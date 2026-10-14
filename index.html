@@ -3,1015 +3,343 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#16060c">
-<title>The Match — Find Your Kind of Love</title>
-<meta name="description" content="The Match is a premium LGBTQ+ dating community for adults aged 18 and above. Discover meaningful connections.">
-
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#10050a">
+<title>The Match ❤️</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-:root {
-  --bg: #10050a;
-  --panel: #1b0b12;
-  --red: #f0194b;
-  --red2: #ff426b;
-  --text: #fff4f7;
-  --muted: #c5aab4;
-  --border: #48202e;
+*{box-sizing:border-box}
+body{
+ margin:0;min-height:100vh;color:#fff2f6;
+ font-family:Arial,sans-serif;
+ background:radial-gradient(ellipse at top,#451020,#180710 48%,#090408);
 }
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  min-height: 100vh;
-  background: radial-gradient(ellipse at top, #40101f 0%, #1a0710 42%, #090408 100%);
-  color: var(--text);
-  font-family: Arial, Helvetica, sans-serif;
-  overflow-x: hidden;
+#stars{position:fixed;inset:0;overflow:hidden;pointer-events:none}
+.star{
+ position:absolute;color:#ff315f;
+ text-shadow:0 0 9px #ff174d,0 0 20px #f0194b;
+ animation:twinkle var(--speed) ease-in-out infinite alternate;
 }
-button, input, select, textarea { font: inherit; }
-button { cursor: pointer; }
-button:disabled { opacity: .6; cursor: wait; }
-.hidden { display: none !important; }
-
-#stars {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-  z-index: 0;
+@keyframes twinkle{
+ from{opacity:.12;transform:scale(.5) rotate(0)}
+ to{opacity:1;transform:scale(1.25) rotate(40deg)}
 }
-.star {
-  position: absolute;
-  color: #ff315f;
-  text-shadow: 0 0 8px #ff174d, 0 0 18px #e90043;
-  animation: twinkle var(--duration, 3s) ease-in-out infinite,
-             drift var(--drift, 7s) ease-in-out infinite alternate;
-  opacity: .3;
+header,main,footer{position:relative}
+header{
+ padding:20px;text-align:center;
+ border-bottom:1px solid #ffffff12;
+ font-size:23px;font-weight:bold
 }
-@keyframes twinkle {
-  0%, 100% { opacity: .15; transform: scale(.6) rotate(0deg); }
-  50% { opacity: 1; transform: scale(1.25) rotate(35deg); }
+header span,h1 span{color:#ff416d}
+main{width:min(92%,430px);margin:0 auto}
+.hero{text-align:center;padding:25px 0 10px}
+.heart{
+ font-size:88px;display:inline-block;
+ animation:float 3s ease-in-out infinite,glow 2s infinite alternate
 }
-@keyframes drift {
-  from { margin-top: 0; }
-  to { margin-top: -22px; }
+@keyframes float{
+ 0%,100%{transform:translateY(0) rotate(-5deg)}
+ 50%{transform:translateY(-13px) rotate(5deg)}
 }
-@keyframes heartFloat {
-  0%, 100% { transform: translateY(0) rotate(-4deg) scale(1); }
-  50% { transform: translateY(-13px) rotate(4deg) scale(1.06); }
+@keyframes glow{
+ from{filter:drop-shadow(0 0 8px #f0194b)}
+ to{filter:drop-shadow(0 0 28px #ff174d)}
 }
-@keyframes heartGlow {
-  0%, 100% { filter: drop-shadow(0 0 12px #ff174d); }
-  50% { filter: drop-shadow(0 0 30px #ff174d) drop-shadow(0 0 45px #a90036); }
+.eyebrow{font-size:11px;letter-spacing:3px;color:#ff91aa}
+h1{font-size:43px;line-height:1.12;margin:12px 0}
+.intro{color:#d2b3bf;font-size:14px;line-height:1.7}
+.panel{
+ margin:20px 0 30px;padding:23px 19px;
+ border:1px solid #582437;border-radius:20px;
+ background:#1c0b13ed;box-shadow:0 15px 50px #0006
 }
-@keyframes pulse {
-  0%, 100% { box-shadow: 0 0 15px #f0194b33; }
-  50% { box-shadow: 0 0 32px #f0194b77; }
+h2{font-size:23px;margin:0 0 8px}
+.small{color:#cbb0bc;font-size:13px;line-height:1.6}
+button,input{font:inherit}
+button{cursor:pointer}
+input{
+ display:block;width:100%;padding:13px;margin-top:7px;
+ color:white;background:#10070c;border:1px solid #593044;
+ border-radius:10px;outline:none
 }
-main, header, footer { position: relative; z-index: 1; }
-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 6%;
-  border-bottom: 1px solid #ffffff0d;
-  background: #10050a66;
-  backdrop-filter: blur(12px);
+input:focus{border-color:#ff416d}
+label{display:block;margin-top:15px;font-size:13px}
+.password{display:flex;gap:7px}
+.password input{flex:1;min-width:0}
+.eye{width:49px;flex-shrink:0;border:1px solid #593044;
+ background:#32111f;color:white;border-radius:10px;margin-top:7px}
+.btn{
+ width:100%;padding:13px;border-radius:11px;
+ font-weight:bold;margin-top:12px
 }
-.brand { font-size: 23px; font-weight: 800; letter-spacing: -.7px; }
-.brand span { color: var(--red2); }
-.header-tag { font-size: 11px; color: var(--muted); letter-spacing: 2px; }
-main { width: min(100% - 28px, 900px); margin: 0 auto; }
-.hero { text-align: center; padding: 30px 0 24px; }
-.heart-stage {
-  height: 170px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  margin: 0 auto 8px;
-}
-.big-heart {
-  font-size: 100px;
-  line-height: 1;
-  display: inline-block;
-  animation: heartFloat 3.2s ease-in-out infinite,
-             heartGlow 2.5s ease-in-out infinite;
-}
-.heart-ring {
-  position: absolute;
-  width: 142px;
-  height: 142px;
-  border: 1px solid #ff315f55;
-  border-radius: 50%;
-  animation: pulse 3s infinite;
-}
-.heart-ring::before {
-  content: "";
-  position: absolute;
-  inset: 12px;
-  border: 1px solid #ff315f35;
-  border-radius: 50%;
-}
-.eyebrow {
-  color: #ff7c9b;
-  font-size: 11px;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-}
-h1 {
-  font-size: clamp(35px, 8vw, 58px);
-  margin: 10px 0;
-  letter-spacing: -2px;
-}
-h1 span {
-  color: var(--red2);
-  text-shadow: 0 0 22px #f0194b55;
-}
-.subtitle {
-  max-width: 460px;
-  margin: 0 auto;
-  line-height: 1.7;
-  color: var(--muted);
-  font-size: 14px;
-}
-.panel {
-  max-width: 490px;
-  margin: 22px auto;
-  padding: 25px;
-  border: 1px solid var(--border);
-  border-radius: 22px;
-  background: linear-gradient(145deg, #24101aee, #13080eee);
-  box-shadow: 0 18px 70px #0005;
-  backdrop-filter: blur(12px);
-}
-.panel h2 { margin: 0 0 8px; font-size: 24px; }
-.panel-intro { color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0 0 20px; }
-label {
-  display: block;
-  margin: 15px 0 7px;
-  color: #f7dce5;
-  font-size: 13px;
-}
-input, select, textarea {
-  width: 100%;
-  padding: 13px 14px;
-  border-radius: 11px;
-  color: white;
-  background: #10070c;
-  border: 1px solid #583044;
-  outline: none;
-}
-input:focus, select:focus, textarea:focus { border-color: var(--red2); box-shadow: 0 0 0 3px #f0194b1c; }
-select option { background: #180a11; }
-textarea { resize: vertical; min-height: 90px; }
-.password-wrap { display: flex; gap: 7px; }
-.password-wrap input { min-width: 0; }
-.eye-btn {
-  width: 48px;
-  flex-shrink: 0;
-  padding: 0;
-  border: 1px solid #583044;
-  border-radius: 11px;
-  color: white;
-  background: #2a101c;
-}
-.primary, .secondary, .social-btn, .small-btn {
-  min-height: 46px;
-  border-radius: 12px;
-  padding: 12px 16px;
-  font-weight: 700;
-  transition: transform .2s, background .2s;
-}
-.primary {
-  width: 100%;
-  margin-top: 18px;
-  color: white;
-  border: 0;
-  background: linear-gradient(100deg, #d90c3c, #ff416d);
-  box-shadow: 0 8px 24px #f0194b2b;
-}
-.primary:hover, .social-btn:hover, .secondary:hover { transform: translateY(-1px); }
-.secondary {
-  width: 100%;
-  color: #ffdce5;
-  background: #ffffff06;
-  border: 1px solid #6a3045;
-}
-.social-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin: 9px 0;
-  color: white;
-  background: #ffffff08;
-  border: 1px solid #553044;
-}
-.social-symbol { font-size: 20px; font-weight: 800; }
-.divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 19px 0;
-  color: #b99aa6;
-  font-size: 12px;
-}
-.divider::before, .divider::after { content: ""; height: 1px; background: #543040; flex: 1; }
-.link-btn {
-  border: 0;
-  background: none;
-  color: #ff7797;
-  padding: 5px 0;
-  font-size: 13px;
-}
-.auth-links {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  margin-top: 13px;
-  flex-wrap: wrap;
-}
-.message {
-  font-size: 13px;
-  line-height: 1.6;
-  margin-top: 13px;
-  overflow-wrap: anywhere;
-}
-.message:empty { display: none; }
-.note {
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.7;
-  text-align: center;
-  margin-top: 17px;
-}
-footer {
-  text-align: center;
-  padding: 26px 12px 35px;
-  color: #a88b97;
-  font-size: 11px;
-  line-height: 1.8;
-}
-.section-heading { margin: 20px 0; }
-.section-heading h2 { margin-bottom: 5px; }
-.section-heading p { color: var(--muted); font-size: 13px; line-height: 1.6; }
-.app-nav { display: flex; gap: 8px; flex-wrap: wrap; margin: 20px 0; }
-.app-nav button { flex: 1; min-width: 100px; }
-.profile-form { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
-.profile-form .full-width { grid-column: 1 / -1; }
-.profile-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; }
-.profile-card {
-  border: 1px solid #54273a;
-  background: linear-gradient(150deg, #26101a, #140810);
-  border-radius: 18px;
-  padding: 18px;
-  min-width: 0;
-}
-.avatar {
-  width: 76px;
-  height: 76px;
-  border-radius: 50%;
-  margin-bottom: 12px;
-  border: 2px solid #fa3d6b;
-  object-fit: cover;
-  background: #351321;
-}
-.avatar-placeholder {
-  display: grid;
-  place-items: center;
-  font-size: 30px;
-  color: #ff7797;
-}
-.profile-card h3 { margin: 0 0 6px; overflow-wrap: anywhere; }
-.profile-card p { color: var(--muted); font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
-.badge { display: inline-block; border: 1px solid #79334d; border-radius: 30px; padding: 5px 9px; font-size: 11px; color: #ffb1c5; margin: 3px 3px 3px 0; }
-@media (max-width: 520px) {
-  header { padding: 15px 18px; }
-  .header-tag { letter-spacing: 1px; font-size: 9px; }
-  .hero { padding-top: 20px; }
-  .panel { padding: 20px 17px; border-radius: 18px; }
-  .heart-stage { height: 145px; }
-  .big-heart { font-size: 83px; }
-  .heart-ring { width: 120px; height: 120px; }
-  .profile-form { grid-template-columns: 1fr; }
-  .profile-form .full-width { grid-column: auto; }
-}
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+.primary{background:linear-gradient(100deg,#d70d3d,#ff416d);color:white;border:0}
+.secondary{background:transparent;color:#ffe4ec;border:1px solid #673047}
+.google{background:#fff;color:#222;border:0}
+button:disabled{opacity:.6}
+.divider{display:flex;align-items:center;gap:10px;color:#b99ba7;font-size:11px;margin:20px 0}
+.divider:before,.divider:after{content:"";height:1px;background:#583044;flex:1}
+.links{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:13px}
+.link{border:0;background:none;color:#ff8da8;padding:5px 0;font-size:12px}
+.status{font-size:13px;line-height:1.6;overflow-wrap:anywhere;color:#ffc4d4}
+footer{text-align:center;padding:15px 12px 30px;color:#ad8e9b;font-size:11px;line-height:1.8}
+.hidden{display:none!important}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after{animation:none!important}
 }
 </style>
 </head>
-
 <body>
 <div id="stars" aria-hidden="true"></div>
-
-<header>
-  <div class="brand">The <span>Match</span> ♥</div>
-  <div class="header-tag">LOVE WITHOUT LIMITS</div>
-</header>
+<header>The <span>Match</span> ♥</header>
 
 <main>
-  <section id="welcome" class="hero">
-    <div class="heart-stage" aria-hidden="true">
-      <div class="heart-ring"></div>
-      <div class="big-heart">❤️</div>
-    </div>
-    <div class="eyebrow">Your next chapter starts here</div>
-    <h1>Find your kind<br>of <span>love.</span></h1>
-    <p class="subtitle">A welcoming space for LGBTQ+ adults to discover meaningful connections, genuine chemistry, and something beautiful.</p>
+<section class="hero">
+ <div class="heart" aria-hidden="true">❤️</div>
+ <div class="eyebrow">YOUR NEXT CHAPTER STARTS HERE</div>
+ <h1>Find your kind<br>of <span>love.</span></h1>
+ <p class="intro">A welcoming LGBTQ+ dating space for adults 18 and above. Discover genuine connections and beautiful possibilities.</p>
+</section>
 
-    <div class="panel">
-      <h2>Welcome to The Match</h2>
-      <p class="panel-intro">Your story. Your identity. Your kind of connection.</p>
+<section class="panel" id="welcome">
+ <h2>Welcome, beautiful ❤️</h2>
+ <p class="small">Your story. Your identity. Your kind of connection.</p>
+ <button class="btn google" id="google">🌐 Continue with Google</button>
+ <div class="divider">OR USE YOUR EMAIL</div>
+ <button class="btn primary" id="signup">Create an account</button>
+ <button class="btn secondary" id="login">Log in</button>
+ <p class="status" id="welcomeStatus" role="status"></p>
+ <p class="small">For adults aged 18+. Please treat every member with respect.</p>
+</section>
 
-      <button class="social-btn" id="googleBtn" type="button">
-        <span class="social-symbol" style="color:#fff">G</span> Continue with Google
-      </button>
-      <button class="social-btn" id="appleBtn" type="button">
-        <span class="social-symbol">●</span> Continue with Apple
-      </button>
+<section class="panel hidden" id="auth">
+ <h2 id="authTitle">Create your account</h2>
+ <p class="small">Start your journey with The Match.</p>
+ <form id="authForm">
+  <label for="email">Email address</label>
+  <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+  <label for="password">Password (minimum 8 characters)</label>
+  <div class="password">
+   <input id="password" type="password" minlength="8" autocomplete="new-password" required>
+   <button class="eye" id="eye" type="button" aria-label="Show password">👁</button>
+  </div>
+  <button class="btn primary" id="submit" type="submit">Create account</button>
+ </form>
+ <div class="links">
+  <button class="link" id="forgot" type="button">Forgot password?</button>
+  <button class="link" id="switch" type="button">Already registered? Log in</button>
+ </div>
+ <p class="status" id="authStatus" role="status"></p>
+ <button class="btn secondary" id="back" type="button">Back</button>
+</section>
 
-      <div class="divider">OR CONTINUE WITH</div>
+<section class="panel hidden" id="reset">
+ <h2>Reset your password</h2>
+ <p class="small">Enter your email to receive a secure reset link.</p>
+ <form id="requestForm">
+  <label for="resetEmail">Email address</label>
+  <input id="resetEmail" type="email" required autocomplete="email">
+  <button class="btn primary" type="submit">Send reset link</button>
+ </form>
+ <form id="newForm" class="hidden">
+  <label for="newPassword">Choose a new password</label>
+  <input id="newPassword" type="password" minlength="8" required autocomplete="new-password">
+  <button class="btn primary" type="submit">Save new password</button>
+ </form>
+ <p class="status" id="resetStatus" role="status"></p>
+ <button class="btn secondary" id="resetBack" type="button">Back to welcome</button>
+</section>
 
-      <button class="primary" id="showSignup" type="button">Create an account with email</button>
-      <button class="secondary" id="showLogin" type="button" style="margin-top:10px">Log in to your account</button>
-
-      <p class="note">For adults aged 18 and above. By continuing, you agree to use The Match respectfully and honestly.</p>
-      <p id="welcomeMessage" class="message" role="status"></p>
-    </div>
-  </section>
-
-  <section id="auth" class="panel hidden">
-    <h2 id="authTitle">Create your account</h2>
-    <p class="panel-intro">A few details, and your next chapter begins.</p>
-
-    <form id="authForm">
-      <label for="email">Email address</label>
-      <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required>
-
-      <label for="password">Password (at least 8 characters)</label>
-      <div class="password-wrap">
-        <input id="password" type="password" minlength="8" autocomplete="new-password" placeholder="Create a strong password" required>
-        <button class="eye-btn" id="togglePassword" type="button" aria-label="Show password">👁</button>
-      </div>
-
-      <button class="primary" id="authSubmit" type="submit">Create account</button>
-    </form>
-
-    <div class="auth-links">
-      <button class="link-btn" id="forgotBtn" type="button">Forgot password?</button>
-      <button class="link-btn" id="switchMode" type="button">Already have an account? Log in</button>
-    </div>
-
-    <div class="divider">OR USE A PHONE NUMBER</div>
-    <label for="phone">Phone number with country code</label>
-    <input id="phone" type="tel" autocomplete="tel" placeholder="+2348012345678">
-    <button class="secondary" id="sendOtp" type="button" style="margin-top:10px">Send SMS verification code</button>
-
-    <div id="otpArea" class="hidden">
-      <label for="otp">Verification code</label>
-      <input id="otp" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="Enter the code from your SMS">
-      <button class="primary" id="verifyOtp" type="button">Verify and continue</button>
-    </div>
-
-    <p id="authMessage" class="message" role="status"></p>
-    <button class="secondary" id="back" type="button" style="margin-top:15px">Back to welcome page</button>
-  </section>
-
-  <section id="resetPanel" class="panel hidden">
-    <h2 id="resetTitle">Reset your password</h2>
-    <p class="panel-intro" id="resetIntro">Enter your account email and we’ll send you a secure password reset link.</p>
-
-    <form id="requestResetForm">
-      <label for="resetEmail">Email address</label>
-      <input id="resetEmail" type="email" autocomplete="email" placeholder="you@example.com" required>
-      <button class="primary" type="submit">Send password reset link</button>
-    </form>
-
-    <form id="newPasswordForm" class="hidden">
-      <label for="newPassword">New password</label>
-      <div class="password-wrap">
-        <input id="newPassword" type="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters" required>
-        <button class="eye-btn" id="toggleNewPassword" type="button" aria-label="Show new password">👁</button>
-      </div>
-      <button class="primary" type="submit">Save new password</button>
-    </form>
-
-    <p id="resetMessage" class="message" role="status"></p>
-    <button class="secondary" id="resetBack" type="button" style="margin-top:15px">Back to welcome page</button>
-  </section>
-
-  <section id="app" class="hidden">
-    <div class="section-heading">
-      <div class="eyebrow">YOUR SPACE, YOUR STORY</div>
-      <h2>Welcome, <span id="memberName">beautiful</span> ❤️</h2>
-      <p>Build your profile and discover people who could become something special.</p>
-    </div>
-
-    <div class="app-nav">
-      <button class="primary" id="navProfile" type="button" style="margin:0">My profile</button>
-      <button class="secondary" id="navDiscover" type="button">Discover</button>
-      <button class="secondary" id="logout" type="button">Log out</button>
-    </div>
-
-    <section id="profileSection" class="panel" style="max-width:none">
-      <h2>Your profile</h2>
-      <p class="panel-intro">Share what makes you you. Please use a photo URL from a service you trust.</p>
-
-      <form id="profileForm" class="profile-form">
-        <div>
-          <label for="displayName">Display name</label>
-          <input id="displayName" maxlength="60" required placeholder="What should people call you?">
-        </div>
-        <div>
-          <label for="age">Age (18+)</label>
-          <input id="age" type="number" min="18" max="120" required>
-        </div>
-        <div>
-          <label for="gender">Gender identity</label>
-          <input id="gender" maxlength="80" placeholder="e.g. Man, woman, non-binary">
-        </div>
-        <div>
-          <label for="interestedIn">Interested in</label>
-          <input id="interestedIn" maxlength="120" placeholder="Who would you like to meet?">
-        </div>
-        <div class="full-width">
-          <label for="city">City or area</label>
-          <input id="city" maxlength="100" placeholder="Your city or general area">
-        </div>
-        <div class="full-width">
-          <label for="avatarUrl">Profile photo URL (optional)</label>
-          <input id="avatarUrl" type="url" maxlength="500" placeholder="https://example.com/photo.jpg">
-        </div>
-        <div class="full-width">
-          <label for="bio">About you</label>
-          <textarea id="bio" maxlength="600" placeholder="Tell people a little about yourself..."></textarea>
-        </div>
-        <div class="full-width">
-          <button class="primary" id="saveProfile" type="submit">Save my profile</button>
-        </div>
-      </form>
-      <p id="profileMessage" class="message" role="status"></p>
-    </section>
-
-    <section id="discoverSection" class="hidden">
-      <div class="section-heading">
-        <h2>Discover connections ✨</h2>
-        <p>Explore member profiles and like someone to show your interest.</p>
-      </div>
-      <button class="secondary" id="refreshDiscover" type="button" style="margin-bottom:18px">Refresh profiles</button>
-      <div id="profileList" class="profile-list"></div>
-      <p id="discoverMessage" class="message" role="status"></p>
-    </section>
-  </section>
+<section class="panel hidden" id="signedIn">
+ <h2>You're signed in! ❤️</h2>
+ <p class="small">Welcome to The Match. Your login is working.</p>
+ <p class="status" id="memberEmail"></p>
+ <p class="small">Next, we'll add your profile and discovery features.</p>
+ <button class="btn secondary" id="logout" type="button">Log out</button>
+</section>
 </main>
 
 <footer>
-  <div>♥ The Match — Find your kind of love.</div>
-  <div>Adults 18+ only. Respect, consent, and kindness always.</div>
+ The Match ❤️ — Find your kind of love.<br>
+ Adults 18+ only · Respect · Consent · Kindness
 </footer>
 
 <script>
-(() => {
-  "use strict";
+(function(){
+ "use strict";
 
-  const SITE_URL = "https://the-match-datingapp.onrender.com";
-  const SUPABASE_URL = "https://rxbdmgzmwhjnkcclyrcq.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_5OirCcmy8L5n3isPvi-P0w_Dgeb13U_";
+ const SITE_URL=window.location.origin;
+ const SUPABASE_URL="https://rxbdmgzmwhjnkcclyrcq.supabase.co";
+ const SUPABASE_KEY="sb_publishable_5OirCcmy8L5n3isPvi-P0w_Dgeb13U_";
+ const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+ const $=id=>document.getElementById(id);
+ let loginMode=false;
+ let handling=false;
 
-  const $ = id => document.getElementById(id);
-  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true
-    }
+ // Sparkling red stars
+ const layer=$("stars");
+ const symbols=["✦","✧","⋆","✦","✧"];
+ for(let i=0;i<28;i++){
+  const star=document.createElement("span");
+  star.className="star";
+  star.textContent=symbols[Math.floor(Math.random()*symbols.length)];
+  star.style.left=Math.random()*100+"%";
+  star.style.top=Math.random()*100+"%";
+  star.style.fontSize=(9+Math.random()*15)+"px";
+  star.style.setProperty("--speed",(1.5+Math.random()*3)+"s");
+  star.style.animationDelay=(-Math.random()*4)+"s";
+  layer.appendChild(star);
+ }
+
+ function status(id,text,error){
+  $(id).textContent=text||"";
+  $(id).style.color=error?"#ff91aa":"#ffc4d4";
+ }
+ function show(id){
+  ["welcome","auth","reset","signedIn"].forEach(x=>{
+   $(x).classList.toggle("hidden",x!==id);
   });
+  window.scrollTo(0,0);
+ }
+ function friendly(error){
+  const m=error?.message||"Something went wrong. Please try again.";
+  if(/invalid login credentials/i.test(m))return "Incorrect email or password.";
+  if(/email not confirmed/i.test(m))return "Please confirm your email using the link we sent.";
+  if(/already registered/i.test(m))return "This email is already registered. Please log in.";
+  return m;
+ }
+ function openAuth(isLogin){
+  loginMode=isLogin;
+  $("authTitle").textContent=isLogin?"Welcome back":"Create your account";
+  $("submit").textContent=isLogin?"Log in":"Create account";
+  $("password").value="";
+  $("password").type="password";
+  $("password").autocomplete=isLogin?"current-password":"new-password";
+  $("switch").textContent=isLogin?"New here? Create an account":"Already registered? Log in";
+  status("authStatus","");
+  show("auth");
+ }
 
-  let loginMode = false;
-  let currentUser = null;
-  let currentProfile = null;
-  let busy = false;
+ $("signup").onclick=()=>openAuth(false);
+ $("login").onclick=()=>openAuth(true);
+ $("back").onclick=()=>show("welcome");
+ $("switch").onclick=()=>openAuth(!loginMode);
 
-  // Sparkling stars behind the welcome screen
-  const starLayer = $("stars");
-  const starSymbols = ["✦", "✧", "⋆", "✦", "·"];
-  for (let i = 0; i < 38; i++) {
-    const star = document.createElement("span");
-    star.className = "star";
-    star.textContent = starSymbols[Math.floor(Math.random() * starSymbols.length)];
-    star.style.left = Math.random() * 100 + "%";
-    star.style.top = Math.random() * 100 + "%";
-    star.style.fontSize = (8 + Math.random() * 17) + "px";
-    star.style.setProperty("--duration", (1.5 + Math.random() * 3.5) + "s");
-    star.style.setProperty("--drift", (4 + Math.random() * 7) + "s");
-    star.style.animationDelay = (Math.random() * -5) + "s";
-    starLayer.appendChild(star);
-  }
+ $("eye").onclick=()=>{
+  const input=$("password");
+  input.type=input.type==="password"?"text":"password";
+  $("eye").textContent=input.type==="password"?"👁":"🙈";
+ };
 
-  function message(id, text, isError = false) {
-    $(id).textContent = text || "";
-    $(id).style.color = isError ? "#ff8da8" : "#f6c7d5";
-  }
+ $("google").onclick=async()=>{
+  status("welcomeStatus","Connecting to Google...");
+  try{
+   const {error}=await db.auth.signInWithOAuth({
+    provider:"google",
+    options:{redirectTo:SITE_URL}
+   });
+   if(error)throw error;
+  }catch(e){status("welcomeStatus",friendly(e),true);}
+ };
 
-  function show(sectionId) {
-    ["welcome", "auth", "resetPanel", "app"].forEach(id => {
-      $(id).classList.toggle("hidden", id !== sectionId);
+ $("authForm").onsubmit=async event=>{
+  event.preventDefault();
+  if(handling)return;
+  handling=true;
+  const button=$("submit");
+  button.disabled=true;
+  status("authStatus","Please wait...");
+  try{
+   const email=$("email").value.trim();
+   const password=$("password").value;
+   let result;
+   if(loginMode){
+    result=await db.auth.signInWithPassword({email,password});
+   }else{
+    result=await db.auth.signUp({
+     email,password,
+     options:{emailRedirectTo:SITE_URL}
     });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+   }
+   if(result.error)throw result.error;
+   if(!loginMode&&!result.data.session){
+    status("authStatus","Account created! Check your email and confirm your address, then return here to log in.");
+   }else if(result.data.session){
+    await showSignedIn(result.data.session.user);
+   }
+  }catch(e){status("authStatus",friendly(e),true);}
+  finally{button.disabled=false;handling=false;}
+ };
+
+ $("forgot").onclick=()=>{
+  $("resetEmail").value=$("email").value.trim();
+  $("requestForm").classList.remove("hidden");
+  $("newForm").classList.add("hidden");
+  status("resetStatus","");
+  show("reset");
+ };
+ $("resetBack").onclick=()=>show("welcome");
+
+ $("requestForm").onsubmit=async event=>{
+  event.preventDefault();
+  const button=event.submitter;
+  button.disabled=true;
+  status("resetStatus","Sending reset link...");
+  try{
+   const {error}=await db.auth.resetPasswordForEmail(
+    $("resetEmail").value.trim(),
+    {redirectTo:SITE_URL}
+   );
+   if(error)throw error;
+   status("resetStatus","If the account exists, a reset email has been sent. Check your inbox and spam folder.");
+  }catch(e){status("resetStatus",friendly(e),true);}
+  finally{button.disabled=false;}
+ };
+
+ $("newForm").onsubmit=async event=>{
+  event.preventDefault();
+  const button=event.submitter;
+  button.disabled=true;
+  try{
+   const {error}=await db.auth.updateUser({password:$("newPassword").value});
+   if(error)throw error;
+   status("resetStatus","Password changed successfully. You can now log in.");
+   $("newForm").classList.add("hidden");
+  }catch(e){status("resetStatus",friendly(e),true);}
+  finally{button.disabled=false;}
+ };
+
+ async function showSignedIn(user){
+  $("memberEmail").textContent=user.email||user.phone||"Your account";
+  show("signedIn");
+ }
+
+ $("logout").onclick=async()=>{
+  const {error}=await db.auth.signOut();
+  if(error){status("memberEmail",friendly(error),true);return;}
+  show("welcome");
+ };
+
+ db.auth.onAuthStateChange((event,session)=>{
+  if(event==="PASSWORD_RECOVERY"){
+   $("requestForm").classList.add("hidden");
+   $("newForm").classList.remove("hidden");
+   status("resetStatus","Enter your new password below.");
+   show("reset");
   }
-
-  function setBusy(button, state, label) {
-    button.disabled = state;
-    if (state) {
-      button.dataset.originalLabel = button.textContent;
-      button.textContent = label || "Please wait...";
-    } else if (button.dataset.originalLabel) {
-      button.textContent = button.dataset.originalLabel;
-      delete button.dataset.originalLabel;
-    }
+  if(event==="SIGNED_IN"&&session?.user){
+   showSignedIn(session.user);
   }
-
-  function errorText(error) {
-    const text = error && error.message ? error.message : "Something went wrong. Please try again.";
-    if (/invalid login credentials/i.test(text)) return "Email or password is incorrect.";
-    if (/email not confirmed/i.test(text)) return "Please confirm your email using the link we sent you.";
-    if (/user already registered/i.test(text)) return "This email already has an account. Please log in.";
-    return text;
-  }
-
-  $("showSignup").onclick = () => {
-    loginMode = false;
-    $("authTitle").textContent = "Create your account";
-    $("authSubmit").textContent = "Create account";
-    $("password").autocomplete = "new-password";
-    $("password").value = "";
-    message("authMessage", "");
-    show("auth");
-  };
-
-  $("showLogin").onclick = () => openLogin();
-
-  function openLogin() {
-    loginMode = true;
-    $("authTitle").textContent = "Welcome back";
-    $("authSubmit").textContent = "Log in";
-    $("password").autocomplete = "current-password";
-    $("password").value = "";
-    message("authMessage", "");
-    show("auth");
-  }
-
-  $("switchMode").onclick = () => {
-    loginMode = !loginMode;
-    $("authTitle").textContent = loginMode ? "Welcome back" : "Create your account";
-    $("authSubmit").textContent = loginMode ? "Log in" : "Create account";
-    $("password").autocomplete = loginMode ? "current-password" : "new-password";
-    $("switchMode").textContent = loginMode ? "New here? Create an account" : "Already have an account? Log in";
-    message("authMessage", "");
-  };
-
-  $("back").onclick = () => show("welcome");
-  $("resetBack").onclick = () => show("welcome");
-
-  $("togglePassword").onclick = () => {
-    const field = $("password");
-    const visible = field.type === "password";
-    field.type = visible ? "text" : "password";
-    $("togglePassword").textContent = visible ? "🙈" : "👁";
-    $("togglePassword").setAttribute("aria-label", visible ? "Hide password" : "Show password");
-  };
-
-  $("toggleNewPassword").onclick = () => {
-    const field = $("newPassword");
-    const visible = field.type === "password";
-    field.type = visible ? "text" : "password";
-    $("toggleNewPassword").textContent = visible ? "🙈" : "👁";
-  };
-
-  $("authForm").onsubmit = async event => {
-    event.preventDefault();
-    if (busy) return;
-    busy = true;
-
-    const email = $("email").value.trim();
-    const password = $("password").value;
-    const button = $("authSubmit");
-    setBusy(button, true);
-    message("authMessage", "Please wait...");
-
-    try {
-      let result;
-      if (loginMode) {
-        result = await db.auth.signInWithPassword({ email, password });
-      } else {
-        result = await db.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: SITE_URL
-          }
-        });
-      }
-
-      if (result.error) throw result.error;
-
-      if (!loginMode && !result.data.session) {
-        message("authMessage", "Your account request is ready! Check your email and tap the confirmation link, then return here to log in.");
-      } else {
-        message("authMessage", "You're signed in. Welcome to The Match!");
-        await checkSession();
-      }
-    } catch (error) {
-      message("authMessage", errorText(error), true);
-    } finally {
-      setBusy(button, false);
-      busy = false;
-    }
-  };
-
-  // Google and Apple sign-in
-  async function socialLogin(provider) {
-    message("welcomeMessage", "Connecting securely...");
-    try {
-      const { error } = await db.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: SITE_URL
-        }
-      });
-      if (error) throw error;
-    } catch (error) {
-      message("welcomeMessage", errorText(error), true);
-    }
-  }
-
-  $("googleBtn").onclick = () => socialLogin("google");
-  $("appleBtn").onclick = () => socialLogin("apple");
-
-  // Password recovery request
-  $("forgotBtn").onclick = () => {
-    $("resetTitle").textContent = "Reset your password";
-    $("resetIntro").textContent = "Enter your account email and we’ll send you a secure password reset link.";
-    $("requestResetForm").classList.remove("hidden");
-    $("newPasswordForm").classList.add("hidden");
-    $("resetEmail").value = $("email").value.trim();
-    message("resetMessage", "");
-    show("resetPanel");
-  };
-
-  $("requestResetForm").onsubmit = async event => {
-    event.preventDefault();
-    const button = event.submitter || $("requestResetForm").querySelector("button");
-    setBusy(button, true);
-    message("resetMessage", "Sending your secure reset link...");
-
-    try {
-      const { error } = await db.auth.resetPasswordForEmail(
-        $("resetEmail").value.trim(),
-        { redirectTo: SITE_URL }
-      );
-      if (error) throw error;
-      message("resetMessage", "If an account exists for that email, a reset link will be sent. Check your inbox and spam folder.");
-    } catch (error) {
-      message("resetMessage", errorText(error), true);
-    } finally {
-      setBusy(button, false);
-    }
-  };
-
-  $("newPasswordForm").onsubmit = async event => {
-    event.preventDefault();
-    const button = event.submitter || $("newPasswordForm").querySelector("button");
-    setBusy(button, true);
-    message("resetMessage", "Updating your password...");
-
-    try {
-      const { error } = await db.auth.updateUser({ password: $("newPassword").value });
-      if (error) throw error;
-      message("resetMessage", "Your password has been changed. You can now use it to log in.");
-      $("newPasswordForm").classList.add("hidden");
-      $("requestResetForm").classList.add("hidden");
-    } catch (error) {
-      message("resetMessage", errorText(error), true);
-    } finally {
-      setBusy(button, false);
-    }
-  };
-
-  // Phone OTP. SMS provider must be enabled in Supabase.
-  $("sendOtp").onclick = async () => {
-    const phone = $("phone").value.trim();
-    if (!phone) {
-      message("authMessage", "Enter your phone number with its country code, for example +234...", true);
-      return;
-    }
-
-    setBusy($("sendOtp"), true);
-    message("authMessage", "Sending SMS verification code...");
-
-    try {
-      const { error } = await db.auth.signInWithOtp({ phone });
-      if (error) throw error;
-      $("otpArea").classList.remove("hidden");
-      message("authMessage", "If SMS sign-in is configured, your verification code should arrive shortly.");
-    } catch (error) {
-      message("authMessage", errorText(error), true);
-    } finally {
-      setBusy($("sendOtp"), false);
-    }
-  };
-
-  $("verifyOtp").onclick = async () => {
-    const phone = $("phone").value.trim();
-    const token = $("otp").value.trim();
-    if (!token) {
-      message("authMessage", "Enter the verification code from your SMS.", true);
-      return;
-    }
-
-    setBusy($("verifyOtp"), true);
-    try {
-      const { error } = await db.auth.verifyOtp({ phone, token, type: "sms" });
-      if (error) throw error;
-      await checkSession();
-    } catch (error) {
-      message("authMessage", errorText(error), true);
-    } finally {
-      setBusy($("verifyOtp"), false);
-    }
-  };
-
-  async function loadProfile() {
-    if (!currentUser) return;
-
-    const { data, error } = await db
-      .from("profiles")
-      .select("*")
-      .eq("id", currentUser.id)
-      .maybeSingle();
-
-    if (error) throw error;
-    currentProfile = data;
-
-    $("memberName").textContent = data && data.display_name ? data.display_name : "beautiful";
-    $("displayName").value = data?.display_name || "";
-    $("age").value = data?.age || "";
-    $("gender").value = data?.gender_identity || "";
-    $("interestedIn").value = data?.interested_in || "";
-    $("city").value = data?.city || "";
-    $("avatarUrl").value = data?.avatar_url || "";
-    $("bio").value = data?.bio || "";
-  }
-
-  $("profileForm").onsubmit = async event => {
-    event.preventDefault();
-    if (!currentUser) return;
-
-    const age = Number($("age").value);
-    if (!Number.isInteger(age) || age < 18 || age > 120) {
-      message("profileMessage", "The Match is for adults aged 18 and above. Please enter a valid age.", true);
-      return;
-    }
-
-    const button = $("saveProfile");
-    setBusy(button, true);
-    message("profileMessage", "Saving your profile...");
-
-    try {
-      const profile = {
-        id: currentUser.id,
-        display_name: $("displayName").value.trim(),
-        age,
-        gender_identity: $("gender").value.trim(),
-        interested_in: $("interestedIn").value.trim(),
-        city: $("city").value.trim(),
-        avatar_url: $("avatarUrl").value.trim() || null,
-        bio: $("bio").value.trim(),
-        updated_at: new Date().toISOString()
-      };
-
-      const { error } = await db.from("profiles").upsert(profile, { onConflict: "id" });
-      if (error) throw error;
-
-      currentProfile = profile;
-      $("memberName").textContent = profile.display_name;
-      message("profileMessage", "Your profile has been saved. You're ready to discover connections!");
-    } catch (error) {
-      message("profileMessage", errorText(error), true);
-    } finally {
-      setBusy(button, false);
-    }
-  };
-
-  function safeImageUrl(url) {
-    if (!url) return null;
-    try {
-      const parsed = new URL(url);
-      return parsed.protocol === "https:" ? parsed.href : null;
-    } catch {
-      return null;
-    }
-  }
-
-  async function loadDiscover() {
-    if (!currentUser) return;
-    $("profileList").replaceChildren();
-    message("discoverMessage", "Finding people...");
-
-    try {
-      const { data: profiles, error } = await db
-        .from("profiles")
-        .select("id, display_name, age, gender_identity, interested_in, bio, city, avatar_url")
-        .neq("id", currentUser.id)
-        .order("created_at", { ascending: false })
-        .limit(60);
-
-      if (error) throw error;
-
-      const { data: likes, error: likesError } = await db
-        .from("likes")
-        .select("liked_id")
-        .eq("liker_id", currentUser.id);
-
-      if (likesError) throw likesError;
-
-      const likedIds = new Set((likes || []).map(item => item.liked_id));
-      const list = $("profileList");
-
-      if (!profiles || profiles.length === 0) {
-        message("discoverMessage", "No profiles yet. Check back soon, and make sure your own profile is complete.");
-        return;
-      }
-
-      profiles.forEach(profile => {
-        const card = document.createElement("article");
-        card.className = "profile-card";
-
-        const imageUrl = safeImageUrl(profile.avatar_url);
-        if (imageUrl) {
-          const img = document.createElement("img");
-          img.className = "avatar";
-          img.alt = "Profile photo";
-          img.src = imageUrl;
-          img.loading = "lazy";
-          img.onerror = () => {
-            img.replaceWith(makeAvatarPlaceholder());
-          };
-          card.appendChild(img);
-        } else {
-          card.appendChild(makeAvatarPlaceholder());
-        }
-
-        const title = document.createElement("h3");
-        title.textContent = `${profile.display_name || "Member"}${profile.age ? ", " + profile.age : ""}`;
-        card.appendChild(title);
-
-        if (profile.city) {
-          const city = document.createElement("span");
-          city.className = "badge";
-          city.textContent = profile.city;
-          card.appendChild(city);
-        }
-        if (profile.gender_identity) {
-          const gender = document.createElement("span");
-          gender.className = "badge";
-          gender.textContent = profile.gender_identity;
-          card.appendChild(gender);
-        }
-        if (profile.interested_in) {
-          const interest = document.createElement("span");
-          interest.className = "badge";
-          interest.textContent = "Interested in: " + profile.interested_in;
-          card.appendChild(interest);
-        }
-
-        const bio = document.createElement("p");
-        bio.textContent = profile.bio || "This member hasn't added a bio yet.";
-        card.appendChild(bio);
-
-        const likeButton = document.createElement("button");
-        likeButton.className = likedIds.has(profile.id) ? "secondary" : "primary";
-        likeButton.textContent = likedIds.has(profile.id) ? "♥ Liked" : "♥ Like profile";
-        likeButton.disabled = likedIds.has(profile.id);
-        likeButton.style.marginTop = "10px";
-
-        likeButton.onclick = async () => {
-          likeButton.disabled = true;
-          try {
-            const { error } = await db.from("likes").insert({
-              liker_id: currentUser.id,
-              liked_id: profile.id
-            });
-            if (error) throw error;
-            likeButton.textContent = "♥ Liked";
-            likeButton.className = "secondary";
-            message("discoverMessage", "Like sent! If they like you too, it could be a match.");
-          } catch (error) {
-            message("discoverMessage", errorText(error), true);
-            likeButton.disabled = false;
-          }
-        };
-
-        card.appendChild(likeButton);
-        list.appendChild(card);
-      });
-
-      message("discoverMessage", `${profiles.length} profile${profiles.length === 1 ? "" : "s"} found. Say hello with a like!`);
-    } catch (error) {
-      message("discoverMessage", errorText(error), true);
-    }
-  }
-
-  function makeAvatarPlaceholder() {
-    const avatar = document.createElement("div");
-    avatar.className = "avatar avatar-placeholder";
-    avatar.textContent = "♥";
-    avatar.setAttribute("aria-label", "No profile photo");
-    return avatar;
-  }
-
-  $("navProfile").onclick = () => {
-    $("profileSection").classList.remove("hidden");
-    $("discoverSection").classList.add("hidden");
-  };
-
-  $("navDiscover").onclick = async () => {
-    $("profileSection").classList.add("hidden");
-    $("discoverSection").classList.remove("hidden");
-    await loadDiscover();
-  };
-
-  $("refreshDiscover").onclick = loadDiscover;
-
-  $("logout").onclick = async () => {
-    const { error } = await db.auth.signOut();
-    if (error) {
-      message("profileMessage", errorText(error), true);
-      return;
-    }
-    currentUser = null;
-    currentProfile = null;
-    show("welcome");
-  };
-
-  async function checkSession() {
-    const { data, error } = await db.auth.getSession();
-    if (error) {
-      message("welcomeMessage", errorText(error), true);
-      show("welcome");
-      return;
-    }
-
-    currentUser = data.session ? data.session.user : null;
-
-    if (!currentUser) {
-      show("welcome");
-      return;
-    }
-
-    try {
-      await loadProfile();
-      show("app");
-    } catch (error) {
-      show("app");
-      message("profileMessage", "Your account is signed in, but we couldn't load your profile. Please check your connection and database policies.", true);
-    }
-  }
-
-  db.auth.onAuthStateChange((event, session) => {
-    if (event === "PASSWORD_RECOVERY") {
-      currentUser = session?.user || null;
-      $("resetTitle").textContent = "Choose a new password";
-      $("resetIntro").textContent = "Enter your new password below.";
-      $("requestResetForm").classList.add("hidden");
-      $("newPasswordForm").classList.remove("hidden");
-      message("resetMessage", "");
-      show("resetPanel");
-      return;
-    }
-
-    if (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "USER_UPDATED") {
-      if (session && session.user) {
-        currentUser = session.user;
-        checkSession();
-      }
-    }
-
-    if (event === "SIGNED_OUT") {
-      currentUser = null;
-      currentProfile = null;
-      show("welcome");
-    }
-  });
-
-  // Initial session check
-  checkSession();
+ });
+
+ async function init(){
+  const {data,error}=await db.auth.getSession();
+  if(error){status("welcomeStatus",friendly(error),true);return;}
+  if(data.session?.user)await showSignedIn(data.session.user);
+ }
+ init();
 })();
 </script>
 </body>
 </html>
+

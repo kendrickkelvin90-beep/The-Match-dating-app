@@ -33,6 +33,35 @@
 }
 
 <style>
+  .photo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.photo-item {
+  border: 1px solid #583044;
+  border-radius: 12px;
+  padding: 8px;
+  background: #10070c;
+}
+.photo-item img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.photo-item button {
+  width: 100%;
+  font-size: 12px;
+  padding: 9px 6px;
+  margin-top: 7px;
+}
+.photo-tag {
+  font-size: 11px;
+  color: #ff91aa;
+  margin: 7px 0;
+}
   .photo-item {
   border: 1px solid #583044;
   border-radius: 12px;

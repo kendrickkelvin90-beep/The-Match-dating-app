@@ -597,7 +597,101 @@ $("uploadPhotos").onclick=async()=>{
     btn.disabled=false;
   }
 };
-$("editProfile").onclick=()=>show("profile");
+async function loadVerificationStatus(){
+if(!currentUser)return;
+const box=$("verificationStatus");
+const {data,error}=await db.from("verification_requests")
+.select("status")
+.eq("user_id",currentUser.id)
+.order("created_at",{ascending:false})
+.limit(1);
+if(error){
+box.textContent="Could not load verification status.";
+return;
+}
+if(data&&data.length){
+const s=data[0].status;
+box.textContent="Verification status: "+s;
+}else{
+box.textContent="You have not requested verification yet.";
+}
+}
+
+$("requestVerification").onclick=async()=>{
+if(!currentUser){
+$("verificationStatus").textContent="Please sign in first.";
+return;
+}
+const input=$("verificationSelfie");
+const file=input.files&&input.files[0];
+const box=$("verificationStatus");
+const btn=$("requestVerification");
+
+if(!file){
+box.textContent="Please choose a selfie first.";
+return;
+}
+if(!["image/jpeg","image/png","image/webp"].includes(file.type)){
+box.textContent="Choose a JPG, PNG or WebP image.";
+return;
+}
+if(file.size>5242880){
+box.textContent="Your selfie must be 5 MB or smaller.";
+return;
+}
+
+btn.disabled=true;
+box.textContent="Submitting your verification request...";
+
+let path="";
+try{
+const {data:previous,error:checkError}=await db
+.from("verification_requests")
+.select("status")
+.eq("user_id",currentUser.id)
+.eq("status","pending")
+.limit(1);
+
+if(checkError)throw checkError;
+if(previous&&previous.length){
+  box.textContent="Your request is already pending review.";
+  return;
+}
+
+path=currentUser.id+"/"+Date.now()+"-verification."+(
+  file.type==="image/png"?"png":
+  file.type==="image/webp"?"webp":"jpg"
+);
+
+const {error:uploadError}=await db.storage
+  .from("verification-selfies")
+  .upload(path,file,{contentType:file.type});
+
+if(uploadError)throw uploadError;
+
+const {error:insertError}=await db
+  .from("verification_requests")
+  .insert({
+    user_id:currentUser.id,
+    selfie_path:path,
+    status:"pending"
+  });
+
+if(insertError){
+  await db.storage.from("verification-selfies").remove([path]);
+  throw insertError;
+}
+
+input.value="";
+box.textContent="Request submitted! Your selfie is awaiting review.";
+
+}catch(e){
+box.textContent="Submission failed: "+friendly(e);
+}finally{
+btn.disabled=false;
+}
+};
+  $("editProfile").onclick=()=>show("profile");
 
 async function logout(){
 let r=await db.auth.signOut();

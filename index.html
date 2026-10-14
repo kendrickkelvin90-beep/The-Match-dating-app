@@ -3,398 +3,1015 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#090909">
-<title>The Match — Find Your Connection</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#16060c">
+<title>The Match — Find Your Kind of Love</title>
+<meta name="description" content="The Match is a premium LGBTQ+ dating community for adults aged 18 and above. Discover meaningful connections.">
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
-:root{--red:#ff294d;--bg:#090909;--panel:#171113;--text:#fff7f8;--muted:#b9a9ad}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
-header{padding:18px 5%;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #302326;gap:10px}
-.brand{font-size:24px;font-weight:bold}.brand span{color:var(--red)}
-button,a.btn{background:var(--red);color:white;border:0;border-radius:25px;padding:12px 18px;font-weight:bold;cursor:pointer;text-decoration:none}
-button.secondary,a.secondary{background:transparent;border:1px solid #594047;color:white}
-main{max-width:900px;margin:auto;padding:24px 16px}
-h1{font-size:clamp(34px,7vw,60px);margin:20px 0}
-h1 span{color:var(--red)}
-p{line-height:1.6;color:var(--muted)}
-.panel,.person{background:var(--panel);border:1px solid #39252b;border-radius:18px;padding:20px;margin:18px 0}
-input,select,textarea{width:100%;padding:13px;margin:7px 0 14px;background:#0e0b0c;color:white;border:1px solid #49343a;border-radius:10px;font-size:16px}
-label{font-size:14px;color:#e7dce0}
-.actions{display:flex;gap:10px;flex-wrap:wrap;margin:15px 0}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
-.person{margin:0}
-.person img{width:100%;height:190px;object-fit:cover;border-radius:12px;background:#24151a}
-.person h3{margin-bottom:5px}
-.small{font-size:12px}
-.notice{padding:12px;background:#21151a;border-radius:10px;color:#ffdbe2;overflow-wrap:anywhere}
-.hidden{display:none!important}
-footer{text-align:center;padding:25px;color:#8f8185;font-size:12px}
+:root {
+  --bg: #10050a;
+  --panel: #1b0b12;
+  --red: #f0194b;
+  --red2: #ff426b;
+  --text: #fff4f7;
+  --muted: #c5aab4;
+  --border: #48202e;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(ellipse at top, #40101f 0%, #1a0710 42%, #090408 100%);
+  color: var(--text);
+  font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
+}
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+button:disabled { opacity: .6; cursor: wait; }
+.hidden { display: none !important; }
+
+#stars {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+.star {
+  position: absolute;
+  color: #ff315f;
+  text-shadow: 0 0 8px #ff174d, 0 0 18px #e90043;
+  animation: twinkle var(--duration, 3s) ease-in-out infinite,
+             drift var(--drift, 7s) ease-in-out infinite alternate;
+  opacity: .3;
+}
+@keyframes twinkle {
+  0%, 100% { opacity: .15; transform: scale(.6) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.25) rotate(35deg); }
+}
+@keyframes drift {
+  from { margin-top: 0; }
+  to { margin-top: -22px; }
+}
+@keyframes heartFloat {
+  0%, 100% { transform: translateY(0) rotate(-4deg) scale(1); }
+  50% { transform: translateY(-13px) rotate(4deg) scale(1.06); }
+}
+@keyframes heartGlow {
+  0%, 100% { filter: drop-shadow(0 0 12px #ff174d); }
+  50% { filter: drop-shadow(0 0 30px #ff174d) drop-shadow(0 0 45px #a90036); }
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 15px #f0194b33; }
+  50% { box-shadow: 0 0 32px #f0194b77; }
+}
+main, header, footer { position: relative; z-index: 1; }
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 6%;
+  border-bottom: 1px solid #ffffff0d;
+  background: #10050a66;
+  backdrop-filter: blur(12px);
+}
+.brand { font-size: 23px; font-weight: 800; letter-spacing: -.7px; }
+.brand span { color: var(--red2); }
+.header-tag { font-size: 11px; color: var(--muted); letter-spacing: 2px; }
+main { width: min(100% - 28px, 900px); margin: 0 auto; }
+.hero { text-align: center; padding: 30px 0 24px; }
+.heart-stage {
+  height: 170px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin: 0 auto 8px;
+}
+.big-heart {
+  font-size: 100px;
+  line-height: 1;
+  display: inline-block;
+  animation: heartFloat 3.2s ease-in-out infinite,
+             heartGlow 2.5s ease-in-out infinite;
+}
+.heart-ring {
+  position: absolute;
+  width: 142px;
+  height: 142px;
+  border: 1px solid #ff315f55;
+  border-radius: 50%;
+  animation: pulse 3s infinite;
+}
+.heart-ring::before {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border: 1px solid #ff315f35;
+  border-radius: 50%;
+}
+.eyebrow {
+  color: #ff7c9b;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+h1 {
+  font-size: clamp(35px, 8vw, 58px);
+  margin: 10px 0;
+  letter-spacing: -2px;
+}
+h1 span {
+  color: var(--red2);
+  text-shadow: 0 0 22px #f0194b55;
+}
+.subtitle {
+  max-width: 460px;
+  margin: 0 auto;
+  line-height: 1.7;
+  color: var(--muted);
+  font-size: 14px;
+}
+.panel {
+  max-width: 490px;
+  margin: 22px auto;
+  padding: 25px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: linear-gradient(145deg, #24101aee, #13080eee);
+  box-shadow: 0 18px 70px #0005;
+  backdrop-filter: blur(12px);
+}
+.panel h2 { margin: 0 0 8px; font-size: 24px; }
+.panel-intro { color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0 0 20px; }
+label {
+  display: block;
+  margin: 15px 0 7px;
+  color: #f7dce5;
+  font-size: 13px;
+}
+input, select, textarea {
+  width: 100%;
+  padding: 13px 14px;
+  border-radius: 11px;
+  color: white;
+  background: #10070c;
+  border: 1px solid #583044;
+  outline: none;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--red2); box-shadow: 0 0 0 3px #f0194b1c; }
+select option { background: #180a11; }
+textarea { resize: vertical; min-height: 90px; }
+.password-wrap { display: flex; gap: 7px; }
+.password-wrap input { min-width: 0; }
+.eye-btn {
+  width: 48px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 1px solid #583044;
+  border-radius: 11px;
+  color: white;
+  background: #2a101c;
+}
+.primary, .secondary, .social-btn, .small-btn {
+  min-height: 46px;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 700;
+  transition: transform .2s, background .2s;
+}
+.primary {
+  width: 100%;
+  margin-top: 18px;
+  color: white;
+  border: 0;
+  background: linear-gradient(100deg, #d90c3c, #ff416d);
+  box-shadow: 0 8px 24px #f0194b2b;
+}
+.primary:hover, .social-btn:hover, .secondary:hover { transform: translateY(-1px); }
+.secondary {
+  width: 100%;
+  color: #ffdce5;
+  background: #ffffff06;
+  border: 1px solid #6a3045;
+}
+.social-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 9px 0;
+  color: white;
+  background: #ffffff08;
+  border: 1px solid #553044;
+}
+.social-symbol { font-size: 20px; font-weight: 800; }
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 19px 0;
+  color: #b99aa6;
+  font-size: 12px;
+}
+.divider::before, .divider::after { content: ""; height: 1px; background: #543040; flex: 1; }
+.link-btn {
+  border: 0;
+  background: none;
+  color: #ff7797;
+  padding: 5px 0;
+  font-size: 13px;
+}
+.auth-links {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 13px;
+  flex-wrap: wrap;
+}
+.message {
+  font-size: 13px;
+  line-height: 1.6;
+  margin-top: 13px;
+  overflow-wrap: anywhere;
+}
+.message:empty { display: none; }
+.note {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+  text-align: center;
+  margin-top: 17px;
+}
+footer {
+  text-align: center;
+  padding: 26px 12px 35px;
+  color: #a88b97;
+  font-size: 11px;
+  line-height: 1.8;
+}
+.section-heading { margin: 20px 0; }
+.section-heading h2 { margin-bottom: 5px; }
+.section-heading p { color: var(--muted); font-size: 13px; line-height: 1.6; }
+.app-nav { display: flex; gap: 8px; flex-wrap: wrap; margin: 20px 0; }
+.app-nav button { flex: 1; min-width: 100px; }
+.profile-form { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+.profile-form .full-width { grid-column: 1 / -1; }
+.profile-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; }
+.profile-card {
+  border: 1px solid #54273a;
+  background: linear-gradient(150deg, #26101a, #140810);
+  border-radius: 18px;
+  padding: 18px;
+  min-width: 0;
+}
+.avatar {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  margin-bottom: 12px;
+  border: 2px solid #fa3d6b;
+  object-fit: cover;
+  background: #351321;
+}
+.avatar-placeholder {
+  display: grid;
+  place-items: center;
+  font-size: 30px;
+  color: #ff7797;
+}
+.profile-card h3 { margin: 0 0 6px; overflow-wrap: anywhere; }
+.profile-card p { color: var(--muted); font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.badge { display: inline-block; border: 1px solid #79334d; border-radius: 30px; padding: 5px 9px; font-size: 11px; color: #ffb1c5; margin: 3px 3px 3px 0; }
+@media (max-width: 520px) {
+  header { padding: 15px 18px; }
+  .header-tag { letter-spacing: 1px; font-size: 9px; }
+  .hero { padding-top: 20px; }
+  .panel { padding: 20px 17px; border-radius: 18px; }
+  .heart-stage { height: 145px; }
+  .big-heart { font-size: 83px; }
+  .heart-ring { width: 120px; height: 120px; }
+  .profile-form { grid-template-columns: 1fr; }
+  .profile-form .full-width { grid-column: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+}
 </style>
 </head>
+
 <body>
+<div id="stars" aria-hidden="true"></div>
+
 <header>
-  <div class="brand">The <span>Match</span> ♡</div>
-  <button id="logout" class="secondary hidden">Log out</button>
+  <div class="brand">The <span>Match</span> ♥</div>
+  <div class="header-tag">LOVE WITHOUT LIMITS</div>
 </header>
 
 <main>
-<section id="welcome">
-  <p style="color:#ff8196;letter-spacing:3px">A SPACE TO CONNECT</p>
-  <h1>Your people.<br>Your story.<br><span>Your Match.</span></h1>
-  <p>A premium LGBTQ+ dating community for adults aged 18 and above. Meet people, express yourself and discover meaningful connections.</p>
-  <div class="actions">
-    <button id="showSignup">Create account</button>
-    <button id="showLogin" class="secondary">Log in</button>
-  </div>
-  <p class="small">Adults 18+ only. Please be respectful and protect your privacy.</p>
-</section>
+  <section id="welcome" class="hero">
+    <div class="heart-stage" aria-hidden="true">
+      <div class="heart-ring"></div>
+      <div class="big-heart">❤️</div>
+    </div>
+    <div class="eyebrow">Your next chapter starts here</div>
+    <h1>Find your kind<br>of <span>love.</span></h1>
+    <p class="subtitle">A welcoming space for LGBTQ+ adults to discover meaningful connections, genuine chemistry, and something beautiful.</p>
 
-<section id="auth" class="panel hidden">
-  <h2 id="authTitle">Create your account</h2>
-  <form id="authForm">
-    <label>Email address</label>
-    <input id="email" type="email" autocomplete="email" required>
-    <label>Password (at least 8 characters)</label>
-    <input id="password" type="password" minlength="8" autocomplete="new-password" required>
-    <button id="authSubmit" type="submit">Create account</button>
-  </form>
-  <p id="authMessage" role="status"></p>
-  <button id="back" class="secondary">Back</button>
-</section>
+    <div class="panel">
+      <h2>Welcome to The Match</h2>
+      <p class="panel-intro">Your story. Your identity. Your kind of connection.</p>
 
-<section id="app" class="hidden">
-  <h2>Welcome to The Match ❤️</h2>
-  <p id="userEmail"></p>
+      <button class="social-btn" id="googleBtn" type="button">
+        <span class="social-symbol" style="color:#fff">G</span> Continue with Google
+      </button>
+      <button class="social-btn" id="appleBtn" type="button">
+        <span class="social-symbol">●</span> Continue with Apple
+      </button>
 
-  <div class="panel">
-    <h2>Your dating profile</h2>
-    <p>Only adults aged 18 or older may join. Enter truthful information and avoid sharing your home address or other sensitive details.</p>
-    <form id="profileForm">
-      <label>Display name</label>
-      <input id="displayName" maxlength="40" required>
-      <label>Age (18+)</label>
-      <input id="age" type="number" min="18" max="120" required>
-      <label>Gender identity</label>
-      <input id="gender" maxlength="60" placeholder="How do you identify?">
-      <label>Interested in</label>
-      <input id="interest" maxlength="100" placeholder="Who would you like to meet?">
-      <label>City or general area (optional)</label>
-      <input id="city" maxlength="80" placeholder="City only; no home address">
-      <label>Profile photo URL (optional)</label>
-      <input id="avatar" type="url" placeholder="https://...">
-      <label>About you</label>
-      <textarea id="bio" maxlength="500" rows="4" placeholder="Tell people a little about yourself"></textarea>
-      <button type="submit">Save profile</button>
+      <div class="divider">OR CONTINUE WITH</div>
+
+      <button class="primary" id="showSignup" type="button">Create an account with email</button>
+      <button class="secondary" id="showLogin" type="button" style="margin-top:10px">Log in to your account</button>
+
+      <p class="note">For adults aged 18 and above. By continuing, you agree to use The Match respectfully and honestly.</p>
+      <p id="welcomeMessage" class="message" role="status"></p>
+    </div>
+  </section>
+
+  <section id="auth" class="panel hidden">
+    <h2 id="authTitle">Create your account</h2>
+    <p class="panel-intro">A few details, and your next chapter begins.</p>
+
+    <form id="authForm">
+      <label for="email">Email address</label>
+      <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+
+      <label for="password">Password (at least 8 characters)</label>
+      <div class="password-wrap">
+        <input id="password" type="password" minlength="8" autocomplete="new-password" placeholder="Create a strong password" required>
+        <button class="eye-btn" id="togglePassword" type="button" aria-label="Show password">👁</button>
+      </div>
+
+      <button class="primary" id="authSubmit" type="submit">Create account</button>
     </form>
-    <p id="profileMessage" role="status"></p>
-  </div>
 
-  <div class="panel">
-    <h2>Discover people</h2>
-    <p>Browse other members and like profiles that interest you.</p>
-    <button id="refresh">Refresh profiles</button>
-    <p id="discoverMessage" role="status"></p>
-    <div id="people" class="grid"></div>
-  </div>
+    <div class="auth-links">
+      <button class="link-btn" id="forgotBtn" type="button">Forgot password?</button>
+      <button class="link-btn" id="switchMode" type="button">Already have an account? Log in</button>
+    </div>
 
-  <div class="panel">
-    <h2>Your likes</h2>
-    <p id="likesMessage">Loading your likes...</p>
-  </div>
-</section>
+    <div class="divider">OR USE A PHONE NUMBER</div>
+    <label for="phone">Phone number with country code</label>
+    <input id="phone" type="tel" autocomplete="tel" placeholder="+2348012345678">
+    <button class="secondary" id="sendOtp" type="button" style="margin-top:10px">Send SMS verification code</button>
+
+    <div id="otpArea" class="hidden">
+      <label for="otp">Verification code</label>
+      <input id="otp" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="Enter the code from your SMS">
+      <button class="primary" id="verifyOtp" type="button">Verify and continue</button>
+    </div>
+
+    <p id="authMessage" class="message" role="status"></p>
+    <button class="secondary" id="back" type="button" style="margin-top:15px">Back to welcome page</button>
+  </section>
+
+  <section id="resetPanel" class="panel hidden">
+    <h2 id="resetTitle">Reset your password</h2>
+    <p class="panel-intro" id="resetIntro">Enter your account email and we’ll send you a secure password reset link.</p>
+
+    <form id="requestResetForm">
+      <label for="resetEmail">Email address</label>
+      <input id="resetEmail" type="email" autocomplete="email" placeholder="you@example.com" required>
+      <button class="primary" type="submit">Send password reset link</button>
+    </form>
+
+    <form id="newPasswordForm" class="hidden">
+      <label for="newPassword">New password</label>
+      <div class="password-wrap">
+        <input id="newPassword" type="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters" required>
+        <button class="eye-btn" id="toggleNewPassword" type="button" aria-label="Show new password">👁</button>
+      </div>
+      <button class="primary" type="submit">Save new password</button>
+    </form>
+
+    <p id="resetMessage" class="message" role="status"></p>
+    <button class="secondary" id="resetBack" type="button" style="margin-top:15px">Back to welcome page</button>
+  </section>
+
+  <section id="app" class="hidden">
+    <div class="section-heading">
+      <div class="eyebrow">YOUR SPACE, YOUR STORY</div>
+      <h2>Welcome, <span id="memberName">beautiful</span> ❤️</h2>
+      <p>Build your profile and discover people who could become something special.</p>
+    </div>
+
+    <div class="app-nav">
+      <button class="primary" id="navProfile" type="button" style="margin:0">My profile</button>
+      <button class="secondary" id="navDiscover" type="button">Discover</button>
+      <button class="secondary" id="logout" type="button">Log out</button>
+    </div>
+
+    <section id="profileSection" class="panel" style="max-width:none">
+      <h2>Your profile</h2>
+      <p class="panel-intro">Share what makes you you. Please use a photo URL from a service you trust.</p>
+
+      <form id="profileForm" class="profile-form">
+        <div>
+          <label for="displayName">Display name</label>
+          <input id="displayName" maxlength="60" required placeholder="What should people call you?">
+        </div>
+        <div>
+          <label for="age">Age (18+)</label>
+          <input id="age" type="number" min="18" max="120" required>
+        </div>
+        <div>
+          <label for="gender">Gender identity</label>
+          <input id="gender" maxlength="80" placeholder="e.g. Man, woman, non-binary">
+        </div>
+        <div>
+          <label for="interestedIn">Interested in</label>
+          <input id="interestedIn" maxlength="120" placeholder="Who would you like to meet?">
+        </div>
+        <div class="full-width">
+          <label for="city">City or area</label>
+          <input id="city" maxlength="100" placeholder="Your city or general area">
+        </div>
+        <div class="full-width">
+          <label for="avatarUrl">Profile photo URL (optional)</label>
+          <input id="avatarUrl" type="url" maxlength="500" placeholder="https://example.com/photo.jpg">
+        </div>
+        <div class="full-width">
+          <label for="bio">About you</label>
+          <textarea id="bio" maxlength="600" placeholder="Tell people a little about yourself..."></textarea>
+        </div>
+        <div class="full-width">
+          <button class="primary" id="saveProfile" type="submit">Save my profile</button>
+        </div>
+      </form>
+      <p id="profileMessage" class="message" role="status"></p>
+    </section>
+
+    <section id="discoverSection" class="hidden">
+      <div class="section-heading">
+        <h2>Discover connections ✨</h2>
+        <p>Explore member profiles and like someone to show your interest.</p>
+      </div>
+      <button class="secondary" id="refreshDiscover" type="button" style="margin-bottom:18px">Refresh profiles</button>
+      <div id="profileList" class="profile-list"></div>
+      <p id="discoverMessage" class="message" role="status"></p>
+    </section>
+  </section>
 </main>
 
 <footer>
-  The Match · LGBTQ+ dating for adults 18+.<br>
-  Be respectful. Meet in public. Never send money to someone you have not verified.
+  <div>♥ The Match — Find your kind of love.</div>
+  <div>Adults 18+ only. Respect, consent, and kindness always.</div>
 </footer>
 
 <script>
-const SUPABASE_URL = "https://rxbdmgzmwhjnkcclyrcq.supabase.co";
-const SUPABASE_KEY = "sb_publishable_5OirCcmy8L5n3isPvi-P0w_Dgeb13U_";
+(() => {
+  "use strict";
 
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const SITE_URL = "https://the-match-datingapp.onrender.com";
+  const SUPABASE_URL = "https://rxbdmgzmwhjnkcclyrcq.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_5OirCcmy8L5n3isPvi-P0w_Dgeb13U_";
 
-const $ = id => document.getElementById(id);
-let currentUser = null;
-let loginMode = false;
-
-function message(id, text) {
-  $(id).textContent = text;
-}
-
-function show(section) {
-  ["welcome", "auth", "app"].forEach(id =>
-    $(id).classList.toggle("hidden", id !== section)
-  );
-}
-
-function escapeHTML(value) {
-  return String(value ?? "").replace(/[&<>"']/g, char => ({
-    "&":"&amp;", "<":"&lt;", ">":"&gt;",
-    '"':"&quot;", "'":"&#39;"
-  })[char]);
-}
-
-$("showSignup").onclick = () => {
-  loginMode = false;
-  $("authTitle").textContent = "Create your account";
-  $("authSubmit").textContent = "Create account";
-  $("password").autocomplete = "new-password";
-  message("authMessage", "");
-  show("auth");
-};
-
-$("showLogin").onclick = () => {
-  loginMode = true;
-  $("authTitle").textContent = "Welcome back";
-  $("authSubmit").textContent = "Log in";
-  $("password").autocomplete = "current-password";
-  message("authMessage", "");
-  show("auth");
-};
-
-$("back").onclick = () => show("welcome");
-
-$("authForm").onsubmit = async event => {
-  event.preventDefault();
-  const email = $("email").value.trim();
-  const password = $("password").value;
-  const button = $("authSubmit");
-  button.disabled = true;
-  message("authMessage", "Please wait...");
-
-  try {
-    let result;
-
-    if (loginMode) {
-      result = await db.auth.signInWithPassword({email, password});
-    } else {
-      result = await db.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: window.location.origin
-        }
-      });
+  const $ = id => document.getElementById(id);
+  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
     }
+  });
 
-    if (result.error) throw result.error;
+  let loginMode = false;
+  let currentUser = null;
+  let currentProfile = null;
+  let busy = false;
 
-    if (!loginMode && !result.data.session) {
-      message("authMessage",
-        "Account request received. Check your email to confirm your account, then return here and log in."
-      );
-    } else {
-      message("authMessage", "Success!");
-      await checkSession();
+  // Sparkling stars behind the welcome screen
+  const starLayer = $("stars");
+  const starSymbols = ["✦", "✧", "⋆", "✦", "·"];
+  for (let i = 0; i < 38; i++) {
+    const star = document.createElement("span");
+    star.className = "star";
+    star.textContent = starSymbols[Math.floor(Math.random() * starSymbols.length)];
+    star.style.left = Math.random() * 100 + "%";
+    star.style.top = Math.random() * 100 + "%";
+    star.style.fontSize = (8 + Math.random() * 17) + "px";
+    star.style.setProperty("--duration", (1.5 + Math.random() * 3.5) + "s");
+    star.style.setProperty("--drift", (4 + Math.random() * 7) + "s");
+    star.style.animationDelay = (Math.random() * -5) + "s";
+    starLayer.appendChild(star);
+  }
+
+  function message(id, text, isError = false) {
+    $(id).textContent = text || "";
+    $(id).style.color = isError ? "#ff8da8" : "#f6c7d5";
+  }
+
+  function show(sectionId) {
+    ["welcome", "auth", "resetPanel", "app"].forEach(id => {
+      $(id).classList.toggle("hidden", id !== sectionId);
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function setBusy(button, state, label) {
+    button.disabled = state;
+    if (state) {
+      button.dataset.originalLabel = button.textContent;
+      button.textContent = label || "Please wait...";
+    } else if (button.dataset.originalLabel) {
+      button.textContent = button.dataset.originalLabel;
+      delete button.dataset.originalLabel;
     }
-  } catch (error) {
-    message("authMessage", error.message || "Something went wrong.");
-  } finally {
-    button.disabled = false;
-  }
-};
-
-async function checkSession() {
-  const {data, error} = await db.auth.getSession();
-  if (error) {
-    show("welcome");
-    return;
   }
 
-  currentUser = data.session?.user || null;
-
-  if (!currentUser) {
-    $("logout").classList.add("hidden");
-    show("welcome");
-    return;
+  function errorText(error) {
+    const text = error && error.message ? error.message : "Something went wrong. Please try again.";
+    if (/invalid login credentials/i.test(text)) return "Email or password is incorrect.";
+    if (/email not confirmed/i.test(text)) return "Please confirm your email using the link we sent you.";
+    if (/user already registered/i.test(text)) return "This email already has an account. Please log in.";
+    return text;
   }
 
-  $("logout").classList.remove("hidden");
-  $("userEmail").textContent = currentUser.email || "";
-  show("app");
-  await loadProfile();
-  await loadPeople();
-  await loadLikes();
-}
-
-$("logout").onclick = async () => {
-  const {error} = await db.auth.signOut();
-  if (error) {
-    alert(error.message);
-    return;
-  }
-  currentUser = null;
-  show("welcome");
-  $("logout").classList.add("hidden");
-};
-
-async function loadProfile() {
-  const {data, error} = await db
-    .from("profiles")
-    .select("display_name,age,gender_identity,interested_in,bio,city,avatar_url")
-    .eq("id", currentUser.id)
-    .maybeSingle();
-
-  if (error) {
-    message("profileMessage", "Could not load profile: " + error.message);
-    return;
-  }
-
-  if (!data) {
-    message("profileMessage", "Complete your profile and save it.");
-    return;
-  }
-
-  $("displayName").value = data.display_name || "";
-  $("age").value = data.age || "";
-  $("gender").value = data.gender_identity || "";
-  $("interest").value = data.interested_in || "";
-  $("bio").value = data.bio || "";
-  $("city").value = data.city || "";
-  $("avatar").value = data.avatar_url || "";
-  message("profileMessage", "Your profile is loaded.");
-}
-
-$("profileForm").onsubmit = async event => {
-  event.preventDefault();
-  if (!currentUser) return;
-
-  const age = Number($("age").value);
-  if (!Number.isInteger(age) || age < 18 || age > 120) {
-    message("profileMessage", "You must be at least 18 years old.");
-    return;
-  }
-
-  const avatar = $("avatar").value.trim();
-  if (avatar && !/^https:\/\//i.test(avatar)) {
-    message("profileMessage", "Please use a secure HTTPS photo URL.");
-    return;
-  }
-
-  const profile = {
-    id: currentUser.id,
-    display_name: $("displayName").value.trim(),
-    age,
-    gender_identity: $("gender").value.trim(),
-    interested_in: $("interest").value.trim(),
-    city: $("city").value.trim(),
-    avatar_url: avatar || null,
-    bio: $("bio").value.trim(),
-    updated_at: new Date().toISOString()
+  $("showSignup").onclick = () => {
+    loginMode = false;
+    $("authTitle").textContent = "Create your account";
+    $("authSubmit").textContent = "Create account";
+    $("password").autocomplete = "new-password";
+    $("password").value = "";
+    message("authMessage", "");
+    show("auth");
   };
 
-  message("profileMessage", "Saving profile...");
+  $("showLogin").onclick = () => openLogin();
 
-  const {error} = await db.from("profiles").upsert(profile, {onConflict:"id"});
-
-  if (error) {
-    message("profileMessage", "Could not save: " + error.message);
-    return;
+  function openLogin() {
+    loginMode = true;
+    $("authTitle").textContent = "Welcome back";
+    $("authSubmit").textContent = "Log in";
+    $("password").autocomplete = "current-password";
+    $("password").value = "";
+    message("authMessage", "");
+    show("auth");
   }
 
-  message("profileMessage", "Profile saved successfully ❤️");
-  await loadPeople();
-};
+  $("switchMode").onclick = () => {
+    loginMode = !loginMode;
+    $("authTitle").textContent = loginMode ? "Welcome back" : "Create your account";
+    $("authSubmit").textContent = loginMode ? "Log in" : "Create account";
+    $("password").autocomplete = loginMode ? "current-password" : "new-password";
+    $("switchMode").textContent = loginMode ? "New here? Create an account" : "Already have an account? Log in";
+    message("authMessage", "");
+  };
 
-async function loadPeople() {
-  if (!currentUser) return;
-  message("discoverMessage", "Loading profiles...");
-  $("people").replaceChildren();
+  $("back").onclick = () => show("welcome");
+  $("resetBack").onclick = () => show("welcome");
 
-  const {data, error} = await db
-    .from("profiles")
-    .select("id,display_name,age,gender_identity,interested_in,bio,city,avatar_url")
-    .neq("id", currentUser.id)
-    .order("created_at", {ascending:false})
-    .limit(50);
+  $("togglePassword").onclick = () => {
+    const field = $("password");
+    const visible = field.type === "password";
+    field.type = visible ? "text" : "password";
+    $("togglePassword").textContent = visible ? "🙈" : "👁";
+    $("togglePassword").setAttribute("aria-label", visible ? "Hide password" : "Show password");
+  };
 
-  if (error) {
-    message("discoverMessage", "Could not load profiles: " + error.message);
-    return;
+  $("toggleNewPassword").onclick = () => {
+    const field = $("newPassword");
+    const visible = field.type === "password";
+    field.type = visible ? "text" : "password";
+    $("toggleNewPassword").textContent = visible ? "🙈" : "👁";
+  };
+
+  $("authForm").onsubmit = async event => {
+    event.preventDefault();
+    if (busy) return;
+    busy = true;
+
+    const email = $("email").value.trim();
+    const password = $("password").value;
+    const button = $("authSubmit");
+    setBusy(button, true);
+    message("authMessage", "Please wait...");
+
+    try {
+      let result;
+      if (loginMode) {
+        result = await db.auth.signInWithPassword({ email, password });
+      } else {
+        result = await db.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: SITE_URL
+          }
+        });
+      }
+
+      if (result.error) throw result.error;
+
+      if (!loginMode && !result.data.session) {
+        message("authMessage", "Your account request is ready! Check your email and tap the confirmation link, then return here to log in.");
+      } else {
+        message("authMessage", "You're signed in. Welcome to The Match!");
+        await checkSession();
+      }
+    } catch (error) {
+      message("authMessage", errorText(error), true);
+    } finally {
+      setBusy(button, false);
+      busy = false;
+    }
+  };
+
+  // Google and Apple sign-in
+  async function socialLogin(provider) {
+    message("welcomeMessage", "Connecting securely...");
+    try {
+      const { error } = await db.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: SITE_URL
+        }
+      });
+      if (error) throw error;
+    } catch (error) {
+      message("welcomeMessage", errorText(error), true);
+    }
   }
 
-  if (!data || data.length === 0) {
-    message("discoverMessage", "No other profiles yet. Check again later.");
-    return;
+  $("googleBtn").onclick = () => socialLogin("google");
+  $("appleBtn").onclick = () => socialLogin("apple");
+
+  // Password recovery request
+  $("forgotBtn").onclick = () => {
+    $("resetTitle").textContent = "Reset your password";
+    $("resetIntro").textContent = "Enter your account email and we’ll send you a secure password reset link.";
+    $("requestResetForm").classList.remove("hidden");
+    $("newPasswordForm").classList.add("hidden");
+    $("resetEmail").value = $("email").value.trim();
+    message("resetMessage", "");
+    show("resetPanel");
+  };
+
+  $("requestResetForm").onsubmit = async event => {
+    event.preventDefault();
+    const button = event.submitter || $("requestResetForm").querySelector("button");
+    setBusy(button, true);
+    message("resetMessage", "Sending your secure reset link...");
+
+    try {
+      const { error } = await db.auth.resetPasswordForEmail(
+        $("resetEmail").value.trim(),
+        { redirectTo: SITE_URL }
+      );
+      if (error) throw error;
+      message("resetMessage", "If an account exists for that email, a reset link will be sent. Check your inbox and spam folder.");
+    } catch (error) {
+      message("resetMessage", errorText(error), true);
+    } finally {
+      setBusy(button, false);
+    }
+  };
+
+  $("newPasswordForm").onsubmit = async event => {
+    event.preventDefault();
+    const button = event.submitter || $("newPasswordForm").querySelector("button");
+    setBusy(button, true);
+    message("resetMessage", "Updating your password...");
+
+    try {
+      const { error } = await db.auth.updateUser({ password: $("newPassword").value });
+      if (error) throw error;
+      message("resetMessage", "Your password has been changed. You can now use it to log in.");
+      $("newPasswordForm").classList.add("hidden");
+      $("requestResetForm").classList.add("hidden");
+    } catch (error) {
+      message("resetMessage", errorText(error), true);
+    } finally {
+      setBusy(button, false);
+    }
+  };
+
+  // Phone OTP. SMS provider must be enabled in Supabase.
+  $("sendOtp").onclick = async () => {
+    const phone = $("phone").value.trim();
+    if (!phone) {
+      message("authMessage", "Enter your phone number with its country code, for example +234...", true);
+      return;
+    }
+
+    setBusy($("sendOtp"), true);
+    message("authMessage", "Sending SMS verification code...");
+
+    try {
+      const { error } = await db.auth.signInWithOtp({ phone });
+      if (error) throw error;
+      $("otpArea").classList.remove("hidden");
+      message("authMessage", "If SMS sign-in is configured, your verification code should arrive shortly.");
+    } catch (error) {
+      message("authMessage", errorText(error), true);
+    } finally {
+      setBusy($("sendOtp"), false);
+    }
+  };
+
+  $("verifyOtp").onclick = async () => {
+    const phone = $("phone").value.trim();
+    const token = $("otp").value.trim();
+    if (!token) {
+      message("authMessage", "Enter the verification code from your SMS.", true);
+      return;
+    }
+
+    setBusy($("verifyOtp"), true);
+    try {
+      const { error } = await db.auth.verifyOtp({ phone, token, type: "sms" });
+      if (error) throw error;
+      await checkSession();
+    } catch (error) {
+      message("authMessage", errorText(error), true);
+    } finally {
+      setBusy($("verifyOtp"), false);
+    }
+  };
+
+  async function loadProfile() {
+    if (!currentUser) return;
+
+    const { data, error } = await db
+      .from("profiles")
+      .select("*")
+      .eq("id", currentUser.id)
+      .maybeSingle();
+
+    if (error) throw error;
+    currentProfile = data;
+
+    $("memberName").textContent = data && data.display_name ? data.display_name : "beautiful";
+    $("displayName").value = data?.display_name || "";
+    $("age").value = data?.age || "";
+    $("gender").value = data?.gender_identity || "";
+    $("interestedIn").value = data?.interested_in || "";
+    $("city").value = data?.city || "";
+    $("avatarUrl").value = data?.avatar_url || "";
+    $("bio").value = data?.bio || "";
   }
 
-  message("discoverMessage", data.length + " profile(s) found.");
+  $("profileForm").onsubmit = async event => {
+    event.preventDefault();
+    if (!currentUser) return;
 
-  data.forEach(person => {
-    const card = document.createElement("article");
-    card.className = "person";
+    const age = Number($("age").value);
+    if (!Number.isInteger(age) || age < 18 || age > 120) {
+      message("profileMessage", "The Match is for adults aged 18 and above. Please enter a valid age.", true);
+      return;
+    }
 
-    const safePhoto = /^https:\/\//i.test(person.avatar_url || "")
-      ? escapeHTML(person.avatar_url)
-      : "";
+    const button = $("saveProfile");
+    setBusy(button, true);
+    message("profileMessage", "Saving your profile...");
 
-    card.innerHTML = `
-      ${safePhoto
-        ? `<img src="${safePhoto}" alt="Profile photo" loading="lazy" referrerpolicy="no-referrer">`
-        : `<div style="height:120px;display:grid;place-items:center;font-size:50px;color:#ff294d">♡</div>`}
-      <h3>${escapeHTML(person.display_name)}</h3>
-      <p>${person.age ? escapeHTML(person.age) + " years old" : ""}
-      ${person.city ? " · " + escapeHTML(person.city) : ""}</p>
-      <p>${escapeHTML(person.gender_identity)}</p>
-      <p>${escapeHTML(person.bio || "No introduction yet.")}</p>
-      <button class="likeButton">♡ Like</button>
-      <p class="likeStatus small" role="status"></p>
-    `;
+    try {
+      const profile = {
+        id: currentUser.id,
+        display_name: $("displayName").value.trim(),
+        age,
+        gender_identity: $("gender").value.trim(),
+        interested_in: $("interestedIn").value.trim(),
+        city: $("city").value.trim(),
+        avatar_url: $("avatarUrl").value.trim() || null,
+        bio: $("bio").value.trim(),
+        updated_at: new Date().toISOString()
+      };
 
-    card.querySelector(".likeButton").onclick = async event => {
-      const button = event.currentTarget;
-      button.disabled = true;
-      const status = card.querySelector(".likeStatus");
+      const { error } = await db.from("profiles").upsert(profile, { onConflict: "id" });
+      if (error) throw error;
 
-      const {error: likeError} = await db.from("likes").insert({
-        liker_id: currentUser.id,
-        liked_id: person.id
+      currentProfile = profile;
+      $("memberName").textContent = profile.display_name;
+      message("profileMessage", "Your profile has been saved. You're ready to discover connections!");
+    } catch (error) {
+      message("profileMessage", errorText(error), true);
+    } finally {
+      setBusy(button, false);
+    }
+  };
+
+  function safeImageUrl(url) {
+    if (!url) return null;
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === "https:" ? parsed.href : null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function loadDiscover() {
+    if (!currentUser) return;
+    $("profileList").replaceChildren();
+    message("discoverMessage", "Finding people...");
+
+    try {
+      const { data: profiles, error } = await db
+        .from("profiles")
+        .select("id, display_name, age, gender_identity, interested_in, bio, city, avatar_url")
+        .neq("id", currentUser.id)
+        .order("created_at", { ascending: false })
+        .limit(60);
+
+      if (error) throw error;
+
+      const { data: likes, error: likesError } = await db
+        .from("likes")
+        .select("liked_id")
+        .eq("liker_id", currentUser.id);
+
+      if (likesError) throw likesError;
+
+      const likedIds = new Set((likes || []).map(item => item.liked_id));
+      const list = $("profileList");
+
+      if (!profiles || profiles.length === 0) {
+        message("discoverMessage", "No profiles yet. Check back soon, and make sure your own profile is complete.");
+        return;
+      }
+
+      profiles.forEach(profile => {
+        const card = document.createElement("article");
+        card.className = "profile-card";
+
+        const imageUrl = safeImageUrl(profile.avatar_url);
+        if (imageUrl) {
+          const img = document.createElement("img");
+          img.className = "avatar";
+          img.alt = "Profile photo";
+          img.src = imageUrl;
+          img.loading = "lazy";
+          img.onerror = () => {
+            img.replaceWith(makeAvatarPlaceholder());
+          };
+          card.appendChild(img);
+        } else {
+          card.appendChild(makeAvatarPlaceholder());
+        }
+
+        const title = document.createElement("h3");
+        title.textContent = `${profile.display_name || "Member"}${profile.age ? ", " + profile.age : ""}`;
+        card.appendChild(title);
+
+        if (profile.city) {
+          const city = document.createElement("span");
+          city.className = "badge";
+          city.textContent = profile.city;
+          card.appendChild(city);
+        }
+        if (profile.gender_identity) {
+          const gender = document.createElement("span");
+          gender.className = "badge";
+          gender.textContent = profile.gender_identity;
+          card.appendChild(gender);
+        }
+        if (profile.interested_in) {
+          const interest = document.createElement("span");
+          interest.className = "badge";
+          interest.textContent = "Interested in: " + profile.interested_in;
+          card.appendChild(interest);
+        }
+
+        const bio = document.createElement("p");
+        bio.textContent = profile.bio || "This member hasn't added a bio yet.";
+        card.appendChild(bio);
+
+        const likeButton = document.createElement("button");
+        likeButton.className = likedIds.has(profile.id) ? "secondary" : "primary";
+        likeButton.textContent = likedIds.has(profile.id) ? "♥ Liked" : "♥ Like profile";
+        likeButton.disabled = likedIds.has(profile.id);
+        likeButton.style.marginTop = "10px";
+
+        likeButton.onclick = async () => {
+          likeButton.disabled = true;
+          try {
+            const { error } = await db.from("likes").insert({
+              liker_id: currentUser.id,
+              liked_id: profile.id
+            });
+            if (error) throw error;
+            likeButton.textContent = "♥ Liked";
+            likeButton.className = "secondary";
+            message("discoverMessage", "Like sent! If they like you too, it could be a match.");
+          } catch (error) {
+            message("discoverMessage", errorText(error), true);
+            likeButton.disabled = false;
+          }
+        };
+
+        card.appendChild(likeButton);
+        list.appendChild(card);
       });
 
-      if (likeError && likeError.code === "23505") {
-        status.textContent = "You've already liked this profile.";
-      } else if (likeError) {
-        status.textContent = "Could not send like: " + likeError.message;
-        button.disabled = false;
-      } else {
-        status.textContent = "Like sent ❤️";
-        await loadLikes();
-      }
-    };
-
-    $("people").appendChild(card);
-  });
-}
-
-$("refresh").onclick = loadPeople;
-
-async function loadLikes() {
-  if (!currentUser) return;
-
-  const {data, error} = await db
-    .from("likes")
-    .select("id,created_at")
-    .eq("liker_id", currentUser.id);
-
-  if (error) {
-    message("likesMessage", "Could not load likes: " + error.message);
-    return;
+      message("discoverMessage", `${profiles.length} profile${profiles.length === 1 ? "" : "s"} found. Say hello with a like!`);
+    } catch (error) {
+      message("discoverMessage", errorText(error), true);
+    }
   }
 
-  message("likesMessage", "You've liked " + (data?.length || 0) + " profile(s).");
-}
+  function makeAvatarPlaceholder() {
+    const avatar = document.createElement("div");
+    avatar.className = "avatar avatar-placeholder";
+    avatar.textContent = "♥";
+    avatar.setAttribute("aria-label", "No profile photo");
+    return avatar;
+  }
 
-db.auth.onAuthStateChange(() => {
-  setTimeout(() => checkSession(), 0);
-});
+  $("navProfile").onclick = () => {
+    $("profileSection").classList.remove("hidden");
+    $("discoverSection").classList.add("hidden");
+  };
 
-checkSession();
+  $("navDiscover").onclick = async () => {
+    $("profileSection").classList.add("hidden");
+    $("discoverSection").classList.remove("hidden");
+    await loadDiscover();
+  };
+
+  $("refreshDiscover").onclick = loadDiscover;
+
+  $("logout").onclick = async () => {
+    const { error } = await db.auth.signOut();
+    if (error) {
+      message("profileMessage", errorText(error), true);
+      return;
+    }
+    currentUser = null;
+    currentProfile = null;
+    show("welcome");
+  };
+
+  async function checkSession() {
+    const { data, error } = await db.auth.getSession();
+    if (error) {
+      message("welcomeMessage", errorText(error), true);
+      show("welcome");
+      return;
+    }
+
+    currentUser = data.session ? data.session.user : null;
+
+    if (!currentUser) {
+      show("welcome");
+      return;
+    }
+
+    try {
+      await loadProfile();
+      show("app");
+    } catch (error) {
+      show("app");
+      message("profileMessage", "Your account is signed in, but we couldn't load your profile. Please check your connection and database policies.", true);
+    }
+  }
+
+  db.auth.onAuthStateChange((event, session) => {
+    if (event === "PASSWORD_RECOVERY") {
+      currentUser = session?.user || null;
+      $("resetTitle").textContent = "Choose a new password";
+      $("resetIntro").textContent = "Enter your new password below.";
+      $("requestResetForm").classList.add("hidden");
+      $("newPasswordForm").classList.remove("hidden");
+      message("resetMessage", "");
+      show("resetPanel");
+      return;
+    }
+
+    if (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "USER_UPDATED") {
+      if (session && session.user) {
+        currentUser = session.user;
+        checkSession();
+      }
+    }
+
+    if (event === "SIGNED_OUT") {
+      currentUser = null;
+      currentProfile = null;
+      show("welcome");
+    }
+  });
+
+  // Initial session check
+  checkSession();
+})();
 </script>
 </body>
 </html>
-
-

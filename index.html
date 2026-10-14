@@ -346,6 +346,7 @@ $("displayName").value=fallback;
 status("profileStatus","Add your details, then tap Save profile and discover.");
 }
 }catch(e){status("profileStatus","Could not load profile: "+friendly(e),true);}
+  await loadMyPhotos();
 }
 
 $("profileForm").onsubmit=async e=>{

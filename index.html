@@ -429,6 +429,159 @@ card.appendChild(like);$("profileList").appendChild(card);
 }
 
 $("refreshNearby").onclick=loadNearby;
+  async function loadMyPhotos(){
+  if(!currentUser)return;
+  const grid=$("profilePhotos");
+  if(!grid)return;
+
+  grid.replaceChildren();
+
+  try{
+    const {data:photos,error}=await db
+      .from("profile_photos")
+      .select("id,user_id,storage_path,position")
+      .eq("user_id",currentUser.id)
+      .order("position");
+
+    if(error)throw error;
+
+    photos.forEach(p=>{
+      const url=db.storage.from("profile-photos")
+        .getPublicUrl(p.storage_path).data.publicUrl;
+
+      const item=document.createElement("div");
+      item.className="photo-item";
+
+      const img=document.createElement("img");
+      img.src=url;
+      img.alt="Profile photo";
+      item.appendChild(img);
+
+      const tag=document.createElement("p");
+      tag.className="photo-tag";
+      tag.textContent=p.position===0?"⭐ Main photo":"Photo "+(p.position+1);
+      item.appendChild(tag);
+
+      if(p.position!==0){
+        const main=document.createElement("button");
+        main.textContent="Make main photo";
+        main.onclick=async()=>{
+          const ordered=[p,...photos.filter(x=>x.id!==p.id)];
+          for(let i=0;i<ordered.length;i++){
+            const {error}=await db.from("profile_photos")
+              .update({position:i}).eq("id",ordered[i].id)
+              .eq("user_id",currentUser.id);
+            if(error){
+              status("photoStatus","Could not change main photo.",true);
+              return;
+            }
+          }
+          await loadMyPhotos();
+        };
+        item.appendChild(main);
+      }
+
+      const del=document.createElement("button");
+      del.textContent="Delete photo";
+      del.onclick=async()=>{
+        if(!confirm("Delete this photo?"))return;
+        const {error}=await db.storage.from("profile-photos")
+          .remove([p.storage_path]);
+        if(error){
+          status("photoStatus","Could not delete photo.",true);
+          return;
+        }
+        const {error:dbError}=await db.from("profile_photos")
+          .delete().eq("id",p.id).eq("user_id",currentUser.id);
+        if(dbError){
+          status("photoStatus","Photo record could not be deleted.",true);
+          return;
+        }
+        await loadMyPhotos();
+      };
+      item.appendChild(del);
+      grid.appendChild(item);
+    });
+
+    status("photoStatus",photos.length+" of 5 photos added.");
+    $("photoFiles").disabled=photos.length>=5;
+    $("uploadPhotos").disabled=photos.length>=5;
+
+  }catch(e){
+    status("photoStatus","Could not load photos: "+friendly(e),true);
+  }
+}
+
+$("uploadPhotos").onclick=async()=>{
+  if(!currentUser){
+    status("photoStatus","Please sign in first.",true);
+    return;
+  }
+
+  const input=$("photoFiles");
+  const files=Array.from(input.files||[]);
+
+  if(!files.length){
+    status("photoStatus","Choose your photos first.",true);
+    return;
+  }
+
+  const {data:existing,error}=await db.from("profile_photos")
+    .select("id,position").eq("user_id",currentUser.id)
+    .order("position");
+
+  if(error){
+    status("photoStatus","Could not check your photos.",true);
+    return;
+  }
+
+  if(files.length>5-existing.length){
+    status("photoStatus","You can add only "+(5-existing.length)+" more photo(s).",true);
+    return;
+  }
+
+  const btn=$("uploadPhotos");
+  btn.disabled=true;
+
+  try{
+    for(const file of files){
+      if(!["image/jpeg","image/png","image/webp"].includes(file.type))
+        throw Error("Use JPG, PNG or WebP only.");
+      if(file.size>5242880)
+        throw Error("Each photo must be 5 MB or smaller.");
+
+      const path=currentUser.id+"/"+Date.now()+"-"+Math.random().toString(36).slice(2,8)+"-"+file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+
+      const {error:uploadError}=await db.storage
+        .from("profile-photos")
+        .upload(path,file,{contentType:file.type});
+
+      if(uploadError)throw uploadError;
+
+      const {error:insertError}=await db.from("profile_photos")
+        .insert({
+          user_id:currentUser.id,
+          storage_path:path,
+          position:existing.length
+        });
+
+      if(insertError){
+        await db.storage.from("profile-photos").remove([path]);
+        throw insertError;
+      }
+
+      existing.push({position:existing.length});
+    }
+
+    input.value="";
+    await loadMyPhotos();
+
+  }catch(e){
+    status("photoStatus","Upload failed: "+friendly(e),true);
+  }finally{
+    btn.disabled=false;
+  }
+};
 $("editProfile").onclick=()=>show("profile");
 
 async function logout(){

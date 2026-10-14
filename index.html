@@ -1,1 +1,265 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#090909">
+<title>The Match — Find Your Connection</title>
+<style>
+:root {
+  --bg: #090909;
+  --panel: #141112;
+  --red: #ff294d;
+  --pink: #ff6b83;
+  --text: #fff7f8;
+  --muted: #b9a9ad;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  color: var(--text);
+  background: var(--bg);
+  font-family: Arial, Helvetica, sans-serif;
+}
+button, a { font: inherit; }
+a { color: inherit; text-decoration: none; }
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 6%;
+  border-bottom: 1px solid #ffffff12;
+}
+.brand { font-size: 23px; font-weight: 800; letter-spacing: -.8px; }
+.brand span { color: var(--red); }
+.nav a:last-child, .primary {
+  display: inline-block;
+  background: var(--red);
+  color: white;
+  border: 0;
+  border-radius: 30px;
+  padding: 12px 20px;
+  font-weight: 700;
+}
+.hero {
+  max-width: 1050px;
+  margin: auto;
+  min-height: 590px;
+  padding: 75px 24px 65px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.icon-wrap {
+  width: 112px;
+  height: 112px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #ff294d55;
+  border-radius: 32px;
+  background: radial-gradient(circle, #ff294d22, #12090c);
+  box-shadow: 0 0 55px #ff294d18;
+  margin-bottom: 28px;
+}
+.icon-wrap svg { width: 74px; height: 74px; }
+.eyebrow {
+  color: var(--pink);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+h1 {
+  font-size: clamp(43px, 9vw, 78px);
+  line-height: 1.04;
+  letter-spacing: -3px;
+  max-width: 800px;
+  margin: 18px 0;
+}
+h1 span { color: var(--red); }
+.hero p {
+  color: var(--muted);
+  line-height: 1.8;
+  max-width: 550px;
+  font-size: 16px;
+}
+.actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
+.secondary {
+  border: 1px solid #ffffff30;
+  padding: 12px 20px;
+  border-radius: 30px;
+  color: white;
+}
+.notice { color: #8f8185; font-size: 12px; margin-top: 24px; }
+.section { padding: 65px 7%; text-align: center; }
+.section h2 { font-size: clamp(28px, 5vw, 42px); margin: 12px 0; }
+.section > p { color: var(--muted); line-height: 1.7; max-width: 570px; margin: 0 auto; }
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+  max-width: 1000px;
+  margin: 36px auto 0;
+  text-align: left;
+}
+.feature {
+  background: linear-gradient(145deg, #191315, #100e0f);
+  border: 1px solid #ffffff12;
+  border-radius: 18px;
+  padding: 25px;
+}
+.feature .symbol { color: var(--red); font-size: 26px; }
+.feature h3 { margin: 15px 0 8px; }
+.feature p { color: var(--muted); line-height: 1.7; font-size: 14px; }
+.cta {
+  margin: 30px auto 70px;
+  max-width: 900px;
+  width: calc(100% - 36px);
+  padding: 42px 22px;
+  text-align: center;
+  border: 1px solid #ff294d35;
+  border-radius: 24px;
+  background: radial-gradient(ellipse at top, #42101c, #151011 70%);
+}
+.cta p { color: var(--muted); line-height: 1.7; }
+footer {
+  padding: 25px 6%;
+  text-align: center;
+  color: #8f8185;
+  border-top: 1px solid #ffffff12;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.gate {
+  position: fixed;
+  z-index: 10;
+  inset: 0;
+  background: #080708f5;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+}
+.gate-box {
+  max-width: 420px;
+  width: 100%;
+  background: #171113;
+  border: 1px solid #ff294d55;
+  border-radius: 24px;
+  padding: 32px 24px;
+  text-align: center;
+}
+.gate-box h2 { font-size: 29px; margin: 14px 0; }
+.gate-box p { color: var(--muted); line-height: 1.7; font-size: 14px; }
+.gate-buttons { display: grid; gap: 12px; margin-top: 22px; }
+.gate-buttons button {
+  padding: 14px;
+  border-radius: 30px;
+  border: 1px solid #ffffff25;
+  background: transparent;
+  color: white;
+  cursor: pointer;
+}
+.gate-buttons .primary { background: var(--red); border: 0; }
+.hidden { display: none; }
+@media (max-width: 500px) {
+  .nav { padding: 17px 5%; }
+  .brand { font-size: 20px; }
+  .nav a:last-child { padding: 10px 14px; font-size: 13px; }
+  .hero { min-height: 540px; padding-top: 55px; }
+  h1 { letter-spacing: -2px; }
+}
+</style>
+</head>
+<body>
+<header class="nav">
+  <a class="brand" href="#">The <span>Match</span></a>
+  <a href="#discover">Discover</a>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="icon-wrap" aria-label="Heart symbol">
+      <svg viewBox="0 0 100 100" fill="none" aria-hidden="true">
+        <path d="M50 80C39 70 17 54 17 34C17 18 38 12 50 31C62 12 83 18 83 34C83 54 61 70 50 80Z" stroke="#ff294d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M24 49C35 42 43 48 50 59C57 48 65 42 76 49" stroke="#ff8196" stroke-width="3" stroke-linecap="round"/>
+        <path d="M78 14L81 21L88 24L81 27L78 34L75 27L68 24L75 21Z" fill="#ff8196"/>
+      </svg>
+    </div>
+    <div class="eyebrow">A space to connect</div>
+    <h1>Your people.<br>Your story. <span>Your Match.</span></h1>
+    <p>A premium LGBTQ+ dating experience created for adults who want to explore connection, discover chemistry, and make room for something meaningful.</p>
+    <div class="actions">
+      <a class="primary" href="#discover">Explore The Match</a>
+      <a class="secondary" href="#about">Get to know us</a>
+    </div>
+    <div class="notice">Inclusive by design · Adults 18+ · Connection starts here</div>
+  </section>
+
+  <section class="section" id="discover">
+    <div class="eyebrow">More than a swipe</div>
+    <h2>Make room for a real connection.</h2>
+    <p>The Match is being created around a simple idea: dating should feel welcoming, personal, and respectful.</p>
+    <div class="features">
+      <article class="feature">
+        <div class="symbol">♡</div>
+        <h3>Discover people</h3>
+        <p>A future home for profiles that help you express who you are and what you hope to find.</p>
+      </article>
+      <article class="feature">
+        <div class="symbol">✦</div>
+        <h3>Find your chemistry</h3>
+        <p>Designed with mutual interest and meaningful connections in mind.</p>
+      </article>
+      <article class="feature">
+        <div class="symbol">♧</div>
+        <h3>Feel welcome</h3>
+        <p>An inclusive vision built around respect, privacy, and LGBTQ+ adults.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="cta" id="about">
+    <div class="eyebrow">The beginning of something</div>
+    <h2>Welcome to The Match.</h2>
+    <p>We are building the experience step by step. Profile creation, real matching, and private messaging will need to be connected before they can work.</p>
+    <a class="primary" href="#top" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">Back to top</a>
+  </section>
+</main>
+
+<footer>
+  <strong>The Match</strong> · A dating platform concept for LGBTQ+ adults 18 and over.<br>
+  Please do not submit private or sensitive information on this starter page.<br>
+  © <span id="year"></span> The Match. All rights reserved.
+</footer>
+
+<div class="gate" id="ageGate">
+  <div class="gate-box">
+    <div class="icon-wrap" style="margin:0 auto 22px;width:78px;height:78px;border-radius:24px">
+      <svg viewBox="0 0 100 100" fill="none" aria-hidden="true">
+        <path d="M50 80C39 70 17 54 17 34C17 18 38 12 50 31C62 12 83 18 83 34C83 54 61 70 50 80Z" stroke="#ff294d" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="eyebrow">Before you enter</div>
+    <h2>Are you 18 or older?</h2>
+    <p>The Match is intended for adults aged 18 and above. This welcome screen is an age reminder, not formal age verification.</p>
+    <div class="gate-buttons">
+      <button class="primary" onclick="enterSite()">Yes, I'm 18 or older</button>
+      <button onclick="window.location.href='https://www.google.com'">No, I'm under 18</button>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('year').textContent = new Date().getFullYear();
+function enterSite() {
+  document.getElementById('ageGate').classList.add('hidden');
+}
+</script>
+</body>
+</html>
+

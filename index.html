@@ -7,339 +7,412 @@
 <meta name="theme-color" content="#10050a">
 <title>The Match ❤️</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
 *{box-sizing:border-box}
-body{
- margin:0;min-height:100vh;color:#fff2f6;
- font-family:Arial,sans-serif;
- background:radial-gradient(ellipse at top,#451020,#180710 48%,#090408);
-}
+body{margin:0;min-height:100vh;color:#fff2f6;font-family:Arial,sans-serif;background:radial-gradient(ellipse at top,#451020,#180710 48%,#090408)}
 #stars{position:fixed;inset:0;overflow:hidden;pointer-events:none}
-.star{
- position:absolute;color:#ff315f;
- text-shadow:0 0 9px #ff174d,0 0 20px #f0194b;
- animation:twinkle var(--speed) ease-in-out infinite alternate;
-}
-@keyframes twinkle{
- from{opacity:.12;transform:scale(.5) rotate(0)}
- to{opacity:1;transform:scale(1.25) rotate(40deg)}
-}
+.star{position:absolute;color:#ff315f;text-shadow:0 0 9px #ff174d,0 0 20px #f0194b;animation:twinkle var(--speed) ease-in-out infinite alternate}
+@keyframes twinkle{from{opacity:.12;transform:scale(.5)}to{opacity:1;transform:scale(1.25) rotate(40deg)}}
 header,main,footer{position:relative}
-header{
- padding:20px;text-align:center;
- border-bottom:1px solid #ffffff12;
- font-size:23px;font-weight:bold
-}
+header{padding:20px;text-align:center;border-bottom:1px solid #ffffff12;font-size:23px;font-weight:bold}
 header span,h1 span{color:#ff416d}
-main{width:min(92%,430px);margin:0 auto}
-.hero{text-align:center;padding:25px 0 10px}
-.heart{
- font-size:88px;display:inline-block;
- animation:float 3s ease-in-out infinite,glow 2s infinite alternate
-}
-@keyframes float{
- 0%,100%{transform:translateY(0) rotate(-5deg)}
- 50%{transform:translateY(-13px) rotate(5deg)}
-}
-@keyframes glow{
- from{filter:drop-shadow(0 0 8px #f0194b)}
- to{filter:drop-shadow(0 0 28px #ff174d)}
-}
+main{width:min(92%,500px);margin:0 auto}
+.hero{text-align:center;padding:22px 0 8px}
+.heart{font-size:78px;display:inline-block;animation:float 3s ease-in-out infinite,glow 2s infinite alternate}
+@keyframes float{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-13px) rotate(5deg)}}
+@keyframes glow{from{filter:drop-shadow(0 0 8px #f0194b)}to{filter:drop-shadow(0 0 28px #ff174d)}}
 .eyebrow{font-size:11px;letter-spacing:3px;color:#ff91aa}
-h1{font-size:43px;line-height:1.12;margin:12px 0}
-.intro{color:#d2b3bf;font-size:14px;line-height:1.7}
-.panel{
- margin:20px 0 30px;padding:23px 19px;
- border:1px solid #582437;border-radius:20px;
- background:#1c0b13ed;box-shadow:0 15px 50px #0006
-}
+h1{font-size:40px;line-height:1.12;margin:12px 0}
+.intro,.small{color:#d2b3bf;font-size:14px;line-height:1.65}
+.panel{margin:18px 0 28px;padding:22px 18px;border:1px solid #582437;border-radius:20px;background:#1c0b13ed;box-shadow:0 15px 50px #0006}
 h2{font-size:23px;margin:0 0 8px}
-.small{color:#cbb0bc;font-size:13px;line-height:1.6}
-button,input{font:inherit}
+button,input,select,textarea{font:inherit}
 button{cursor:pointer}
-input{
- display:block;width:100%;padding:13px;margin-top:7px;
- color:white;background:#10070c;border:1px solid #593044;
- border-radius:10px;outline:none
-}
-input:focus{border-color:#ff416d}
-label{display:block;margin-top:15px;font-size:13px}
-.password{display:flex;gap:7px}
-.password input{flex:1;min-width:0}
-.eye{width:49px;flex-shrink:0;border:1px solid #593044;
- background:#32111f;color:white;border-radius:10px;margin-top:7px}
-.btn{
- width:100%;padding:13px;border-radius:11px;
- font-weight:bold;margin-top:12px
-}
+input,select,textarea{display:block;width:100%;padding:13px;margin-top:7px;color:white;background:#10070c;border:1px solid #593044;border-radius:10px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#ff416d}
+textarea{min-height:82px;resize:vertical}
+label{display:block;margin-top:14px;font-size:13px}
+.btn{width:100%;padding:13px;border-radius:11px;font-weight:bold;margin-top:12px}
 .primary{background:linear-gradient(100deg,#d70d3d,#ff416d);color:white;border:0}
 .secondary{background:transparent;color:#ffe4ec;border:1px solid #673047}
-.google{background:#fff;color:#222;border:0}
-button:disabled{opacity:.6}
-.divider{display:flex;align-items:center;gap:10px;color:#b99ba7;font-size:11px;margin:20px 0}
-.divider:before,.divider:after{content:"";height:1px;background:#583044;flex:1}
-.links{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:13px}
-.link{border:0;background:none;color:#ff8da8;padding:5px 0;font-size:12px}
+.btn:disabled{opacity:.55}
 .status{font-size:13px;line-height:1.6;overflow-wrap:anywhere;color:#ffc4d4}
-footer{text-align:center;padding:15px 12px 30px;color:#ad8e9b;font-size:11px;line-height:1.8}
+.links{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:12px}
+.link{border:0;background:none;color:#ff8da8;padding:5px 0;font-size:12px}
 .hidden{display:none!important}
-@media(prefers-reduced-motion:reduce){
- *,*::before,*::after{animation:none!important}
-}
+.member-card{border:1px solid #583044;border-radius:15px;padding:15px;margin:13px 0;background:#10070c}
+.distance{color:#ff8da8;font-weight:bold;font-size:13px}
+footer{text-align:center;padding:15px 12px 30px;color:#ad8e9b;font-size:11px;line-height:1.8}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important}}
 </style>
 </head>
 <body>
 <div id="stars" aria-hidden="true"></div>
 <header>The <span>Match</span> ♥</header>
-
 <main>
 <section class="hero">
- <div class="heart" aria-hidden="true">❤️</div>
- <div class="eyebrow">YOUR NEXT CHAPTER STARTS HERE</div>
- <h1>Find your kind<br>of <span>love.</span></h1>
- <p class="intro">A welcoming LGBTQ+ dating space for adults 18 and above. Discover genuine connections and beautiful possibilities.</p>
+<div class="heart">❤️</div>
+<div class="eyebrow">YOUR NEXT CHAPTER STARTS HERE</div>
+<h1>Find your kind<br>of <span>love.</span></h1>
+<p class="intro">A welcoming LGBTQ+ dating space for adults 18 and above. Discover genuine connections nearby.</p>
 </section>
 
 <section class="panel" id="welcome">
- <h2>Welcome, beautiful ❤️</h2>
- <p class="small">Your story. Your identity. Your kind of connection.</p>
- <button class="btn google" id="google">🌐 Continue with Google</button>
- <div class="divider">OR USE YOUR EMAIL</div>
- <button class="btn primary" id="signup">Create an account</button>
- <button class="btn secondary" id="login">Log in</button>
- <p class="status" id="welcomeStatus" role="status"></p>
- <p class="small">For adults aged 18+. Please treat every member with respect.</p>
+<h2>Welcome, beautiful ❤️</h2>
+<p class="small">Your story. Your identity. Your kind of connection.</p>
+<button class="btn primary" id="signup">Create an account</button>
+<button class="btn secondary" id="login">Log in</button>
+<p class="small">Google sign-in will be added later. Adults 18+ only.</p>
+<p class="status" id="welcomeStatus"></p>
 </section>
 
 <section class="panel hidden" id="auth">
- <h2 id="authTitle">Create your account</h2>
- <p class="small">Start your journey with The Match.</p>
- <form id="authForm">
-  <label for="email">Email address</label>
-  <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required>
-  <label for="password">Password (minimum 8 characters)</label>
-  <div class="password">
-   <input id="password" type="password" minlength="8" autocomplete="new-password" required>
-   <button class="eye" id="eye" type="button" aria-label="Show password">👁</button>
-  </div>
-  <button class="btn primary" id="submit" type="submit">Create account</button>
- </form>
- <div class="links">
-  <button class="link" id="forgot" type="button">Forgot password?</button>
-  <button class="link" id="switch" type="button">Already registered? Log in</button>
- </div>
- <p class="status" id="authStatus" role="status"></p>
- <button class="btn secondary" id="back" type="button">Back</button>
+<h2 id="authTitle">Create your account</h2>
+<p class="small">Start your journey with The Match.</p>
+<form id="authForm">
+<label for="email">Email address</label>
+<input id="email" type="email" autocomplete="email" required placeholder="you@example.com">
+<label for="password">Password (minimum 8 characters)</label>
+<input id="password" type="password" minlength="8" required autocomplete="new-password">
+<button class="btn primary" id="submit" type="submit">Create account</button>
+</form>
+<div class="links">
+<button class="link" id="forgot" type="button">Forgot password?</button>
+<button class="link" id="switch" type="button">Already registered? Log in</button>
+</div>
+<p class="status" id="authStatus"></p>
+<button class="btn secondary" id="back" type="button">Back</button>
 </section>
 
 <section class="panel hidden" id="reset">
- <h2>Reset your password</h2>
- <p class="small">Enter your email to receive a secure reset link.</p>
- <form id="requestForm">
-  <label for="resetEmail">Email address</label>
-  <input id="resetEmail" type="email" required autocomplete="email">
-  <button class="btn primary" type="submit">Send reset link</button>
- </form>
- <form id="newForm" class="hidden">
-  <label for="newPassword">Choose a new password</label>
-  <input id="newPassword" type="password" minlength="8" required autocomplete="new-password">
-  <button class="btn primary" type="submit">Save new password</button>
- </form>
- <p class="status" id="resetStatus" role="status"></p>
- <button class="btn secondary" id="resetBack" type="button">Back to welcome</button>
+<h2>Reset password</h2>
+<form id="resetForm">
+<label for="resetEmail">Email address</label>
+<input id="resetEmail" type="email" required>
+<button class="btn primary" type="submit">Send reset link</button>
+</form>
+<form id="newPasswordForm" class="hidden">
+<label for="newPassword">New password</label>
+<input id="newPassword" type="password" minlength="8" required>
+<button class="btn primary" type="submit">Save new password</button>
+</form>
+<p class="status" id="resetStatus"></p>
+<button class="btn secondary" id="resetBack" type="button">Back</button>
 </section>
 
-<section class="panel hidden" id="signedIn">
- <h2>You're signed in! ❤️</h2>
- <p class="small">Welcome to The Match. Your login is working.</p>
- <p class="status" id="memberEmail"></p>
- <p class="small">Next, we'll add your profile and discovery features.</p>
- <button class="btn secondary" id="logout" type="button">Log out</button>
+<section class="panel hidden" id="profile">
+<h2 id="greeting">Welcome ❤️</h2>
+<p class="small">Complete your profile to meet people. Location is optional.</p>
+<form id="profileForm">
+<label for="displayName">Display name *</label>
+<input id="displayName" maxlength="60" required placeholder="What should members call you?">
+<label for="age">Age (18+) *</label>
+<input id="age" type="number" min="18" max="120" required placeholder="Your age">
+<label for="gender">Gender identity *</label>
+<select id="gender" required>
+<option value="">Choose one</option>
+<option>Man</option><option>Woman</option><option>Non-binary</option>
+<option>Trans man</option><option>Trans woman</option>
+<option>Genderqueer</option><option>Prefer to self-describe</option>
+<option>Prefer not to say</option>
+</select>
+<label for="interest">Interested in *</label>
+<select id="interest" required>
+<option value="">Choose who you'd like to meet</option>
+<option>Men</option><option>Women</option><option>All genders</option>
+<option>Non-binary people</option><option>Not sure yet</option>
+</select>
+<label for="city">City (optional)</label>
+<input id="city" maxlength="100" placeholder="Your city">
+<label for="bio">About you (optional)</label>
+<textarea id="bio" maxlength="1000" placeholder="Share a little about yourself"></textarea>
+<button class="btn secondary" id="locationButton" type="button">📍 Turn on nearby discovery</button>
+<p class="small" id="locationHelp">Location is optional. If enabled, rounded coordinates are saved for approximate distance.</p>
+<button class="btn primary" id="saveProfile" type="submit">Save profile and discover</button>
+</form>
+<p class="status" id="profileStatus"></p>
+<button class="btn secondary" id="logoutProfile" type="button">Log out</button>
+</section>
+
+<section class="panel hidden" id="discover">
+<h2>Nearby members ❤️</h2>
+<p class="small">Members who share their approximate location appear nearest first. Distances are estimates.</p>
+<button class="btn secondary" id="refreshNearby" type="button">Refresh nearby members</button>
+<div id="profileList"></div>
+<p class="status" id="discoverStatus"></p>
+<button class="btn secondary" id="editProfile" type="button">Edit my profile</button>
+<button class="btn secondary" id="logoutDiscover" type="button">Log out</button>
 </section>
 </main>
-
-<footer>
- The Match ❤️ — Find your kind of love.<br>
- Adults 18+ only · Respect · Consent · Kindness
-</footer>
+<footer>The Match ❤️ — Find your kind of love.<br>Adults 18+ only · Respect · Consent · Kindness</footer>
 
 <script>
 (function(){
- "use strict";
+"use strict";
+const SITE_URL=window.location.origin;
+const db=window.supabase.createClient(
+"https://rxbdmgzmwhjnkcclyrcq.supabase.co",
+"sb_publishable_5OirCcmy8L5n3isPvi-P0w_Dgeb13U_"
+);
+const $=id=>document.getElementById(id);
+let loginMode=false,currentUser=null,approxLocation=null;
+const panels=["welcome","auth","reset","profile","discover"];
 
- const SITE_URL=window.location.origin;
- const SUPABASE_URL="https://rxbdmgzmwhjnkcclyrcq.supabase.co";
- const SUPABASE_KEY="sb_publishable_5OirCcmy8L5n3isPvi-P0w_Dgeb13U_";
- const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
- const $=id=>document.getElementById(id);
- let loginMode=false;
- let handling=false;
+function show(id){
+panels.forEach(p=>$(p).classList.toggle("hidden",p!==id));
+window.scrollTo(0,0);
+}
+function status(id,msg,error){
+$(id).textContent=msg||"";
+$(id).style.color=error?"#ff91aa":"#ffc4d4";
+}
+function friendly(e){
+let m=e&&e.message?e.message:"Something went wrong.";
+if(/invalid login credentials/i.test(m))return"Incorrect email or password.";
+if(/email not confirmed/i.test(m))return"Please confirm your email first.";
+if(/already registered/i.test(m))return"This email is already registered. Please log in.";
+return m;
+}
 
- // Sparkling red stars
- const layer=$("stars");
- const symbols=["✦","✧","⋆","✦","✧"];
- for(let i=0;i<28;i++){
-  const star=document.createElement("span");
-  star.className="star";
-  star.textContent=symbols[Math.floor(Math.random()*symbols.length)];
-  star.style.left=Math.random()*100+"%";
-  star.style.top=Math.random()*100+"%";
-  star.style.fontSize=(9+Math.random()*15)+"px";
-  star.style.setProperty("--speed",(1.5+Math.random()*3)+"s");
-  star.style.animationDelay=(-Math.random()*4)+"s";
-  layer.appendChild(star);
- }
+for(let i=0;i<28;i++){
+let s=document.createElement("span");
+s.className="star";s.textContent=["✦","✧","⋆"][i%3];
+s.style.left=Math.random()*100+"%";
+s.style.top=Math.random()*100+"%";
+s.style.fontSize=(9+Math.random()*15)+"px";
+s.style.setProperty("--speed",(1.5+Math.random()*3)+"s");
+$("stars").appendChild(s);
+}
 
- function status(id,text,error){
-  $(id).textContent=text||"";
-  $(id).style.color=error?"#ff91aa":"#ffc4d4";
- }
- function show(id){
-  ["welcome","auth","reset","signedIn"].forEach(x=>{
-   $(x).classList.toggle("hidden",x!==id);
-  });
-  window.scrollTo(0,0);
- }
- function friendly(error){
-  const m=error?.message||"Something went wrong. Please try again.";
-  if(/invalid login credentials/i.test(m))return "Incorrect email or password.";
-  if(/email not confirmed/i.test(m))return "Please confirm your email using the link we sent.";
-  if(/already registered/i.test(m))return "This email is already registered. Please log in.";
-  return m;
- }
- function openAuth(isLogin){
-  loginMode=isLogin;
-  $("authTitle").textContent=isLogin?"Welcome back":"Create your account";
-  $("submit").textContent=isLogin?"Log in":"Create account";
-  $("password").value="";
-  $("password").type="password";
-  $("password").autocomplete=isLogin?"current-password":"new-password";
-  $("switch").textContent=isLogin?"New here? Create an account":"Already registered? Log in";
-  status("authStatus","");
-  show("auth");
- }
+function openAuth(isLogin){
+loginMode=isLogin;
+$("authTitle").textContent=isLogin?"Welcome back":"Create your account";
+$("submit").textContent=isLogin?"Log in":"Create account";
+$("password").autocomplete=isLogin?"current-password":"new-password";
+$("switch").textContent=isLogin?"New here? Create an account":"Already registered? Log in";
+status("authStatus","");
+show("auth");
+}
+$("signup").onclick=()=>openAuth(false);
+$("login").onclick=()=>openAuth(true);
+$("back").onclick=()=>show("welcome");
+$("switch").onclick=()=>openAuth(!loginMode);
 
- $("signup").onclick=()=>openAuth(false);
- $("login").onclick=()=>openAuth(true);
- $("back").onclick=()=>show("welcome");
- $("switch").onclick=()=>openAuth(!loginMode);
+$("authForm").onsubmit=async e=>{
+e.preventDefault();
+let b=$("submit");b.disabled=true;
+status("authStatus","Please wait...");
+try{
+let email=$("email").value.trim(),password=$("password").value;
+let r=loginMode
+?await db.auth.signInWithPassword({email,password})
+:await db.auth.signUp({email,password,options:{emailRedirectTo:SITE_URL}});
+if(r.error)throw r.error;
+if(!loginMode&&!r.data.session){
+status("authStatus","Account created! Confirm your email, then return and log in.");
+}else if(r.data.session){
+await showProfile(r.data.session.user);
+}
+}catch(e){status("authStatus",friendly(e),true);}
+finally{b.disabled=false;}
+};
 
- $("eye").onclick=()=>{
-  const input=$("password");
-  input.type=input.type==="password"?"text":"password";
-  $("eye").textContent=input.type==="password"?"👁":"🙈";
- };
+$("forgot").onclick=()=>{
+$("resetEmail").value=$("email").value.trim();
+status("resetStatus","");
+$("resetForm").classList.remove("hidden");
+$("newPasswordForm").classList.add("hidden");
+show("reset");
+};
+$("resetBack").onclick=()=>show("welcome");
 
- $("google").onclick=async()=>{
-  status("welcomeStatus","Connecting to Google...");
-  try{
-   const {error}=await db.auth.signInWithOAuth({
-    provider:"google",
-    options:{redirectTo:SITE_URL}
-   });
-   if(error)throw error;
-  }catch(e){status("welcomeStatus",friendly(e),true);}
- };
+$("resetForm").onsubmit=async e=>{
+e.preventDefault();
+try{
+let r=await db.auth.resetPasswordForEmail($("resetEmail").value.trim(),{redirectTo:SITE_URL});
+if(r.error)throw r.error;
+status("resetStatus","If the account exists, a reset email has been sent. Check inbox and spam.");
+}catch(e){status("resetStatus",friendly(e),true);}
+};
+$("newPasswordForm").onsubmit=async e=>{
+e.preventDefault();
+try{
+let r=await db.auth.updateUser({password:$("newPassword").value});
+if(r.error)throw r.error;
+status("resetStatus","Password updated. You can log in now.");
+$("newPasswordForm").classList.add("hidden");
+}catch(e){status("resetStatus",friendly(e),true);}
+};
 
- $("authForm").onsubmit=async event=>{
-  event.preventDefault();
-  if(handling)return;
-  handling=true;
-  const button=$("submit");
-  button.disabled=true;
-  status("authStatus","Please wait...");
-  try{
-   const email=$("email").value.trim();
-   const password=$("password").value;
-   let result;
-   if(loginMode){
-    result=await db.auth.signInWithPassword({email,password});
-   }else{
-    result=await db.auth.signUp({
-     email,password,
-     options:{emailRedirectTo:SITE_URL}
-    });
-   }
-   if(result.error)throw result.error;
-   if(!loginMode&&!result.data.session){
-    status("authStatus","Account created! Check your email and confirm your address, then return here to log in.");
-   }else if(result.data.session){
-    await showSignedIn(result.data.session.user);
-   }
-  }catch(e){status("authStatus",friendly(e),true);}
-  finally{button.disabled=false;handling=false;}
- };
+function kmBetween(a,b,c,d){
+const rad=x=>x*Math.PI/180;
+const x=rad(c-a),y=rad(d-b);
+const z=Math.sin(x/2)**2+Math.cos(rad(a))*Math.cos(rad(c))*Math.sin(y/2)**2;
+return 6371*2*Math.atan2(Math.sqrt(z),Math.sqrt(1-z));
+}
+function distanceLabel(km){
+return km<1?Math.max(50,Math.round(km*1000/50)*50)+" m away":km.toFixed(1)+" km away";
+}
 
- $("forgot").onclick=()=>{
-  $("resetEmail").value=$("email").value.trim();
-  $("requestForm").classList.remove("hidden");
-  $("newForm").classList.add("hidden");
-  status("resetStatus","");
-  show("reset");
- };
- $("resetBack").onclick=()=>show("welcome");
+$("locationButton").onclick=()=>{
+if(!navigator.geolocation){
+status("profileStatus","Location is not supported by this browser. You can still save your profile.");return;
+}
+status("profileStatus","Requesting location permission...");
+navigator.geolocation.getCurrentPosition(pos=>{
+approxLocation={
+latitude:Math.round(pos.coords.latitude*100)/100,
+longitude:Math.round(pos.coords.longitude*100)/100
+};
+$("locationButton").textContent="📍 Nearby discovery is on";
+$("locationHelp").textContent="Your location is rounded to roughly 1 km precision before saving.";
+status("profileStatus","Location enabled. Save your profile to continue.");
+},err=>{
+approxLocation=null;
+status("profileStatus",err.code===1?"Permission denied. You can still save your profile without location.":"Could not get location. Check your phone settings and try again.",true);
+},{enableHighAccuracy:false,timeout:12000,maximumAge:300000});
+};
 
- $("requestForm").onsubmit=async event=>{
-  event.preventDefault();
-  const button=event.submitter;
-  button.disabled=true;
-  status("resetStatus","Sending reset link...");
-  try{
-   const {error}=await db.auth.resetPasswordForEmail(
-    $("resetEmail").value.trim(),
-    {redirectTo:SITE_URL}
-   );
-   if(error)throw error;
-   status("resetStatus","If the account exists, a reset email has been sent. Check your inbox and spam folder.");
-  }catch(e){status("resetStatus",friendly(e),true);}
-  finally{button.disabled=false;}
- };
+async function showProfile(user){
+currentUser=user;
+let email=user.email||"";
+let fallback=(email.split("@")[0]||"Member")
+.replace(/[._-]+/g," ")
+.replace(/\b\w/g,ch=>ch.toUpperCase());
+$("greeting").textContent="Welcome, "+fallback+"! ❤️";
+show("profile");
+status("profileStatus","Loading your profile...");
+try{
+let r=await db.from("profiles").select("*").eq("id",user.id).maybeSingle();
+if(r.error)throw r.error;
+if(r.data){
+let p=r.data;
+$("displayName").value=p.display_name||fallback;
+$("age").value=p.age||"";
+$("gender").value=p.gender_identity||"";
+$("interest").value=p.interested_in||"";
+$("city").value=p.city||"";
+$("bio").value=p.bio||"";
+approxLocation=p.location_sharing&&p.latitude!=null&&p.longitude!=null
+?{latitude:p.latitude,longitude:p.longitude}:null;
+$("locationButton").textContent=approxLocation?"📍 Nearby discovery is on":"📍 Turn on nearby discovery";
+status("profileStatus","Your profile is loaded. Check your details and save when ready.");
+}else{
+$("displayName").value=fallback;
+status("profileStatus","Add your details, then tap Save profile and discover.");
+}
+}catch(e){status("profileStatus","Could not load profile: "+friendly(e),true);}
+}
 
- $("newForm").onsubmit=async event=>{
-  event.preventDefault();
-  const button=event.submitter;
-  button.disabled=true;
-  try{
-   const {error}=await db.auth.updateUser({password:$("newPassword").value});
-   if(error)throw error;
-   status("resetStatus","Password changed successfully. You can now log in.");
-   $("newForm").classList.add("hidden");
-  }catch(e){status("resetStatus",friendly(e),true);}
-  finally{button.disabled=false;}
- };
+$("profileForm").onsubmit=async e=>{
+e.preventDefault();
+if(!currentUser)return;
+let b=$("saveProfile");b.disabled=true;
+status("profileStatus","Saving your profile...");
+try{
+let age=Number($("age").value);
+if(age<18||age>120)throw Error("The Match is for adults aged 18 and above.");
+let p={
+id:currentUser.id,
+display_name:$("displayName").value.trim(),
+age:age,
+gender_identity:$("gender").value,
+interested_in:$("interest").value,
+city:$("city").value.trim(),
+bio:$("bio").value.trim(),
+latitude:approxLocation?approxLocation.latitude:null,
+longitude:approxLocation?approxLocation.longitude:null,
+location_sharing:!!approxLocation,
+updated_at:new Date().toISOString()
+};
+let r=await db.from("profiles").upsert(p,{onConflict:"id"});
+if(r.error)throw r.error;
+await loadNearby();
+show("discover");
+}catch(e){status("profileStatus","Could not save profile: "+friendly(e),true);}
+finally{b.disabled=false;}
+};
 
- async function showSignedIn(user){
-  $("memberEmail").textContent=user.email||user.phone||"Your account";
-  show("signedIn");
- }
+async function loadNearby(){
+if(!currentUser)return;
+status("discoverStatus","Finding members...");
+$("profileList").replaceChildren();
+try{
+let r=await db.from("profiles")
+.select("id,display_name,age,gender_identity,city,bio,latitude,longitude,location_sharing")
+.neq("id",currentUser.id).limit(100);
+if(r.error)throw r.error;
+let people=r.data||[];
+if(approxLocation){
+people=people.map(p=>({...p,_distance:p.location_sharing&&p.latitude!=null&&p.longitude!=null
+?kmBetween(approxLocation.latitude,approxLocation.longitude,p.latitude,p.longitude):null
+})).sort((a,b)=>a._distance==null?1:b._distance==null?-1:a._distance-b._distance);
+}
+if(!people.length){
+status("discoverStatus","No other profiles yet. Invite people to join The Match.");
+return;
+}
+status("discoverStatus",approxLocation
+?"Nearest profiles with shared locations appear first."
+:"Enable location in Edit my profile to see approximate distances.");
+people.forEach(p=>{
+let card=document.createElement("div");card.className="member-card";
+let name=document.createElement("h2");name.textContent=p.display_name||"The Match member";card.appendChild(name);
+let d=document.createElement("div");d.className="distance";
+d.textContent=p._distance==null?"Distance unavailable":distanceLabel(p._distance);
+card.appendChild(d);
+let detail=document.createElement("p");detail.className="small";
+detail.textContent=[p.age?String(p.age):"",p.gender_identity||"",p.city||""].filter(Boolean).join(" · ");
+card.appendChild(detail);
+if(p.bio){
+let bio=document.createElement("p");bio.className="small";bio.textContent=p.bio;card.appendChild(bio);
+}
+let like=document.createElement("button");like.className="btn primary";like.textContent="❤️ Like";
+like.onclick=async()=>{
+like.disabled=true;
+let lr=await db.from("likes").insert({liker_id:currentUser.id,liked_id:p.id});
+if(lr.error){
+status("discoverStatus",/duplicate/i.test(lr.error.message)?"You've already liked this member.":"Couldn't send like: "+friendly(lr.error),true);
+like.disabled=false;
+}else{
+like.textContent="Liked ❤️";
+status("discoverStatus","Like sent! Mutual matches and private chat will be added next.");
+}
+};
+card.appendChild(like);$("profileList").appendChild(card);
+});
+}catch(e){status("discoverStatus","Could not load members: "+friendly(e),true);}
+}
 
- $("logout").onclick=async()=>{
-  const {error}=await db.auth.signOut();
-  if(error){status("memberEmail",friendly(error),true);return;}
-  show("welcome");
- };
+$("refreshNearby").onclick=loadNearby;
+$("editProfile").onclick=()=>show("profile");
 
- db.auth.onAuthStateChange((event,session)=>{
-  if(event==="PASSWORD_RECOVERY"){
-   $("requestForm").classList.add("hidden");
-   $("newForm").classList.remove("hidden");
-   status("resetStatus","Enter your new password below.");
-   show("reset");
-  }
-  if(event==="SIGNED_IN"&&session?.user){
-   showSignedIn(session.user);
-  }
- });
+async function logout(){
+let r=await db.auth.signOut();
+if(r.error){alert(friendly(r.error));return;}
+currentUser=null;approxLocation=null;show("welcome");
+}
+$("logoutProfile").onclick=logout;
+$("logoutDiscover").onclick=logout;
 
- async function init(){
-  const {data,error}=await db.auth.getSession();
-  if(error){status("welcomeStatus",friendly(error),true);return;}
-  if(data.session?.user)await showSignedIn(data.session.user);
- }
- init();
+db.auth.onAuthStateChange((event,session)=>{
+if(event==="PASSWORD_RECOVERY"){
+$("resetForm").classList.add("hidden");
+$("newPasswordForm").classList.remove("hidden");
+status("resetStatus","Choose a new password below.");
+show("reset");
+}
+if(event==="SIGNED_IN"&&session&&session.user)showProfile(session.user);
+});
+
+async function init(){
+let r=await db.auth.getSession();
+if(r.data&&r.data.session&&r.data.session.user)await showProfile(r.data.session.user);
+}
+init();
 })();
 </script>
 </body>
 </html>
+
 

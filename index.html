@@ -927,7 +927,90 @@ status("profileStatus",err.code===1?"Permission denied. You can still save your 
 },{enableHighAccuracy:false,timeout:12000,maximumAge:300000});
 };
 
-async function showProfile(user){
+
+let notificationSoundContext = null;
+let knownReceivedLikes = new Set();
+let knownReceivedMessageIds = new Set();
+
+function playMatchSound(type) {
+  try {
+    const AudioContextClass =
+      window.AudioContext || window.webkitAudioContext;
+
+    if (!AudioContextClass) return;
+
+    if (!notificationSoundContext) {
+      notificationSoundContext = new AudioContextClass();
+    }
+
+    const audio = notificationSoundContext;
+
+    if (audio.state === "suspended") {
+      audio.resume();
+    }
+
+    const notes = type === "like"
+      ? [880, 1174]
+      : [587, 784];
+
+    notes.forEach((frequency, index) => {
+      const oscillator = audio.createOscillator();
+      const gain = audio.createGain();
+
+      oscillator.type = "sine";
+      oscillator.frequency.value = frequency;
+
+      gain.gain.setValueAtTime(0.0001, audio.currentTime);
+      gain.gain.exponentialRampToValueAtTime(
+        0.12,
+        audio.currentTime + 0.03
+      );
+      gain.gain.exponentialRampToValueAtTime(
+        0.0001,
+        audio.currentTime + 0.22
+      );
+
+      oscillator.connect(gain);
+      gain.connect(audio.destination);
+
+      const start = audio.currentTime + index * 0.16;
+      oscillator.start(start);
+      oscillator.stop(start + 0.24);
+    });
+  } catch (error) {
+    console.warn("Notification sound unavailable:", error);
+  }
+}
+
+async function requestMatchNotificationPermission() {
+  if ("Notification" in window &&
+      Notification.permission === "default") {
+    try {
+      await Notification.requestPermission();
+    } catch (error) {
+      console.warn("Notification permission unavailable:", error);
+    }
+  }
+}
+
+function showMatchNotification(title, body, type) {
+  playMatchSound(type);
+
+  if ("Notification" in window &&
+      Notification.permission === "granted" &&
+      document.visibilityState === "hidden") {
+    try {
+      new Notification(title, {
+        body: body,
+        tag: "the-match-" + type
+      });
+    } catch (error) {
+      console.warn("Notification unavailable:", error);
+    }
+  }
+}
+
+  async function showProfile(user){
 currentUser=user;
 let email=user.email||"";
 let fallback=(email.split("@")[0]||"Member")

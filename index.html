@@ -1824,7 +1824,12 @@ async function loadChatMessages(){
     status("chatPageStatus","Could not load messages: "+friendly(e),true);
   }
 }
-
+$("chatMessageInput").addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){
+    e.preventDefault();
+    $("sendChatMessage").click();
+  }
+});
 $("sendChatMessage").onclick = async()=>{
   if(!currentUser || !activeChatUserId)return;
 

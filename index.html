@@ -724,7 +724,21 @@ blockBtn.style.margin="6px";
 blockBtn.onclick=async()=>{
   
   
-  let experience=prompt("Why are you blocking this member? Enter a number:\n1. Not vibing\n2. Uncomfortable\n3. Harassment\n4. Fake profile\n5. Something else");
+  let experience=prompt("How is your chat experience with this member?\n1. Comfortable\n2. Not vibing\n3. Uncomfortable\n4. Harassment\n5. Fake profile\n6. Something else\n\nChoose a number from 1 to 6:");
+if(!experience)return;
+const blockReasons={
+"1":"Comfortable",
+"2":"Not vibing",
+"3":"Uncomfortable",
+"4":"Harassment",
+"5":"Fake profile",
+"6":"Something else"
+};
+experience=blockReasons[experience.trim()];
+if(!experience){
+status("discoverStatus","Please choose a number from 1 to 6.",true);
+return;
+}
 if(!experience)return;
 const blockReasons={
 "1":"Not vibing",

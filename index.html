@@ -819,7 +819,7 @@ let fallback=(email.split("@")[0]||"Member")
 .replace(/[._-]+/g," ")
 .replace(/\b\w/g,ch=>ch.toUpperCase());
 $("greeting").textContent="Welcome, "+fallback+"! ❤️";
-show("profile");
+show("discover");
 status("profileStatus","Loading your profile...");
 try{
 let r=await db.from("profiles").select("*").eq("id",user.id).maybeSingle();

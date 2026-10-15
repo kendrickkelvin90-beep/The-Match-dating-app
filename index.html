@@ -1456,21 +1456,22 @@ $("sendChatMessage").onclick = async()=>{
   button.disabled = true;
 
   try{
-    const blockCheck=await db.from("member_blocks")
-  .select("id")
-  .eq("blocker_id",currentUser.id)
-  .eq("blocked_id",activeChatUserId)
-  .maybeSingle();
+    
+    const blockCheck = await db.rpc("can_interact_with_member", {
+      target_user_id: activeChatUserId
+    });
 
-if(blockCheck.error)throw blockCheck.error;
+    if(blockCheck.error) throw blockCheck.error;
 
-if(blockCheck.data){
-  $("activeConversation").classList.add("hidden");
-  $("chatMessages").replaceChildren();
-  activeChatUserId=null;
-  status("chatPageStatus","You cannot message someone you have blocked.",true);
-  return;
-}
+    if(blockCheck.data !== true){
+      $("activeConversation").classList.add("hidden");
+      $("chatMessages").replaceChildren();
+      activeChatUserId = null;
+      activeConversation = null;
+      status("chatPageStatus","Message not sent. This conversation is unavailable because either member has blocked the other.",true);
+      return;
+    }
+
     const {error} = await db
       .from("messages")
       .insert({

@@ -645,7 +645,9 @@ async function loadMyMatches(){
 
     const {data:profiles,error:profileError}=await db
       .from("profiles")
-      .select("id,display_name,age,city,bio,avatar_url")
+      
+.select("id,display_name,age,city,bio")
+
       .in("id",mutualIds);
 
     if(profileError)throw profileError;

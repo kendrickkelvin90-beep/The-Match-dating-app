@@ -603,6 +603,77 @@ $("refreshNearby").onclick=loadNearby;
 $("openMessages").onclick=()=>show("messages");
 $("backFromMatches").onclick=()=>show("discover");
 $("backFromMessages").onclick=()=>show("matches");
+ 
+async function loadMyMatches(){
+  if(!currentUser)return;
+
+  const list=$("matchesList");
+  list.replaceChildren();
+  status("matchesStatus","Loading your matches...");
+
+  try{
+    const {data:sent,error:sentError}=await db
+      .from("likes")
+      .select("liked_id")
+      .eq("liker_id",currentUser.id);
+
+    if(sentError)throw sentError;
+
+    const mutualIds=[];
+
+    for(const item of (sent||[])){
+      const {data:back,error:backError}=await db
+        .from("likes")
+        .select("liker_id")
+        .eq("liker_id",item.liked_id)
+        .eq("liked_id",currentUser.id)
+        .maybeSingle();
+
+      if(backError)throw backError;
+      if(back)mutualIds.push(item.liked_id);
+    }
+
+    if(!mutualIds.length){
+      status("matchesStatus","No mutual matches yet. Keep discovering members and sending likes.");
+      return;
+    }
+
+    const {data:profiles,error:profileError}=await db
+      .from("profiles")
+      .select("id,display_name,age,city,bio,avatar_url")
+      .in("id",mutualIds);
+
+    if(profileError)throw profileError;
+
+    (profiles||[]).forEach(p=>{
+      const card=document.createElement("div");
+      card.className="profile-card";
+
+      const name=document.createElement("h3");
+      name.textContent="❤️ "+(p.display_name||"Member");
+      card.appendChild(name);
+
+      const details=document.createElement("p");
+      details.textContent=
+        (p.age?p.age+" years old":"Age not listed")+
+        (p.city?" · "+p.city:"");
+      card.appendChild(details);
+
+      if(p.bio){
+        const bio=document.createElement("p");
+        bio.textContent=p.bio;
+        card.appendChild(bio);
+      }
+
+      list.appendChild(card);
+    });
+
+    status("matchesStatus","You have "+profiles.length+" mutual match(es)!");
+  }catch(e){
+    status("matchesStatus","Could not load matches: "+friendly(e),true);
+  }
+}
+
   async function loadMyPhotos(){
   if(!currentUser)return;
   const grid=$("profilePhotos");

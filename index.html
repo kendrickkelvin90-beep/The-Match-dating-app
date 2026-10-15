@@ -676,7 +676,17 @@ box.textContent="You have not requested verification yet.";
 }
 }
 
-$("requestVerification").onclick=async()=>{
+
+$("openVerification").onclick=async()=>{
+  show("verificationPage");
+  await loadVerificationStatus();
+};
+
+$("backFromVerification").onclick=()=>{
+  show("profile");
+};
+
+  $("requestVerification").onclick=async()=>{
 if(!currentUser){
 $("verificationStatus").textContent="Please sign in first.";
 return;

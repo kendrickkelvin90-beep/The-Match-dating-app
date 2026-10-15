@@ -1079,10 +1079,15 @@ $("blockMemberButton").onclick = async () => {
       block_reason: reason
     });
 
-    if(result.error) throw result.error;
+        if(result.error) throw result.error;
 
     activeChatUserId = null;
+    activeConversation = null;
+    $("activeConversation").classList.add("hidden");
     status("memberProfileStatus","Member blocked successfully.");
+    await loadMatches();
+    await loadMyConversations();
+    show("matches");
   } catch(e) {
     status("memberProfileStatus","Could not block member: "+friendly(e),true);
   }

@@ -568,7 +568,9 @@ like.onclick=async()=>{
 like.disabled=true;
 let lr=await db.from("likes").insert({liker_id:currentUser.id,liked_id:p.id});
 if(lr.error){
-status("discoverStatus",/duplicate/i.test(lr.error.message)?"You've already liked this member.":"Couldn't send like: "+friendly(lr.error),true);
+
+status("discoverStatus",/DAILY_LIKE_LIMIT/i.test(lr.error.message)?"You've used your 10 free likes for today. Go Premium to keep liking.":/duplicate/i.test(lr.error.message)?"You've already liked this member.":"Couldn't send like: "+friendly(lr.error),true);
+
 like.disabled=false;
 }else{
 like.textContent="Liked ❤️";

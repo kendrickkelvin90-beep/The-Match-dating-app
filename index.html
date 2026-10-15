@@ -715,11 +715,109 @@ $("refreshNearby").onclick=loadNearby;
     if(page==="discover") await loadNearby();
     if(page==="matches") await loadMyMatches();
     if(page==="messages") await loadMyConversations();
-    if(page==="likes") status("likesStatus","Likes page opened. We'll connect it to real likes next.");
+    if(page==="likes") await loadLikesPage();
   });
 });
   
-$("openMatches").onclick=async()=>{
+async function loadLikesPage(){
+  if(!currentUser)return;
+
+  const list=$("receivedLikesList");
+  list.replaceChildren();
+  status("likesStatus","Loading your likes...");
+
+  try{
+    const {data:received,error:receivedError}=await db
+      .from("likes")
+      .select("liker_id")
+      .eq("liked_id",currentUser.id);
+
+    if(receivedError)throw receivedError;
+
+    const peopleIds=[...new Set((received||[]).map(x=>x.liker_id))];
+
+    if(!peopleIds.length){
+      status("likesStatus","No likes yet. Keep your profile updated and discover members.");
+      return;
+    }
+
+    const {data:profiles,error:profileError}=await db
+      .from("profiles")
+      .select("id,display_name,age,city,bio")
+      .in("id",peopleIds);
+
+    if(profileError)throw profileError;
+
+    const {data:sent,error:sentError}=await db
+      .from("likes")
+      .select("liked_id")
+      .eq("liker_id",currentUser.id);
+
+    if(sentError)throw sentError;
+
+    const sentIds=new Set((sent||[]).map(x=>x.liked_id));
+
+    (profiles||[]).forEach(p=>{
+      const card=document.createElement("div");
+      card.className="member-card";
+
+      const name=document.createElement("h3");
+      name.textContent="💖 "+(p.display_name||"Member");
+      card.appendChild(name);
+
+      const details=document.createElement("p");
+      details.className="small";
+      details.textContent=[
+        p.age?p.age+" years old":"",
+        p.city||""
+      ].filter(Boolean).join(" · ");
+      card.appendChild(details);
+
+      if(p.bio){
+        const bio=document.createElement("p");
+        bio.textContent=p.bio;
+        card.appendChild(bio);
+      }
+
+      const action=document.createElement("button");
+      action.type="button";
+      action.className="btn primary";
+
+      if(sentIds.has(p.id)){
+        action.textContent="You liked each other 💞";
+        action.disabled=true;
+      }else{
+        action.textContent="Like Back ❤️";
+        action.onclick=async()=>{
+          action.disabled=true;
+          const result=await db.from("likes").insert({
+            liker_id:currentUser.id,
+            liked_id:p.id
+          });
+
+          if(result.error){
+            status("likesStatus","Could not send like: "+friendly(result.error),true);
+            action.disabled=false;
+          }else{
+            action.textContent="Liked ❤️";
+            sentIds.add(p.id);
+            status("likesStatus","Like sent! Check Matches for a mutual connection.");
+          }
+        };
+      }
+
+      card.appendChild(action);
+      list.appendChild(card);
+    });
+
+    status("likesStatus","You have "+profiles.length+" member(s) who liked you.");
+  }catch(e){
+    status("likesStatus","Could not load likes: "+friendly(e),true);
+  }
+}
+
+$("refreshLikes").onclick=loadLikesPage;
+  $("openMatches").onclick=async()=>{
   show("matches");
   await loadMyMatches();
 };

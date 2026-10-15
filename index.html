@@ -571,14 +571,20 @@ margin-bottom: 4px;
     Back to Matches
   </button>
 </section>
+
 <section class="panel hidden" id="likes">
   <h2>❤️ Likes</h2>
   <p class="small">Discover people who are interested in you.</p>
 
   <div class="member-card">
-    <h3>💖 Who Liked You</h3>
-    <p class="small">See people who have liked your profile.</p>
+    <h3>💖 People Who Like You</h3>
+    <p class="small">Premium members can see full photos. Free members see blurred photos.</p>
     <div id="receivedLikesList"></div>
+  </div>
+
+  <div class="member-card">
+    <h3>❤️ People You Like</h3>
+    <div id="sentLikesList"></div>
   </div>
 
   <p class="status" id="likesStatus"></p>
@@ -587,6 +593,7 @@ margin-bottom: 4px;
     Refresh Likes
   </button>
 </section>
+
     <nav class="bottom-nav hidden" id="bottomNavigation">
   <button type="button" data-page="discover" aria-label="Discover">
   <span class="nav-icon" aria-hidden="true">🧭</span>

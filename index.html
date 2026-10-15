@@ -1000,6 +1000,22 @@ async function openMemberProfile(memberId){
   status("memberProfileStatus","Loading profile...");
 
   try{
+    
+    const blockCheck = await db
+      .from("member_blocks")
+      .select("id")
+      .eq("blocker_id", currentUser.id)
+      .eq("blocked_id", memberId)
+      .maybeSingle();
+
+    if(blockCheck.error) throw blockCheck.error;
+
+    if(blockCheck.data) {
+      status("memberProfileStatus","This profile is unavailable.");
+      $("memberProfileDetails").replaceChildren();
+      return;
+    }
+
     const {data:p,error} = await db
       .from("profiles")
       .select("id,display_name,age,gender_identity,interested_in,city,bio,sexual_roles")

@@ -1095,6 +1095,7 @@ $("bottomNavigation").querySelectorAll("button[data-page]").forEach(button=>{
     });
 
     if(page==="discover") await loadNearby();
+    if(page==="discover") await loadStories();
     if(page==="matches") await loadMyMatches();
     if(page==="messages") await loadMyConversations();
     if(page==="likes") await loadLikesPage();

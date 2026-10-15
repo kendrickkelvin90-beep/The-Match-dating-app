@@ -968,7 +968,7 @@ async function loadStories(){
         };
 
         previous.onclick=()=>{if(index>0){index--;renderStory();}};
-        next.onclick=()=>{if(index<memberStories.length-1){index++;renderStory();}};
+                overlay.append(heading,mediaArea,caption,time,counter,viewersInfo,controls,close);
 
         controls.append(previous,next);
         overlay.append(heading,mediaArea,caption,time,counter,controls,close);

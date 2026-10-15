@@ -770,6 +770,87 @@ async function loadMyConversations(){
   }
 }
  
+let activeChatUserId = null;
+
+async function openChat(userId, userName){
+  activeChatUserId = userId;
+  $("activeConversation").classList.remove("hidden");
+  $("chatPartnerName").textContent = "Chat with " + userName;
+  await loadChatMessages();
+}
+
+async function loadChatMessages(){
+  if(!currentUser || !activeChatUserId)return;
+
+  const chat = $("chatMessages");
+  chat.replaceChildren();
+  status("messagesStatus","Loading messages...");
+
+  try{
+    const me = currentUser.id;
+    const them = activeChatUserId;
+
+    const {data,error} = await db
+      .from("messages")
+      .select("id,sender_id,receiver_id,body,created_at")
+      .or("and(sender_id.eq."+me+",receiver_id.eq."+them+"),and(sender_id.eq."+them+",receiver_id.eq."+me+")")
+      .order("created_at",{ascending:true});
+
+    if(error)throw error;
+
+    if(!data || !data.length){
+      const empty = document.createElement("p");
+      empty.textContent = "No messages yet. Say hello!";
+      chat.appendChild(empty);
+    }else{
+      data.forEach(message=>{
+        const bubble = document.createElement("p");
+        bubble.textContent =
+          (message.sender_id===me ? "You: " : "Them: ") +
+          message.body;
+        chat.appendChild(bubble);
+      });
+    }
+
+    status("messagesStatus","Conversation loaded.");
+  }catch(e){
+    status("messagesStatus","Could not load messages: "+friendly(e),true);
+  }
+}
+
+$("sendChatMessage").onclick = async()=>{
+  if(!currentUser || !activeChatUserId)return;
+
+  const input = $("chatMessageInput");
+  const body = input.value.trim();
+
+  if(!body){
+    status("messagesStatus","Please type a message first.",true);
+    return;
+  }
+
+  const button = $("sendChatMessage");
+  button.disabled = true;
+
+  try{
+    const {error} = await db
+      .from("messages")
+      .insert({
+        sender_id:currentUser.id,
+        receiver_id:activeChatUserId,
+        body:body
+      });
+
+    if(error)throw error;
+
+    input.value = "";
+    await loadChatMessages();
+  }catch(e){
+    status("messagesStatus","Message not sent: "+friendly(e),true);
+  }finally{
+    button.disabled = false;
+  }
+};  
   async function loadMyPhotos(){
   if(!currentUser)return;
   const grid=$("profilePhotos");

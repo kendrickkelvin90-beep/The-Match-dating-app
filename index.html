@@ -2796,7 +2796,10 @@ async function loadMyConversations(){
   }
 }
  
+
 let activeChatUserId = null;
+let chatRefreshTimer = null;
+
 
 async function openChat(userId, userName){
 

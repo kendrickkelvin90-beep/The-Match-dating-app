@@ -1851,7 +1851,36 @@ if(blockCheck.data !== true){
 
 
 activeChatUserId=userId;
-$("chatPageTitle").textContent="💬 Chat with "+userName;
+$("chatPageTitle").textContent=userName;
+
+$("chatPartnerAvatar").src="";
+$("chatPartnerLocation").textContent="Location unavailable";
+
+const {data:chatProfile}=await db
+  .from("profiles")
+  .select("city,location_sharing")
+  .eq("id",userId)
+  .maybeSingle();
+
+if(chatProfile){
+  $("chatPartnerLocation").textContent=
+    chatProfile.location_sharing && chatProfile.city
+      ? chatProfile.city
+      : "Location hidden";
+}
+
+const {data:chatPhotos}=await db
+  .from("profile_photos")
+  .select("storage_path,position")
+  .eq("user_id",userId)
+  .order("position")
+  .limit(1);
+
+if(chatPhotos && chatPhotos.length){
+  $("chatPartnerAvatar").src=db.storage
+    .from("profile-photos")
+    .getPublicUrl(chatPhotos[0].storage_path).data.publicUrl;
+}
 
 const chatContent=$("chatPageContent");
 chatContent.replaceChildren();

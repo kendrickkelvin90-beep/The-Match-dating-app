@@ -2156,6 +2156,10 @@ async function loadChatMessages(){
   const input=$("chatMessageInput");
   input.style.height="auto";
   input.style.height=Math.min(input.scrollHeight,120)+"px";
+  $("chatPageStatus").textContent="";
+});
+  input.style.height="auto";
+  input.style.height=Math.min(input.scrollHeight,120)+"px";
 });
   $("chatMessageInput").addEventListener("keydown",e=>{
   if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){

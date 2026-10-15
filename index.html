@@ -701,8 +701,9 @@ card.appendChild(like);$("profileList").appendChild(card);
 }
 
 $("refreshNearby").onclick=loadNearby;
-  $("bottomNavigation").querySelectorAll("button[data-page]").forEach(button=>{
-  button.addEventListener("click",async()=>{
+  
+$("bottomNavigation").querySelectorAll("button[data-page]").forEach(button=>{
+  button.onclick=async()=>{
     const page=button.dataset.page;
 
     if(!currentUser){
@@ -712,16 +713,17 @@ $("refreshNearby").onclick=loadNearby;
 
     show(page);
 
-    $("bottomNavigation").querySelectorAll("button").forEach(item=>{
-      item.classList.toggle("active",item===button);
+    $("bottomNavigation").querySelectorAll("button[data-page]").forEach(item=>{
+      item.classList.toggle("active",item.dataset.page===page);
     });
 
     if(page==="discover") await loadNearby();
     if(page==="matches") await loadMyMatches();
     if(page==="messages") await loadMyConversations();
     if(page==="likes") await loadLikesPage();
-  });
+  };
 });
+
   
 async function loadLikesPage(){
   if(!currentUser)return;

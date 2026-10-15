@@ -1001,20 +1001,19 @@ async function openMemberProfile(memberId){
 
   try{
     
-    const blockCheck = await db
-      .from("member_blocks")
-      .select("id")
-      .eq("blocker_id", currentUser.id)
-      .eq("blocked_id", memberId)
-      .maybeSingle();
+    
+    const blockCheck = await db.rpc("can_interact_with_member", {
+      target_user_id: memberId
+    });
 
     if(blockCheck.error) throw blockCheck.error;
 
-    if(blockCheck.data) {
+    if(blockCheck.data !== true) {
       status("memberProfileStatus","This profile is unavailable.");
       $("memberProfileDetails").replaceChildren();
       return;
     }
+
 
     const {data:p,error} = await db
       .from("profiles")

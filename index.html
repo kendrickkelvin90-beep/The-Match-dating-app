@@ -890,6 +890,7 @@ async function loadStories(){
       p.id,p.display_name||"The Match member"
     ]));
 
+    
     const seen=new Set();
 
     stories.forEach(story=>{
@@ -900,92 +901,124 @@ async function loadStories(){
       const button=document.createElement("button");
       button.type="button";
       button.className="story-item";
-      button.setAttribute("aria-label","View story by "+name);
+      button.setAttribute("aria-label","View stories by "+name);
 
       const avatar=document.createElement("span");
       avatar.className="story-avatar";
       avatar.textContent=(name.trim()[0]||"M").toUpperCase();
 
       const label=document.createElement("span");
-      label.textContent=story.user_id===currentUser.id
-        ?"Your Story":name;
-
+      label.textContent=story.user_id===currentUser.id?"Your Story":name;
       button.append(avatar,label);
-      
+
       button.onclick=async()=>{
+        const memberStories=stories
+          .filter(s=>s.user_id===story.user_id)
+          .sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+
+        let index=0;
         const overlay=document.createElement("div");
         Object.assign(overlay.style,{
           position:"fixed",inset:"0",zIndex:"9999",
           background:"#10050a",color:"#fff2f6",
           display:"flex",flexDirection:"column",
           justifyContent:"center",alignItems:"center",
-          padding:"24px",textAlign:"center",overflowY:"auto"
+          padding:"20px",textAlign:"center",overflowY:"auto"
         });
 
         const heading=document.createElement("h2");
         heading.textContent=name+"'s Story";
-        overlay.appendChild(heading);
 
-        if(story.media_url){
-          const {data:signedData,error:signedError}=await db.storage
-            .from("story-media")
-            .createSignedUrl(story.media_url,3600);
+        const mediaArea=document.createElement("div");
+        Object.assign(mediaArea.style,{
+          width:"100%",display:"flex",
+          justifyContent:"center",alignItems:"center"
+        });
 
-          if(signedError){
-            status("storiesStatus","Could not open Story media: "+friendly(signedError),true);
-            return;
-          }
-
-          let media;
-          if(story.media_type==="video"){
-            media=document.createElement("video");
-            media.controls=true;
-            media.autoplay=true;
-            media.playsInline=true;
-          }else{
-            media=document.createElement("img");
-            media.alt="Story photo by "+name;
-          }
-
-          media.src=signedData.signedUrl;
-          Object.assign(media.style,{
-            maxWidth:"100%",maxHeight:"60vh",
-            width:"auto",height:"auto",
-            objectFit:"contain",borderRadius:"12px",
-            margin:"12px 0"
-          });
-          overlay.appendChild(media);
-        }
-
-        if(story.caption){
-          const content=document.createElement("p");
-          content.className="story-view";
-          content.style.fontSize="20px";
-          content.textContent=story.caption;
-          overlay.appendChild(content);
-        }
+        const caption=document.createElement("p");
+        caption.style.fontSize="18px";
 
         const time=document.createElement("p");
         time.className="small";
-        time.textContent=new Date(story.created_at).toLocaleString();
+
+        const counter=document.createElement("p");
+        counter.className="small";
+
+        const controls=document.createElement("div");
+        controls.style.display="flex";
+        controls.style.gap="12px";
+
+        const previous=document.createElement("button");
+        previous.className="btn secondary";
+        previous.textContent="← Previous";
+
+        const next=document.createElement("button");
+        next.className="btn primary";
+        next.textContent="Next →";
 
         const close=document.createElement("button");
-        close.type="button";
         close.className="btn secondary";
-        close.textContent="Close Story";
+        close.textContent="Close Stories";
         close.onclick=()=>{
           overlay.querySelectorAll("video").forEach(v=>v.pause());
           overlay.remove();
         };
 
-        overlay.append(time,close);
-        document.body.appendChild(overlay);
-      };
+        previous.onclick=()=>{if(index>0){index--;renderStory();}};
+        next.onclick=()=>{if(index<memberStories.length-1){index++;renderStory();}};
 
-        
+        controls.append(previous,next);
+        overlay.append(heading,mediaArea,caption,time,counter,controls,close);
+        document.body.appendChild(overlay);
+
+        async function renderStory(){
+          overlay.querySelectorAll("video").forEach(v=>v.pause());
+          mediaArea.replaceChildren();
+          caption.textContent="";
+          time.textContent="";
+          counter.textContent=(index+1)+" of "+memberStories.length;
+          previous.disabled=index===0;
+          next.disabled=index===memberStories.length-1;
+
+          const current=memberStories[index];
+
+          if(current.media_url){
+            const {data,error}=await db.storage
+              .from("story-media")
+              .createSignedUrl(current.media_url,3600);
+
+            if(!overlay.isConnected)return;
+            if(error){
+              mediaArea.textContent="Could not load this Story media.";
+            }else{
+              const media=document.createElement(
+                current.media_type==="video"?"video":"img"
+              );
+              if(current.media_type==="video"){
+                media.controls=true;
+                media.playsInline=true;
+              }else{
+                media.alt="Story photo by "+name;
+              }
+              media.src=data.signedUrl;
+              Object.assign(media.style,{
+                maxWidth:"100%",maxHeight:"55vh",
+                objectFit:"contain",borderRadius:"12px"
+              });
+              mediaArea.appendChild(media);
+            }
+          }
+
+          caption.textContent=current.caption||"";
+          time.textContent=new Date(current.created_at).toLocaleString();
+        }
+
+        await renderStory();
+      };
 
       list.appendChild(button);
     });
+
 
     status("storiesStatus","");
   }catch(e){

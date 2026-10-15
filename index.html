@@ -1206,22 +1206,20 @@ async function loadMyMatches(){
       if(back)mutualIds.push(item.liked_id);
     }
     
-    const blockedResult = await db
-      .from("member_blocks")
-      .select("blocked_id")
-      .eq("blocker_id", currentUser.id);
-
-    if(blockedResult.error) throw blockedResult.error;
-
-    const blockedIds = new Set(
-      (blockedResult.data || []).map(item => item.blocked_id)
-    );
-
+    
     for(let i = mutualIds.length - 1; i >= 0; i--) {
-      if(blockedIds.has(mutualIds[i])) {
+      const { data: canInteract, error: checkError } = await db
+        .rpc("can_interact_with_member", {
+          target_user_id: mutualIds[i]
+        });
+
+      if(checkError) throw checkError;
+
+      if(canInteract !== true) {
         mutualIds.splice(i, 1);
       }
     }
+
 
     if(!mutualIds.length){
       status("matchesStatus","No mutual matches yet. Keep discovering members and sending likes.");

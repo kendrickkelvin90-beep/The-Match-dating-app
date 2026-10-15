@@ -282,6 +282,32 @@ display: block;
 font-size: 20px;
 margin-bottom: 4px;
 }
+/* Simple backgrounds for navigation pages */
+body:has(#matches:not(.hidden)),
+body:has(#likes:not(.hidden)),
+body:has(#memberProfilePage:not(.hidden)) {
+background: #000000;
+color: #ffffff;
+}
+
+body:has(#messages:not(.hidden)) {
+background: #202020;
+color: #ffffff;
+}
+
+body:has(#settings:not(.hidden)) {
+background: #242424;
+color: #ffffff;
+}
+
+/* Hide moving stars on these pages only */
+body:has(#matches:not(.hidden)) #stars,
+body:has(#messages:not(.hidden)) #stars,
+body:has(#likes:not(.hidden)) #stars,
+body:has(#settings:not(.hidden)) #stars,
+body:has(#memberProfilePage:not(.hidden)) #stars {
+display: none;
+}
 </style>
 </head>
 <body>

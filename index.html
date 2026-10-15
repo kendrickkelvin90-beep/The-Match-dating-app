@@ -1313,7 +1313,7 @@ const blockCheck=await db.from("member_blocks")
 .maybeSingle();
 
 if(blockCheck.error){
-status("messagesStatus","Could not check block status: "+friendly(blockCheck.error),true);
+status("chatPageStatus","Could not check block status: "+friendly(blockCheck.error),true);
 return;
 }
 

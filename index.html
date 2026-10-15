@@ -723,8 +723,22 @@ blockBtn.textContent="🚫 Block";
 blockBtn.style.margin="6px";
 blockBtn.onclick=async()=>{
   
-  let experience=prompt("Why do you want to block this member?\nType one option:\n1. Not vibing\n2. Uncomfortable\n3. Harassment\n4. Fake profile\n5. Something else");
+  
+  let experience=prompt("Why are you blocking this member?\n1. Not vibing\n2. Uncomfortable\n3. Harassment\n4. Fake profile\n5. Something else");
   if(!experience)return;
+  let reportToo=confirm("Would you also like to REPORT this member?");
+  let reportReason="";
+  let reportDetails="";
+  if(reportToo){
+    reportReason=prompt("What are you reporting this member for?\nExamples: harassment, scam, fake profile");
+    if(!reportReason||reportReason.trim().length<3){
+      status("discoverStatus","Please enter a report reason of at least 3 characters.",true);
+      return;
+    }
+    reportDetails=prompt("Any additional details? (Optional)")||"";
+  }
+
+  
 
   blockBtn.disabled=true;
   try{

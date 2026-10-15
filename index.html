@@ -1838,7 +1838,89 @@ async function openMemberProfile(memberId){
 
 $("backFromMemberProfile").onclick = () => show("matches");
  
-$("blockMemberButton").onclick = async () => {
+function showSafetyDialog(mode) {
+  return new Promise((resolve) => {
+    const dialog = $("safetyDialog");
+    const title = $("safetyDialogTitle");
+    const message = $("safetyDialogMessage");
+    const choices = $("safetyDialogChoices");
+    const reason = $("safetyDialogReason");
+    const details = $("safetyDialogDetails");
+    const submit = $("safetyDialogSubmit");
+    const cancel = $("safetyDialogCancel");
+
+    const options = [
+      "Comfortable",
+      "Not vibing",
+      "Uncomfortable",
+      "Harassment",
+      "Fake profile",
+      "Something else"
+    ];
+
+    title.textContent = mode === "block" ? "Block member" : "Report member";
+    message.textContent = "How do you feel about this member?";
+    choices.replaceChildren();
+
+    options.forEach((option, index) => {
+      const label = document.createElement("label");
+      const radio = document.createElement("input");
+      radio.type = "radio";
+      radio.name = "safetyExperience";
+      radio.value = option;
+      radio.style.marginRight = "8px";
+      label.style.margin = "10px 0";
+      label.append(radio, document.createTextNode(option));
+      choices.append(label);
+    });
+
+    reason.value = "";
+    details.value = "";
+    reason.placeholder = mode === "report"
+      ? "Why are you reporting this member?"
+      : "Optional details";
+    reason.previousElementSibling.textContent =
+      mode === "report" ? "Report reason" : "Reason";
+
+    const finish = (value) => {
+      dialog.classList.add("hidden");
+      submit.removeEventListener("click", onSubmit);
+      cancel.removeEventListener("click", onCancel);
+      resolve(value);
+    };
+
+    const onSubmit = () => {
+      const selected = dialog.querySelector(
+        'input[name="safetyExperience"]:checked'
+      );
+
+      if (!selected) {
+        message.textContent = "Please choose an option first.";
+        return;
+      }
+
+      if (mode === "report" &&
+          selected.value !== "Comfortable" &&
+          reason.value.trim().length < 3) {
+        message.textContent = "Please enter a reason of at least 3 characters.";
+        return;
+      }
+
+      finish({
+        experience: selected.value,
+        reason: reason.value.trim(),
+        details: details.value.trim()
+      });
+    };
+
+    const onCancel = () => finish(null);
+
+    submit.addEventListener("click", onSubmit);
+    cancel.addEventListener("click", onCancel);
+    dialog.classList.remove("hidden");
+  });
+  }
+  $("blockMemberButton").onclick = async () => {
   if(!selectedMemberId || !currentUser) return;
 
   const experience = prompt(

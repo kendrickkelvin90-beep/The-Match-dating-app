@@ -1810,11 +1810,37 @@ async function loadChatMessages(){
       empty.textContent = "No messages yet. Say hello!";
       chat.appendChild(empty);
     }else{
-      data.forEach(message=>{
-        const bubble = document.createElement("p");
-        bubble.textContent =
-          (message.sender_id===me ? "You: " : "Them: ") +
-          message.body;
+            data.forEach(message=>{
+        const mine=message.sender_id===me;
+        const bubble=document.createElement("div");
+        bubble.className=mine?"chat-bubble sent":"chat-bubble received";
+
+        Object.assign(bubble.style,{
+          maxWidth:"82%",
+          width:"fit-content",
+          padding:"10px 14px",
+          margin:"8px 0",
+          borderRadius:"16px",
+          background:mine?"#6d28d9":"#29212a",
+          color:"#ffffff",
+          alignSelf:mine?"flex-end":"flex-start",
+          overflowWrap:"anywhere"
+        });
+
+        const body=document.createElement("div");
+        body.textContent=message.body;
+
+        const timestamp=document.createElement("small");
+        timestamp.textContent=new Date(message.created_at).toLocaleTimeString([],{
+          hour:"2-digit",
+          minute:"2-digit"
+        });
+        timestamp.style.display="block";
+        timestamp.style.marginTop="5px";
+        timestamp.style.opacity="0.75";
+        timestamp.style.textAlign="right";
+
+        bubble.append(body,timestamp);
         chat.appendChild(bubble);
       });
     }

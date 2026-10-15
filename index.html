@@ -1293,21 +1293,20 @@ async function loadMyConversations(){
     }
 
    
-    const blockedResult=await db.from("member_blocks")
-      .select("blocked_id")
-      .eq("blocker_id",currentUser.id);
+    
+    for(let i = mutualIds.length - 1; i >= 0; i--) {
+      const { data: canInteract, error: checkError } = await db
+        .rpc("can_interact_with_member", {
+          target_user_id: mutualIds[i]
+        });
 
-    if(blockedResult.error)throw blockedResult.error;
+      if(checkError) throw checkError;
 
-    const blockedIds=new Set(
-      (blockedResult.data||[]).map(item=>item.blocked_id)
-    );
-
-    for(let i=mutualIds.length-1;i>=0;i--){
-      if(blockedIds.has(mutualIds[i])){
-        mutualIds.splice(i,1);
+      if(canInteract !== true) {
+        mutualIds.splice(i, 1);
       }
     }
+
 
     if(!mutualIds.length){
       status("messagesStatus","No conversations yet. You need a mutual match to chat.");

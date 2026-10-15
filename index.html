@@ -1426,7 +1426,7 @@ if(blockCheck.data){
   $("activeConversation").classList.add("hidden");
   $("chatMessages").replaceChildren();
   activeChatUserId=null;
-  status("messagesStatus","You cannot message someone you have blocked.",true);
+  status("chatPageStatus","You cannot message someone you have blocked.",true);
   return;
 }
     const {error} = await db

@@ -764,6 +764,13 @@ blockBtn.onclick=async()=>{
 
     
     card.remove();
+    if(activeChatUserId===p.id){
+  activeChatUserId=null;
+  $("activeConversation").classList.add("hidden");
+  $("chatMessages").replaceChildren();
+}
+
+await loadMyConversations();
     status("discoverStatus","Member blocked successfully.");
   }catch(e){
     status("discoverStatus","Could not block member: "+friendly(e),true);

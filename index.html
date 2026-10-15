@@ -1010,6 +1010,8 @@ function showMatchNotification(title, body, type) {
   }
 }
 
+ let notificationPollTimer = null;
+let notificationPolling = false; 
   async function showProfile(user){
 currentUser=user;
 let email=user.email||"";

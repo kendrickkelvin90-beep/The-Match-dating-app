@@ -1190,6 +1190,36 @@ $("blockMemberButton").onclick = async () => {
   }
 };
 
+$("reportMemberButton").onclick = async () => {
+  if(!selectedMemberId || !currentUser) return;
+
+  const reason = prompt(
+    "Why are you reporting this member?\nExamples: harassment, scam, fake profile"
+  );
+
+  if(!reason || reason.trim().length < 3) {
+    status("memberProfileStatus","Please enter a reason of at least 3 characters.",true);
+    return;
+  }
+
+  const details = prompt("Additional details (optional):") || "";
+
+  try {
+    const result = await db.from("member_reports").insert({
+      reporter_id: currentUser.id,
+      reported_user_id: selectedMemberId,
+      reason: reason.trim(),
+      details: details.trim() || null
+    });
+
+    if(result.error) throw result.error;
+
+    status("memberProfileStatus","Report submitted. Thank you for helping keep The Match safe.");
+  } catch(e) {
+    status("memberProfileStatus","Could not submit report: "+friendly(e),true);
+  }
+};
+
 $("messageMemberButton").onclick = async () => {
   if(!selectedMemberId) return;
 

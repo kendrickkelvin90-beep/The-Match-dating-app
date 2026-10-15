@@ -1445,6 +1445,10 @@ async function loadStories(){
       .limit(100);
 
     if(error)throw error;
+    createButton.style.display =
+  stories && stories.some(s => s.user_id === currentUser.id)
+    ? "none"
+    : "";
 
     if(!stories||stories.length===0){
       status("storiesStatus","No active stories yet. Be the first to share a moment.");

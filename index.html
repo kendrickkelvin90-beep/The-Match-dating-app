@@ -327,13 +327,33 @@ footer{text-align:center;padding:15px 12px 30px;color:#ad8e9b;font-size:11px;lin
   <button class="btn secondary" id="backFromMatches" type="button">Back to Discover</button>
 </section>
 
+
 <section class="panel hidden" id="messages">
-  <h2>💬 Your Messages</h2>
-  <p class="small">Your private conversations will appear here.</p>
-  <div id="messagesList"></div>
+  <h2>💬 Your Private Messages</h2>
+  <p class="small">Chat privately with your mutual matches.</p>
+
+  <div id="conversationList"></div>
+
+  <div id="activeConversation" class="hidden">
+    <h3 id="chatPartnerName">Conversation</h3>
+    <div id="chatMessages"></div>
+
+    <textarea id="chatMessageInput" maxlength="2000"
+      placeholder="Write your message..." rows="3"></textarea>
+
+    <button class="btn primary" id="sendChatMessage" type="button">
+      Send Message
+    </button>
+  </div>
+
   <p class="status" id="messagesStatus"></p>
-  <button class="btn secondary" id="backFromMessages" type="button">Back to Matches</button>
-</section></main>
+
+  <button class="btn secondary" id="backFromMessages" type="button">
+    Back to Matches
+  </button>
+</section>
+</main>
+
 <footer>The Match ❤️ — Find your kind of love.<br>Adults 18+ only · Respect · Consent · Kindness</footer>
 
 <script>

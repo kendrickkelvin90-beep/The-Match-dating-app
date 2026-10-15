@@ -212,7 +212,25 @@ footer{text-align:center;padding:15px 12px 30px;color:#ad8e9b;font-size:11px;lin
 <button class="btn secondary" id="logoutProfile" type="button">Log out</button>
 </section>
 
-<section class="panel hidden" id="discover">
+
+<section class="panel hidden" id="verificationPage">
+  <h2>Get Verified 🛡️</h2>
+  <p class="small">A verified profile helps build trust on The Match.</p>
+  <div class="member-card">
+    <h3>How verification works</h3>
+    <p class="small">1. Choose a clear selfie of yourself.</p>
+    <p class="small">2. Submit it privately for review.</p>
+    <p class="small">3. Your request will remain pending until reviewed.</p>
+    <p class="small">Your verification selfie is for review and is not a public profile photo.</p>
+    <label for="verificationSelfie">Choose your verification selfie</label>
+    <input id="verificationSelfie" type="file" accept="image/jpeg,image/png,image/webp">
+    <button class="btn primary" id="requestVerification" type="button">Submit for verification</button>
+    <p class="status" id="verificationStatus"></p>
+  </div>
+  <button class="btn secondary" id="backFromVerification" type="button">← Back to profile</button>
+</section>
+
+  <section class="panel hidden" id="discover">
 <h2>Nearby members ❤️</h2>
 <p class="small">Members who share their approximate location appear nearest first. Distances are estimates.</p>
 <button class="btn secondary" id="refreshNearby" type="button">Refresh nearby members</button>

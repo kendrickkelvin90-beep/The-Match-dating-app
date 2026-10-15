@@ -1545,10 +1545,13 @@ if (story.user_id === currentUser.id) {
           }
         };
 
+        
         overlay.append(
           mediaArea, heading, caption, time, counter,
-          viewersInfo, leftTap, rightTap
+          viewersInfo, leftTap, rightTap,
+          reactionBar, reactionStatus
         );
+
 
         document.body.appendChild(overlay);
 

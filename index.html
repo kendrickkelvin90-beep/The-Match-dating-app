@@ -618,6 +618,39 @@ margin-bottom: 4px;
 </section>
 
     <nav class="bottom-nav hidden" id="bottomNavigation">
+      <section class="panel hidden" id="settings">
+  <h2>⚙️ Settings</h2>
+  <p class="small">Manage your account, Premium membership, privacy and safety.</p>
+
+  <div class="member-card">
+    <h3>👤 Account</h3>
+    <button class="btn secondary" id="settingsEditProfile" type="button">Edit my profile</button>
+    <button class="btn secondary" id="settingsPasswordReset" type="button">Reset my password</button>
+    <button class="btn secondary" id="settingsLogout" type="button">Log out</button>
+  </div>
+
+  <div class="member-card">
+    <h3>⭐ The Match Premium</h3>
+    <p class="small">Review membership plans and check payment status.</p>
+    <button class="btn primary" id="settingsPremium" type="button">View Premium</button>
+    <button class="btn secondary" id="settingsPaymentStatus" type="button">Check payment status</button>
+  </div>
+
+  <div class="member-card">
+    <h3>🛡️ Privacy and safety</h3>
+    <p class="small">Location sharing is optional. Manage it from your profile.</p>
+    <button class="btn secondary" id="settingsPrivacyProfile" type="button">Profile and location settings</button>
+    <button class="btn secondary" id="settingsBlockedMembers" type="button">Blocked members</button>
+  </div>
+
+  <div class="member-card">
+    <h3>🤝 Help and respect</h3>
+    <p class="small">For adults 18+ only. Respect consent and other members' privacy. Report abusive behavior from a member's profile.</p>
+    <p class="small">Secure account deletion and notification preferences will be added later.</p>
+  </div>
+
+  <p class="status" id="settingsStatus" role="status"></p>
+      </section>
   <button type="button" data-page="discover" aria-label="Discover">
   <span class="nav-icon" aria-hidden="true">🧭</span>
   <span>Discover</span>

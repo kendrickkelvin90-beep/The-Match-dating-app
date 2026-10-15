@@ -408,7 +408,7 @@ margin-bottom: 4px;
     Refresh Likes
   </button>
 </section>
-  <!-- Fixed bottom navigation --><nav class="bottom-nav" id="bottomNavigation" aria-label="Main navigation">
+  <nav class="bottom-nav hidden" id="bottomNavigation"
   <button type="button" class="active" data-page="discover">
     <span class="nav-icon">🧭</span>
     Discover
@@ -450,6 +450,10 @@ const panels=["welcome","auth","reset","profile","verificationPage","discover","
 
 function show(id){
 panels.forEach(p=>$(p).classList.toggle("hidden",p!==id));
+  $("bottomNavigation").classList.toggle(
+  "hidden",
+  ["welcome","auth","reset"].includes(id)
+);
 window.scrollTo(0,0);
 }
 function status(id,msg,error){

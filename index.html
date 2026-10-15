@@ -1412,7 +1412,51 @@ $("backFromBlockedMembers").onclick=()=>{
   show("discover");
   loadNearby();
 };
- 
+ // Settings page actions
+$("settingsEditProfile").onclick=()=>{
+show("profile");
+};
+
+$("settingsPrivacyProfile").onclick=()=>{
+show("profile");
+};
+
+$("settingsPremium").onclick=()=>{
+show("premium");
+};
+
+$("settingsPaymentStatus").onclick=async()=>{
+show("premium");
+await $("refreshPremiumRequests").onclick();
+};
+
+$("settingsPasswordReset").onclick=()=>{
+if(!currentUser){
+show("welcome");
+return;
+}
+
+$("resetEmail").value=currentUser.email||"";
+$("resetForm").classList.remove("hidden");
+$("newPasswordForm").classList.add("hidden");
+status("resetStatus","");
+show("reset");
+};
+
+$("settingsBlockedMembers").onclick=async()=>{
+show("blockedMembers");
+await loadBlockedMembers();
+};
+
+$("settingsLogout").onclick=async()=>{
+if(!currentUser){
+show("welcome");
+return;
+}
+
+if(!confirm("Are you sure you want to log out?"))return;
+await logout();
+};
 $("bottomNavigation").querySelectorAll("button[data-page]").forEach(button=>{
   button.onclick=async()=>{
     const page=button.dataset.page;

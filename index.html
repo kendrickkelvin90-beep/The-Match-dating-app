@@ -2870,7 +2870,15 @@ $("voiceCallButton").onclick=()=>{
   status("chatPageStatus","Voice calling is not connected yet.");
 };
 
-$("videoCallButton").onclick=()=>{
+
+if (chatRefreshTimer) clearInterval(chatRefreshTimer);
+chatRefreshTimer = setInterval(() => {
+  if (activeChatUserId && !$("chatPage").classList.contains("hidden")) {
+    loadChatMessages();
+  }
+}, 3000);
+
+  $("videoCallButton").onclick=()=>{
   status("chatPageStatus","Video calling is not connected yet.");
 };
 status("chatPageStatus","Loading messages...");

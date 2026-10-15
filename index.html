@@ -599,7 +599,12 @@ card.appendChild(like);$("profileList").appendChild(card);
 }
 
 $("refreshNearby").onclick=loadNearby;
-  $("openMatches").onclick=()=>show("matches");
+  
+$("openMatches").onclick=async()=>{
+  show("matches");
+  await loadMyMatches();
+};
+
 $("openMessages").onclick=()=>show("messages");
 $("backFromMatches").onclick=()=>show("discover");
 $("backFromMessages").onclick=()=>show("matches");

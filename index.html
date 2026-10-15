@@ -245,6 +245,64 @@ footer{text-align:center;padding:15px 12px 30px;color:#ad8e9b;font-size:11px;lin
 <button class="btn secondary" id="editProfile" type="button">Edit my profile</button>
 <button class="btn secondary" id="logoutDiscover" type="button">Log out</button>
 </section>
+
+<section class="panel hidden" id="premium">
+  <h2>⭐ The Match Premium</h2>
+  <p class="small">Unlock a more exciting dating experience.</p>
+
+  <div class="member-card">
+    <h3>Monthly Premium</h3>
+    <p>₦3,000 / month</p>
+    <button class="btn primary" type="button"
+      onclick="document.getElementById('premiumPlan').value='monthly'; document.getElementById('premiumAmount').textContent='₦3,000';">
+      Choose Monthly
+    </button>
+  </div>
+
+  <div class="member-card">
+    <h3>Yearly Premium</h3>
+    <p>₦20,000 / year</p>
+    <button class="btn primary" type="button"
+      onclick="document.getElementById('premiumPlan').value='yearly'; document.getElementById('premiumAmount').textContent='₦20,000';">
+      Choose Yearly
+    </button>
+  </div>
+
+  <div class="member-card">
+    <h3>Manual Bank Transfer</h3>
+    <p>Network: MTN MoMo</p>
+    <p>Account name: JUSTICE TRUST UGOALA</p>
+    <p>Account number: 0896939533</p>
+    <p class="small">Transfer the amount for your selected plan, then submit your payment details. Premium will not activate until your payment is reviewed and approved.</p>
+  </div>
+
+  <form id="premiumPaymentForm">
+    <label for="premiumPlan">Selected plan</label>
+    <select id="premiumPlan" required>
+      <option value="">Choose a plan</option>
+      <option value="monthly">Monthly — ₦3,000</option>
+      <option value="yearly">Yearly — ₦20,000</option>
+    </select>
+
+    <p>Amount to transfer: <strong id="premiumAmount">Choose a plan above</strong></p>
+
+    <label for="premiumSender">Name used for transfer</label>
+    <input id="premiumSender" maxlength="120" required>
+
+    <label for="premiumReference">Transfer reference</label>
+    <input id="premiumReference" minlength="4" maxlength="120" required>
+
+    <button class="btn primary" id="submitPremiumPayment" type="submit">
+      Submit Payment for Review
+    </button>
+    <p class="status" id="premiumStatus"></p>
+  </form>
+
+  <button class="btn secondary" id="backFromPremium" type="button">
+    ← Back to profile
+  </button>
+</section>
+
 </main>
 <footer>The Match ❤️ — Find your kind of love.<br>Adults 18+ only · Respect · Consent · Kindness</footer>
 

@@ -1002,6 +1002,41 @@ if(current.user_id!==currentUser.id){
               console.warn("Could not record Story view:",viewError.message);
             }
 }
+                    viewersInfo.textContent="";
+          viewersInfo.style.display="none";
+
+          if(current.user_id===currentUser.id){
+            viewersInfo.style.display="block";
+            viewersInfo.textContent="Loading viewers...";
+
+            const {data:viewRows,error:viewsError}=await db
+              .from("story_views")
+              .select("viewer_id,viewed_at")
+              .eq("story_id",current.id)
+              .order("viewed_at",{ascending:false});
+
+            if(viewsError){
+              viewersInfo.textContent="Could not load Story viewers.";
+            }else if(!viewRows||viewRows.length===0){
+              viewersInfo.textContent="No views yet.";
+            }else{
+              const viewerIds=[...new Set(viewRows.map(v=>v.viewer_id))];
+              const {data:viewerProfiles,error:viewerProfilesError}=await db
+                .from("profiles")
+                .select("id,display_name")
+                .in("id",viewerIds);
+
+              if(viewerProfilesError){
+                viewersInfo.textContent="Views: "+viewerIds.length;
+              }else{
+                const viewerNames=new Map((viewerProfiles||[]).map(p=>[
+                  p.id,p.display_name||"The Match member"
+                ]));
+                viewersInfo.textContent="Viewed by ("+viewerIds.length+"): "+
+                  viewerIds.map(id=>viewerNames.get(id)||"The Match member").join(", ");
+              }
+            }
+          }
           if(current.media_url){
             const {data,error}=await db.storage
               .from("story-media")

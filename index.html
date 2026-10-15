@@ -252,7 +252,9 @@ const db=window.supabase.createClient(
 );
 const $=id=>document.getElementById(id);
 let loginMode=false,currentUser=null,approxLocation=null;
-const panels=["welcome","auth","reset","profile","discover"];
+
+const panels=["welcome","auth","reset","profile","verificationPage","discover"];
+
 
 function show(id){
 panels.forEach(p=>$(p).classList.toggle("hidden",p!==id));

@@ -1345,28 +1345,6 @@ $("conversationList").appendChild($("activeConversation"));
 $("activeConversation").classList.add("hidden");
 show("messages");
 };
-const blockCheck=await db.from("member_blocks")
-.select("id")
-.eq("blocker_id",currentUser.id)
-.eq("blocked_id",userId)
-.maybeSingle();
-
-if(blockCheck.error){
-status("messagesStatus","Could not check block status: "+friendly(blockCheck.error),true);
-return;
-}
-
-if(blockCheck.data){
-$("activeConversation").classList.add("hidden");
-status("messagesStatus","This conversation is unavailable because you blocked this member.");
-return;
-}
-
-activeChatUserId = userId;
-$("activeConversation").classList.remove("hidden");
-$("chatPartnerName").textContent = "Chat with " + userName;
-await loadChatMessages();
-}
 
 async function loadChatMessages(){
   if(!currentUser || !activeChatUserId)return;

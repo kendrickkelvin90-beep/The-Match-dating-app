@@ -2183,7 +2183,8 @@ $("sendChatMessage").onclick = async()=>{
 
 
     
-    const blockCheck = await db.rpc("can_interact_with_member", {
+  try{  
+  const blockCheck = await db.rpc("can_interact_with_member", {
       target_user_id: activeChatUserId
     });
 

@@ -1590,7 +1590,7 @@ async function loadLikesPage(){
         matchNote.textContent="You liked each other 💞";
         card.appendChild(matchNote);
       }else if(receivedPerson){
-        const likeBack=document.createElement("button");
+        }else if(receivedPerson&&!isPremium){
         likeBack.type="button";
         likeBack.className="btn primary";
         likeBack.textContent="Like Back ❤️";

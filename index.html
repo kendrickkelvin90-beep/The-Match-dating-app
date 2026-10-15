@@ -649,6 +649,17 @@ let r=await db.from("profiles")
 .neq("id",currentUser.id).limit(100);
 if(r.error)throw r.error;
 let people=r.data||[];
+  let blocked=await db.from("member_blocks")
+  .select("blocked_id")
+  .eq("blocker_id",currentUser.id);
+
+if(blocked.error)throw blocked.error;
+
+let blockedIds=new Set(
+  (blocked.data||[]).map(item=>item.blocked_id)
+);
+
+people=people.filter(person=>!blockedIds.has(person.id));
 if(approxLocation){
 people=people.map(p=>({...p,_distance:p.location_sharing&&p.latitude!=null&&p.longitude!=null
 ?kmBetween(approxLocation.latitude,approxLocation.longitude,p.latitude,p.longitude):null

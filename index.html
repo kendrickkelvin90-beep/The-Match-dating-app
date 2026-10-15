@@ -2815,6 +2815,12 @@ if(blockCheck.data !== true){
 
 activeChatUserId=userId;
 $("chatPageTitle").textContent=userName;
+  
+$("chatPageTitle").style.cursor = "pointer";
+$("chatPageTitle").onclick = () => {
+  if (activeChatUserId) openMemberProfile(activeChatUserId);
+};
+
 
 $("chatPartnerAvatar").src="";
 $("chatPartnerLocation").textContent="Location unavailable";

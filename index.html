@@ -1810,13 +1810,41 @@ async function loadMyConversations(){
 
     if(profileError)throw profileError;
 
+    
     (profiles||[]).forEach(p=>{
       const button=document.createElement("button");
       button.type="button";
       button.className="btn secondary";
-      button.textContent="💬 "+(p.display_name||"Member")+
-        (p.age?" · "+p.age:"")+
-        (p.city?" · "+p.city:"");
+      button.style.cssText="display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px;margin-bottom:8px;";
+
+      const avatar=document.createElement("img");
+      avatar.alt="";
+      avatar.style.cssText="width:48px;height:48px;border-radius:50%;object-fit:cover;background:#292929;";
+
+      const details=document.createElement("div");
+      details.style.cssText="display:flex;flex-direction:column;gap:4px;";
+
+      const name=document.createElement("strong");
+      name.textContent=p.display_name||"Member";
+
+      const age=document.createElement("span");
+      age.style.cssText="font-size:13px;opacity:.75;";
+      age.textContent=p.age ? String(p.age)+" years old" : "Age not provided";
+
+      details.append(name,age);
+      button.append(avatar,details);
+
+      db.from("profile_photos")
+        .select("storage_path")
+        .eq("user_id",p.id)
+        .order("position")
+        .limit(1)
+        .then(({data})=>{
+          if(data && data.length){
+            avatar.src=db.storage.from("profile-photos")
+              .getPublicUrl(data[0].storage_path).data.publicUrl;
+          }
+        });
 
       button.onclick=()=>{
         openChat(p.id,p.display_name||"Member");
@@ -1824,6 +1852,7 @@ async function loadMyConversations(){
 
       list.appendChild(button);
     });
+
 
     status("messagesStatus","Choose a mutual match to open your conversation.");
   }catch(e){

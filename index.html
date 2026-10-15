@@ -695,7 +695,57 @@ like.textContent="Liked ❤️";
 status("discoverStatus","Like sent successfully! If you both like each other, you'll become a match and can chat privately.");
 }
 };
-card.appendChild(like);$("profileList").appendChild(card);
+card.appendChild(like);
+
+let blockBtn=document.createElement("button");
+blockBtn.className="btn";
+blockBtn.textContent="🚫 Block";
+blockBtn.style.margin="6px";
+blockBtn.onclick=async()=>{
+  if(!confirm("Block "+(p.display_name||"this member")+"? They will be removed from Discover."))return;
+  blockBtn.disabled=true;
+  try{
+    let result=await db.from("member_blocks").insert({
+      blocker_id:currentUser.id,
+      blocked_id:p.id
+    });
+    if(result.error)throw result.error;
+    card.remove();
+    status("discoverStatus","Member blocked successfully.");
+  }catch(e){
+    status("discoverStatus","Could not block member: "+friendly(e),true);
+    blockBtn.disabled=false;
+  }
+};
+card.appendChild(blockBtn);
+
+let reportBtn=document.createElement("button");
+reportBtn.className="btn";
+reportBtn.textContent="⚑ Report";
+reportBtn.style.margin="6px";
+reportBtn.onclick=async()=>{
+  let reason=prompt("Why are you reporting this member? (e.g. harassment, fake profile, scam)");
+  if(!reason||reason.trim().length<3){
+    status("discoverStatus","Please enter a reason of at least 3 characters.",true);
+    return;
+  }
+  let details=prompt("Additional details (optional):")||"";
+  try{
+    let result=await db.from("member_reports").insert({
+      reporter_id:currentUser.id,
+      reported_user_id:p.id,
+      reason:reason.trim(),
+      details:details.trim()||null
+    });
+    if(result.error)throw result.error;
+    status("discoverStatus","Report submitted. Thank you for helping keep The Match safe.");
+  }catch(e){
+    status("discoverStatus","Could not submit report: "+friendly(e),true);
+  }
+};
+card.appendChild(reportBtn);
+
+$("profileList").appendChild(card);
 });
 }catch(e){status("discoverStatus","Could not load members: "+friendly(e),true);}
 }

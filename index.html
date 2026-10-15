@@ -91,6 +91,46 @@ label{display:block;margin-top:14px;font-size:13px}
 .distance{color:#ff8da8;font-weight:bold;font-size:13px}
 footer{text-align:center;padding:15px 12px 30px;color:#ad8e9b;font-size:11px;line-height:1.8}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important}}
+/* The Match fixed bottom navigation */
+body {
+padding-bottom: 90px;
+}
+
+.bottom-nav {
+position: fixed;
+bottom: 0;
+left: 0;
+right: 0;
+z-index: 1000;
+display: flex;
+justify-content: space-around;
+align-items: center;
+padding: 10px 4px calc(10px + env(safe-area-inset-bottom));
+background: #180b13;
+border-top: 1px solid #673047;
+}
+
+.bottom-nav button {
+flex: 1;
+border: 0;
+background: transparent;
+color: #d2b3bf;
+font-size: 11px;
+padding: 8px 2px;
+border-radius: 10px;
+}
+
+.bottom-nav button.active {
+color: #ff416d;
+background: #351020;
+font-weight: bold;
+}
+
+.bottom-nav .nav-icon {
+display: block;
+font-size: 20px;
+margin-bottom: 4px;
+}
 </style>
 </head>
 <body>

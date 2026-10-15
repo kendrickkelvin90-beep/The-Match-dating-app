@@ -1168,88 +1168,259 @@ show("discover");
 finally{b.disabled=false;}
 };
 
+
 async function loadNearby(){
-if(!currentUser)return;
-status("discoverStatus","Finding members...");
-$("profileList").replaceChildren();
-try{
-let r=await db.from("profiles")
+  if(!currentUser)return;
 
-.select("id,display_name,age,gender_identity,city,bio,latitude,longitude,location_sharing,sexual_roles")
+  const list=$("profileList");
+  list.replaceChildren();
+  status("discoverStatus","Finding members...");
 
-.neq("id",currentUser.id).limit(100);
-if(r.error)throw r.error;
-let people=r.data||[];
-  
-    for(let i = people.length - 1; i >= 0; i--) {
-      const { data: canInteract, error: checkError } = await db
-        .rpc("can_interact_with_member", {
-          target_user_id: people[i].id
-        });
+  try{
+    const {data:membership,error:premiumError}=await db
+      .from("premium_memberships")
+      .select("premium_until")
+      .eq("user_id",currentUser.id)
+      .maybeSingle();
 
-      if(checkError) throw checkError;
+    if(premiumError)throw premiumError;
 
-      if(canInteract !== true) {
-        people.splice(i, 1);
-      }
+    const isPremium=!!membership &&
+      new Date(membership.premium_until).getTime()>Date.now();
+
+    if(!isPremium){
+      const message=document.createElement("div");
+      message.className="member-card";
+      const title=document.createElement("h2");
+      title.textContent="⭐ Premium Nearby";
+      const note=document.createElement("p");
+      note.className="small";
+      note.textContent="Upgrade to Premium to discover members closest to your location.";
+      const upgrade=document.createElement("button");
+      upgrade.className="btn primary";
+      upgrade.textContent="Go Premium";
+      upgrade.onclick=()=>show("premium");
+      message.append(title,note,upgrade);
+      list.appendChild(message);
+      status("discoverStatus","Nearby discovery is a Premium feature.");
+      return;
     }
 
-if(approxLocation){
-people=people.map(p=>({...p,_distance:p.location_sharing&&p.latitude!=null&&p.longitude!=null
-?kmBetween(approxLocation.latitude,approxLocation.longitude,p.latitude,p.longitude):null
-})).sort((a,b)=>a._distance==null?1:b._distance==null?-1:a._distance-b._distance);
+    const {data:peopleData,error}=await db.from("profiles")
+      .select("id,display_name,age,gender_identity,city,bio,latitude,longitude,location_sharing,sexual_roles")
+      .neq("id",currentUser.id)
+      .limit(100);
+
+    if(error)throw error;
+
+    let people=peopleData||[];
+
+    for(let i=people.length-1;i>=0;i--){
+      const {data:canInteract,error:checkError}=await db.rpc(
+        "can_interact_with_member",
+        {target_user_id:people[i].id}
+      );
+      if(checkError)throw checkError;
+      if(canInteract!==true)people.splice(i,1);
+    }
+
+    if(approxLocation){
+      people=people.map(p=>({...p,_distance:
+        p.location_sharing&&p.latitude!=null&&p.longitude!=null
+          ?kmBetween(approxLocation.latitude,approxLocation.longitude,p.latitude,p.longitude)
+          :null
+      })).sort((a,b)=>a._distance==null?1:b._distance==null?-1:a._distance-b._distance);
+    }
+
+    const {data:myLikes,error:myLikesError}=await db.from("likes")
+      .select("liked_id").eq("liker_id",currentUser.id);
+    if(myLikesError)throw myLikesError;
+
+    const alreadyLiked=new Set((myLikes||[]).map(x=>x.liked_id));
+    people=people.filter(p=>!alreadyLiked.has(p.id));
+
+    if(!people.length){
+      status("discoverStatus","No new profiles to show right now.");
+      return;
+    }
+
+    let personIndex=0;
+
+    async function showPerson(){
+      list.replaceChildren();
+
+      if(personIndex>=people.length){
+        status("discoverStatus","You've seen all available profiles. Refresh to check again.");
+        return;
+      }
+
+      const p=people[personIndex];
+      const card=document.createElement("div");
+      card.className="member-card";
+      card.style.cssText="max-width:520px;margin:14px auto;padding:16px;border-radius:20px;touch-action:pan-y;";
+
+      const photoBox=document.createElement("div");
+      photoBox.style.cssText="position:relative;width:100%;height:min(58vh,520px);min-height:260px;background:#171717;border-radius:16px;overflow:hidden;";
+
+      const photo=document.createElement("img");
+      photo.alt="Profile photo";
+      photo.style.cssText="width:100%;height:100%;object-fit:cover;display:none;";
+      photoBox.appendChild(photo);
+
+      const photoCount=document.createElement("div");
+      photoCount.style.cssText="position:absolute;top:10px;right:10px;background:#000a;color:white;padding:6px 10px;border-radius:20px;font-size:12px;";
+      photoCount.textContent="Loading photos...";
+      photoBox.appendChild(photoCount);
+
+      let photoIndex=0;
+      let photoUrls=[];
+
+      const {data:photos,error:photosError}=await db.from("profile_photos")
+        .select("storage_path").eq("user_id",p.id).order("position");
+
+      if(photosError)throw photosError;
+
+      photoUrls=(photos||[]).map(item=>
+        db.storage.from("profile-photos").getPublicUrl(item.storage_path).data.publicUrl
+      );
+
+      if(photoUrls.length){
+        photo.src=photoUrls[0];
+        photo.style.display="block";
+        photoCount.textContent="1 / "+photoUrls.length;
+      }else{
+        photoCount.textContent="No photos";
+      }
+
+      const previous=document.createElement("button");
+      previous.type="button";
+      previous.textContent="‹";
+      previous.style.cssText="position:absolute;left:8px;top:45%;font-size:30px;border:0;border-radius:50%;background:#0009;color:white;width:42px;height:42px;";
+      previous.onclick=()=>{
+        if(photoUrls.length){
+          photoIndex=(photoIndex-1+photoUrls.length)%photoUrls.length;
+          photo.src=photoUrls[photoIndex];
+          photoCount.textContent=(photoIndex+1)+" / "+photoUrls.length;
+        }
+      };
+
+      const nextPhoto=document.createElement("button");
+      nextPhoto.type="button";
+      nextPhoto.textContent="›";
+      nextPhoto.style.cssText="position:absolute;right:8px;top:45%;font-size:30px;border:0;border-radius:50%;background:#0009;color:white;width:42px;height:42px;";
+      nextPhoto.onclick=()=>{
+        if(photoUrls.length){
+          photoIndex=(photoIndex+1)%photoUrls.length;
+          photo.src=photoUrls[photoIndex];
+          photoCount.textContent=(photoIndex+1)+" / "+photoUrls.length;
+        }
+      };
+
+      photoBox.append(previous,nextPhoto);
+      card.appendChild(photoBox);
+
+      const name=document.createElement("h2");
+      name.textContent=p.display_name||"The Match member";
+      card.appendChild(name);
+
+      const distance=document.createElement("div");
+      distance.className="distance";
+      distance.textContent=p._distance==null?"Distance unavailable":distanceLabel(p._distance);
+      card.appendChild(distance);
+
+      const details=document.createElement("p");
+      details.className="small";
+      details.textContent=[p.age?String(p.age):"",p.gender_identity||"",p.city||""].filter(Boolean).join(" · ");
+      card.appendChild(details);
+
+      if(Array.isArray(p.sexual_roles)&&p.sexual_roles.length){
+        const roles=document.createElement("p");
+        roles.className="small";
+        roles.textContent="🏳️‍🌈 Role: "+p.sexual_roles.join(", ");
+        card.appendChild(roles);
+      }
+
+      if(p.bio){
+        const bio=document.createElement("p");
+        bio.className="small";
+        bio.textContent=p.bio;
+        card.appendChild(bio);
+      }
+
+      const actions=document.createElement("div");
+      actions.style.cssText="display:flex;gap:12px;margin-top:14px;";
+
+      const pass=document.createElement("button");
+      pass.className="btn secondary";
+      pass.textContent="✖ Pass";
+      pass.style.flex="1";
+      pass.onclick=async()=>{
+        personIndex++;
+        await showPerson();
+      };
+
+      const like=document.createElement("button");
+      like.className="btn primary";
+      like.textContent="❤️ Like";
+      like.style.flex="1";
+      like.onclick=async()=>{
+        like.disabled=true;
+        pass.disabled=true;
+        const {error:likeError}=await db.from("likes").insert({
+          liker_id:currentUser.id,
+          liked_id:p.id
+        });
+
+        if(likeError){
+          status("discoverStatus",
+            /DAILY_LIKE_LIMIT/i.test(likeError.message)
+              ?"You've used your 10 free likes for today. Go Premium to keep liking."
+              :/duplicate/i.test(likeError.message)
+                ?"You've already liked this member."
+                :"Couldn't send like: "+friendly(likeError),true);
+          like.disabled=false;
+          pass.disabled=false;
+          return;
+        }
+
+        status("discoverStatus","Like sent successfully! ❤️");
+        personIndex++;
+        await showPerson();
+      };
+
+      actions.append(pass,like);
+      card.appendChild(actions);
+      list.appendChild(card);
+
+      let startX=0;
+      let startY=0;
+      card.addEventListener("touchstart",event=>{
+        startX=event.changedTouches[0].clientX;
+        startY=event.changedTouches[0].clientY;
+      },{passive:true});
+
+      card.addEventListener("touchend",async event=>{
+        const dx=event.changedTouches[0].clientX-startX;
+        const dy=event.changedTouches[0].clientY-startY;
+        if(Math.abs(dx)<90||Math.abs(dx)<Math.abs(dy))return;
+        if(dx<0){
+          personIndex++;
+          await showPerson();
+        }else{
+          like.click();
+        }
+      },{passive:true});
+    }
+
+    status("discoverStatus","Swipe right to like ❤️ or left to pass ✖. Tap the photo arrows to view more pictures.");
+    await showPerson();
+
+  }catch(e){
+    status("discoverStatus","Could not load members: "+friendly(e),true);
+  }
 }
-if(!people.length){
-status("discoverStatus","No other profiles yet. Invite people to join The Match.");
-return;
-}
-status("discoverStatus",approxLocation
-?"Nearest profiles with shared locations appear first."
-:"Enable location in Edit my profile to see approximate distances.");
-people.forEach(p=>{
-let card=document.createElement("div");card.className="member-card";
-let name=document.createElement("h2");name.textContent=p.display_name||"The Match member";card.appendChild(name);
-let d=document.createElement("div");d.className="distance";
-d.textContent=p._distance==null?"Distance unavailable":distanceLabel(p._distance);
-card.appendChild(d);
-let detail=document.createElement("p");detail.className="small";
-detail.textContent=[p.age?String(p.age):"",p.gender_identity||"",p.city||""].filter(Boolean).join(" · ");
-card.appendChild(detail);
-  
-if(Array.isArray(p.sexual_roles)&&p.sexual_roles.length){
-  let roles=document.createElement("p");
-  roles.className="small";
-  roles.textContent="🏳️‍🌈 Role: "+p.sexual_roles.join(", ");
-  card.appendChild(roles);
-}
-
-if(p.bio){
-let bio=document.createElement("p");bio.className="small";bio.textContent=p.bio;card.appendChild(bio);
-}
-let like=document.createElement("button");like.className="btn primary";like.textContent="❤️ Like";
-like.onclick=async()=>{
-like.disabled=true;
-let lr=await db.from("likes").insert({liker_id:currentUser.id,liked_id:p.id});
-if(lr.error){
-
-status("discoverStatus",/DAILY_LIKE_LIMIT/i.test(lr.error.message)?"You've used your 10 free likes for today. Go Premium to keep liking.":/duplicate/i.test(lr.error.message)?"You've already liked this member.":"Couldn't send like: "+friendly(lr.error),true);
-
-like.disabled=false;
-}else{
-like.textContent="Liked ❤️";
-status("discoverStatus","Like sent successfully! If you both like each other, you'll become a match and can chat privately.");
-}
-};
-card.appendChild(like);
 
 
-
-
-
-$("profileList").appendChild(card);
-});
-}catch(e){status("discoverStatus","Could not load members: "+friendly(e),true);}
-}
 
 $("refreshNearby").onclick=loadNearby;
  

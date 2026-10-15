@@ -981,7 +981,24 @@ async function loadStories(){
           next.disabled=index===memberStories.length-1;
 
           const current=memberStories[index];
+if(current.user_id!==currentUser.id){
+            const {error:viewError}=await db
+              .from("story_views")
+              .upsert(
+                {
+                  story_id:current.id,
+                  viewer_id:currentUser.id
+                },
+                {
+                  onConflict:"story_id,viewer_id",
+                  ignoreDuplicates:true
+                }
+              );
 
+            if(viewError){
+              console.warn("Could not record Story view:",viewError.message);
+            }
+}
           if(current.media_url){
             const {data,error}=await db.storage
               .from("story-media")

@@ -2793,4 +2793,22 @@ init();
 </body>
 </html>
 
+<!-- The Match in-app safety dialog -->
+<div id="safetyDialog" class="safety-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="safetyDialogTitle">
+  <div class="safety-dialog-card">
+    <h2 id="safetyDialogTitle">Member safety</h2>
+    <p id="safetyDialogMessage">Please tell us about your experience.</p>
+    <div id="safetyDialogChoices"></div>
+    <label for="safetyDialogReason">Reason</label>
+    <textarea id="safetyDialogReason" rows="3" placeholder="Tell us what happened..."></textarea>
+    <label for="safetyDialogDetails">Additional details (optional)</label>
+    <textarea id="safetyDialogDetails" rows="2" placeholder="Add details if needed..."></textarea>
+    <div class="safety-dialog-actions">
+      <button type="button" id="safetyDialogCancel">Cancel</button>
+      <button type="button" id="safetyDialogSubmit">Continue</button>
+    </div>
+  </div>
+</div>
+
+
 

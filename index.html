@@ -1966,59 +1966,42 @@ function showSafetyDialog(mode) {
 
 
 $("reportMemberButton").onclick = async () => {
-  if(!selectedMemberId || !currentUser) return;
+  if (!selectedMemberId || !currentUser) return;
 
-  const experience = prompt(
-    "How do you feel about this member?\n1. Comfortable\n2. Not vibing\n3. Uncomfortable\n4. Harassment\n5. Fake profile\n6. Something else\n\nEnter 1 to 6:"
-  );
+  const memberId = selectedMemberId;
+  const answer = await showSafetyDialog("report");
 
-  if(!experience) return;
+  if (!answer) return;
 
-  const reasons = {
-    "1":"Comfortable",
-    "2":"Not vibing",
-    "3":"Uncomfortable",
-    "4":"Harassment",
-    "5":"Fake profile",
-    "6":"Something else"
-  };
-
-  const feeling = reasons[experience.trim()];
-
-  if(!feeling) {
-    status("memberProfileStatus","Please choose a number from 1 to 6.",true);
+  if (answer.experience === "Comfortable") {
+    status(
+      "memberProfileStatus",
+      "You can continue using this member's profile.",
+      false
+    );
     return;
   }
-
-  if(feeling === "Comfortable") {
-    status("memberProfileStatus","You can continue using this member's profile.",false);
-    return;
-  }
-
-  const reason = prompt(
-    "Why are you reporting this member? Your experience was: " + feeling
-  );
-
-  if(!reason || reason.trim().length < 3) {
-    status("memberProfileStatus","Please enter a report reason of at least 3 characters.",true);
-    return;
-  }
-
-  const details = prompt("Additional details (optional):") || "";
 
   try {
     const result = await db.from("member_reports").insert({
       reporter_id: currentUser.id,
-      reported_user_id: selectedMemberId,
-      reason: feeling + ": " + reason.trim(),
-      details: details.trim() || null
+      reported_user_id: memberId,
+      reason: answer.experience + ": " + answer.reason,
+      details: answer.details || null
     });
 
-    if(result.error) throw result.error;
+    if (result.error) throw result.error;
 
-    status("memberProfileStatus","Report submitted. Thank you for helping keep The Match safe.");
-  } catch(e) {
-    status("memberProfileStatus","Could not submit report: "+friendly(e),true);
+    status(
+      "memberProfileStatus",
+      "Report submitted. Thank you for helping keep The Match safe."
+    );
+  } catch (e) {
+    status(
+      "memberProfileStatus",
+      "Could not submit report: " + friendly(e),
+      true
+    );
   }
 };
 

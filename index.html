@@ -2863,11 +2863,6 @@ show("chatPage");
   $("backFromChatPage").click();
 };
 
-$("voiceCallButton").onclick=()=>{
-  status("chatPageStatus","Voice calling is not connected yet.");
-};
-
-
 if (chatRefreshTimer) clearInterval(chatRefreshTimer);
 chatRefreshTimer = setInterval(() => {
   if (activeChatUserId && !$("chatPage").classList.contains("hidden")) {

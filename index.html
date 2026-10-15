@@ -1351,7 +1351,46 @@ async function loadStories(){
           fontWeight: "600",
           textShadow: "0 1px 5px #000"
         });
+        const discardStoryButton = document.createElement("button");
+discardStoryButton.type = "button";
+discardStoryButton.textContent = "Discard Story";
+discardStoryButton.style.cssText =
+  "position:absolute;top:max(12px,env(safe-area-inset-top));right:12px;z-index:5;padding:9px 12px;border:0;border-radius:18px;background:#b91c1c;color:white;font-weight:600;";
 
+if (story.user_id === currentUser.id) {
+  discardStoryButton.onclick = async () => {
+    const current = memberStories[index];
+    if (!current || current.user_id !== currentUser.id) return;
+    if (!confirm("Discard this story? This cannot be undone.")) return;
+
+    discardStoryButton.disabled = true;
+    try {
+      const { error } = await db
+        .from("stories")
+        .delete()
+        .eq("id", current.id)
+        .eq("user_id", currentUser.id);
+
+      if (error) throw error;
+
+      if (current.media_url) {
+        const { error: removeError } = await db.storage
+          .from("story-media")
+          .remove([current.media_url]);
+        if (removeError) console.warn(removeError.message);
+      }
+
+      closeStory();
+      await loadStories();
+      status("storiesStatus", "Story discarded.");
+    } catch (e) {
+      status("storiesStatus", "Could not discard story: " + friendly(e), true);
+      discardStoryButton.disabled = false;
+    }
+  };
+
+  overlay.appendChild(discardStoryButton);
+}
         const mediaArea = document.createElement("div");
         Object.assign(mediaArea.style, {
           position: "absolute",

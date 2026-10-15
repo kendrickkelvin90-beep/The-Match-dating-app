@@ -1,0 +1,14 @@
+
+{
+  "id": "/",
+  "name": "The Match",
+  "short_name": "Match",
+  "description": "Meet people and make meaningful connections.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#10070c",
+  "theme_color": "#10070c",
+  "categories": ["social", "lifestyle"]
+}

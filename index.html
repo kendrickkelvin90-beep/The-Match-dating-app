@@ -1859,6 +1859,17 @@ chatContent.appendChild($("activeConversation"));
 $("activeConversation").classList.remove("hidden");
 
 show("chatPage");
+  $("backFromChatHeader").onclick=()=>{
+  $("backFromChatPage").click();
+};
+
+$("voiceCallButton").onclick=()=>{
+  status("chatPageStatus","Voice calling is not connected yet.");
+};
+
+$("videoCallButton").onclick=()=>{
+  status("chatPageStatus","Video calling is not connected yet.");
+};
 status("chatPageStatus","Loading messages...");
 
 try{

@@ -1486,9 +1486,14 @@ async function loadStories(){
       button.append(avatar,label);
 
       button.onclick=async()=>{
-        const memberStories=stories
-          .filter(s=>s.user_id===story.user_id)
-          .sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+        const memberStories = stories
+  .filter(s =>
+    s.user_id === story.user_id &&
+    s.story_group_id === story.story_group_id
+  )
+  .sort((a, b) =>
+    new Date(a.created_at) - new Date(b.created_at)
+  );
 
         
         let index = 0;

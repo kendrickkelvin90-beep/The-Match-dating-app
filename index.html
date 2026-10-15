@@ -2896,7 +2896,18 @@ status("chatPageStatus","Could not load messages: "+friendly(e),true);
 
 $("backFromChatPage").onclick=()=>{
 $("conversationList").appendChild($("activeConversation"));
-$("activeConversation").classList.add("hidden");
+  
+$("backFromChatPage").onclick = () => {
+  if (chatRefreshTimer) {
+    clearInterval(chatRefreshTimer);
+    chatRefreshTimer = null;
+  }
+
+  $("conversationList").appendChild($("activeConversation"));
+  $("activeConversation").classList.add("hidden");
+  show("messages");
+};
+
 show("messages");
 };
 

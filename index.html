@@ -739,19 +739,7 @@ if(!experience){
 status("discoverStatus","Please choose a number from 1 to 6.",true);
 return;
 }
-if(!experience)return;
-const blockReasons={
-"1":"Not vibing",
-"2":"Uncomfortable",
-"3":"Harassment",
-"4":"Fake profile",
-"5":"Something else"
-};
-experience=blockReasons[experience.trim()];
-if(!experience){
-status("discoverStatus","Please choose a number from 1 to 5.",true);
-return;
-}
+
   
   let reportToo=confirm("Would you also like to REPORT this member?");
   let reportReason="";

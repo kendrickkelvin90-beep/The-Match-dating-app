@@ -1088,15 +1088,43 @@ $("blockMemberButton").onclick = async () => {
   }
 };
 
+
 $("reportMemberButton").onclick = async () => {
   if(!selectedMemberId || !currentUser) return;
 
+  const experience = prompt(
+    "How do you feel about this member?\n1. Comfortable\n2. Not vibing\n3. Uncomfortable\n4. Harassment\n5. Fake profile\n6. Something else\n\nEnter 1 to 6:"
+  );
+
+  if(!experience) return;
+
+  const reasons = {
+    "1":"Comfortable",
+    "2":"Not vibing",
+    "3":"Uncomfortable",
+    "4":"Harassment",
+    "5":"Fake profile",
+    "6":"Something else"
+  };
+
+  const feeling = reasons[experience.trim()];
+
+  if(!feeling) {
+    status("memberProfileStatus","Please choose a number from 1 to 6.",true);
+    return;
+  }
+
+  if(feeling === "Comfortable") {
+    status("memberProfileStatus","You can continue using this member's profile.",false);
+    return;
+  }
+
   const reason = prompt(
-    "Why are you reporting this member?\nExamples: harassment, scam, fake profile"
+    "Why are you reporting this member? Your experience was: " + feeling
   );
 
   if(!reason || reason.trim().length < 3) {
-    status("memberProfileStatus","Please enter a reason of at least 3 characters.",true);
+    status("memberProfileStatus","Please enter a report reason of at least 3 characters.",true);
     return;
   }
 
@@ -1106,7 +1134,7 @@ $("reportMemberButton").onclick = async () => {
     const result = await db.from("member_reports").insert({
       reporter_id: currentUser.id,
       reported_user_id: selectedMemberId,
-      reason: reason.trim(),
+      reason: feeling + ": " + reason.trim(),
       details: details.trim() || null
     });
 
@@ -1117,6 +1145,7 @@ $("reportMemberButton").onclick = async () => {
     status("memberProfileStatus","Could not submit report: "+friendly(e),true);
   }
 };
+
 
 $("messageMemberButton").onclick = async () => {
   if(!selectedMemberId) return;

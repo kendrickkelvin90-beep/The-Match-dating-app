@@ -994,6 +994,93 @@ $("createStoryButton").onclick=async()=>{
   }
 };
 
+$("uploadStoryButton").onclick=()=>{
+  if(!currentUser){
+    status("storiesStatus","Please sign in to post a story.",true);
+    return;
+  }
+  $("storyMediaFile").click();
+};
+
+$("storyMediaFile").onchange=async()=>{
+  const input=$("storyMediaFile");
+  const file=input.files&&input.files[0];
+  if(!file)return;
+
+  const allowedTypes=[
+    "image/jpeg","image/png","image/webp",
+    "video/mp4","video/webm"
+  ];
+
+  if(!allowedTypes.includes(file.type)){
+    status("storiesStatus","Choose a JPG, PNG, WebP, MP4 or WebM file.",true);
+    input.value="";
+    return;
+  }
+
+  if(file.size>50*1024*1024){
+    status("storiesStatus","Your file must be 50 MB or smaller.",true);
+    input.value="";
+    return;
+  }
+
+  const caption=prompt("Add a caption (optional, maximum 500 characters):");
+  if(caption===null){
+    input.value="";
+    return;
+  }
+
+  const text=caption.trim();
+  if(text.length>500){
+    status("storiesStatus","Captions can contain up to 500 characters.",true);
+    input.value="";
+    return;
+  }
+
+  const button=$("uploadStoryButton");
+  button.disabled=true;
+  status("storiesStatus","Uploading your Story...");
+
+  let path=null;
+
+  try{
+    const extension=file.name.includes(".")
+      ?file.name.split(".").pop().toLowerCase()
+      :"bin";
+
+    path=currentUser.id+"/"+crypto.randomUUID()+"."+extension;
+
+    const {error:uploadError}=await db.storage
+      .from("story-media")
+      .upload(path,file,{
+        contentType:file.type,
+        upsert:false
+      });
+
+    if(uploadError)throw uploadError;
+
+    const {error:insertError}=await db.from("stories").insert({
+      user_id:currentUser.id,
+      media_url:path,
+      media_type:file.type.startsWith("video/")?"video":"image",
+      caption:text
+    });
+
+    if(insertError)throw insertError;
+
+    status("storiesStatus","Your photo/video Story is live for 24 hours.");
+    await loadStories();
+  }catch(e){
+    if(path){
+      await db.storage.from("story-media").remove([path]);
+    }
+    status("storiesStatus","Could not upload Story: "+friendly(e),true);
+  }finally{
+    button.disabled=false;
+    input.value="";
+  }
+};
+
 async function loadBlockedMembers(){
   if(!currentUser)return;
 

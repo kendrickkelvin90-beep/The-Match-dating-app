@@ -308,6 +308,22 @@ body:has(#settings:not(.hidden)) #stars,
 body:has(#memberProfilePage:not(.hidden)) #stars {
 display: none;
 }
+
+/* Show the welcome heart and slogan only on the Discover page */
+body:has(#discover:not(.hidden)) .hero {
+  display: block;
+}
+
+body:has(#matches:not(.hidden)) .hero,
+body:has(#likes:not(.hidden)) .hero,
+body:has(#messages:not(.hidden)) .hero,
+body:has(#settings:not(.hidden)) .hero,
+body:has(#memberProfilePage:not(.hidden)) .hero,
+body:has(#chatPage:not(.hidden)) .hero,
+body:has(#profile:not(.hidden)) .hero {
+  display: none;
+}
+
 </style>
 </head>
 <body>

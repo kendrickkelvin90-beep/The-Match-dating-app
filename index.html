@@ -1010,7 +1010,89 @@ function showMatchNotification(title, body, type) {
   }
 }
 
- let notificationPollTimer = null;
+
+let notificationBaselineReady = false;
+
+async function checkMatchNotifications() {
+  if (!currentUser || notificationPolling) return;
+
+  notificationPolling = true;
+
+  try {
+    const me = currentUser.id;
+
+    const [likesResult, messagesResult] = await Promise.all([
+      db.from("likes")
+        .select("liker_id")
+        .eq("liked_id", me),
+
+      db.from("messages")
+        .select("id,sender_id,receiver_id,body,created_at")
+        .eq("receiver_id", me)
+        .order("created_at", { ascending: false })
+        .limit(50)
+    ]);
+
+    if (likesResult.error) throw likesResult.error;
+    if (messagesResult.error) throw messagesResult.error;
+
+    const newLikes = likesResult.data || [];
+    const newMessages = messagesResult.data || [];
+
+    if (!notificationBaselineReady) {
+      knownReceivedLikes = new Set(
+        newLikes.map(item => item.liker_id)
+      );
+
+      knownReceivedMessageIds = new Set(
+        newMessages.map(item => item.id)
+      );
+
+      notificationBaselineReady = true;
+      return;
+    }
+
+    for (const item of newLikes) {
+      if (!knownReceivedLikes.has(item.liker_id)) {
+        showMatchNotification(
+          "New like ❤️",
+          "Someone likes you on The Match!",
+          "like"
+        );
+      }
+    }
+
+    knownReceivedLikes = new Set(
+      newLikes.map(item => item.liker_id)
+    );
+
+    for (const message of newMessages) {
+      if (!knownReceivedMessageIds.has(message.id)) {
+        if (
+          document.visibilityState === "hidden" ||
+          activeChatUserId !== message.sender_id
+        ) {
+          showMatchNotification(
+            "New message 💬",
+            (message.body || "You received a message").slice(0, 100),
+            "message"
+          );
+        }
+      }
+    }
+
+    knownReceivedMessageIds = new Set([
+      ...knownReceivedMessageIds,
+      ...newMessages.map(item => item.id)
+    ]);
+  } catch (error) {
+    console.warn("Notification check failed:", error);
+  } finally {
+    notificationPolling = false;
+  }
+}
+
+  let notificationPollTimer = null;
 let notificationPolling = false; 
   async function showProfile(user){
 currentUser=user;

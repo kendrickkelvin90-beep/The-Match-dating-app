@@ -1836,6 +1836,8 @@ reactionsInfo.onclick = async event => {
           
 reactionBar.style.display =
   current.user_id === currentUser.id ? "none" : "flex";
+   reactionsInfo.style.display =
+  current.user_id === currentUser.id ? "block" : "none";       
 reactionStatus.textContent = "";
 
 if(current.user_id!==currentUser.id){

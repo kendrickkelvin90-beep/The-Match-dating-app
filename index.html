@@ -1755,11 +1755,23 @@ $("bottomNavigation").querySelectorAll("button[data-page]").forEach(button=>{
       item.classList.toggle("active",item.dataset.page===page);
     });
 
-    if(page==="discover") await loadNearby();
-    if(page==="discover") await loadStories();
-    if(page==="matches") await loadMyMatches();
-    if(page==="messages") await loadMyConversations();
-    if(page==="likes") await loadLikesPage();
+        if (page === "discover") await loadNearby();
+    if (page === "discover") await loadStories();
+    if (page === "matches") await loadMyMatches();
+    if (page === "messages") await loadMyConversations();
+    if (page === "likes") await loadLikesPage();
+
+    if (page === "messages" || page === "likes") {
+      await requestMatchNotificationPermission();
+      await checkMatchNotifications();
+    }
+
+    if (!notificationPollTimer) {
+      notificationPollTimer = setInterval(
+        checkMatchNotifications,
+        15000
+      );
+    }
   };
 });
 

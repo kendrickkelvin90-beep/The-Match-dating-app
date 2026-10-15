@@ -911,6 +911,67 @@ $("premiumPaymentForm").addEventListener("submit",async(e)=>{
   }
 });
 
+ 
+$("refreshPremiumRequests").onclick=async()=>{
+  const list=$("premiumRequestList");
+
+  if(!currentUser){
+    list.textContent="Please sign in to check your payment requests.";
+    return;
+  }
+
+  list.textContent="Loading your payment requests...";
+
+  try{
+    const {data,error}=await db
+      .from("premium_payment_requests")
+      .select("plan,amount_ngn,status,created_at,admin_note")
+      .eq("user_id",currentUser.id)
+      .order("created_at",{ascending:false});
+
+    if(error)throw error;
+
+    list.replaceChildren();
+
+    if(!data||data.length===0){
+      list.textContent="You have not submitted any payment requests yet.";
+      return;
+    }
+
+    data.forEach(request=>{
+      const card=document.createElement("div");
+      card.className="member-card";
+
+      const plan=document.createElement("h4");
+      plan.textContent=
+        request.plan==="monthly"?"Monthly Premium":"Yearly Premium";
+
+      const amount=document.createElement("p");
+      amount.textContent="Amount: ₦"+
+        Number(request.amount_ngn).toLocaleString("en-NG");
+
+      const statusText=document.createElement("p");
+      const state=String(request.status||"pending").toLowerCase();
+      statusText.textContent="Status: "+
+        (state==="approved"?"Approved":
+         state==="rejected"?"Rejected":"Pending review");
+
+      card.append(plan,amount,statusText);
+
+      if(request.admin_note){
+        const note=document.createElement("p");
+        note.textContent="Admin note: "+request.admin_note;
+        card.appendChild(note);
+      }
+
+      list.appendChild(card);
+    });
+
+  }catch(error){
+    list.textContent="Could not load payment requests: "+friendly(error);
+  }
+};
+ 
   async function logout(){
 let r=await db.auth.signOut();
 if(r.error){alert(friendly(r.error));return;}

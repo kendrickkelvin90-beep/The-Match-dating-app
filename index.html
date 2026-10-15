@@ -866,7 +866,7 @@ async function loadStories(){
   try{
     const {data:stories,error}=await db
       .from("stories")
-      .select("id,user_id,media_type,caption,created_at,expires_at")
+      .select("id,user_id,media_url,media_type,caption,created_at,expires_at")
       .gt("expires_at",new Date().toISOString())
       .order("created_at",{ascending:false})
       .limit(100);

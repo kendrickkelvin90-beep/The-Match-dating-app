@@ -1921,54 +1921,46 @@ function showSafetyDialog(mode) {
   });
   }
   $("blockMemberButton").onclick = async () => {
-  if(!selectedMemberId || !currentUser) return;
+  if (!selectedMemberId || !currentUser) return;
 
-  const experience = prompt(
-    "How do you feel about this member?\n1. Comfortable\n2. Not vibing\n3. Uncomfortable\n4. Harassment\n5. Fake profile\n6. Something else\n\nEnter 1 to 6:"
+  const memberId = selectedMemberId;
+  const answer = await showSafetyDialog("block");
+
+  if (!answer) return;
+
+  if (answer.experience === "Comfortable") {
+    status("memberProfileStatus", "No block was made.", false);
+    return;
+  }
+
+  const confirmed = window.confirm(
+    "Block this member? Their chat will become unavailable."
   );
 
-  if(!experience) return;
-
-  const reasons = {
-    "1":"Comfortable",
-    "2":"Not vibing",
-    "3":"Uncomfortable",
-    "4":"Harassment",
-    "5":"Fake profile",
-    "6":"Something else"
-  };
-
-  const reason = reasons[experience.trim()];
-  if(!reason) {
-    status("memberProfileStatus","Please choose a number from 1 to 6.",true);
-    return;
-  }
-
-  if(reason === "Comfortable") {
-    status("memberProfileStatus","No block was made.",false);
-    return;
-  }
-
-  if(!confirm("Block this member? Their chat will become unavailable.")) return;
+  if (!confirmed) return;
 
   try {
     const result = await db.from("member_blocks").insert({
       blocker_id: currentUser.id,
-      blocked_id: selectedMemberId,
-      block_reason: reason
+      blocked_id: memberId,
+      block_reason: answer.experience
     });
 
-        if(result.error) throw result.error;
+    if (result.error) throw result.error;
 
     activeChatUserId = null;
-$("activeConversation").classList.add("hidden");
-  
-    status("memberProfileStatus","Member blocked successfully.");
+    $("activeConversation").classList.add("hidden");
+
+    status("memberProfileStatus", "Member blocked successfully.");
     await loadMyMatches();
     await loadMyConversations();
     show("matches");
-  } catch(e) {
-    status("memberProfileStatus","Could not block member: "+friendly(e),true);
+  } catch (e) {
+    status(
+      "memberProfileStatus",
+      "Could not block member: " + friendly(e),
+      true
+    );
   }
 };
 

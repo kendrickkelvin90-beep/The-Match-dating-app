@@ -722,7 +722,10 @@ blockBtn.className="btn";
 blockBtn.textContent="🚫 Block";
 blockBtn.style.margin="6px";
 blockBtn.onclick=async()=>{
-  if(!confirm("Block "+(p.display_name||"this member")+"? They will be removed from Discover."))return;
+  
+  let experience=prompt("Why do you want to block this member?\nType one option:\n1. Not vibing\n2. Uncomfortable\n3. Harassment\n4. Fake profile\n5. Something else");
+  if(!experience)return;
+
   blockBtn.disabled=true;
   try{
     let result=await db.from("member_blocks").insert({

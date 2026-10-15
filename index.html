@@ -828,6 +828,10 @@ btn.disabled=false;
 }
 };
   $("editProfile").onclick=()=>show("profile");
+  
+$("openPremium").onclick=()=>show("premium");
+$("backFromPremium").onclick=()=>show("profile");
+
 
 async function logout(){
 let r=await db.auth.signOut();

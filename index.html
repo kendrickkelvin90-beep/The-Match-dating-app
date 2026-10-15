@@ -2152,7 +2152,12 @@ async function loadChatMessages(){
     status("chatPageStatus","Could not load messages: "+friendly(e),true);
   }
 }
-$("chatMessageInput").addEventListener("keydown",e=>{
+ $("chatMessageInput").addEventListener("input",()=>{
+  const input=$("chatMessageInput");
+  input.style.height="auto";
+  input.style.height=Math.min(input.scrollHeight,120)+"px";
+});
+  $("chatMessageInput").addEventListener("keydown",e=>{
   if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){
     e.preventDefault();
     $("sendChatMessage").click();

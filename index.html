@@ -706,6 +706,70 @@ async function loadMyMatches(){
   }
 }
 
+ 
+async function loadMyConversations(){
+  if(!currentUser)return;
+
+  const list=$("conversationList");
+  list.replaceChildren();
+  $("activeConversation").classList.add("hidden");
+  status("messagesStatus","Loading your matches...");
+
+  try{
+    const {data:sent,error}=await db
+      .from("likes")
+      .select("liked_id")
+      .eq("liker_id",currentUser.id);
+
+    if(error)throw error;
+
+    const mutualIds=[];
+
+    for(const item of (sent||[])){
+      const {data:back,error:backError}=await db
+        .from("likes")
+        .select("liker_id")
+        .eq("liker_id",item.liked_id)
+        .eq("liked_id",currentUser.id)
+        .maybeSingle();
+
+      if(backError)throw backError;
+      if(back)mutualIds.push(item.liked_id);
+    }
+
+    if(!mutualIds.length){
+      status("messagesStatus","No conversations yet. You need a mutual match to chat.");
+      return;
+    }
+
+    const {data:profiles,error:profileError}=await db
+      .from("profiles")
+      .select("id,display_name,age,city")
+      .in("id",mutualIds);
+
+    if(profileError)throw profileError;
+
+    (profiles||[]).forEach(p=>{
+      const button=document.createElement("button");
+      button.type="button";
+      button.className="btn secondary";
+      button.textContent="💬 "+(p.display_name||"Member")+
+        (p.age?" · "+p.age:"")+
+        (p.city?" · "+p.city:"");
+
+      button.onclick=()=>{
+        openChat(p.id,p.display_name||"Member");
+      };
+
+      list.appendChild(button);
+    });
+
+    status("messagesStatus","Choose a mutual match to open your conversation.");
+  }catch(e){
+    status("messagesStatus","Could not load conversations: "+friendly(e),true);
+  }
+}
+ 
   async function loadMyPhotos(){
   if(!currentUser)return;
   const grid=$("profilePhotos");

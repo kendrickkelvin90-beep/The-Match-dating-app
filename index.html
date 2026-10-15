@@ -699,17 +699,20 @@ let r=await db.from("profiles")
 .neq("id",currentUser.id).limit(100);
 if(r.error)throw r.error;
 let people=r.data||[];
-  let blocked=await db.from("member_blocks")
-  .select("blocked_id")
-  .eq("blocker_id",currentUser.id);
+  
+    for(let i = people.length - 1; i >= 0; i--) {
+      const { data: canInteract, error: checkError } = await db
+        .rpc("can_interact_with_member", {
+          target_user_id: people[i].id
+        });
 
-if(blocked.error)throw blocked.error;
+      if(checkError) throw checkError;
 
-let blockedIds=new Set(
-  (blocked.data||[]).map(item=>item.blocked_id)
-);
+      if(canInteract !== true) {
+        people.splice(i, 1);
+      }
+    }
 
-people=people.filter(person=>!blockedIds.has(person.id));
 if(approxLocation){
 people=people.map(p=>({...p,_distance:p.location_sharing&&p.latitude!=null&&p.longitude!=null
 ?kmBetween(approxLocation.latitude,approxLocation.longitude,p.latitude,p.longitude):null

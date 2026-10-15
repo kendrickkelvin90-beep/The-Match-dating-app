@@ -453,6 +453,14 @@ card.appendChild(d);
 let detail=document.createElement("p");detail.className="small";
 detail.textContent=[p.age?String(p.age):"",p.gender_identity||"",p.city||""].filter(Boolean).join(" · ");
 card.appendChild(detail);
+  
+if(Array.isArray(p.sexual_roles)&&p.sexual_roles.length){
+  let roles=document.createElement("p");
+  roles.className="small";
+  roles.textContent="🏳️‍🌈 Role: "+p.sexual_roles.join(", ");
+  card.appendChild(roles);
+}
+
 if(p.bio){
 let bio=document.createElement("p");bio.className="small";bio.textContent=p.bio;card.appendChild(bio);
 }

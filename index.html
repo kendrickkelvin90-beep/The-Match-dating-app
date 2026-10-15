@@ -1339,7 +1339,9 @@ async function loadStories(){
         });
 
         const heading = document.createElement("div");
-        heading.textContent = name + "'s Story";
+        heading.textContent = story.user_id === currentUser.id
+  ? "Your Story"
+  : name + "'s Story";
         Object.assign(heading.style, {
           position: "absolute",
           top: "max(14px, env(safe-area-inset-top))",

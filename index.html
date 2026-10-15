@@ -1274,6 +1274,21 @@ $("sendChatMessage").onclick = async()=>{
   button.disabled = true;
 
   try{
+    const blockCheck=await db.from("member_blocks")
+  .select("id")
+  .eq("blocker_id",currentUser.id)
+  .eq("blocked_id",activeChatUserId)
+  .maybeSingle();
+
+if(blockCheck.error)throw blockCheck.error;
+
+if(blockCheck.data){
+  $("activeConversation").classList.add("hidden");
+  $("chatMessages").replaceChildren();
+  activeChatUserId=null;
+  status("messagesStatus","You cannot message someone you have blocked.",true);
+  return;
+}
     const {error} = await db
       .from("messages")
       .insert({

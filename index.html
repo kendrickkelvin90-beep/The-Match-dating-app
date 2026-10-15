@@ -599,6 +599,10 @@ card.appendChild(like);$("profileList").appendChild(card);
 }
 
 $("refreshNearby").onclick=loadNearby;
+  $("openMatches").onclick=()=>show("matches");
+$("openMessages").onclick=()=>show("messages");
+$("backFromMatches").onclick=()=>show("discover");
+$("backFromMessages").onclick=()=>show("matches");
   async function loadMyPhotos(){
   if(!currentUser)return;
   const grid=$("profilePhotos");

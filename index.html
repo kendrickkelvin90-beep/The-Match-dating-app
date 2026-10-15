@@ -1379,31 +1379,30 @@ $("bottomNavigation").querySelectorAll("button[data-page]").forEach(button=>{
 async function loadLikesPage(){
   if(!currentUser)return;
 
-  const list=$("receivedLikesList");
-  list.replaceChildren();
+  const receivedList=$("receivedLikesList");
+  const sentList=$("sentLikesList");
+  receivedList.replaceChildren();
+  sentList.replaceChildren();
   status("likesStatus","Loading your likes...");
 
   try{
+    const {data:membership,error:premiumError}=await db
+      .from("premium_memberships")
+      .select("premium_until")
+      .eq("user_id",currentUser.id)
+      .maybeSingle();
+
+    if(premiumError)throw premiumError;
+
+    const isPremium=!!membership &&
+      new Date(membership.premium_until).getTime()>Date.now();
+
     const {data:received,error:receivedError}=await db
       .from("likes")
       .select("liker_id")
       .eq("liked_id",currentUser.id);
 
     if(receivedError)throw receivedError;
-
-    const peopleIds=[...new Set((received||[]).map(x=>x.liker_id))];
-
-    if(!peopleIds.length){
-      status("likesStatus","No likes yet. Keep your profile updated and discover members.");
-      return;
-    }
-
-    const {data:profiles,error:profileError}=await db
-      .from("profiles")
-      .select("id,display_name,age,city,bio")
-      .in("id",peopleIds);
-
-    if(profileError)throw profileError;
 
     const {data:sent,error:sentError}=await db
       .from("likes")
@@ -1412,14 +1411,60 @@ async function loadLikesPage(){
 
     if(sentError)throw sentError;
 
-    const sentIds=new Set((sent||[]).map(x=>x.liked_id));
+    const receivedIds=[...new Set((received||[]).map(x=>x.liker_id))];
+    const sentIds=[...new Set((sent||[]).map(x=>x.liked_id))];
 
-    (profiles||[]).forEach(p=>{
+    const allIds=[...new Set([...receivedIds,...sentIds])];
+
+    let profiles=[];
+    if(allIds.length){
+      const {data,error}=await db
+        .from("profiles")
+        .select("id,display_name,age,city,bio")
+        .in("id",allIds);
+
+      if(error)throw error;
+      profiles=data||[];
+    }
+
+    const profileMap=new Map(profiles.map(p=>[p.id,p]));
+
+    async function renderPerson(id,list,receivedPerson){
+      const p=profileMap.get(id);
+      if(!p)return;
+
       const card=document.createElement("div");
       card.className="member-card";
 
+      const avatar=document.createElement("img");
+      avatar.alt="Member photo";
+      avatar.style.cssText=
+        "width:76px;height:76px;border-radius:50%;object-fit:cover;display:block;margin-bottom:10px;background:#292036;";
+
+      const {data:photos,error:photoError}=await db
+        .from("profile_photos")
+        .select("storage_path")
+        .eq("user_id",p.id)
+        .order("position")
+        .limit(1);
+
+      if(photoError)throw photoError;
+
+      if(photos&&photos.length){
+        avatar.src=db.storage.from("profile-photos")
+          .getPublicUrl(photos[0].storage_path).data.publicUrl;
+
+        if(receivedPerson&&!isPremium){
+          avatar.style.filter="blur(12px)";
+        }
+      }else{
+        avatar.style.display="none";
+      }
+
+      card.appendChild(avatar);
+
       const name=document.createElement("h3");
-      name.textContent="💖 "+(p.display_name||"Member");
+      name.textContent=p.display_name||"Member";
       card.appendChild(name);
 
       const details=document.createElement("p");
@@ -1430,44 +1475,63 @@ async function loadLikesPage(){
       ].filter(Boolean).join(" · ");
       card.appendChild(details);
 
-      if(p.bio){
-        const bio=document.createElement("p");
-        bio.textContent=p.bio;
-        card.appendChild(bio);
+      if(receivedPerson&&!isPremium){
+        const premiumNote=document.createElement("p");
+        premiumNote.className="small";
+        premiumNote.textContent="Upgrade to Premium to view full photos.";
+        card.appendChild(premiumNote);
       }
 
-      const action=document.createElement("button");
-      action.type="button";
-      action.className="btn primary";
+      if(receivedPerson&&sentIds.includes(p.id)){
+        const matchNote=document.createElement("p");
+        matchNote.textContent="You liked each other 💞";
+        card.appendChild(matchNote);
+      }else if(receivedPerson){
+        const likeBack=document.createElement("button");
+        likeBack.type="button";
+        likeBack.className="btn primary";
+        likeBack.textContent="Like Back ❤️";
 
-      if(sentIds.has(p.id)){
-        action.textContent="You liked each other 💞";
-        action.disabled=true;
-      }else{
-        action.textContent="Like Back ❤️";
-        action.onclick=async()=>{
-          action.disabled=true;
-          const result=await db.from("likes").insert({
+        likeBack.onclick=async()=>{
+          likeBack.disabled=true;
+          const {error}=await db.from("likes").insert({
             liker_id:currentUser.id,
             liked_id:p.id
           });
 
-          if(result.error){
-            status("likesStatus","Could not send like: "+friendly(result.error),true);
-            action.disabled=false;
+          if(error){
+            status("likesStatus","Could not send like: "+friendly(error),true);
+            likeBack.disabled=false;
           }else{
-            action.textContent="Liked ❤️";
-            sentIds.add(p.id);
-            status("likesStatus","Like sent! Check Matches for a mutual connection.");
+            status("likesStatus","Like sent! Refresh to update your likes.");
+            await loadLikesPage();
           }
         };
+
+        card.appendChild(likeBack);
+      }else{
+        const likedNote=document.createElement("p");
+        likedNote.className="small";
+        likedNote.textContent="You sent this member a like ❤️";
+        card.appendChild(likedNote);
       }
 
-      card.appendChild(action);
       list.appendChild(card);
-    });
+    }
 
-    status("likesStatus","You have "+profiles.length+" member(s) who liked you.");
+    for(const id of receivedIds){
+      await renderPerson(id,receivedList,true);
+    }
+
+    for(const id of sentIds){
+      await renderPerson(id,sentList,false);
+    }
+
+    status(
+      "likesStatus",
+      "People who like you: "+receivedIds.length+
+      " · People you like: "+sentIds.length
+    );
   }catch(e){
     status("likesStatus","Could not load likes: "+friendly(e),true);
   }

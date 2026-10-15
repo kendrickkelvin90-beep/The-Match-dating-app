@@ -1532,14 +1532,7 @@ $("createStoryButton").onclick = () => {
   $("storyMediaFile").click();
 };
 
-$("uploadStoryButton").onclick = () => {
-  if (!currentUser) {
-    status("storiesStatus", "Please sign in to post a story.", true);
-    return;
-  }
 
-  $("storyMediaFile").click();
-};
 
 
 $("storyMediaFile").onchange=async()=>{

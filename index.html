@@ -697,6 +697,27 @@ card.appendChild(like);$("profileList").appendChild(card);
 }
 
 $("refreshNearby").onclick=loadNearby;
+  $("bottomNavigation").querySelectorAll("button[data-page]").forEach(button=>{
+  button.addEventListener("click",async()=>{
+    const page=button.dataset.page;
+
+    if(!currentUser){
+      show("welcome");
+      return;
+    }
+
+    show(page);
+
+    $("bottomNavigation").querySelectorAll("button").forEach(item=>{
+      item.classList.toggle("active",item===button);
+    });
+
+    if(page==="discover") await loadNearby();
+    if(page==="matches") await loadMyMatches();
+    if(page==="messages") await loadMyConversations();
+    if(page==="likes") status("likesStatus","Likes page opened. We'll connect it to real likes next.");
+  });
+});
   
 $("openMatches").onclick=async()=>{
   show("matches");

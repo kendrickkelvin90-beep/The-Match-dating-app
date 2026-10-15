@@ -1142,6 +1142,53 @@ async function openMemberProfile(memberId){
 }
 
 $("backFromMemberProfile").onclick = () => show("matches");
+ 
+$("blockMemberButton").onclick = async () => {
+  if(!selectedMemberId || !currentUser) return;
+
+  const experience = prompt(
+    "How do you feel about this member?\n1. Comfortable\n2. Not vibing\n3. Uncomfortable\n4. Harassment\n5. Fake profile\n6. Something else\n\nEnter 1 to 6:"
+  );
+
+  if(!experience) return;
+
+  const reasons = {
+    "1":"Comfortable",
+    "2":"Not vibing",
+    "3":"Uncomfortable",
+    "4":"Harassment",
+    "5":"Fake profile",
+    "6":"Something else"
+  };
+
+  const reason = reasons[experience.trim()];
+  if(!reason) {
+    status("memberProfileStatus","Please choose a number from 1 to 6.",true);
+    return;
+  }
+
+  if(reason === "Comfortable") {
+    status("memberProfileStatus","No block was made.",false);
+    return;
+  }
+
+  if(!confirm("Block this member? Their chat will become unavailable.")) return;
+
+  try {
+    const result = await db.from("member_blocks").insert({
+      blocker_id: currentUser.id,
+      blocked_id: selectedMemberId,
+      block_reason: reason
+    });
+
+    if(result.error) throw result.error;
+
+    activeChatUserId = null;
+    status("memberProfileStatus","Member blocked successfully.");
+  } catch(e) {
+    status("memberProfileStatus","Could not block member: "+friendly(e),true);
+  }
+};
 
 $("messageMemberButton").onclick = async () => {
   if(!selectedMemberId) return;

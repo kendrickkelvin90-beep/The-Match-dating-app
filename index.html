@@ -1064,7 +1064,67 @@ $("openMessages").onclick=async()=>{
 
 $("backFromMatches").onclick=()=>show("discover");
 $("backFromMessages").onclick=()=>show("matches");
- 
+ let selectedMemberId = null;
+
+async function openMemberProfile(memberId){
+  selectedMemberId = memberId;
+  show("memberProfilePage");
+  $("memberProfileDetails").replaceChildren();
+  $("memberProfileName").textContent = "Member Profile ❤️";
+  status("memberProfileStatus","Loading profile...");
+
+  try{
+    const {data:p,error} = await db
+      .from("profiles")
+      .select("id,display_name,age,gender_identity,interested_in,city,bio,sexual_roles")
+      .eq("id",memberId)
+      .maybeSingle();
+
+    if(error) throw error;
+    if(!p) throw Error("This member's profile could not be found.");
+
+    $("memberProfileName").textContent =
+      (p.display_name || "Member") + " ❤️";
+
+    const details = $("memberProfileDetails");
+
+    function addProfileDetail(label,value){
+      const item = document.createElement("p");
+      item.className = "small";
+      item.textContent = label + ": " + value;
+      details.appendChild(item);
+    }
+
+    addProfileDetail("Age",p.age || "Not listed");
+    addProfileDetail("Gender identity",p.gender_identity || "Not listed");
+    addProfileDetail("Interested in",p.interested_in || "Not listed");
+    addProfileDetail("City",p.city || "Not listed");
+    addProfileDetail(
+      "Identity / role",
+      Array.isArray(p.sexual_roles) && p.sexual_roles.length
+        ? p.sexual_roles.join(", ")
+        : "Not listed"
+    );
+    addProfileDetail("About this member",p.bio || "No description added yet.");
+
+    status("memberProfileStatus","");
+  }catch(e){
+    status("memberProfileStatus","Could not load profile: "+friendly(e),true);
+  }
+}
+
+$("backFromMemberProfile").onclick = () => show("matches");
+
+$("messageMemberButton").onclick = async () => {
+  if(!selectedMemberId) return;
+
+  const memberId = selectedMemberId;
+  const memberName = $("memberProfileName").textContent.replace(/ ❤️$/,"");
+
+  show("messages");
+  await loadMyConversations();
+  await openChat(memberId,memberName);
+};
 async function loadMyMatches(){
   if(!currentUser)return;
 

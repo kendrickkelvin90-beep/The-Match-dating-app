@@ -2208,7 +2208,8 @@ $("sendChatMessage").onclick = async()=>{
     status("chatPageStatus","Message not sent: "+friendly(e),true);
   }finally{
     button.disabled = false;
-  }
+    button.textContent = "Send";
+}
 };  
   async function loadMyPhotos(){
   if(!currentUser)return;

@@ -397,6 +397,9 @@ display_name:$("displayName").value.trim(),
 age:age,
 gender_identity:$("gender").value,
 interested_in:$("interest").value,
+  
+sexual_roles:Array.from(document.querySelectorAll('input[name="sexualRole"]:checked')).map(el=>el.value),
+
 city:$("city").value.trim(),
 bio:$("bio").value.trim(),
 latitude:approxLocation?approxLocation.latitude:null,

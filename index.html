@@ -1347,21 +1347,21 @@ async function loadMyConversations(){
 let activeChatUserId = null;
 
 async function openChat(userId, userName){
-const blockCheck=await db.from("member_blocks")
-.select("id")
-.eq("blocker_id",currentUser.id)
-.eq("blocked_id",userId)
-.maybeSingle();
+
+const blockCheck = await db.rpc("can_interact_with_member", {
+  target_user_id: userId
+});
 
 if(blockCheck.error){
-status("chatPageStatus","Could not check block status: "+friendly(blockCheck.error),true);
-return;
+  status("chatPageStatus","Could not check block status: "+friendly(blockCheck.error),true);
+  return;
 }
 
-if(blockCheck.data){
-  status("chatPageStatus","This conversation is unavailable because you blocked this member.");
-return;
+if(blockCheck.data !== true){
+  status("chatPageStatus","This conversation is unavailable because either member has blocked the other.");
+  return;
 }
+
 
 activeChatUserId=userId;
 $("chatPageTitle").textContent="💬 Chat with "+userName;

@@ -1293,6 +1293,7 @@ async function loadStories(){
     const seen=new Set();
 
     stories.forEach(story=>{
+      if(story.user_id===currentUser.id)return;
       if(seen.has(story.user_id))return;
       seen.add(story.user_id);
 

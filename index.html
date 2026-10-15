@@ -851,6 +851,146 @@ $("profileList").appendChild(card);
 
 $("refreshNearby").onclick=loadNearby;
  
+async function loadStories(){
+  if(!currentUser)return;
+
+  const list=$("storiesList");
+  const createButton=$("createStoryButton");
+
+  list.replaceChildren(createButton);
+  status("storiesStatus","Loading stories...");
+
+  try{
+    const {data:stories,error}=await db
+      .from("stories")
+      .select("id,user_id,media_type,caption,created_at,expires_at")
+      .gt("expires_at",new Date().toISOString())
+      .order("created_at",{ascending:false})
+      .limit(100);
+
+    if(error)throw error;
+
+    if(!stories||stories.length===0){
+      status("storiesStatus","No active stories yet. Be the first to share a moment.");
+      return;
+    }
+
+    const userIds=[...new Set(stories.map(s=>s.user_id))];
+    const {data:profiles,error:profileError}=await db
+      .from("profiles")
+      .select("id,display_name")
+      .in("id",userIds);
+
+    if(profileError)throw profileError;
+
+    const names=new Map((profiles||[]).map(p=>[
+      p.id,p.display_name||"The Match member"
+    ]));
+
+    const seen=new Set();
+
+    stories.forEach(story=>{
+      if(seen.has(story.user_id))return;
+      seen.add(story.user_id);
+
+      const name=names.get(story.user_id)||"The Match member";
+      const button=document.createElement("button");
+      button.type="button";
+      button.className="story-item";
+      button.setAttribute("aria-label","View story by "+name);
+
+      const avatar=document.createElement("span");
+      avatar.className="story-avatar";
+      avatar.textContent=(name.trim()[0]||"M").toUpperCase();
+
+      const label=document.createElement("span");
+      label.textContent=story.user_id===currentUser.id
+        ?"Your Story":name;
+
+      button.append(avatar,label);
+      button.onclick=()=>{
+        const overlay=document.createElement("div");
+        Object.assign(overlay.style,{
+          position:"fixed",inset:"0",zIndex:"9999",
+          background:"#10050a",color:"#fff2f6",
+          display:"flex",flexDirection:"column",
+          justifyContent:"center",alignItems:"center",
+          padding:"24px",textAlign:"center"
+        });
+
+        const heading=document.createElement("h2");
+        heading.textContent=name+"'s Story";
+
+        const content=document.createElement("p");
+        content.className="story-view";
+        content.style.fontSize="20px";
+        content.textContent=story.caption||"";
+
+        const time=document.createElement("p");
+        time.className="small";
+        time.textContent=new Date(story.created_at).toLocaleString();
+
+        const close=document.createElement("button");
+        close.type="button";
+        close.className="btn secondary";
+        close.textContent="Close Story";
+        close.onclick=()=>overlay.remove();
+
+        overlay.append(heading,content,time,close);
+        document.body.appendChild(overlay);
+      };
+
+      list.appendChild(button);
+    });
+
+    status("storiesStatus","");
+  }catch(e){
+    status("storiesStatus","Could not load stories: "+friendly(e),true);
+  }
+}
+
+$("createStoryButton").onclick=async()=>{
+  if(!currentUser){
+    status("storiesStatus","Please sign in to post a story.",true);
+    return;
+  }
+
+  const caption=prompt("Share a moment (maximum 500 characters):");
+  if(caption===null)return;
+
+  const text=caption.trim();
+  if(!text){
+    status("storiesStatus","Write something before posting.",true);
+    return;
+  }
+
+  if(text.length>500){
+    status("storiesStatus","Stories can contain up to 500 characters.",true);
+    return;
+  }
+
+  const button=$("createStoryButton");
+  button.disabled=true;
+  status("storiesStatus","Posting your story...");
+
+  try{
+    const {error}=await db.from("stories").insert({
+      user_id:currentUser.id,
+      media_type:"text",
+      caption:text
+    });
+
+    if(error)throw error;
+
+    status("storiesStatus","Your story is live for 24 hours.");
+    await loadStories();
+  }catch(e){
+    status("storiesStatus","Could not post story: "+friendly(e),true);
+  }finally{
+    button.disabled=false;
+  }
+};
+
 async function loadBlockedMembers(){
   if(!currentUser)return;
 

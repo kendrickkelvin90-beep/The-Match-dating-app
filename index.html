@@ -1761,8 +1761,8 @@ $("blockMemberButton").onclick = async () => {
         if(result.error) throw result.error;
 
     activeChatUserId = null;
-    activeConversation = null;
-    $("activeConversation").classList.add("hidden");
+$("activeConversation").classList.add("hidden");
+  
     status("memberProfileStatus","Member blocked successfully.");
     await loadMyMatches();
     await loadMyConversations();

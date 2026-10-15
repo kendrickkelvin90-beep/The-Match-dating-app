@@ -1725,25 +1725,51 @@ async function loadMyMatches(){
 
     if(profileError)throw profileError;
 
+    
     (profiles||[]).forEach(p=>{
       const card=document.createElement("div");
       card.className="profile-card";
+      card.style.cssText="display:flex;align-items:center;gap:14px;padding:14px;margin-bottom:12px;background:#21152b;border:1px solid #59366b;border-radius:16px;";
+
+      const avatar=document.createElement("img");
+      avatar.alt="Profile photo";
+      avatar.style.cssText="width:60px;height:60px;border-radius:50%;object-fit:cover;background:#292929;flex-shrink:0;";
+
+      const details=document.createElement("div");
+      details.style.cssText="display:flex;flex-direction:column;gap:6px;";
 
       const name=document.createElement("button");
-  name.className="btn secondary";
-  name.type="button";
-  name.textContent="❤️ "+(p.display_name||"Member");
-  name.onclick=()=>openMemberProfile(p.id);
-  card.appendChild(name);
+      name.className="btn secondary";
+      name.type="button";
+      name.textContent=p.display_name||"Member";
+      name.onclick=()=>openMemberProfile(p.id);
 
-  const hint=document.createElement("p");
-  hint.className="small";
-  hint.textContent="Tap to view full profile and send a message.";
-  card.appendChild(hint);
+      const age=document.createElement("span");
+      age.className="small";
+      age.textContent=p.age ? String(p.age)+" years old" : "Age not provided";
 
-  list.appendChild(card);
+      const hint=document.createElement("span");
+      hint.className="small";
+      hint.textContent="Tap to view profile";
 
+      details.append(name,age,hint);
+      card.append(avatar,details);
+
+      db.from("profile_photos")
+        .select("storage_path")
+        .eq("user_id",p.id)
+        .order("position")
+        .limit(1)
+        .then(({data})=>{
+          if(data && data.length){
+            avatar.src=db.storage.from("profile-photos")
+              .getPublicUrl(data[0].storage_path).data.publicUrl;
+          }
+        });
+
+      list.appendChild(card);
     });
+
 
     status("matchesStatus","You have "+profiles.length+" mutual match(es)!");
   }catch(e){

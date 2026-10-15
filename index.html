@@ -943,7 +943,10 @@ async function loadStories(){
 
         const counter=document.createElement("p");
         counter.className="small";
-
+        const viewersInfo=document.createElement("p");
+        viewersInfo.className="small";
+        viewersInfo.style.maxWidth="100%";
+        viewersInfo.style.overflowWrap="anywhere";
         const controls=document.createElement("div");
         controls.style.display="flex";
         controls.style.gap="12px";

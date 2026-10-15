@@ -1522,13 +1522,25 @@ $("createStoryButton").onclick=async()=>{
   }
 };
 
-$("uploadStoryButton").onclick=()=>{
-  if(!currentUser){
-    status("storiesStatus","Please sign in to post a story.",true);
+
+$("createStoryButton").onclick = () => {
+  if (!currentUser) {
+    status("storiesStatus", "Please sign in to post a story.", true);
     return;
   }
+
   $("storyMediaFile").click();
 };
+
+$("uploadStoryButton").onclick = () => {
+  if (!currentUser) {
+    status("storiesStatus", "Please sign in to post a story.", true);
+    return;
+  }
+
+  $("storyMediaFile").click();
+};
+
 
 $("storyMediaFile").onchange=async()=>{
   const input=$("storyMediaFile");

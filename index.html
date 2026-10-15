@@ -761,6 +761,7 @@ updated_at:new Date().toISOString()
 let r=await db.from("profiles").upsert(p,{onConflict:"id"});
 if(r.error)throw r.error;
 await loadNearby();
+await loadStories();
 show("discover");
 }catch(e){status("profileStatus","Could not save profile: "+friendly(e),true);}
 finally{b.disabled=false;}

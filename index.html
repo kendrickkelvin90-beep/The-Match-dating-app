@@ -739,7 +739,10 @@ if(!experience){
 status("discoverStatus","Please choose a number from 1 to 6.",true);
 return;
 }
-
+if(experience==="Comfortable"){
+  status("discoverStatus","Glad you're comfortable! No block was made.",false);
+  return;
+}
   
   let reportToo=confirm("Would you also like to REPORT this member?");
   let reportReason="";

@@ -1442,7 +1442,7 @@ if(blockCheck.data){
     input.value = "";
     await loadChatMessages();
   }catch(e){
-    status("messagesStatus","Message not sent: "+friendly(e),true);
+    status("chatPageStatus","Message not sent: "+friendly(e),true);
   }finally{
     button.disabled = false;
   }

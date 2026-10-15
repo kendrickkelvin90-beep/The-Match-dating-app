@@ -2878,15 +2878,13 @@ chatRefreshTimer = setInterval(() => {
   }
 }, 3000);
 
-  $("videoCallButton").onclick=()=>{
-  status("chatPageStatus","Video calling is not connected yet.");
-    
-if (chatRefreshTimer) {
-  clearInterval(chatRefreshTimer);
-  chatRefreshTimer = null;
-}
-
+  
+$("videoCallButton").onclick = () => {
+  status("chatPageStatus", "Video calling is not connected yet.");
 };
+
+    
+
 status("chatPageStatus","Loading messages...");
 
 try{

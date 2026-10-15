@@ -368,6 +368,11 @@ $("displayName").value=p.display_name||fallback;
 $("age").value=p.age||"";
 $("gender").value=p.gender_identity||"";
 $("interest").value=p.interested_in||"";
+  
+document.querySelectorAll('input[name="sexualRole"]').forEach(el=>{
+  el.checked=Array.isArray(p.sexual_roles)&&p.sexual_roles.includes(el.value);
+});
+
 $("city").value=p.city||"";
 $("bio").value=p.bio||"";
 approxLocation=p.location_sharing&&p.latitude!=null&&p.longitude!=null

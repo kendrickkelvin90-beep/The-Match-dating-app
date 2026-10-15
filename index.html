@@ -1789,7 +1789,17 @@ async function loadChatMessages(){
     return;
   }
 
-  const chat = $("chatMessages");
+    const chat = $("chatMessages");
+  Object.assign(chat.style,{
+    display:"flex",
+    flexDirection:"column",
+    gap:"4px",
+    maxHeight:"55vh",
+    overflowY:"auto",
+    padding:"12px",
+    borderRadius:"12px",
+    background:"#100d12"
+  });
   chat.replaceChildren();
   status("chatPageStatus","Loading messages...");
 

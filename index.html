@@ -1208,7 +1208,21 @@ await loadChatMessages();
 
 async function loadChatMessages(){
   if(!currentUser || !activeChatUserId)return;
+const blockCheck=await db.from("member_blocks")
+.select("id")
+.eq("blocker_id",currentUser.id)
+.eq("blocked_id",activeChatUserId)
+.maybeSingle();
 
+if(blockCheck.error)throw blockCheck.error;
+
+if(blockCheck.data){
+$("activeConversation").classList.add("hidden");
+$("chatMessages").replaceChildren();
+activeChatUserId=null;
+status("messagesStatus","This conversation is unavailable because you blocked this member.");
+return;
+}
   const chat = $("chatMessages");
   chat.replaceChildren();
   status("messagesStatus","Loading messages...");

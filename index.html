@@ -1475,8 +1475,7 @@ async function loadStories(){
           caption.textContent="";
           time.textContent="";
           counter.textContent=(index+1)+" of "+memberStories.length;
-          previous.disabled=index===0;
-          next.disabled=index===memberStories.length-1;
+          
 
           const current=memberStories[index];
 if(current.user_id!==currentUser.id){

@@ -426,7 +426,9 @@ status("discoverStatus","Finding members...");
 $("profileList").replaceChildren();
 try{
 let r=await db.from("profiles")
-.select("id,display_name,age,gender_identity,city,bio,latitude,longitude,location_sharing")
+
+.select("id,display_name,age,gender_identity,city,bio,latitude,longitude,location_sharing,sexual_roles")
+
 .neq("id",currentUser.id).limit(100);
 if(r.error)throw r.error;
 let people=r.data||[];

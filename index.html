@@ -1415,6 +1415,51 @@ if (story.user_id === currentUser.id) {
           overflowWrap: "anywhere"
         });
 
+        
+        const reactionBar = document.createElement("div");
+        reactionBar.style.cssText =
+          "position:absolute;bottom:70px;left:12px;right:12px;z-index:6;display:flex;justify-content:center;gap:10px;";
+
+        const reactionStatus = document.createElement("p");
+        reactionStatus.style.cssText =
+          "position:absolute;bottom:48px;left:12px;right:12px;z-index:6;color:white;text-align:center;font-size:12px;";
+
+        ["❤️", "😂", "😍", "🔥", "👏"].forEach(emoji => {
+          const reactionButton = document.createElement("button");
+          reactionButton.type = "button";
+          reactionButton.textContent = emoji;
+          reactionButton.style.cssText =
+            "font-size:24px;padding:8px;border:0;border-radius:50%;background:#292929;color:white;";
+
+          reactionButton.onclick = async event => {
+            event.stopPropagation();
+            const current = memberStories[index];
+            if (!current || current.user_id === currentUser.id) return;
+
+            reactionButton.disabled = true;
+            try {
+              const { error } = await db.from("story_reactions").upsert(
+                {
+                  story_id: current.id,
+                  user_id: currentUser.id,
+                  reaction: emoji
+                },
+                { onConflict: "story_id,user_id" }
+              );
+
+              if (error) throw error;
+              reactionStatus.textContent = "You reacted " + emoji;
+            } catch (e) {
+              reactionStatus.textContent =
+                "Could not send reaction: " + friendly(e);
+            } finally {
+              reactionButton.disabled = false;
+            }
+          };
+
+          reactionBar.appendChild(reactionButton);
+        });
+
         const time = document.createElement("p");
         time.style.display = "none";
 

@@ -769,7 +769,94 @@ $("profileList").appendChild(card);
 }
 
 $("refreshNearby").onclick=loadNearby;
-  
+ 
+async function loadBlockedMembers(){
+  if(!currentUser)return;
+
+  const list=$("blockedMembersList");
+  list.replaceChildren();
+  status("blockedMembersStatus","Loading blocked members...");
+
+  try{
+    const result=await db.from("member_blocks")
+      .select("blocked_id")
+      .eq("blocker_id",currentUser.id);
+
+    if(result.error)throw result.error;
+
+    const rows=result.data||[];
+
+    if(!rows.length){
+      status("blockedMembersStatus","You haven't blocked anyone.");
+      return;
+    }
+
+    const ids=rows.map(row=>row.blocked_id);
+    const resultProfiles=await db.from("profiles")
+      .select("id,display_name")
+      .in("id",ids);
+
+    if(resultProfiles.error)throw resultProfiles.error;
+
+    const names=new Map(
+      (resultProfiles.data||[]).map(p=>[
+        p.id,p.display_name||"The Match member"
+      ])
+    );
+
+    for(const row of rows){
+      const card=document.createElement("div");
+      card.className="member-card";
+
+      const name=document.createElement("h3");
+      name.textContent=names.get(row.blocked_id)||"The Match member";
+      card.appendChild(name);
+
+      const btn=document.createElement("button");
+      btn.className="btn secondary";
+      btn.textContent="Unblock";
+
+      btn.onclick=async()=>{
+        if(!confirm("Unblock this member?"))return;
+        btn.disabled=true;
+
+        try{
+          const removal=await db.from("member_blocks")
+            .delete()
+            .eq("blocker_id",currentUser.id)
+            .eq("blocked_id",row.blocked_id);
+
+          if(removal.error)throw removal.error;
+
+          await loadBlockedMembers();
+        }catch(e){
+          status("blockedMembersStatus",
+            "Could not unblock member: "+friendly(e),true);
+          btn.disabled=false;
+        }
+      };
+
+      card.appendChild(btn);
+      list.appendChild(card);
+    }
+
+    status("blockedMembersStatus","");
+  }catch(e){
+    status("blockedMembersStatus",
+      "Could not load blocked members: "+friendly(e),true);
+  }
+}
+
+$("openBlockedMembers").onclick=async()=>{
+  show("blockedMembers");
+  await loadBlockedMembers();
+};
+
+$("backFromBlockedMembers").onclick=()=>{
+  show("discover");
+  loadNearby();
+};
+ 
 $("bottomNavigation").querySelectorAll("button[data-page]").forEach(button=>{
   button.onclick=async()=>{
     const page=button.dataset.page;

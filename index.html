@@ -1517,6 +1517,11 @@ if (story.user_id === currentUser.id) {
           
 
           const current=memberStories[index];
+          
+reactionBar.style.display =
+  current.user_id === currentUser.id ? "none" : "flex";
+reactionStatus.textContent = "";
+
 if(current.user_id!==currentUser.id){
             const {error:viewError}=await db
               .from("story_views")

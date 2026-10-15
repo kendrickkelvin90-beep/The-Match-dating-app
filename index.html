@@ -760,31 +760,7 @@ card.appendChild(like);
 
 
 
-let reportBtn=document.createElement("button");
-reportBtn.className="btn";
-reportBtn.textContent="⚑ Report";
-reportBtn.style.margin="6px";
-reportBtn.onclick=async()=>{
-  let reason=prompt("Why are you reporting this member? (e.g. harassment, fake profile, scam)");
-  if(!reason||reason.trim().length<3){
-    status("discoverStatus","Please enter a reason of at least 3 characters.",true);
-    return;
-  }
-  let details=prompt("Additional details (optional):")||"";
-  try{
-    let result=await db.from("member_reports").insert({
-      reporter_id:currentUser.id,
-      reported_user_id:p.id,
-      reason:reason.trim(),
-      details:details.trim()||null
-    });
-    if(result.error)throw result.error;
-    status("discoverStatus","Report submitted. Thank you for helping keep The Match safe.");
-  }catch(e){
-    status("discoverStatus","Could not submit report: "+friendly(e),true);
-  }
-};
-card.appendChild(reportBtn);
+
 
 $("profileList").appendChild(card);
 });

@@ -1665,6 +1665,96 @@ if (story.user_id === currentUser.id) {
           color: "#fff",
           textShadow: "0 1px 5px #000"
         });
+        const reactionsInfo = document.createElement("button");
+reactionsInfo.type = "button";
+reactionsInfo.textContent = "View all reactions";
+reactionsInfo.style.cssText =
+  "display:none;position:absolute;bottom:42px;left:12px;z-index:10;" +
+  "padding:9px 14px;border:0;border-radius:20px;" +
+  "background:#8b5cf6;color:white;font-weight:600;";
+
+reactionsInfo.onclick = async event => {
+  event.stopPropagation();
+
+  const current = memberStories[index];
+  if (!current || current.user_id !== currentUser.id) return;
+
+  reactionsInfo.disabled = true;
+  reactionsInfo.textContent = "Loading reactions...";
+
+  try {
+    const { data: reactions, error } = await db
+      .from("story_reactions")
+      .select("user_id,reaction")
+      .eq("story_id", current.id);
+
+    if (error) throw error;
+
+    if (!reactions || reactions.length === 0) {
+      alert("Nobody has reacted to this Story yet.");
+      return;
+    }
+
+    const ids = [...new Set(reactions.map(r => r.user_id))];
+
+    const { data: profiles, error: profilesError } = await db
+      .from("profiles")
+      .select("id,display_name")
+      .in("id", ids);
+
+    if (profilesError) throw profilesError;
+
+    const names = new Map((profiles || []).map(p => [
+      p.id,
+      p.display_name || "The Match member"
+    ]));
+
+    const panel = document.createElement("div");
+    panel.style.cssText =
+      "position:fixed;inset:0;z-index:100001;background:#111;" +
+      "color:white;padding:24px 16px;overflow:auto;";
+
+    const title = document.createElement("h2");
+    title.textContent = "Story reactions (" + reactions.length + ")";
+    panel.appendChild(title);
+
+    const closeButton = document.createElement("button");
+    closeButton.type = "button";
+    closeButton.textContent = "Close";
+    closeButton.style.cssText =
+      "padding:10px 16px;border:0;border-radius:12px;" +
+      "background:#8b5cf6;color:white;";
+    closeButton.onclick = () => panel.remove();
+    panel.appendChild(closeButton);
+
+    reactions.forEach(reaction => {
+      const personButton = document.createElement("button");
+      personButton.type = "button";
+      personButton.textContent =
+        (names.get(reaction.user_id) || "The Match member") +
+        "  " + reaction.reaction;
+      personButton.style.cssText =
+        "display:block;width:100%;text-align:left;margin-top:12px;" +
+        "padding:14px;border:1px solid #444;border-radius:12px;" +
+        "background:#222;color:white;font-size:16px;";
+
+      personButton.onclick = () => {
+        panel.remove();
+        closeStory();
+        openMemberProfile(reaction.user_id);
+      };
+
+      panel.appendChild(personButton);
+    });
+
+    document.body.appendChild(panel);
+  } catch (error) {
+    alert("Could not load reactions: " + friendly(error));
+  } finally {
+    reactionsInfo.disabled = false;
+    reactionsInfo.textContent = "View all reactions";
+  }
+};
 
         const closeStory = () => {
           overlay.querySelectorAll("video").forEach(video => video.pause());

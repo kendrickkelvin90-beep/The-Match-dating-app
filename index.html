@@ -625,7 +625,12 @@ $("openMatches").onclick=async()=>{
   await loadMyMatches();
 };
 
-$("openMessages").onclick=()=>show("messages");
+
+$("openMessages").onclick=async()=>{
+  show("messages");
+  await loadMyConversations();
+};
+
 $("backFromMatches").onclick=()=>show("discover");
 $("backFromMessages").onclick=()=>show("matches");
  

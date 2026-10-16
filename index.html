@@ -431,8 +431,13 @@ body:has(#profile:not(.hidden)) .hero {
 <form id="authForm">
 <label for="email">Email address</label>
 <input id="email" type="email" autocomplete="email" required placeholder="you@example.com">
+
 <label for="password">Password (minimum 8 characters)</label>
-<input id="password" type="password" minlength="8" required autocomplete="new-password">
+<div class="password-wrap" style="display:flex;gap:8px;align-items:center;">
+  <input id="password" type="password" minlength="8" required autocomplete="new-password" style="flex:1;min-width:0;">
+  <button type="button" class="btn secondary" data-toggle-password="password" aria-label="Show password" aria-pressed="false" style="width:auto;padding:10px 14px;">👁</button>
+</div>
+
 <button class="btn primary" id="submit" type="submit">Create account</button>
 </form>
 <div class="links">

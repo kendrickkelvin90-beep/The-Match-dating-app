@@ -868,7 +868,20 @@ $("switch").textContent=isLogin?"New here? Create an account":"Already registere
 status("authStatus","");
 show("auth");
 }
-$("signup").onclick=()=>openAuth(false);
+
+document.querySelectorAll("[data-toggle-password]").forEach(button=>{
+  button.addEventListener("click",()=>{
+    const input=document.getElementById(button.dataset.togglePassword);
+    if(!input)return;
+    const showing=input.type==="password";
+    input.type=showing?"text":"password";
+    button.textContent=showing?"🙈":"👁";
+    button.setAttribute("aria-label",showing?"Hide password":"Show password");
+    button.setAttribute("aria-pressed",String(showing));
+  });
+});
+
+  $("signup").onclick=()=>openAuth(false);
 $("login").onclick=()=>openAuth(true);
 $("back").onclick=()=>show("welcome");
 $("switch").onclick=()=>openAuth(!loginMode);

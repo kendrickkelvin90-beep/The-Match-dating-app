@@ -3191,10 +3191,9 @@ async function loadChatMessages(){
     borderRadius:"12px",
     background:"#100d12"
   });
-  chat.replaceChildren();
-  status("chatPageStatus","Loading messages...");
+    status("chatPageStatus","Loading messages...");
 
-  try{
+  try {
     const me = currentUser.id;
     const them = activeChatUserId;
 
@@ -3204,17 +3203,25 @@ async function loadChatMessages(){
       .or("and(sender_id.eq."+me+",receiver_id.eq."+them+"),and(sender_id.eq."+them+",receiver_id.eq."+me+")")
       .order("created_at",{ascending:true});
 
-    if(error)throw error;
+    if(error) throw error;
 
     if(!data || !data.length){
-      const empty = document.createElement("p");
-      empty.textContent = "No messages yet. Say hello!";
-      chat.appendChild(empty);
-    }else{
-            data.forEach(message=>{
-        const mine=message.sender_id===me;
-        const bubble=document.createElement("div");
-        bubble.className=mine?"chat-bubble sent":"chat-bubble received";
+      if(!chat.querySelector("[data-empty-message]")){
+        const empty = document.createElement("p");
+        empty.dataset.emptyMessage = "true";
+        empty.textContent = "No messages yet. Say hello!";
+        chat.appendChild(empty);
+      }
+    } else {
+      chat.querySelectorAll("[data-empty-message]").forEach(node => node.remove());
+
+      data.forEach(message => {
+        if(chat.querySelector('[data-message-id="' + message.id + '"]')) return;
+
+        const mine = message.sender_id === me;
+        const bubble = document.createElement("div");
+        bubble.dataset.messageId = message.id;
+        bubble.className = mine ? "chat-bubble sent" : "chat-bubble received";
 
         Object.assign(bubble.style,{
           maxWidth:"82%",
@@ -3222,29 +3229,35 @@ async function loadChatMessages(){
           padding:"10px 14px",
           margin:"8px 0",
           borderRadius:"16px",
-          background:mine?"#6d28d9":"#29212a",
+          background:mine ? "#6d28d9" : "#29212a",
           color:"#ffffff",
-          alignSelf:mine?"flex-end":"flex-start",
+          alignSelf:mine ? "flex-end" : "flex-start",
           overflowWrap:"anywhere"
         });
 
-        const body=document.createElement("div");
-        body.textContent=message.body;
+        const body = document.createElement("div");
+        body.textContent = message.body;
 
-        const timestamp=document.createElement("small");
-        timestamp.textContent=new Date(message.created_at).toLocaleTimeString([],{
+        const timestamp = document.createElement("small");
+        timestamp.textContent = new Date(message.created_at).toLocaleTimeString([],{
           hour:"2-digit",
           minute:"2-digit"
         });
-        timestamp.style.display="block";
-        timestamp.style.marginTop="5px";
-        timestamp.style.opacity="0.75";
-        timestamp.style.textAlign="right";
+        timestamp.style.display = "block";
+        timestamp.style.marginTop = "5px";
+        timestamp.style.opacity = "0.75";
+        timestamp.style.textAlign = "right";
 
         bubble.append(body,timestamp);
         chat.appendChild(bubble);
       });
     }
+
+    chat.scrollTop = chat.scrollHeight;
+    status("chatPageStatus","Conversation loaded.");
+  } catch(e) {
+    status("chatPageStatus","Could not load messages: "+friendly(e),true);
+  }
     chat.scrollTop=chat.scrollHeight;
     status("chatPageStatus","Conversation loaded.");
   }catch(e){

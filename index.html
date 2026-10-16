@@ -1541,10 +1541,10 @@ async function loadStories(){
 
       button.onclick=async()=>{
         const memberStories = stories
-  .filter(s =>
-    s.user_id === story.user_id &&
-    s.story_group_id === story.story_group_id
-  )
+  .filter(s => s.user_id === story.user_id)
+  .sort((a, b) =>
+    new Date(a.created_at) - new Date(b.created_at)
+  );
   .sort((a, b) =>
     new Date(a.created_at) - new Date(b.created_at)
   );

@@ -2008,47 +2008,7 @@ if(current.user_id!==currentUser.id){
   }
 }
 
-$("createStoryButton").onclick=async()=>{
-  if(!currentUser){
-    status("storiesStatus","Please sign in to post a story.",true);
-    return;
-  }
 
-  const caption=prompt("Share a moment (maximum 500 characters):");
-  if(caption===null)return;
-
-  const text=caption.trim();
-  if(!text){
-    status("storiesStatus","Write something before posting.",true);
-    return;
-  }
-
-  if(text.length>500){
-    status("storiesStatus","Stories can contain up to 500 characters.",true);
-    return;
-  }
-
-  const button=$("createStoryButton");
-  button.disabled=true;
-  status("storiesStatus","Posting your story...");
-
-  try{
-    const {error}=await db.from("stories").insert({
-      user_id:currentUser.id,
-      media_type:"text",
-      caption:text
-    });
-
-    if(error)throw error;
-
-    status("storiesStatus","Your story is live for 24 hours.");
-    await loadStories();
-  }catch(e){
-    status("storiesStatus","Could not post story: "+friendly(e),true);
-  }finally{
-    button.disabled=false;
-  }
-};
 
 
 $("createStoryButton").onclick = () => {

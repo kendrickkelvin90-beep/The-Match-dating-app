@@ -3240,16 +3240,37 @@ async function loadChatMessages(){
         body.textContent = message.body;
 
         const timestamp = document.createElement("small");
-        timestamp.textContent = new Date(message.created_at).toLocaleTimeString([],{
-          hour:"2-digit",
-          minute:"2-digit"
-        });
-        timestamp.style.display = "block";
-        timestamp.style.marginTop = "5px";
-        timestamp.style.opacity = "0.75";
-        timestamp.style.textAlign = "right";
+const timeText = new Date(message.created_at).toLocaleTimeString([],{
+  hour:"2-digit",
+  minute:"2-digit"
+});
 
-        bubble.append(body,timestamp);
+timestamp.textContent = timeText;
+timestamp.style.display = "block";
+timestamp.style.marginTop = "5px";
+timestamp.style.opacity = "0.85";
+timestamp.style.textAlign = "right";
+
+if(mine){
+  const receipt = document.createElement("span");
+  receipt.style.marginLeft = "6px";
+  receipt.style.fontWeight = "bold";
+
+  if(message.read_at){
+    receipt.textContent = "✓✓ Seen";
+    receipt.style.color = "#60d8ff";
+  } else if(message.delivered_at){
+    receipt.textContent = "✓✓ Delivered";
+    receipt.style.color = "#ffffff";
+  } else {
+    receipt.textContent = "✓ Sent";
+    receipt.style.color = "#ffffff";
+  }
+
+  timestamp.appendChild(receipt);
+}
+
+bubble.append(body,timestamp);
         chat.appendChild(bubble);
       });
     }

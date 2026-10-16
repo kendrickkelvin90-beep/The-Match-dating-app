@@ -1,4 +1,3 @@
-
 {
   "id": "/",
   "name": "The Match",
@@ -10,5 +9,13 @@
   "orientation": "portrait",
   "background_color": "#10070c",
   "theme_color": "#10070c",
-  "categories": ["social", "lifestyle"]
+  "categories": ["social", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
 }

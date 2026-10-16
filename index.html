@@ -2157,12 +2157,13 @@ $("storyMediaFile").onchange = async () => {
       uploadedPaths.push(path);
 
       storyRows.push({
-        user_id: currentUser.id,
-        story_group_id: groupId,
-        media_url: path,
-        media_type: file.type.startsWith("video/") ? "video" : "image",
-        caption: textCaption
-      });
+  user_id: currentUser.id,
+  story_group_id: groupId,
+  media_url: path,
+  media_type: file.type.startsWith("video/") ? "video" : "image",
+  caption: textCaption,
+  expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+});
 
       status(
         "storiesStatus",

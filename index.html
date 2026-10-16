@@ -18,74 +18,55 @@
 
   .photo-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin-top: 14px;
 }
 
-.stories-section {
-  margin: 18px 0;
-  padding: 16px 0;
-  border-top: 1px solid #583044;
-  border-bottom: 1px solid #583044;
-}
-.stories-section h3 {
-  margin: 0 0 6px;
-  color: #ff91aa;
-}
-.stories-list {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding: 10px 2px;
-}
-.story-circle {
-  flex: 0 0 76px;
-  min-height: 76px;
-  border: 1px solid #ff416d;
-  border-radius: 50%;
-  background: #180b13;
-  color: #fff2f6;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 3px;
-  font-size: 11px;
-}
-.story-plus {
-  font-size: 26px;
-  color: #ff416d;
-  line-height: 1;
-}
-.story-item {
-  flex: 0 0 76px;
+.photo-item {
+  position: relative;
+  min-width: 0;
+  aspect-ratio: 3 / 4;
   border: 0;
-  background: transparent;
-  color: #fff2f6;
+  border-radius: 16px;
   padding: 0;
-  text-align: center;
-  font-size: 11px;
-}
-.story-avatar {
-  width: 62px;
-  height: 62px;
-  border: 2px solid #ff416d;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  margin: 0 auto 5px;
-  background: #351020;
+  background: #10070c;
   overflow: hidden;
 }
-.story-avatar img {
+
+.photo-item img {
   width: 100%;
   height: 100%;
+  display: block;
   object-fit: cover;
+  border-radius: 16px;
 }
-.story-view {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+
+.photo-item button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #000;
+  color: #fff;
+  font-size: 22px;
+}
+
+.photo-tag {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  margin: 0;
+  padding: 4px 7px;
+  border-radius: 10px;
+  background: #0008;
+  color: #fff;
+  font-size: 11px;
 }
 
   .photo-item {

@@ -3648,6 +3648,14 @@ init();
 </script>
 </body>
 </html>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/service-worker.js")
+      .catch((error) => console.error("Service worker registration failed:", error));
+  });
+}
+</script>
 
 <!-- The Match in-app safety dialog -->
 <div id="safetyDialog" class="safety-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="safetyDialogTitle">

@@ -3258,11 +3258,7 @@ async function loadChatMessages(){
   } catch(e) {
     status("chatPageStatus","Could not load messages: "+friendly(e),true);
   }
-    chat.scrollTop=chat.scrollHeight;
-    status("chatPageStatus","Conversation loaded.");
-  }catch(e){
-    status("chatPageStatus","Could not load messages: "+friendly(e),true);
-  }
+    
 }
  $("chatMessageInput").addEventListener("input",()=>{
   const input=$("chatMessageInput");

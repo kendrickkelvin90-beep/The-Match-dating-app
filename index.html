@@ -3392,7 +3392,8 @@ $("sendChatMessage").onclick = async()=>{
   }
 }
 
-$("uploadPhotos").onclick=async()=>{
+
+async function uploadSelectedPhotos(){
   if(!currentUser){
     status("photoStatus","Please sign in first.",true);
     return;
@@ -3401,10 +3402,7 @@ $("uploadPhotos").onclick=async()=>{
   const input=$("photoFiles");
   const files=Array.from(input.files||[]);
 
-  if(!files.length){
-    status("photoStatus","Choose your photos first.",true);
-    return;
-  }
+  if(!files.length)return;
 
   const {data:existing,error}=await db.from("profile_photos")
     .select("id,position").eq("user_id",currentUser.id)
@@ -3461,7 +3459,11 @@ $("uploadPhotos").onclick=async()=>{
   }finally{
     btn.disabled=false;
   }
-};
+}
+
+$("uploadPhotos").onclick=uploadSelectedPhotos;
+$("photoFiles").onchange=uploadSelectedPhotos;
+
 async function loadVerificationStatus(){
 if(!currentUser)return;
 const box=$("verificationStatus");

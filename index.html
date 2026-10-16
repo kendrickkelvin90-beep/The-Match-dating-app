@@ -451,9 +451,11 @@ body:has(#profile:not(.hidden)) .hero {
 <section class="panel hidden" id="reset">
 <h2>Reset password</h2>
 <form id="resetForm">
-<label for="newPassword">New password</label>
-<div class="password-wrap" style="display:flex;gap:8px;align-items:center;">
-  <input id="newPassword" type="password" minlength="8" required style="flex:1;min-width:0;">
+<form id="resetForm">
+<label for="resetEmail">Email address</label>
+<input id="resetEmail" type="email" required>
+<button class="btn primary" type="submit">Send reset link</button>
+</form>
   <button type="button" class="btn secondary" data-toggle-password="newPassword" aria-label="Show password" aria-pressed="false" style="width:auto;padding:10px 14px;">👁</button>
 </div>
 <button class="btn primary" type="submit">Save new password</button>

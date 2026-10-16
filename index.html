@@ -2227,6 +2227,58 @@ async function loadBlockedMembers(){
 
 $("openBlockedMembers").onclick=async()=>{
   show("blockedMembers");
+  // Install The Match — Settings button only
+let deferredInstallPrompt = null;
+
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+});
+
+const installButton = document.getElementById("installAppButton");
+const installHelp = document.getElementById("installAppHelp");
+
+if (installButton && installHelp) {
+  installButton.addEventListener("click", async () => {
+    if (
+      window.matchMedia("(display-mode: standalone)").matches ||
+      navigator.standalone === true
+    ) {
+      installHelp.textContent = "The Match is already installed on this device.";
+      return;
+    }
+
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+
+      const result = await deferredInstallPrompt.userChoice;
+
+      installHelp.textContent =
+        result.outcome === "accepted"
+          ? "The Match is being installed."
+          : "Installation was cancelled. You can try again.";
+
+      deferredInstallPrompt = null;
+      return;
+    }
+
+    if (/iphone|ipad|ipod/i.test(navigator.userAgent)) {
+      installHelp.textContent =
+        "To install on iPhone: open this website in Safari, tap Share, then choose Add to Home Screen.";
+    } else {
+      installHelp.textContent =
+        "Open your browser menu (⋮) and choose Install app or Add to Home screen.";
+    }
+  });
+}
+
+window.addEventListener("appinstalled", () => {
+  deferredInstallPrompt = null;
+
+  if (installHelp) {
+    installHelp.textContent = "The Match is installed on this device.";
+  }
+});
   await loadBlockedMembers();
 };
 

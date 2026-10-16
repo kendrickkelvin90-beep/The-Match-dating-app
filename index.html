@@ -69,35 +69,53 @@
   font-size: 11px;
 }
 
-  .photo-item {
-  border: 1px solid #583044;
-  border-radius: 12px;
-  padding: 8px;
+  
+.photo-item {
+  position: relative;
+  min-width: 0;
+  aspect-ratio: 3 / 4;
+  border: 0;
+  border-radius: 16px;
+  padding: 0;
   background: #10070c;
+  overflow: hidden;
 }
+
 .photo-item img {
   width: 100%;
-  aspect-ratio: 1 / 1;
+  height: 100%;
+  display: block;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 16px;
 }
+
 .photo-item button {
-  width: 100%;
-  font-size: 12px;
-  padding: 9px 6px;
-  margin-top: 7px;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #000;
+  color: #fff;
+  font-size: 22px;
 }
+
 .photo-tag {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  margin: 0;
+  padding: 4px 7px;
+  border-radius: 10px;
+  background: #0008;
+  color: #fff;
   font-size: 11px;
-  color: #ff91aa;
-  margin: 7px 0;
 }
-  .photo-item {
-  border: 1px solid #583044;
-  border-radius: 12px;
-  padding: 8px;
-  background: #10070c;
-  }
+
   
 .photo-grid {
   display: grid;

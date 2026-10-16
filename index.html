@@ -3205,6 +3205,21 @@ async function loadChatMessages(){
       .order("created_at",{ascending:true});
 
     if(error) throw error;
+    for (const message of (data || [])) {
+  if (message.receiver_id === me && !message.read_at) {
+    const { error: receiptError } = await db.rpc(
+      "mark_message_receipt",
+      {
+        p_message_id: message.id,
+        p_mark_read: true
+      }
+    );
+
+    if (receiptError) {
+      console.error("Could not update message receipt:", receiptError);
+    }
+  }
+    }
 
     if(!data || !data.length){
       if(!chat.querySelector("[data-empty-message]")){

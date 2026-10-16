@@ -3232,7 +3232,23 @@ async function loadChatMessages(){
       chat.querySelectorAll("[data-empty-message]").forEach(node => node.remove());
 
       data.forEach(message => {
-        if(chat.querySelector('[data-message-id="' + message.id + '"]')) return;
+        const existingBubble = chat.querySelector('[data-message-id="' + message.id + '"]');
+if(existingBubble){
+  const existingReceipt = existingBubble.querySelector("small span");
+  if(message.sender_id === me && existingReceipt){
+    if(message.read_at){
+      existingReceipt.textContent = "✓✓ Seen";
+      existingReceipt.style.color = "#60d8ff";
+    } else if(message.delivered_at){
+      existingReceipt.textContent = "✓✓ Delivered";
+      existingReceipt.style.color = "#ffffff";
+    } else {
+      existingReceipt.textContent = "✓ Sent";
+      existingReceipt.style.color = "#ffffff";
+    }
+  }
+  return;
+  }
 
         const mine = message.sender_id === me;
         const bubble = document.createElement("div");

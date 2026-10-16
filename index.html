@@ -3381,9 +3381,36 @@ $("sendChatMessage").onclick = async()=>{
       };
       item.appendChild(del);
       grid.appendChild(item);
+      
     });
 
+    if(photos.length<5){
+      const add=document.createElement("div");
+      add.className="photo-item add-photo-tile";
+      add.textContent="+";
+      add.setAttribute("role","button");
+      add.setAttribute("tabindex","0");
+      add.setAttribute("aria-label","Add profile photo");
+
+      const openPicker=()=>{
+        const picker=$("photoFiles");
+        if(picker && !picker.disabled) picker.click();
+      };
+
+      add.onclick=openPicker;
+      add.onkeydown=e=>{
+        if(e.key==="Enter" || e.key===" "){
+          e.preventDefault();
+          openPicker();
+        }
+      };
+
+      grid.appendChild(add);
+    }
+
     status("photoStatus",photos.length+" of 5 photos added.");
+
+      
     $("photoFiles").disabled=photos.length>=5;
     $("uploadPhotos").disabled=photos.length>=5;
 

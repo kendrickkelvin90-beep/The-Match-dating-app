@@ -467,9 +467,8 @@ body:has(#profile:not(.hidden)) .hero {
   <div class="member-card" id="photoGallery">
   <h2>My photos 📸</h2>
   <p class="small">Add up to 5 profile photos. The first photo is your main photo. JPG, PNG or WebP, up to 5 MB each.</p>
-  <label for="photoFiles">Choose photos (up to 5 total)</label>
-  <input id="photoFiles" type="file" accept="image/jpeg,image/png,image/webp" multiple>
-  <button class="btn primary" id="uploadPhotos" type="button">Upload selected photos</button>
+  <input id="photoFiles" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
+<button class="btn primary" id="uploadPhotos" type="button" hidden>Upload selected photos</button>
   <p class="status" id="photoStatus"></p>
   <div class="photo-grid" id="profilePhotos"></div>
   </div>

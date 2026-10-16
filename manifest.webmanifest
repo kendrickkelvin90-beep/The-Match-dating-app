@@ -2,7 +2,7 @@
 {
   "id": "/",
   "name": "The Match",
-  "short_name": "Match",
+  "short_name": "The Match",
   "description": "Meet people and make meaningful connections.",
   "start_url": "/",
   "scope": "/",
@@ -13,11 +13,12 @@
   "categories": ["social", "lifestyle"],
   "icons": [
     {
-      "src": "/icons/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/icons/file_00000000194481f48390cd96271ae5c9.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
       "purpose": "any"
     }
   ]
 }
+
 

@@ -3331,7 +3331,13 @@ async function openChat(userId, userName){
       if(activeChatUserId) openMemberProfile(activeChatUserId);
     };
 
+    
     $("chatPartnerAvatar").src = "";
+    $("chatPartnerAvatar").style.cursor = "pointer";
+    $("chatPartnerAvatar").onclick = () => {
+      if (activeChatUserId) openMemberProfile(activeChatUserId);
+    };
+
     $("chatPartnerLocation").textContent = "Loading profile...";
 
     const chatContent = $("chatPageContent");

@@ -3639,12 +3639,12 @@ document.getElementById("sendChatMessage").addEventListener("click", function ()
 
   $("sendChatMessage").onclick = async () => {
   if(!currentUser){
-    status("chatPageStatus","Please log in again to send messages.",true);
+    status("chatPageStatus","Please log in again.",true);
     return;
   }
 
   if(!activeChatUserId){
-    status("chatPageStatus","No conversation selected. Please reopen this person's chat.",true);
+    status("chatPageStatus","No active chat selected.",true);
     return;
   }
 
@@ -3657,35 +3657,51 @@ document.getElementById("sendChatMessage").addEventListener("click", function ()
   }
 
   const button = $("sendChatMessage");
-  if(button.disabled) return;
   button.disabled = true;
   button.textContent = "Sending...";
+  status("chatPageStatus", "Attempting to insert into database...");
 
   try {
-    const { error } = await db
+    // 1. Double check values before sending
+    console.log("Sending message:", {
+      sender_id: currentUser.id,
+      receiver_id: activeChatUserId,
+      body: body
+    });
+
+    // 2. Perform the database insert
+    const { data, error } = await db
       .from("messages")
       .insert({
         sender_id: currentUser.id,
         receiver_id: activeChatUserId,
         body: body
-      });
+      })
+      .select();
 
-    if(error) throw error;
+    if (error) {
+      console.error("Supabase insert error object:", error);
+      throw error;
+    }
 
-    // Clear input and reset height on successful send
+    console.log("Message inserted successfully:", data);
+
+    // 3. Clear text and reload messages
     input.value = "";
     input.style.height = "auto";
     await loadChatMessages();
-    status("chatPageStatus", "Message sent!");
+    status("chatPageStatus", "Message sent successfully!");
 
   } catch(e) {
-    console.error("Send message error:", e);
-    status("chatPageStatus", "Not sent: " + friendly(e), true);
+    console.error("Caught error during send:", e);
+    // This will force the exact database error message onto your screen
+    status("chatPageStatus", "ERROR: " + (e.message || JSON.stringify(e)), true);
   } finally {
     button.disabled = false;
     button.textContent = "Send";
   }
 };
+
  
   async function loadMyPhotos(){
   if(!currentUser)return;

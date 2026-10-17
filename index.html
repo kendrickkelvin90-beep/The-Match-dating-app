@@ -2674,9 +2674,10 @@ async function loadLikesPage(){
         likeBack.className="btn primary";
         likeBack.textContent="❤️ Like Back";
 
+        
         likeBack.onclick=async()=>{
           likeBack.disabled=true;
-          status("likesStatus","Liking back...");
+          status("likesStatus","Checking for your match...");
 
           try{
             const {error}=await db
@@ -2686,18 +2687,75 @@ async function loadLikesPage(){
                 liked_id:id
               });
 
-            if(error){
-              if(error.code!=="23505")throw error;
-            }
+            if(error && error.code!=="23505")throw error;
 
-            status("likesStatus","It's a mutual match! ❤️");
+            const {data:myProfile,error:myProfileError}=await db
+              .from("profiles")
+              .select("display_name")
+              .eq("id",currentUser.id)
+              .maybeSingle();
+
+            if(myProfileError)throw myProfileError;
+
+            const {data:myPhotos,error:myPhotoError}=await db
+              .from("profile_photos")
+              .select("storage_path")
+              .eq("user_id",currentUser.id)
+              .order("position")
+              .limit(1);
+
+            if(myPhotoError)throw myPhotoError;
+
+            const {data:theirPhotos,error:theirPhotoError}=await db
+              .from("profile_photos")
+              .select("storage_path")
+              .eq("user_id",id)
+              .order("position")
+              .limit(1);
+
+            if(theirPhotoError)throw theirPhotoError;
+
+            $("matchMyName").textContent=
+              myProfile?.display_name||"You";
+            $("matchOtherName").textContent=
+              p.display_name||"Your match";
+
+            $("matchMyPhoto").src=myPhotos?.length
+              ?db.storage.from("profile-photos")
+                .getPublicUrl(myPhotos[0].storage_path).data.publicUrl
+              :"";
+
+            $("matchOtherPhoto").src=theirPhotos?.length
+              ?db.storage.from("profile-photos")
+                .getPublicUrl(theirPhotos[0].storage_path).data.publicUrl
+              :"";
+
+            $("matchSendMessage").onclick=()=>{
+              openChat(id,p.display_name||"Your match");
+            };
+
+            $("matchContinueDiscover").onclick=async()=>{
+              show("discover");
+              await showPerson();
+            };
+
+            show("matchCelebrationPage");
+            status("matchCelebrationStatus","It's a mutual match! ❤️");
+            showMatchNotification(
+              "It's a Match!",
+              "You both liked each other.",
+              "match"
+            );
+
             await loadLikesPage();
             await loadMyMatches();
+
           }catch(error){
-            status("likesStatus","Could not like back: "+friendly(error),true);
+            status("likesStatus","Could not complete your match: "+friendly(error),true);
             likeBack.disabled=false;
           }
         };
+
 
         const decline=document.createElement("button");
         decline.type="button";

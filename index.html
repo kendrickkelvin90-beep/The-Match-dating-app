@@ -2793,38 +2793,13 @@ async function loadLikesPage(){
       receivedList.appendChild(card);
     }
 
-    const sentTitle=document.createElement("h3");
-    sentTitle.textContent="People You Like";
-    sentList.appendChild(sentTitle);
 
-    for(const id of sentIds){
-      const {data:p,error:profileError}=await db
-        .from("profiles")
-        .select("id,display_name")
-        .eq("id",id)
-        .maybeSingle();
+    status(
+      "likesStatus",
+      "People who like you: " + receivedIds.length
+    );
 
-      if(profileError)throw profileError;
-      if(!p)continue;
-
-      const card=document.createElement("div");
-      card.className="member-card";
-
-      const name=document.createElement("h3");
-      name.textContent=p.display_name||"Member";
-
-      const note=document.createElement("p");
-      note.className="small";
-      note.textContent="You sent this member a like ❤️";
-
-      card.append(name,note);
-      sentList.appendChild(card);
-    }
-
-    status("likesStatus",
-      "People who like you: "+receivedIds.length+
-      " · People you like: "+sentIds.length);
-
+    
   }catch(e){
     status("likesStatus","Could not load likes: "+friendly(e),true);
   }

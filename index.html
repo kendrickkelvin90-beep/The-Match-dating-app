@@ -2658,27 +2658,40 @@ async function loadLikesPage(){
 
         
       
-        chat.onclick=async()=>{
-          chat.disabled=true;
-          chat.textContent="Opening chat...";
+      
+        chat.onclick = async () => {
+          chat.disabled = true;
+          chat.textContent = "Opening chat...";
 
-          activeChatUserId=id;
-          show("chatPage");
-          status("chatPageStatus","Opening conversation...");
+          try {
+            activeChatUserId = id;
 
-          try{
-            await openChat(id,p.display_name||"Member");
-          }catch(error){
-            status(
-              "chatPageStatus",
-              "Could not open chat: "+friendly(error),
-              true
-            );
-          }finally{
-            chat.disabled=false;
-            chat.textContent="💬 Chat";
+            show("chatPage");
+            status("chatPageStatus", "Opening conversation...");
+
+            await openChat(id, p.display_name || "Member");
+
+          } catch (error) {
+            console.error("Likes-page chat button failed:", error);
+
+            try {
+              show("chatPage");
+              status(
+                "chatPageStatus",
+                "Could not open chat: " + friendly(error),
+                true
+              );
+            } catch (displayError) {
+              console.error("Could not display chat error:", displayError);
+              alert("Could not open the chat. Please refresh and try again.");
+            }
+
+          } finally {
+            chat.disabled = false;
+            chat.textContent = "💬 Chat";
           }
         };
+
 
 
 

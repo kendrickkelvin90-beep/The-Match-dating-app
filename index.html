@@ -2656,16 +2656,25 @@ async function loadLikesPage(){
         chat.className="btn primary";
         chat.textContent="💬 Chat";
 
+        
         chat.onclick=async()=>{
           chat.disabled=true;
           chat.textContent="Opening chat...";
+
           try{
             await openChat(id,p.display_name||"Member");
+          }catch(error){
+            status(
+              "likesStatus",
+              "Could not open chat: "+friendly(error),
+              true
+            );
           }finally{
             chat.disabled=false;
             chat.textContent="💬 Chat";
           }
         };
+
 
         actions.appendChild(chat);
       }else{

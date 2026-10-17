@@ -3403,6 +3403,7 @@ async function openChat(userId, userName){
 }
 
 
+
 $("backFromChatPage").onclick = () => {
   if (chatRefreshTimer) {
     clearInterval(chatRefreshTimer);
@@ -3411,8 +3412,13 @@ $("backFromChatPage").onclick = () => {
 
   $("conversationList").appendChild($("activeConversation"));
   $("activeConversation").classList.add("hidden");
-  show("messages");
+
+  const returnPage = window.chatReturnPage || "messages";
+  window.chatReturnPage = null;
+
+  show(returnPage);
 };
+
 
 
 

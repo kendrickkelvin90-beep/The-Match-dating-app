@@ -3163,9 +3163,15 @@ card.style.cursor = "pointer";
 card.onclick = () => openMemberProfile(p.id);
 
 
-      const avatar=document.createElement("img");
-      avatar.alt="Profile photo";
-      avatar.style.cssText="width:60px;height:60px;border-radius:50%;object-fit:cover;background:#292929;flex-shrink:0;";
+      
+const avatar=document.createElement("img");
+avatar.alt="Profile photo";
+avatar.style.cssText="width:60px;height:60px;border-radius:50%;object-fit:cover;background:#292929;flex-shrink:0;cursor:pointer;";
+avatar.onclick = (event) => {
+  event.stopPropagation();
+  openMemberProfile(p.id);
+};
+
 
       const details=document.createElement("div");
       details.style.cssText="display:flex;flex-direction:column;gap:6px;";

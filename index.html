@@ -3432,7 +3432,7 @@ async function loadChatMessages(){
     $("activeConversation").classList.add("hidden");
     $("chatMessages").replaceChildren();
     activeChatUserId = null;
-    activeConversation = null;
+    
     status("chatPageStatus","This conversation is unavailable because either member has blocked the other.");
     return;
   }
@@ -3611,7 +3611,7 @@ $("sendChatMessage").onclick = async()=>{
       $("activeConversation").classList.add("hidden");
       $("chatMessages").replaceChildren();
       activeChatUserId = null;
-      activeConversation = null;
+      
       status("chatPageStatus","Message not sent. This conversation is unavailable because either member has blocked the other.",true);
       return;
     }

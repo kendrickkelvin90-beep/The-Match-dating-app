@@ -2491,6 +2491,7 @@ $("bottomNavigation").querySelectorAll("button[data-page]").forEach(button=>{
   
 
 
+
 async function loadLikesPage(){
   if(!currentUser)return;
 
@@ -2528,6 +2529,8 @@ async function loadLikesPage(){
       if(profileError)throw profileError;
       if(!p)continue;
 
+      const alreadyLiked=sentIds.includes(id);
+
       const card=document.createElement("div");
       card.className="member-card";
 
@@ -2548,6 +2551,7 @@ async function loadLikesPage(){
       if(photos&&photos.length){
         avatar.src=db.storage.from("profile-photos")
           .getPublicUrl(photos[0].storage_path).data.publicUrl;
+        avatar.onerror=()=>{avatar.alt="Photo could not load";};
       }else{
         avatar.alt="No photo available";
       }
@@ -2556,41 +2560,90 @@ async function loadLikesPage(){
       name.textContent=p.display_name||"Member";
 
       const actions=document.createElement("div");
-      actions.style.cssText="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;";
+      actions.style.cssText=
+        "display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;";
 
-      const chat=document.createElement("button");
-      chat.type="button";
-      chat.className="btn primary";
-      chat.textContent="💬 Chat";
-      chat.onclick=()=>openChat(id,p.display_name||"Member");
+      if(alreadyLiked){
+        const chat=document.createElement("button");
+        chat.type="button";
+        chat.className="btn primary";
+        chat.textContent="💬 Chat";
 
-      const decline=document.createElement("button");
-      decline.type="button";
-      decline.className="btn secondary";
-      decline.textContent="✕ Decline";
+        chat.onclick=async()=>{
+          chat.disabled=true;
+          chat.textContent="Opening chat...";
+          try{
+            await openChat(id,p.display_name||"Member");
+          }finally{
+            chat.disabled=false;
+            chat.textContent="💬 Chat";
+          }
+        };
 
-      decline.onclick=async()=>{
-        if(!confirm("Remove this person from your Likes?"))return;
-        decline.disabled=true;
+        actions.appendChild(chat);
+      }else{
+        const likeBack=document.createElement("button");
+        likeBack.type="button";
+        likeBack.className="btn primary";
+        likeBack.textContent="❤️ Like Back";
 
-        try{
-          const {error}=await db
-            .from("likes")
-            .delete()
-            .eq("liker_id",id)
-            .eq("liked_id",currentUser.id);
+        likeBack.onclick=async()=>{
+          likeBack.disabled=true;
+          status("likesStatus","Liking back...");
 
-          if(error)throw error;
+          try{
+            const {error}=await db
+              .from("likes")
+              .insert({
+                liker_id:currentUser.id,
+                liked_id:id
+              });
 
-          status("likesStatus","Like declined.");
-          await loadLikesPage();
-        }catch(error){
-          status("likesStatus","Could not decline: "+friendly(error),true);
-          decline.disabled=false;
-        }
-      };
+            if(error){
+              if(error.code!=="23505")throw error;
+            }
 
-      actions.append(chat,decline);
+            status("likesStatus","It's a mutual match! ❤️");
+            await loadLikesPage();
+            await loadMyMatches();
+          }catch(error){
+            status("likesStatus","Could not like back: "+friendly(error),true);
+            likeBack.disabled=false;
+          }
+        };
+
+        const decline=document.createElement("button");
+        decline.type="button";
+        decline.className="btn secondary";
+        decline.textContent="✕ Decline";
+
+        decline.onclick=async()=>{
+          if(!confirm("Remove this person from your Likes?"))return;
+
+          decline.disabled=true;
+          likeBack.disabled=true;
+
+          try{
+            const {error}=await db
+              .from("likes")
+              .delete()
+              .eq("liker_id",id)
+              .eq("liked_id",currentUser.id);
+
+            if(error)throw error;
+
+            card.remove();
+            status("likesStatus","Like declined and removed.");
+          }catch(error){
+            status("likesStatus","Could not decline: "+friendly(error),true);
+            decline.disabled=false;
+            likeBack.disabled=false;
+          }
+        };
+
+        actions.append(likeBack,decline);
+      }
+
       card.append(avatar,name,actions);
       receivedList.appendChild(card);
     }
@@ -2626,10 +2679,12 @@ async function loadLikesPage(){
     status("likesStatus",
       "People who like you: "+receivedIds.length+
       " · People you like: "+sentIds.length);
+
   }catch(e){
     status("likesStatus","Could not load likes: "+friendly(e),true);
   }
 }
+
 
 
 $("refreshLikes").onclick=loadLikesPage;

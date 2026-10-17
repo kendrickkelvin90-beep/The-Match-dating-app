@@ -1563,30 +1563,97 @@ async function loadNearby(){
       like.className="btn primary";
       like.textContent="❤️ Like";
       like.style.flex="1";
-      like.onclick=async()=>{
-        like.disabled=true;
-        pass.disabled=true;
-        const {error:likeError}=await db.from("likes").insert({
-          liker_id:currentUser.id,
-          liked_id:p.id
-        });
+      
+like.onclick=async()=>{
+  like.disabled=true;
+  pass.disabled=true;
 
-        if(likeError){
-          status("discoverStatus",
-            /DAILY_LIKE_LIMIT/i.test(likeError.message)
-              ?"You've used your 10 free likes for today. Go Premium to keep liking."
-              :/duplicate/i.test(likeError.message)
-                ?"You've already liked this member."
-                :"Couldn't send like: "+friendly(likeError),true);
-          like.disabled=false;
-          pass.disabled=false;
-          return;
-        }
+  try{
+    const {error:likeError}=await db.from("likes").insert({
+      liker_id:currentUser.id,
+      liked_id:p.id
+    });
 
-        status("discoverStatus","Like sent successfully! ❤️");
+    if(likeError){
+      status("discoverStatus",
+        /DAILY_LIKE_LIMIT/i.test(likeError.message)
+          ?"You've used your 10 free likes for today. Go Premium to keep liking."
+          :/duplicate/i.test(likeError.message)
+            ?"You've already liked this member."
+            :"Couldn't send like: "+friendly(likeError),true);
+      like.disabled=false;
+      pass.disabled=false;
+      return;
+    }
+
+    const {data:reverseLike,error:matchError}=await db
+      .from("likes")
+      .select("liker_id")
+      .eq("liker_id",p.id)
+      .eq("liked_id",currentUser.id)
+      .maybeSingle();
+
+    if(matchError)throw matchError;
+
+    if(reverseLike){
+      const {data:myProfile}=await db
+        .from("profiles")
+        .select("display_name")
+        .eq("id",currentUser.id)
+        .maybeSingle();
+
+      const {data:myPhotos}=await db
+        .from("profile_photos")
+        .select("storage_path")
+        .eq("user_id",currentUser.id)
+        .order("position")
+        .limit(1);
+
+      const {data:theirPhotos}=await db
+        .from("profile_photos")
+        .select("storage_path")
+        .eq("user_id",p.id)
+        .order("position")
+        .limit(1);
+
+      $("matchMyName").textContent=myProfile?.display_name||"You";
+      $("matchOtherName").textContent=p.display_name||"Your match";
+
+      $("matchMyPhoto").src=myPhotos?.length
+        ?db.storage.from("profile-photos").getPublicUrl(myPhotos[0].storage_path).data.publicUrl
+        :"";
+
+      $("matchOtherPhoto").src=theirPhotos?.length
+        ?db.storage.from("profile-photos").getPublicUrl(theirPhotos[0].storage_path).data.publicUrl
+        :"";
+
+      $("matchSendMessage").onclick=()=>{
+        openChat(p.id,p.display_name||"Your match");
+      };
+
+      $("matchContinueDiscover").onclick=async()=>{
         personIndex++;
+        show("discover");
         await showPerson();
       };
+
+      show("matchCelebrationPage");
+      status("matchCelebrationStatus","It's a mutual match! ❤️");
+      showMatchNotification("It's a Match!","You both liked each other.","match");
+      return;
+    }
+
+    status("discoverStatus","Like sent successfully! ❤️");
+    personIndex++;
+    await showPerson();
+
+  }catch(error){
+    status("discoverStatus","Couldn't complete your like: "+friendly(error),true);
+    like.disabled=false;
+    pass.disabled=false;
+  }
+};
+
 
       actions.append(pass,like);
       card.appendChild(actions);

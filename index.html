@@ -1126,7 +1126,45 @@ function showMatchNotification(title, body, type) {
 }
 
 
-let notificationBaselineReady = false;
+async function updateAccountCounts() {
+if (!currentUser) return;
+
+try {
+const me = currentUser.id;
+
+const [likesResult, messagesResult] = await Promise.all([
+  db.from("likes")
+    .select("*", { count: "exact", head: true })
+    .eq("liked_id", me),
+
+  db.from("messages")
+    .select("*", { count: "exact", head: true })
+    .eq("receiver_id", me)
+]);
+
+if (likesResult.error) throw likesResult.error;
+if (messagesResult.error) throw messagesResult.error;
+
+const likesBadge = document.getElementById("likesCount");
+const messagesBadge = document.getElementById("messagesCount");
+
+if (likesBadge) {
+  likesBadge.textContent = likesResult.count || 0;
+  likesBadge.style.display =
+    likesResult.count > 0 ? "inline-block" : "none";
+}
+
+if (messagesBadge) {
+  messagesBadge.textContent = messagesResult.count || 0;
+  messagesBadge.style.display =
+    messagesResult.count > 0 ? "inline-block" : "none";
+}
+
+} catch (error) {
+console.error("Account count update failed:", error);
+}
+}
+  let notificationBaselineReady = false;
 
 async function checkMatchNotifications() {
   if (!currentUser || notificationPolling) return;

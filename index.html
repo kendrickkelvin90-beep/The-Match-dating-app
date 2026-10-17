@@ -3184,6 +3184,15 @@ $("chatPageTitle").onclick = () => {
 
 $("chatPartnerAvatar").src="";
 $("chatPartnerLocation").textContent="Location unavailable";
+    const chatContent=$("chatPageContent");
+  chatContent.replaceChildren();
+  chatContent.appendChild($("activeConversation"));
+  $("activeConversation").classList.remove("hidden");
+
+  show("chatPage");
+  $("backFromChatHeader").onclick=()=>{
+    $("backFromChatPage").click();
+  };
 
 const {data:chatProfile}=await db
   .from("profiles")

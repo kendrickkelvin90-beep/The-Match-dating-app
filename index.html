@@ -3637,7 +3637,7 @@ document.getElementById("sendChatMessage").addEventListener("click", function ()
   }
 });
 
-  $("sendChatMessage").onclick = async()=>{
+  $("sendChatMessage").onclick = async () => {
   if(!currentUser){
     status("chatPageStatus","Please log in again to send messages.",true);
     return;
@@ -3657,48 +3657,36 @@ document.getElementById("sendChatMessage").addEventListener("click", function ()
   }
 
   const button = $("sendChatMessage");
-  if(button.disabled)return;
+  if(button.disabled) return;
   button.disabled = true;
   button.textContent = "Sending...";
-  
 
-
-    
-  try{  
-  const blockCheck = await db.rpc("can_interact_with_member", {
-      target_user_id: activeChatUserId
-    });
-
-    if(blockCheck.error) throw blockCheck.error;
-
-    if(blockCheck.data !== true){
-      $("activeConversation").classList.add("hidden");
-      $("chatMessages").replaceChildren();
-      activeChatUserId = null;
-      
-      status("chatPageStatus","Message not sent. This conversation is unavailable because either member has blocked the other.",true);
-      return;
-    }
-
-    const {error} = await db
+  try {
+    const { error } = await db
       .from("messages")
       .insert({
-        sender_id:currentUser.id,
-        receiver_id:activeChatUserId,
-        body:body
+        sender_id: currentUser.id,
+        receiver_id: activeChatUserId,
+        body: body
       });
 
-    if(error)throw error;
+    if(error) throw error;
 
+    // Clear input and reset height on successful send
     input.value = "";
+    input.style.height = "auto";
     await loadChatMessages();
-  }catch(e){
-    status("chatPageStatus","Message not sent: "+friendly(e),true);
-  }finally{
+    status("chatPageStatus", "Message sent!");
+
+  } catch(e) {
+    console.error("Send message error:", e);
+    status("chatPageStatus", "Not sent: " + friendly(e), true);
+  } finally {
     button.disabled = false;
     button.textContent = "Send";
-}
-};  
+  }
+};
+ 
   async function loadMyPhotos(){
   if(!currentUser)return;
   const grid=$("profilePhotos");

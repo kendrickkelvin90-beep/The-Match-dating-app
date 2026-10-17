@@ -3133,20 +3133,34 @@ let chatRefreshTimer = null;
 
 
 async function openChat(userId, userName){
+  try {
+    status("messagesStatus", "Opening conversation...");
 
-const blockCheck = await db.rpc("can_interact_with_member", {
-  target_user_id: userId
-});
+    const blockCheck = await db.rpc("can_interact_with_member", {
+      target_user_id: userId
+    });
 
-if(blockCheck.error){
-  status("chatPageStatus","Could not check block status: "+friendly(blockCheck.error),true);
-  return;
-}
+    if (blockCheck.error) {
+      throw blockCheck.error;
+    }
 
-if(blockCheck.data !== true){
-  status("chatPageStatus","This conversation is unavailable because either member has blocked the other.");
-  return;
-}
+    if (blockCheck.data !== true) {
+      status(
+        "messagesStatus",
+        "This conversation is unavailable because either member has blocked the other.",
+        true
+      );
+      return;
+    }
+  } catch (error) {
+    status(
+      "messagesStatus",
+      "Could not open conversation: " + friendly(error),
+      true
+    );
+    console.error("Open chat failed:", error);
+    return;
+  }
 
 
 activeChatUserId=userId;

@@ -3170,107 +3170,91 @@ let chatRefreshTimer = null;
 
 
 async function openChat(userId, userName){
-  try {
-    status("messagesStatus", "Opening conversation...");
-
-    
-    const blockCheck = await Promise.race([
-      db.rpc("can_interact_with_member", {
-        target_user_id: userId
-      }),
-      new Promise((_, reject) =>
-        setTimeout(
-          () => reject(new Error("Chat check timed out. Please check your connection and Supabase function.")),
-          12000
-        )
-      )
-    ]);
-
-
-    if (blockCheck.error) {
-      throw blockCheck.error;
-    }
-
-    if (blockCheck.data !== true) {
-      status(
-        "messagesStatus",
-        "This conversation is unavailable because either member has blocked the other.",
-        true
-      );
-      return;
-    }
-  } catch (error) {
-    status(
-      "messagesStatus",
-      "Could not open conversation: " + friendly(error),
-      true
-    );
-    console.error("Open chat failed:", error);
+  if(!currentUser || !userId || userId === currentUser.id){
+    status("messagesStatus","Unable to open this conversation.",true);
     return;
   }
 
+  try{
+    status("messagesStatus","Opening conversation...");
 
-activeChatUserId=userId;
-$("chatPageTitle").textContent=userName;
-  
-$("chatPageTitle").style.cursor = "pointer";
-$("chatPageTitle").onclick = () => {
-  if (activeChatUserId) openMemberProfile(activeChatUserId);
-};
+    activeChatUserId = userId;
 
+    $("chatPageTitle").textContent = userName || "Conversation";
+    $("chatPageTitle").style.cursor = "pointer";
+    $("chatPageTitle").onclick = () => {
+      if(activeChatUserId) openMemberProfile(activeChatUserId);
+    };
 
-$("chatPartnerAvatar").src="";
-$("chatPartnerLocation").textContent="Location unavailable";
-    const chatContent=$("chatPageContent");
-  chatContent.replaceChildren();
-  chatContent.appendChild($("activeConversation"));
-  $("activeConversation").classList.remove("hidden");
+    $("chatPartnerAvatar").src = "";
+    $("chatPartnerLocation").textContent = "Loading profile...";
 
-  show("chatPage");
-  $("backFromChatHeader").onclick=()=>{
-    $("backFromChatPage").click();
-  };
+    const chatContent = $("chatPageContent");
+    chatContent.replaceChildren();
+    chatContent.appendChild($("activeConversation"));
+    $("activeConversation").classList.remove("hidden");
 
-const {data:chatProfile}=await db
-  .from("profiles")
-  .select("city,location_sharing")
-  .eq("id",userId)
-  .maybeSingle();
+    show("chatPage");
 
-if(chatProfile){
-  $("chatPartnerLocation").textContent=
-    chatProfile.location_sharing && chatProfile.city
-      ? chatProfile.city
-      : "Location hidden";
-}
+    $("backFromChatHeader").onclick = () => {
+      $("backFromChatPage").click();
+    };
 
-const {data:chatPhotos}=await db
-  .from("profile_photos")
-  .select("storage_path,position")
-  .eq("user_id",userId)
-  .order("position")
-  .limit(1);
+    status("chatPageStatus","Loading conversation...");
 
-if(chatPhotos && chatPhotos.length){
-  $("chatPartnerAvatar").src=db.storage
-    .from("profile-photos")
-    .getPublicUrl(chatPhotos[0].storage_path).data.publicUrl;
-}
+    const {data: chatProfile, error: profileError} = await db
+      .from("profiles")
+      .select("city,location_sharing")
+      .eq("id",userId)
+      .maybeSingle();
 
-if (chatRefreshTimer) clearInterval(chatRefreshTimer);
-chatRefreshTimer = setInterval(() => {
-  if (activeChatUserId && !$("chatPage").classList.contains("hidden")) {
-    loadChatMessages();
+    if(profileError) throw profileError;
+
+    if(chatProfile){
+      $("chatPartnerLocation").textContent =
+        chatProfile.location_sharing && chatProfile.city
+          ? chatProfile.city
+          : "Location hidden";
+    }
+
+    const {data: chatPhotos, error: photoError} = await db
+      .from("profile_photos")
+      .select("storage_path,position")
+      .eq("user_id",userId)
+      .order("position")
+      .limit(1);
+
+    if(photoError) throw photoError;
+
+    if(chatPhotos && chatPhotos.length){
+      $("chatPartnerAvatar").src = db.storage
+        .from("profile-photos")
+        .getPublicUrl(chatPhotos[0].storage_path).data.publicUrl;
+    }
+
+    if(chatRefreshTimer) clearInterval(chatRefreshTimer);
+
+    chatRefreshTimer = setInterval(() => {
+      if(
+        activeChatUserId &&
+        !$("chatPage").classList.contains("hidden")
+      ){
+        loadChatMessages().catch(error => {
+          console.error("Chat refresh failed:",error);
+        });
+      }
+    },3000);
+
+    await loadChatMessages();
+
+  }catch(error){
+    status(
+      "chatPageStatus",
+      "Could not open conversation: " + friendly(error),
+      true
+    );
+    console.error("Open chat failed:",error);
   }
-}, 3000);
-
-status("chatPageStatus","Loading messages...");
-
-try{
-await loadChatMessages();
-}catch(e){
-status("chatPageStatus","Could not load messages: "+friendly(e),true);
-}
 }
 
 

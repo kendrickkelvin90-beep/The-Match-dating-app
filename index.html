@@ -886,32 +886,38 @@ body:has(#profile:not(.hidden)) .hero {
   <p class="status" id="settingsStatus" role="status"></p>
       </section>
   <nav class="bottom-nav hidden" id="bottomNavigation">
-        <button type="button" data-page="discover" aria-label="Discover">
-  <span class="nav-icon" aria-hidden="true">🧭</span>
-  <span>Discover</span>
+  <button type="button" data-page="discover" aria-label="Discover">
+    <span class="nav-icon" aria-hidden="true">🧭</span>
+    <span>Discover</span>
   </button>
+
   <button type="button" data-page="likes">
-  <span class="nav-icon">❤️</span>
-  <span id="likesCount" class="nav-badge" style="display:none;">0</span>
-  Likes
-  </button>
     <span class="nav-icon">❤️</span>
+    <span id="likesCount" class="nav-badge" style="display:none;">0</span>
     Likes
   </button>
-  <button type="button" data-page="messages">
-  <span class="nav-icon">💬</span>
-  <span id="messagesCount" class="nav-badge" style="display:none;">0</span>
-  Messages
-  </button>
+
+  <button type="button" data-page="matches">
     <span class="nav-icon">💞</span>
     Matches
   </button>
+
   <button type="button" data-page="messages">
     <span class="nav-icon">💬</span>
+    <span id="messagesCount" class="nav-badge" style="display:none;">0</span>
     Messages
   </button>
+
   <button type="button" data-page="profile">
     <span class="nav-icon">👤</span>
+    Profile
+  </button>
+
+  <button type="button" data-page="settings" aria-label="Settings">
+    <span class="nav-icon">⚙️</span>
+    Settings
+  </button>
+  </nav>
     Profile
   </button>
     <button type="button" data-page="settings" aria-label="Settings">

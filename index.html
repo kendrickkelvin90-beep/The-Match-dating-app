@@ -3357,9 +3357,22 @@ async function openChat(userId, userName){
 
     show("chatPage");
 
-  $("backFromChatHeader").onclick = () => {
-  $("backFromChatPage").onclick();
-};
+      
+    $("backFromChatHeader").onclick = () => {
+      if (chatRefreshTimer) {
+        clearInterval(chatRefreshTimer);
+        chatRefreshTimer = null;
+      }
+
+      $("conversationList").appendChild($("activeConversation"));
+      $("activeConversation").classList.add("hidden");
+
+      const returnPage = window.chatReturnPage || "messages";
+      window.chatReturnPage = null;
+
+      show(returnPage);
+    };
+
 
     status("chatPageStatus","Loading conversation...");
 

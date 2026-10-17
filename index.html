@@ -3136,9 +3136,19 @@ async function openChat(userId, userName){
   try {
     status("messagesStatus", "Opening conversation...");
 
-    const blockCheck = await db.rpc("can_interact_with_member", {
-      target_user_id: userId
-    });
+    
+    const blockCheck = await Promise.race([
+      db.rpc("can_interact_with_member", {
+        target_user_id: userId
+      }),
+      new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error("Chat check timed out. Please check your connection and Supabase function.")),
+          12000
+        )
+      )
+    ]);
+
 
     if (blockCheck.error) {
       throw blockCheck.error;

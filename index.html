@@ -3220,16 +3220,6 @@ if(chatPhotos && chatPhotos.length){
     .getPublicUrl(chatPhotos[0].storage_path).data.publicUrl;
 }
 
-const chatContent=$("chatPageContent");
-chatContent.replaceChildren();
-chatContent.appendChild($("activeConversation"));
-$("activeConversation").classList.remove("hidden");
-
-show("chatPage");
-  $("backFromChatHeader").onclick=()=>{
-  $("backFromChatPage").click();
-};
-
 if (chatRefreshTimer) clearInterval(chatRefreshTimer);
 chatRefreshTimer = setInterval(() => {
   if (activeChatUserId && !$("chatPage").classList.contains("hidden")) {

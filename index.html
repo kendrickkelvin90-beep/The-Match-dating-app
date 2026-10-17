@@ -3340,6 +3340,16 @@ async function openChat(userId, userName){
 
     $("chatPartnerLocation").textContent = "Loading profile...";
 
+   
+    const currentPage = panels.find(
+      page => !$(`${page}`).classList.contains("hidden")
+    );
+    window.chatReturnPage =
+      currentPage && currentPage !== "chatPage"
+        ? currentPage
+        : "messages";
+
+ 
     const chatContent = $("chatPageContent");
     chatContent.replaceChildren();
     chatContent.appendChild($("activeConversation"));

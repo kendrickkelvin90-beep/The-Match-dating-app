@@ -3629,6 +3629,15 @@ bubble.append(body,timestamp);
     $("sendChatMessage").click();
   }
 });
+  
+document.getElementById("sendChatMessage").addEventListener("click", function () {
+  const statusBox = document.getElementById("chatPageStatus");
+  if (statusBox) {
+    statusBox.textContent = "Send button tap detected. Checking message handler...";
+  }
+});
+
+$("sendChatMessage").onclick = async()=>{  
   $("sendChatMessage").onclick = async()=>{
   if(!currentUser){
     status("chatPageStatus","Please log in again to send messages.",true);

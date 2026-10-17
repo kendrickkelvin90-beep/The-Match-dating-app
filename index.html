@@ -3314,11 +3314,6 @@ async function loadMyConversations(){
   }
 }
  
-
-let activeChatUserId = null;
-let chatRefreshTimer = null;
-
-
 async function openChat(userId, userName){
   if(!currentUser || !userId || userId === currentUser.id){
     status("messagesStatus","Unable to open this conversation.",true);

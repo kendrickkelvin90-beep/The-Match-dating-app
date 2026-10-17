@@ -767,6 +767,26 @@ body:has(#profile:not(.hidden)) .hero {
   <p class="status" id="matchesStatus"></p>
   <button class="btn secondary" id="backFromMatches" type="button">Back to Discover</button>
 </section>
+ <section class="panel hidden" id="matchCelebrationPage" style="text-align:center;padding:24px 16px;">
+  <h1 style="font-size:34px;">💖 It's a Match!</h1>
+  <p>You both liked each other!</p>
+
+  <div style="display:flex;justify-content:center;align-items:center;gap:14px;margin:24px 0;">
+    <div>
+      <img id="matchMyPhoto" alt="Your photo" style="width:100px;height:100px;border-radius:50%;object-fit:cover;">
+      <p id="matchMyName">You</p>
+    </div>
+    <div style="font-size:28px;">❤️</div>
+    <div>
+      <img id="matchOtherPhoto" alt="Match photo" style="width:100px;height:100px;border-radius:50%;object-fit:cover;">
+      <p id="matchOtherName">Your match</p>
+    </div>
+  </div>
+
+  <button class="btn primary" id="matchSendMessage" type="button">💬 Send a Message</button>
+  <button class="btn secondary" id="matchContinueDiscover" type="button" style="margin-top:10px;">Continue Discovering</button>
+  <p class="status" id="matchCelebrationStatus"></p>
+ </section>
   <section class="panel hidden" id="memberProfilePage">
   <h2 id="memberProfileName">Member Profile ❤️</h2>
   <div id="memberProfileDetails"></div>

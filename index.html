@@ -2489,6 +2489,7 @@ $("bottomNavigation").querySelectorAll("button[data-page]").forEach(button=>{
 });
 
   
+
 async function loadLikesPage(){
   if(!currentUser)return;
 
@@ -2527,128 +2528,141 @@ async function loadLikesPage(){
     const receivedIds=[...new Set((received||[]).map(x=>x.liker_id))];
     const sentIds=[...new Set((sent||[]).map(x=>x.liked_id))];
 
-    const allIds=[...new Set([...receivedIds,...sentIds])];
+    // Free members must not see the identity of people who liked them.
+    if(!isPremium){
+      const locked=document.createElement("div");
+      locked.className="member-card";
 
-    let profiles=[];
-    if(allIds.length){
-      const {data,error}=await db
-        .from("profiles")
-        .select("id,display_name,age,city,bio")
-        .in("id",allIds);
+      const title=document.createElement("h3");
+      title.textContent="🔒 Premium Likes";
 
-      if(error)throw error;
-      profiles=data||[];
-    }
+      const note=document.createElement("p");
+      note.className="small";
+      note.textContent=receivedIds.length
+        ? "You have "+receivedIds.length+" like(s). Upgrade to Premium to see their photos and names, chat with them, or decline a like."
+        : "When someone likes you, upgrade to Premium to see who it is.";
 
-    const profileMap=new Map(profiles.map(p=>[p.id,p]));
+      const upgrade=document.createElement("button");
+      upgrade.type="button";
+      upgrade.className="btn primary";
+      upgrade.textContent="Upgrade to Premium";
+      upgrade.onclick=()=>show("premium");
 
-    async function renderPerson(id,list,receivedPerson){
-      const p=profileMap.get(id);
-      if(!p)return;
+      locked.append(title,note,upgrade);
+      receivedList.appendChild(locked);
+    }else{
+      for(const id of receivedIds){
+        const {data:p,error:profileError}=await db
+          .from("profiles")
+          .select("id,display_name")
+          .eq("id",id)
+          .maybeSingle();
 
-      const card=document.createElement("div");
-      card.className="member-card";
+        if(profileError)throw profileError;
+        if(!p)continue;
 
-      const avatar=document.createElement("img");
-      avatar.alt="Member photo";
-      avatar.style.cssText=
-        "width:76px;height:76px;border-radius:50%;object-fit:cover;display:block;margin-bottom:10px;background:#292036;";
+        const card=document.createElement("div");
+        card.className="member-card";
 
-      const {data:photos,error:photoError}=await db
-        .from("profile_photos")
-        .select("storage_path")
-        .eq("user_id",p.id)
-        .order("position")
-        .limit(1);
+        const name=document.createElement("h3");
+        name.textContent=p.display_name||"Member";
 
-      if(photoError)throw photoError;
+        const avatar=document.createElement("img");
+        avatar.alt="Member photo";
+        avatar.style.cssText=
+          "width:76px;height:76px;border-radius:50%;object-fit:cover;display:block;margin:10px 0;background:#292036;";
 
-      if(photos&&photos.length){
-        avatar.src=db.storage.from("profile-photos")
-          .getPublicUrl(photos[0].storage_path).data.publicUrl;
+        const {data:photos,error:photoError}=await db
+          .from("profile_photos")
+          .select("storage_path")
+          .eq("user_id",id)
+          .order("position")
+          .limit(1);
 
-        if(receivedPerson&&!isPremium){
-          avatar.style.filter="blur(12px)";
+        if(photoError)throw photoError;
+
+        if(photos&&photos.length){
+          avatar.src=db.storage.from("profile-photos")
+            .getPublicUrl(photos[0].storage_path).data.publicUrl;
+        }else{
+          avatar.alt="No photo available";
         }
-      }else{
-        avatar.style.display="none";
-      }
 
-      card.appendChild(avatar);
+        const actions=document.createElement("div");
+        actions.style.cssText="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;";
 
-      const name=document.createElement("h3");
-      name.textContent=p.display_name||"Member";
-      card.appendChild(name);
+        const chat=document.createElement("button");
+        chat.type="button";
+        chat.className="btn primary";
+        chat.textContent="💬 Chat";
+        chat.onclick=()=>openChat(id,p.display_name||"Member");
 
-      const details=document.createElement("p");
-      details.className="small";
-      details.textContent=[
-        p.age?p.age+" years old":"",
-        p.city||""
-      ].filter(Boolean).join(" · ");
-      card.appendChild(details);
+        const decline=document.createElement("button");
+        decline.type="button";
+        decline.className="btn secondary";
+        decline.textContent="✕ Decline";
 
-      if(receivedPerson&&!isPremium){
-        const premiumNote=document.createElement("p");
-        premiumNote.className="small";
-        premiumNote.textContent="Upgrade to Premium to view full photos.";
-        card.appendChild(premiumNote);
-      }
+        decline.onclick=async()=>{
+          if(!confirm("Remove this person from your Likes?"))return;
+          decline.disabled=true;
 
-      if(receivedPerson&&sentIds.includes(p.id)){
-        const matchNote=document.createElement("p");
-        matchNote.textContent="You liked each other 💞";
-        card.appendChild(matchNote);
-      }else if(receivedPerson){
-        }else if(receivedPerson&&!isPremium){
-        likeBack.type="button";
-        likeBack.className="btn primary";
-        likeBack.textContent="Like Back ❤️";
+          try{
+            const {error}=await db
+              .from("likes")
+              .delete()
+              .eq("liker_id",id)
+              .eq("liked_id",currentUser.id);
 
-        likeBack.onclick=async()=>{
-          likeBack.disabled=true;
-          const {error}=await db.from("likes").insert({
-            liker_id:currentUser.id,
-            liked_id:p.id
-          });
+            if(error)throw error;
 
-          if(error){
-            status("likesStatus","Could not send like: "+friendly(error),true);
-            likeBack.disabled=false;
-          }else{
-            status("likesStatus","Like sent! Refresh to update your likes.");
+            status("likesStatus","Like declined.");
             await loadLikesPage();
+          }catch(error){
+            status("likesStatus","Could not decline: "+friendly(error),true);
+            decline.disabled=false;
           }
         };
 
-        card.appendChild(likeBack);
-      }else{
-        const likedNote=document.createElement("p");
-        likedNote.className="small";
-        likedNote.textContent="You sent this member a like ❤️";
-        card.appendChild(likedNote);
+        actions.append(chat,decline);
+        card.append(avatar,name,actions);
+        receivedList.appendChild(card);
       }
-
-      list.appendChild(card);
     }
 
-    for(const id of receivedIds){
-      await renderPerson(id,receivedList,true);
-    }
+    // Keep the existing "people I liked" list.
+    const sentTitle=document.createElement("h3");
+    sentTitle.textContent="People You Like";
+    sentList.appendChild(sentTitle);
 
     for(const id of sentIds){
-      await renderPerson(id,sentList,false);
+      const {data:p,error:profileError}=await db
+        .from("profiles")
+        .select("id,display_name")
+        .eq("id",id)
+        .maybeSingle();
+
+      if(profileError)throw profileError;
+      if(!p)continue;
+
+      const card=document.createElement("div");
+      card.className="member-card";
+      const name=document.createElement("h3");
+      name.textContent=p.display_name||"Member";
+      const note=document.createElement("p");
+      note.className="small";
+      note.textContent="You sent this member a like ❤️";
+      card.append(name,note);
+      sentList.appendChild(card);
     }
 
-    status(
-      "likesStatus",
+    status("likesStatus",
       "People who like you: "+receivedIds.length+
-      " · People you like: "+sentIds.length
-    );
+      " · People you like: "+sentIds.length);
   }catch(e){
     status("likesStatus","Could not load likes: "+friendly(e),true);
   }
 }
+
 
 $("refreshLikes").onclick=loadLikesPage;
   $("openMatches").onclick=async()=>{

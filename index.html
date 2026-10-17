@@ -3440,6 +3440,15 @@ async function loadChatMessages(){
 
   if(blockCheck.error) throw blockCheck.error;
 
+  
+    const currentPage = panels.find(
+      page => !$(`${page}`).classList.contains("hidden")
+    );
+    window.chatReturnPage =
+      currentPage && currentPage !== "chatPage"
+        ? currentPage
+        : "messages";
+
   if(blockCheck.data !== true){
     $("activeConversation").classList.add("hidden");
     $("chatMessages").replaceChildren();

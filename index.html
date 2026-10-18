@@ -989,6 +989,25 @@ body:has(#profile:not(.hidden)) .hero {
     </div>
   </section>
 
+<section class="panel hidden" id="notificationsPage">
+  <h2>Notifications 🔔</h2>
+  <p class="small">Your latest activity and verification updates.</p>
+
+  <button class="btn secondary" id="refreshNotifications" type="button">
+    Refresh Notifications
+  </button>
+
+  <div id="notificationsList">
+    <p class="small">Loading your notifications...</p>
+  </div>
+
+  <p class="status" id="notificationsStatus" role="status"></p>
+
+  <button class="btn secondary" id="backFromNotifications" type="button">
+    ← Back
+  </button>
+</section>
+
   <nav class="bottom-nav hidden" id="bottomNavigation">
   <button type="button" data-page="discover" aria-label="Discover">
     <span class="nav-icon" aria-hidden="true">🧭</span>

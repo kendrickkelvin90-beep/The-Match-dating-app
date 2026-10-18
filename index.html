@@ -2841,10 +2841,12 @@ async function loadLikesPage(){
 
 
 $("refreshLikes").onclick=loadLikesPage;
-  $("openMatches").onclick=async()=>{
-  show("matches");
-  await loadMyMatches();
-};
+  if ($("openMatches")) {
+  $("openMatches").onclick = async () => {
+    show("matches");
+    await loadMyMatches();
+  };
+  }
 
 
 $("openMessages").onclick=async()=>{

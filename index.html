@@ -3060,7 +3060,35 @@ window.addEventListener("appinstalled", () => {
   }
 });
   // Settings page actions
-$("settingsEditProfile").onclick=()=>{
+$("openNotifications").onclick = async () => {
+if (!currentUser) {
+show("welcome");
+return;
+}
+
+show("notificationsPage");
+$("bottomNavigation")
+.querySelectorAll("button[data-page]")
+.forEach(button => button.classList.remove("active"));
+
+await loadMemberNotifications();
+await loadNotificationBadge();
+};
+
+$("refreshNotifications").onclick = async () => {
+await loadMemberNotifications();
+await loadNotificationBadge();
+};
+
+$("backFromNotifications").onclick = () => {
+show("discover");
+$("bottomNavigation")
+.querySelectorAll("button[data-page]")
+.forEach(button => {
+button.classList.toggle("active", button.dataset.page === "discover");
+});
+};
+  $("settingsEditProfile").onclick=()=>{
 show("profile");
 };
 

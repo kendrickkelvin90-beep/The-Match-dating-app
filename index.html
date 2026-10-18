@@ -4031,7 +4031,9 @@ box.textContent="Submission failed: "+friendly(e);
 btn.disabled=false;
 }
 };
-  $("editProfile").onclick=()=>show("profile");
+  if ($("editProfile")) {
+  $("editProfile").onclick = () => show("profile");
+  }
   
 $("openPremium").onclick=()=>show("premium");
 $("backFromPremium").onclick=()=>show("profile");

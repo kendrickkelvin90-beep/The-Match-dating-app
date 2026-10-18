@@ -1168,12 +1168,19 @@ async function loadNotificationBadge() {
   }
   }
 function show(id){
-panels.forEach(p=>$(p).classList.toggle("hidden",p!==id));
+  panels.forEach(p => $(p).classList.toggle("hidden", p !== id));
+
+  $("heroSection").classList.toggle(
+    "hidden",
+    id !== "welcome"
+  );
+
   $("bottomNavigation").classList.toggle(
-  "hidden",
-  ["welcome","auth","reset"].includes(id)
-);
-window.scrollTo(0,0);
+    "hidden",
+    ["welcome", "auth", "reset"].includes(id)
+  );
+
+  window.scrollTo(0, 0);
 }
 function status(id,msg,error){
 $(id).textContent=msg||"";

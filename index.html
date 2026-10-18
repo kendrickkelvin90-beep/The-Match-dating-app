@@ -1968,34 +1968,6 @@ async function loadNearby(){
   status("discoverStatus","Finding members...");
 
   try{
-    const {data:membership,error:premiumError}=await db
-      .from("premium_memberships")
-      .select("premium_until")
-      .eq("user_id",currentUser.id)
-      .maybeSingle();
-
-    if(premiumError)throw premiumError;
-
-    const isPremium=!!membership &&
-      new Date(membership.premium_until).getTime()>Date.now();
-
-    if(!isPremium){
-      const message=document.createElement("div");
-      message.className="member-card";
-      const title=document.createElement("h2");
-      title.textContent="⭐ Premium Nearby";
-      const note=document.createElement("p");
-      note.className="small";
-      note.textContent="Upgrade to Premium to discover members closest to your location.";
-      const upgrade=document.createElement("button");
-      upgrade.className="btn primary";
-      upgrade.textContent="Go Premium";
-      upgrade.onclick=()=>show("premium");
-      message.append(title,note,upgrade);
-      list.appendChild(message);
-      status("discoverStatus","Nearby discovery is a Premium feature.");
-      return;
-    }
 
     const {data:peopleData,error}=await db.from("profiles")
       .select("id,display_name,age,gender_identity,city,bio,latitude,longitude,location_sharing,sexual_roles")

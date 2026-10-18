@@ -2849,10 +2849,12 @@ $("refreshLikes").onclick=loadLikesPage;
   }
 
 
-$("openMessages").onclick=async()=>{
-  show("messages");
-  await loadMyConversations();
-};
+  if ($("openMessages")) {
+  $("openMessages").onclick = async () => {
+    show("messages");
+    await loadMyConversations();
+  };
+  }
 
 $("backFromMatches").onclick=()=>show("discover");
 $("backFromMessages").onclick=()=>show("matches");

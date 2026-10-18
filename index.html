@@ -1328,7 +1328,12 @@ async function loadAdminDashboard() {
         String(result.count ?? 0);
     }
 
-    status("adminStatus", "Dashboard counts loaded.");
+    
+await loadAdminVerificationRequests();
+await loadAdminPaymentRequests();
+await loadAdminMemberReports();
+status("adminStatus", "Dashboard loaded successfully.");
+
   } catch (error) {
     console.error("Admin dashboard error:", error);
     status("adminStatus", "Could not load dashboard: " + friendly(error), true);

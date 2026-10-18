@@ -3312,19 +3312,41 @@ async function openMemberProfile(memberId){
 
     const {data:p,error} = await db
       .from("profiles")
-       .select("id,display_name,age,gender_identity,interested_in,city,bio,sexual_roles,is_verified")
+       .select("id,display_name,age,gender_identity,interested_in,city,bio,sexual_roles,is_verified,verification_level")
       .eq("id",memberId)
       .maybeSingle();
 
     if(error) throw error;
     if(!p) throw Error("This member's profile could not be found.");
 
-    $("memberProfileName").textContent =
-  (p.display_name || "Member") +
-  (p.is_verified ? " ☑" : "") +
-  " ❤️";
+    const badge = document.createElement("span");
+badge.style.fontSize = "0.8em";
+badge.style.fontWeight = "bold";
+badge.style.marginLeft = "6px";
 
-$("memberProfileName").style.color = "#ffffff";
+if (p.verification_level === "enhanced") {
+  badge.textContent = "✓";
+  badge.style.color = "#1687f8";
+  badge.title = "Enhanced identity verification";
+} else if (p.verification_level === "basic" || p.is_verified) {
+  badge.textContent = "✓";
+  badge.style.color = "#111111";
+  badge.style.textShadow = "0 0 1px #ffffff";
+  badge.title = "Selfie reviewed by admin";
+}
+
+const name = $("memberProfileName");
+name.replaceChildren(
+  document.createTextNode((p.display_name || "Member") + " ")
+);
+
+if (p.verification_level === "enhanced" ||
+    p.verification_level === "basic" ||
+    p.is_verified) {
+  name.appendChild(badge);
+}
+
+name.appendChild(document.createTextNode(" ❤️"));
 
     const details = $("memberProfileDetails");
 

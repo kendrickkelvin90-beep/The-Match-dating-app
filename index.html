@@ -3632,6 +3632,7 @@ bubble.append(body,timestamp);
   
 
 $("sendChatMessage").addEventListener("click", async () => {
+  status("chatPageStatus", "Send button clicked — checking...");
   const button = $("sendChatMessage");
   const input = $("chatMessageInput");
 

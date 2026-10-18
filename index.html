@@ -3151,7 +3151,7 @@ let deferredInstallPrompt = null;
 
 window.addEventListener("beforeinstallprompt", (event) => {
   event.preventDefault();
-  if (page === "nearbyPage") await loadPremiumNearby();
+  
   deferredInstallPrompt = event;
 });
 
@@ -3288,6 +3288,7 @@ $("bottomNavigation").querySelectorAll("button[data-page]").forEach(button=>{
     });
 
         if (page === "discover") await loadNearby();
+    if (page === "nearbyPage") await loadPremiumNearby();
     if (page === "discover") await loadStories();
     if (page === "matches") await loadMyMatches();
     if (page === "messages") await loadMyConversations();

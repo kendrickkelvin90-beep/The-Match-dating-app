@@ -4173,7 +4173,9 @@ if(r.error){alert(friendly(r.error));return;}
 currentUser=null;approxLocation=null;show("welcome");
 }
 $("logoutProfile").onclick=logout;
-$("logoutDiscover").onclick=logout;
+if ($("logoutDiscover")) {
+  $("logoutDiscover").onclick = logout;
+}
 
 db.auth.onAuthStateChange((event,session)=>{
 if(event==="PASSWORD_RECOVERY"){

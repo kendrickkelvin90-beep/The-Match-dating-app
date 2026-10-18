@@ -1860,6 +1860,7 @@ async function checkMatchNotifications() {
 let notificationPolling = false; 
   async function showProfile(user){
 currentUser=user;
+    await loadNotificationBadge();
     await checkMatchAdmin();
 let email=user.email||"";
 let fallback=(email.split("@")[0]||"Member")

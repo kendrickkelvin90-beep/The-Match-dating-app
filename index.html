@@ -945,6 +945,9 @@ body:has(#profile:not(.hidden)) .hero {
 <script>
 (function(){
 "use strict";
+  window.addEventListener("error", event => {
+  alert("JavaScript error: " + event.message + " (line " + event.lineno + ")");
+});
 const SITE_URL=window.location.origin;
 const db=window.supabase.createClient(
 "https://rxbdmgzmwhjnkcclyrcq.supabase.co",

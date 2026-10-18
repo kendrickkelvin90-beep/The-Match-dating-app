@@ -1065,6 +1065,35 @@ s.style.setProperty("--speed",(1.5+Math.random()*3)+"s");
 $("stars").appendChild(s);
 }
 
+let isMatchAdmin = false;
+
+async function checkMatchAdmin() {
+  isMatchAdmin = false;
+
+  const card = $("adminAccessCard");
+  if (card) card.classList.add("hidden");
+
+  const { data: sessionData, error: sessionError } =
+    await db.auth.getSession();
+
+  if (sessionError || !sessionData.session) return false;
+
+  const { data, error } = await db.rpc("is_match_admin");
+
+  if (error) {
+    console.error("Admin access check failed:", error.message);
+    return false;
+  }
+
+  isMatchAdmin = data === true;
+
+  if (card) {
+    card.classList.toggle("hidden", !isMatchAdmin);
+  }
+
+  return isMatchAdmin;
+}
+
 function openAuth(isLogin){
 loginMode=isLogin;
 $("authTitle").textContent=isLogin?"Welcome back":"Create your account";

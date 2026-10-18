@@ -2252,6 +2252,143 @@ like.onclick=async()=>{
 
 
 
+async function loadPremiumNearby(){
+  if(!currentUser)return;
+
+  const list=$("nearbyMembersList");
+  list.replaceChildren();
+  status("nearbyMembersStatus","Checking Premium access...");
+
+  try{
+    const {data:membership,error:premiumError}=await db
+      .from("premium_memberships")
+      .select("premium_until")
+      .eq("user_id",currentUser.id)
+      .maybeSingle();
+
+    if(premiumError)throw premiumError;
+
+    const isPremium=!!membership &&
+      new Date(membership.premium_until).getTime()>Date.now();
+
+    if(!isPremium){
+      const card=document.createElement("div");
+      card.className="member-card";
+
+      const title=document.createElement("h3");
+      title.textContent="⭐ Premium Nearby";
+
+      const note=document.createElement("p");
+      note.className="small";
+      note.textContent="Upgrade to Premium to discover members nearest to your location.";
+
+      const upgrade=document.createElement("button");
+      upgrade.className="btn primary";
+      upgrade.textContent="Go Premium";
+      upgrade.onclick=()=>show("premium");
+
+      card.append(title,note,upgrade);
+      list.appendChild(card);
+      status("nearbyMembersStatus","Premium membership is required.");
+      return;
+    }
+
+    if(!approxLocation){
+      status(
+        "nearbyMembersStatus",
+        "Please enable location sharing in your profile to find nearby members.",
+        true
+      );
+      return;
+    }
+
+    status("nearbyMembersStatus","Finding nearby members...");
+
+    const {data:peopleData,error}=await db
+      .from("profiles")
+      .select("id,display_name,age,gender_identity,city,bio,latitude,longitude,location_sharing")
+      .neq("id",currentUser.id)
+      .eq("location_sharing",true)
+      .not("latitude","is",null)
+      .not("longitude","is",null)
+      .limit(100);
+
+    if(error)throw error;
+
+    let people=peopleData||[];
+
+    for(let i=people.length-1;i>=0;i--){
+      const {data:canInteract,error:checkError}=await db.rpc(
+        "can_interact_with_member",
+        {target_user_id:people[i].id}
+      );
+
+      if(checkError)throw checkError;
+      if(canInteract!==true)people.splice(i,1);
+    }
+
+    people=people.map(p=>({
+      ...p,
+      _distance:kmBetween(
+        approxLocation.latitude,
+        approxLocation.longitude,
+        p.latitude,
+        p.longitude
+      )
+    })).sort((a,b)=>a._distance-b._distance);
+
+    if(!people.length){
+      status("nearbyMembersStatus","No nearby members are available yet.");
+      return;
+    }
+
+    people.forEach(p=>{
+      const card=document.createElement("div");
+      card.className="member-card";
+
+      const name=document.createElement("h3");
+      name.textContent=p.display_name||"The Match member";
+
+      const details=document.createElement("p");
+      details.className="small";
+      details.textContent=[
+        p.age?String(p.age):"",
+        p.gender_identity||"",
+        p.city||""
+      ].filter(Boolean).join(" · ");
+
+      const distance=document.createElement("p");
+      distance.className="distance";
+      distance.textContent=distanceLabel(p._distance)+" away";
+
+      card.append(name,details,distance);
+
+      if(p.bio){
+        const bio=document.createElement("p");
+        bio.className="small";
+        bio.textContent=p.bio;
+        card.appendChild(bio);
+      }
+
+      const view=document.createElement("button");
+      view.className="btn secondary";
+      view.textContent="View Profile";
+      view.onclick=()=>openMemberProfile(p.id);
+
+      card.appendChild(view);
+      list.appendChild(card);
+    });
+
+    status("nearbyMembersStatus",people.length+" nearby members found.");
+  }catch(e){
+    status(
+      "nearbyMembersStatus",
+      "Could not load nearby members: "+friendly(e),
+      true
+    );
+  }
+}
+
 $("refreshNearby").onclick=loadNearby;
  
 async function loadStories(){

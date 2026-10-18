@@ -1783,6 +1783,7 @@ async function checkMatchNotifications() {
   try {
     const me = currentUser.id;
     await updateAccountCounts();
+    await loadNotificationBadge();
 
     const [likesResult, messagesResult] = await Promise.all([
       db.from("likes")

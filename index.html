@@ -1472,6 +1472,7 @@ async function checkMatchNotifications() {
 let notificationPolling = false; 
   async function showProfile(user){
 currentUser=user;
+    await checkMatchAdmin();
 let email=user.email||"";
 let fallback=(email.split("@")[0]||"Member")
 .replace(/[._-]+/g," ")

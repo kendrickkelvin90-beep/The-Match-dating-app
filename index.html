@@ -1235,9 +1235,9 @@ async function loadAdminMemberReports() {
 
       const resolve = document.createElement("button");
       resolve.type = "button";
-      resolve.textContent = "Mark resolved";
+      resolve.textContent = "Mark reviewed";
       resolve.onclick = () =>
-        reviewMatchAdminRequest("member_reports", report.id, "resolved");
+        reviewMatchAdminRequest("member_reports", report.id, "reviewed");
 
       card.append(title, details, resolve);
       list.appendChild(card);

@@ -505,7 +505,19 @@ body:has(#profile:not(.hidden)) .hero {
 </head>
 <body>
 <div id="stars" aria-hidden="true"></div>
-<header>The <span>Match</span> ♥</header>
+
+<header style="position:relative">
+  The <span>Match</span> ♥
+  <button
+    type="button"
+    id="openNotifications"
+    aria-label="Notifications"
+    style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:transparent;border:0;color:white;font-size:23px;padding:8px"
+  >
+    ♡<span id="notificationBadge" style="display:none"></span>
+  </button>
+</header>
+
 <main>
 <section class="hero">
 <div class="heart">❤️</div>

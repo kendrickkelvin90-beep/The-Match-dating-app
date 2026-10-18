@@ -3211,43 +3211,40 @@ window.addEventListener("appinstalled", () => {
 });
   // Settings page actions
 $("openNotifications").onclick = async () => {
-if (!currentUser) {
-show("welcome");
-return;
-}
+  if (!currentUser) {
+    show("welcome");
+    return;
+  }
+
+  show("notificationsPage");
+  await loadMemberNotifications();
+  await loadNotificationBadge();
+};
 
 $("refreshNotifications").onclick = async () => {
   try {
-    const { error: expiryNoticeError } = await db.rpc("notify_expired_premium");
-    if (expiryNoticeError) {
-      console.warn("Premium expiry notification check failed:", expiryNoticeError.message);
+    const { error } = await db.rpc("notify_expired_premium");
+    if (error) {
+      console.warn("Premium expiry notification check failed:", error.message);
     }
-  } catch (expiryNoticeError) {
-    console.warn("Premium expiry notification check failed:", expiryNoticeError);
+  } catch (error) {
+    console.warn("Premium expiry notification check failed:", error);
   }
 
   await loadMemberNotifications();
   await loadNotificationBadge();
 };
 
-.forEach(button => button.classList.remove("active"));
-
-await loadMemberNotifications();
-await loadNotificationBadge();
-};
-
-$("refreshNotifications").onclick = async () => {
-await loadMemberNotifications();
-await loadNotificationBadge();
-};
-
 $("backFromNotifications").onclick = () => {
-show("discover");
-$("bottomNavigation")
-.querySelectorAll("button[data-page]")
-.forEach(button => {
-button.classList.toggle("active", button.dataset.page === "discover");
-});
+  show("discover");
+  $("bottomNavigation")
+    .querySelectorAll("button[data-page]")
+    .forEach(button => {
+      button.classList.toggle(
+        "active",
+        button.dataset.page === "discover"
+      );
+    });
 };
   $("settingsEditProfile").onclick=()=>{
 show("profile");

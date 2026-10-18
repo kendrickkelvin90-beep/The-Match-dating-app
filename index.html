@@ -3312,7 +3312,7 @@ async function openMemberProfile(memberId){
 
     const {data:p,error} = await db
       .from("profiles")
-      .select("id,display_name,age,gender_identity,interested_in,city,bio,sexual_roles")
+       .select("id,display_name,age,gender_identity,interested_in,city,bio,sexual_roles,is_verified")
       .eq("id",memberId)
       .maybeSingle();
 
@@ -3320,7 +3320,11 @@ async function openMemberProfile(memberId){
     if(!p) throw Error("This member's profile could not be found.");
 
     $("memberProfileName").textContent =
-      (p.display_name || "Member") + " ❤️";
+  (p.display_name || "Member") +
+  (p.is_verified ? " ☑" : "") +
+  " ❤️";
+
+$("memberProfileName").style.color = "#ffffff";
 
     const details = $("memberProfileDetails");
 

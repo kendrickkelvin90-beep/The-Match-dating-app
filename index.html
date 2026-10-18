@@ -1885,9 +1885,19 @@ async function checkMatchNotifications() {
 
   let notificationPollTimer = null;
 let notificationPolling = false; 
-  async function showProfile(user){
+  
+async function showProfile(user){
 currentUser=user;
+    try {
+      const { error: expiryNoticeError } = await db.rpc("notify_expired_premium");
+      if (expiryNoticeError) {
+        console.warn("Premium expiry notification check failed:", expiryNoticeError.message);
+      }
+    } catch (expiryNoticeError) {
+      console.warn("Premium expiry notification check failed:", expiryNoticeError);
+    }
     await loadNotificationBadge();
+
     await checkMatchAdmin();
 let email=user.email||"";
 let fallback=(email.split("@")[0]||"Member")
@@ -3206,9 +3216,20 @@ show("welcome");
 return;
 }
 
-show("notificationsPage");
-$("bottomNavigation")
-.querySelectorAll("button[data-page]")
+$("refreshNotifications").onclick = async () => {
+  try {
+    const { error: expiryNoticeError } = await db.rpc("notify_expired_premium");
+    if (expiryNoticeError) {
+      console.warn("Premium expiry notification check failed:", expiryNoticeError.message);
+    }
+  } catch (expiryNoticeError) {
+    console.warn("Premium expiry notification check failed:", expiryNoticeError);
+  }
+
+  await loadMemberNotifications();
+  await loadNotificationBadge();
+};
+
 .forEach(button => button.classList.remove("active"));
 
 await loadMemberNotifications();

@@ -1254,42 +1254,47 @@ async function reviewMatchAdminRequest(table, id, decision) {
     return;
   }
 
-  if (!["verification_requests", "premium_payment_requests", "member_reports"].includes(table)) {
+  const allowedDecisions = {
+    verification_requests: ["approved", "rejected"],
+    premium_payment_requests: ["approved", "rejected"],
+    member_reports: ["reviewed", "actioned"]
+  };
+
+  if (
+    !allowedDecisions[table] ||
+    !allowedDecisions[table].includes(decision)
+  ) {
     status("adminStatus", "Unsupported review action.", true);
     return;
   }
 
-  if (!confirm("Confirm this review action: " + decision + "?")) return;
+  if (!confirm("Are you sure you want to " + decision + " this request?")) {
+    return;
+  }
 
-  status("adminStatus", "Saving review...");
+  status("adminStatus", "Processing review...");
 
   try {
-    const updates = { status: decision };
-
-    if (table === "verification_requests") {
-      updates.reviewed_at = new Date().toISOString();
-    } else if (table === "premium_payment_requests") {
-      updates.reviewed_at = new Date().toISOString();
-    }
-
-    const { error } = await db
-      .from(table)
-      .update(updates)
-      .eq("id", id);
+    const { error } = await db.rpc("admin_review_match_request", {
+      p_table: table,
+      p_id: id,
+      p_decision: decision
+    });
 
     if (error) throw error;
 
-    status(
-      "adminStatus",
-      "Review saved. Refreshing dashboard..."
-    );
+    status("adminStatus", "Review completed. Refreshing dashboard...");
 
     await loadAdminDashboard();
-    await loadAdminVerificationRequests();
-    await loadAdminPaymentRequests();
-    await loadAdminMemberReports();
+
+    status("adminStatus", "Review completed successfully.");
   } catch (error) {
-    status("adminStatus", "Review failed: " + friendly(error), true);
+    console.error("Admin review failed:", error);
+    status(
+      "adminStatus",
+      "Review failed: " + friendly(error),
+      true
+    );
   }
 }
 

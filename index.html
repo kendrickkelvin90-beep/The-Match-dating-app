@@ -1094,6 +1094,74 @@ async function checkMatchAdmin() {
   return isMatchAdmin;
 }
 
+async function loadAdminDashboard() {
+  const resultIds = {
+    profiles: "adminMembersCount",
+    likes: "adminLikesCount",
+    messages: "adminMessagesCount",
+    verification_requests: "adminVerificationCount",
+    premium_payment_requests: "adminPaymentsCount",
+    member_reports: "adminReportsCount"
+  };
+
+  status("adminStatus", "Loading dashboard...");
+
+  try {
+    const checks = await Promise.all([
+      db.from("profiles").select("id", { count: "exact", head: true }),
+      db.from("likes").select("id", { count: "exact", head: true }),
+      db.from("messages").select("id", { count: "exact", head: true }),
+      db.from("verification_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      db.from("premium_payment_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      db.from("member_reports").select("id", { count: "exact", head: true }).eq("status", "pending")
+    ]);
+
+    const keys = Object.keys(resultIds);
+
+    for (let i = 0; i < checks.length; i++) {
+      const result = checks[i];
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      $(resultIds[keys[i]]).textContent =
+        String(result.count ?? 0);
+    }
+
+    status("adminStatus", "Dashboard counts loaded.");
+  } catch (error) {
+    console.error("Admin dashboard error:", error);
+    status("adminStatus", "Could not load dashboard: " + friendly(error), true);
+  }
+}
+
+$("openAdminDashboardBtn").addEventListener("click", async () => {
+  const allowed = await checkMatchAdmin();
+
+  if (!allowed) {
+    status("settingsStatus", "Admin access denied for this account.", true);
+    return;
+  }
+
+  show("adminPanel");
+  await loadAdminDashboard();
+});
+
+$("adminRefreshBtn").addEventListener("click", async () => {
+  if (!(await checkMatchAdmin())) {
+    show("settings");
+    status("settingsStatus", "Admin access denied.", true);
+    return;
+  }
+
+  await loadAdminDashboard();
+});
+
+$("adminBackBtn").addEventListener("click", () => {
+  show("settings");
+});
+
 function openAuth(isLogin){
 loginMode=isLogin;
 $("authTitle").textContent=isLogin?"Welcome back":"Create your account";

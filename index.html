@@ -1094,6 +1094,7 @@ async function checkMatchAdmin() {
   return isMatchAdmin;
 }
 
+
 async function loadAdminVerificationRequests() {
   const list = $("adminVerificationList");
   list.textContent = "Loading verification requests...";
@@ -1106,6 +1107,7 @@ async function loadAdminVerificationRequests() {
       .order("created_at", { ascending: false });
 
     if (error) throw error;
+
     list.replaceChildren();
 
     if (!data || data.length === 0) {
@@ -1113,7 +1115,7 @@ async function loadAdminVerificationRequests() {
       return;
     }
 
-    data.forEach(request => {
+    for (const request of data) {
       const card = document.createElement("div");
       card.className = "member-card";
 
@@ -1126,25 +1128,69 @@ async function loadAdminVerificationRequests() {
         " · Submitted: " +
         new Date(request.created_at).toLocaleString();
 
+      card.append(title, details);
+
+      if (request.selfie_path) {
+        const viewSelfie = document.createElement("button");
+        viewSelfie.type = "button";
+        viewSelfie.textContent = "View Selfie";
+
+        viewSelfie.onclick = async () => {
+          viewSelfie.disabled = true;
+          viewSelfie.textContent = "Opening selfie...";
+
+          try {
+            const { data: signedData, error: signedError } =
+              await db.storage
+                .from("verification-selfies")
+                .createSignedUrl(request.selfie_path, 300);
+
+            if (signedError) throw signedError;
+            if (!signedData?.signedUrl) {
+              throw new Error("Could not create a secure selfie link.");
+            }
+
+            window.open(signedData.signedUrl, "_blank", "noopener");
+          } catch (e) {
+            alert("Could not open selfie: " + friendly(e));
+          } finally {
+            viewSelfie.disabled = false;
+            viewSelfie.textContent = "View Selfie";
+          }
+        };
+
+        card.appendChild(viewSelfie);
+      }
+
       const approve = document.createElement("button");
       approve.type = "button";
       approve.textContent = "Approve";
       approve.onclick = () =>
-        reviewMatchAdminRequest("verification_requests", request.id, "approved");
+        reviewMatchAdminRequest(
+          "verification_requests",
+          request.id,
+          "approved"
+        );
 
       const reject = document.createElement("button");
       reject.type = "button";
       reject.textContent = "Reject";
       reject.onclick = () =>
-        reviewMatchAdminRequest("verification_requests", request.id, "rejected");
+        reviewMatchAdminRequest(
+          "verification_requests",
+          request.id,
+          "rejected"
+        );
 
-      card.append(title, details, approve, reject);
+      card.append(approve, reject);
       list.appendChild(card);
-    });
+    }
   } catch (error) {
-    list.textContent = "Could not load verification requests: " + friendly(error);
+    list.textContent =
+      "Could not load verification requests: " + friendly(error);
   }
 }
+
 
 async function loadAdminPaymentRequests() {
   const list = $("adminPaymentsList");

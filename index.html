@@ -1065,7 +1065,108 @@ let chatRefreshTimer = null;
 const panels=["welcome","auth","reset","profile","verificationPage","discover","premium","matches","memberProfilePage","chatPage","messages","likes","blockedMembers","settings","adminPanel","notificationsPage"];
 
 
+async function loadMemberNotifications() {
+  if (!currentUser) return;
 
+  const list = $("notificationsList");
+  const badge = $("notificationBadge");
+  const statusBox = $("notificationsStatus");
+
+  list.replaceChildren();
+  statusBox.textContent = "Loading notifications...";
+
+  try {
+    const { data, error } = await db
+      .from("notifications")
+      .select("id,type,title,body,related_user_id,is_read,created_at")
+      .eq("user_id", currentUser.id)
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      list.textContent = "You're all caught up. No notifications yet.";
+    } else {
+      data.forEach(notification => {
+        const card = document.createElement("div");
+        card.style.cssText =
+          "padding:14px;margin:10px 0;border:1px solid #383044;" +
+          "border-radius:12px;background:" +
+          (notification.is_read ? "#17141d" : "#292033");
+
+        const title = document.createElement("strong");
+        title.textContent = notification.title || "Notification";
+
+        const body = document.createElement("p");
+        body.className = "small";
+        body.textContent = notification.body || "";
+
+        const time = document.createElement("p");
+        time.className = "small";
+        time.textContent = new Date(
+          notification.created_at
+        ).toLocaleString();
+
+        card.append(title, body, time);
+
+        card.addEventListener("click", async () => {
+          if (notification.is_read) return;
+
+          const { error: updateError } = await db
+            .from("notifications")
+            .update({ is_read: true })
+            .eq("id", notification.id)
+            .eq("user_id", currentUser.id);
+
+          if (updateError) {
+            statusBox.textContent =
+              "Could not mark notification as read.";
+            return;
+          }
+
+          notification.is_read = true;
+          await loadMemberNotifications();
+          await loadNotificationBadge();
+        });
+
+        list.appendChild(card);
+      });
+    }
+
+    statusBox.textContent = "";
+  } catch (error) {
+    console.error("Notifications failed to load:", error);
+    statusBox.textContent =
+      "Could not load notifications. Please try again.";
+  }
+}
+
+async function loadNotificationBadge() {
+  if (!currentUser) return;
+
+  const badge = $("notificationBadge");
+
+  try {
+    const { count, error } = await db
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", currentUser.id)
+      .eq("is_read", false);
+
+    if (error) throw error;
+
+    const unread = count || 0;
+    badge.textContent = unread > 9 ? "9+" : String(unread);
+    badge.style.cssText = unread
+      ? "display:inline-block;background:#ef4444;color:white;" +
+        "border-radius:50%;padding:2px 6px;font-size:11px;" +
+        "margin-left:4px;vertical-align:top"
+      : "display:none";
+  } catch (error) {
+    console.error("Notification badge failed:", error);
+  }
+  }
 function show(id){
 panels.forEach(p=>$(p).classList.toggle("hidden",p!==id));
   $("bottomNavigation").classList.toggle(

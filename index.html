@@ -1094,6 +1094,205 @@ async function checkMatchAdmin() {
   return isMatchAdmin;
 }
 
+async function loadAdminVerificationRequests() {
+  const list = $("adminVerificationList");
+  list.textContent = "Loading verification requests...";
+
+  try {
+    const { data, error } = await db
+      .from("verification_requests")
+      .select("id,user_id,status,created_at,selfie_path")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    list.replaceChildren();
+
+    if (!data || data.length === 0) {
+      list.textContent = "No pending verification requests.";
+      return;
+    }
+
+    data.forEach(request => {
+      const card = document.createElement("div");
+      card.className = "member-card";
+
+      const title = document.createElement("h4");
+      title.textContent = "Verification request";
+
+      const details = document.createElement("p");
+      details.textContent =
+        "Member ID: " + request.user_id +
+        " · Submitted: " +
+        new Date(request.created_at).toLocaleString();
+
+      const approve = document.createElement("button");
+      approve.type = "button";
+      approve.textContent = "Approve";
+      approve.onclick = () =>
+        reviewMatchAdminRequest("verification_requests", request.id, "approved");
+
+      const reject = document.createElement("button");
+      reject.type = "button";
+      reject.textContent = "Reject";
+      reject.onclick = () =>
+        reviewMatchAdminRequest("verification_requests", request.id, "rejected");
+
+      card.append(title, details, approve, reject);
+      list.appendChild(card);
+    });
+  } catch (error) {
+    list.textContent = "Could not load verification requests: " + friendly(error);
+  }
+}
+
+async function loadAdminPaymentRequests() {
+  const list = $("adminPaymentsList");
+  list.textContent = "Loading Premium payment requests...";
+
+  try {
+    const { data, error } = await db
+      .from("premium_payment_requests")
+      .select("id,user_id,plan,amount_ngn,transfer_reference,sender_name,status,created_at")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    list.replaceChildren();
+
+    if (!data || data.length === 0) {
+      list.textContent = "No pending Premium payments.";
+      return;
+    }
+
+    data.forEach(request => {
+      const card = document.createElement("div");
+      card.className = "member-card";
+
+      const title = document.createElement("h4");
+      title.textContent =
+        (request.plan === "monthly" ? "Monthly" : "Yearly") +
+        " Premium · ₦" +
+        Number(request.amount_ngn).toLocaleString("en-NG");
+
+      const details = document.createElement("p");
+      details.textContent =
+        "Member: " + request.user_id +
+        " · Sender: " + (request.sender_name || "Not provided") +
+        " · Reference: " + (request.transfer_reference || "Not provided");
+
+      const approve = document.createElement("button");
+      approve.type = "button";
+      approve.textContent = "Approve payment";
+      approve.onclick = () =>
+        reviewMatchAdminRequest("premium_payment_requests", request.id, "approved");
+
+      const reject = document.createElement("button");
+      reject.type = "button";
+      reject.textContent = "Reject payment";
+      reject.onclick = () =>
+        reviewMatchAdminRequest("premium_payment_requests", request.id, "rejected");
+
+      card.append(title, details, approve, reject);
+      list.appendChild(card);
+    });
+  } catch (error) {
+    list.textContent = "Could not load Premium payments: " + friendly(error);
+  }
+}
+
+async function loadAdminMemberReports() {
+  const list = $("adminReportsList");
+  list.textContent = "Loading member reports...";
+
+  try {
+    const { data, error } = await db
+      .from("member_reports")
+      .select("id,reporter_id,reported_user_id,reason,details,status,created_at")
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (error) throw error;
+    list.replaceChildren();
+
+    if (!data || data.length === 0) {
+      list.textContent = "No member reports found.";
+      return;
+    }
+
+    data.forEach(report => {
+      const card = document.createElement("div");
+      card.className = "member-card";
+
+      const title = document.createElement("h4");
+      title.textContent = "Report · " + (report.status || "pending");
+
+      const details = document.createElement("p");
+      details.textContent =
+        "Reported member: " + report.reported_user_id +
+        " · Reason: " + (report.reason || "Not specified") +
+        (report.details ? " · Details: " + report.details : "");
+
+      const resolve = document.createElement("button");
+      resolve.type = "button";
+      resolve.textContent = "Mark resolved";
+      resolve.onclick = () =>
+        reviewMatchAdminRequest("member_reports", report.id, "resolved");
+
+      card.append(title, details, resolve);
+      list.appendChild(card);
+    });
+  } catch (error) {
+    list.textContent = "Could not load member reports: " + friendly(error);
+  }
+}
+
+async function reviewMatchAdminRequest(table, id, decision) {
+  if (!(await checkMatchAdmin())) {
+    status("adminStatus", "Admin access denied.", true);
+    show("settings");
+    return;
+  }
+
+  if (!["verification_requests", "premium_payment_requests", "member_reports"].includes(table)) {
+    status("adminStatus", "Unsupported review action.", true);
+    return;
+  }
+
+  if (!confirm("Confirm this review action: " + decision + "?")) return;
+
+  status("adminStatus", "Saving review...");
+
+  try {
+    const updates = { status: decision };
+
+    if (table === "verification_requests") {
+      updates.reviewed_at = new Date().toISOString();
+    } else if (table === "premium_payment_requests") {
+      updates.reviewed_at = new Date().toISOString();
+    }
+
+    const { error } = await db
+      .from(table)
+      .update(updates)
+      .eq("id", id);
+
+    if (error) throw error;
+
+    status(
+      "adminStatus",
+      "Review saved. Refreshing dashboard..."
+    );
+
+    await loadAdminDashboard();
+    await loadAdminVerificationRequests();
+    await loadAdminPaymentRequests();
+    await loadAdminMemberReports();
+  } catch (error) {
+    status("adminStatus", "Review failed: " + friendly(error), true);
+  }
+}
+
 async function loadAdminDashboard() {
   const resultIds = {
     profiles: "adminMembersCount",

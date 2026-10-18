@@ -905,6 +905,69 @@ body:has(#profile:not(.hidden)) .hero {
 
   <p class="status" id="settingsStatus" role="status"></p>
       </section>
+  
+  <section class="panel hidden" id="adminPanel">
+    <div class="card">
+      <h2>Admin Dashboard</h2>
+      <p>Manage members, verification requests, Premium payments, and reports.</p>
+
+      <div class="grid">
+        <div class="card">
+          <h3>Members</h3>
+          <p id="adminMembersCount">—</p>
+        </div>
+
+        <div class="card">
+          <h3>Likes</h3>
+          <p id="adminLikesCount">—</p>
+        </div>
+
+        <div class="card">
+          <h3>Messages</h3>
+          <p id="adminMessagesCount">—</p>
+        </div>
+
+        <div class="card">
+          <h3>Pending Verification</h3>
+          <p id="adminVerificationCount">—</p>
+        </div>
+
+        <div class="card">
+          <h3>Pending Premium Payments</h3>
+          <p id="adminPaymentsCount">—</p>
+        </div>
+
+        <div class="card">
+          <h3>Member Reports</h3>
+          <p id="adminReportsCount">—</p>
+        </div>
+      </div>
+
+      <hr>
+      <h3>Verification Requests</h3>
+      <div id="adminVerificationList">
+        <p>Verification requests will appear here.</p>
+      </div>
+
+      <hr>
+      <h3>Premium Payment Requests</h3>
+      <div id="adminPaymentsList">
+        <p>Premium payment requests will appear here.</p>
+      </div>
+
+      <hr>
+      <h3>Member Reports</h3>
+      <div id="adminReportsList">
+        <p>Member reports will appear here.</p>
+      </div>
+
+      <hr>
+      <button type="button" id="adminRefreshBtn">Refresh Dashboard</button>
+      <button type="button" id="adminBackBtn">Back to Settings</button>
+      <p class="status" id="adminStatus" role="status"></p>
+    </div>
+  </section>
+
   <nav class="bottom-nav hidden" id="bottomNavigation">
   <button type="button" data-page="discover" aria-label="Discover">
     <span class="nav-icon" aria-hidden="true">🧭</span>

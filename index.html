@@ -4493,6 +4493,18 @@ async function loadChatMessages(){
     status("chatPageStatus","Loading messages...");
 
   try {
+    
+    const { data: myMembership, error: membershipError } = await db
+      .from("premium_memberships")
+      .select("premium_until")
+      .eq("user_id", me)
+      .maybeSingle();
+
+    if (membershipError) throw membershipError;
+
+    const isPremiumSender = !!myMembership &&
+      new Date(myMembership.premium_until).getTime() > Date.now();
+
     const me = currentUser.id;
     const them = activeChatUserId;
 

@@ -1066,9 +1066,30 @@ body:has(#profile:not(.hidden)) .hero {
 <script>
 (function(){
 "use strict";
-  window.addEventListener("error", event => {
-  alert("JavaScript error: " + event.message + " (line " + event.lineno + ")");
+  
+window.addEventListener("error", function(event) {
+  const message =
+    "JavaScript Error!\n\n" +
+    "Message: " + (event.message || "Unknown error") + "\n" +
+    "File: " + (event.filename || "Unknown file") + "\n" +
+    "Line: " + (event.lineno || "Unknown") + "\n" +
+    "Column: " + (event.colno || "Unknown");
+
+  console.error(message, event.error || "");
+  alert(message);
 });
+
+window.addEventListener("unhandledrejection", function(event) {
+  const reason = event.reason;
+  const message =
+    "JavaScript Promise Error!\n\n" +
+    "Message: " +
+    (reason && reason.message ? reason.message : String(reason));
+
+  console.error(message, reason || "");
+  alert(message);
+});
+
 const SITE_URL=window.location.origin;
 const db=window.supabase.createClient(
 "https://rxbdmgzmwhjnkcclyrcq.supabase.co",

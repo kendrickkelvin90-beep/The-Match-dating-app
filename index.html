@@ -4552,19 +4552,30 @@ async function loadChatMessages(){
 
       data.forEach(message => {
         const existingBubble = chat.querySelector('[data-message-id="' + message.id + '"]');
-if(existingBubble){
-  const existingReceipt = existingBubble.querySelector("small span");
-  if(message.sender_id === me && existingReceipt){
-    if(message.read_at){
+
+    if (message.read_at && isPremiumSender) {
       existingReceipt.textContent = "✓✓ Seen";
       existingReceipt.style.color = "#60d8ff";
-    } else if(message.delivered_at){
+      existingReceipt.onclick = null;
+      existingReceipt.style.cursor = "default";
+    } else if (message.read_at) {
+      existingReceipt.textContent =
+        "Want to know if your message has been seen? Tap here to explore Premium.";
+      existingReceipt.style.color = "#ffffff";
+      existingReceipt.style.cursor = "pointer";
+      existingReceipt.onclick = () => show("premium");
+    } else if (message.delivered_at) {
       existingReceipt.textContent = "✓✓ Delivered";
       existingReceipt.style.color = "#ffffff";
+      existingReceipt.onclick = null;
+      existingReceipt.style.cursor = "default";
     } else {
       existingReceipt.textContent = "✓ Sent";
       existingReceipt.style.color = "#ffffff";
+      existingReceipt.onclick = null;
+      existingReceipt.style.cursor = "default";
     }
+
   }
   return;
   }

@@ -5263,14 +5263,30 @@ if ($("logoutDiscover")) {
   $("logoutDiscover").onclick = logout;
 }
 
-db.auth.onAuthStateChange((event,session)=>{
-if(event==="PASSWORD_RECOVERY"){
-$("resetForm").classList.add("hidden");
-$("newPasswordForm").classList.remove("hidden");
-status("resetStatus","Choose a new password below.");
-show("reset");
-}
-if(event==="SIGNED_IN"&&session&&session.user)showProfile(session.user);
+db.auth.onAuthStateChange((event, session) => {
+  if (event === "PASSWORD_RECOVERY") {
+    $("resetForm").classList.add("hidden");
+    $("newPasswordForm").classList.remove("hidden");
+    status("resetStatus", "Choose a new password below.");
+    show("reset");
+    return;
+  }
+
+  if (event === "SIGNED_IN" && session?.user) {
+    // Let Supabase finish its auth callback before making more requests.
+    Promise.resolve().then(() => {
+      if (db.auth) {
+        return showProfile(session.user);
+      }
+    }).catch(error => {
+      console.error("Could not load profile after sign-in:", error);
+      status(
+        "authStatus",
+        "You signed in, but your profile could not load. Please refresh and try again.",
+        true
+      );
+    });
+  }
 });
 
 async function init(){

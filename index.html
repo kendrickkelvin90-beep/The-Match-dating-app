@@ -4494,6 +4494,10 @@ async function loadChatMessages(){
 
   try {
     
+    
+    const me = currentUser.id;
+    const them = activeChatUserId;
+
     const { data: myMembership, error: membershipError } = await db
       .from("premium_memberships")
       .select("premium_until")
@@ -4505,8 +4509,6 @@ async function loadChatMessages(){
     const isPremiumSender = !!myMembership &&
       new Date(myMembership.premium_until).getTime() > Date.now();
 
-    const me = currentUser.id;
-    const them = activeChatUserId;
 
     const {data,error} = await db
       .from("messages")

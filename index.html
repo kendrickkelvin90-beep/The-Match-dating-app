@@ -3132,7 +3132,15 @@ $("storyMediaFile").onchange = async () => {
       }
     }
 
-    status("storiesStatus", "Could not upload Story: " + friendly(e), true);
+    const uploadErrorMessage = String(e && e.message ? e.message : e);
+
+status(
+  "storiesStatus",
+  uploadErrorMessage.includes("FREE_STORY_LIMIT")
+    ? "You've already posted your free Story in the last 24 hours. Upgrade to Premium to post more Stories."
+    : "Could not upload Story: " + friendly(e),
+  true
+);
   } finally {
     button.disabled = false;
     input.value = "";

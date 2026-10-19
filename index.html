@@ -4004,114 +4004,206 @@ avatar.onclick = (event) => {
 }
 
  
-async function loadMyConversations(){
-  if(!currentUser)return;
 
-  const list=$("conversationList");
+async function loadMyConversations() {
+  if (!currentUser) return;
+
+  const list = $("conversationList");
   list.replaceChildren();
   $("activeConversation").classList.add("hidden");
-  status("messagesStatus","Loading your matches...");
+  status("messagesStatus", "Loading your conversations...");
 
-  try{
-    const {data:sent,error}=await db
+  try {
+    const me = currentUser.id;
+
+    const { data: sent, error } = await db
       .from("likes")
       .select("liked_id")
-      .eq("liker_id",currentUser.id);
+      .eq("liker_id", me);
 
-    if(error)throw error;
+    if (error) throw error;
 
-    const mutualIds=[];
+    const mutualIds = [];
 
-    for(const item of (sent||[])){
-      const {data:back,error:backError}=await db
+    for (const item of (sent || [])) {
+      const { data: back, error: backError } = await db
         .from("likes")
         .select("liker_id")
-        .eq("liker_id",item.liked_id)
-        .eq("liked_id",currentUser.id)
+        .eq("liker_id", item.liked_id)
+        .eq("liked_id", me)
         .maybeSingle();
 
-      if(backError)throw backError;
-      if(back)mutualIds.push(item.liked_id);
+      if (backError) throw backError;
+      if (back) mutualIds.push(item.liked_id);
     }
 
-   
-    
-    for(let i = mutualIds.length - 1; i >= 0; i--) {
+    for (let i = mutualIds.length - 1; i >= 0; i--) {
       const { data: canInteract, error: checkError } = await db
         .rpc("can_interact_with_member", {
           target_user_id: mutualIds[i]
         });
 
-      if(checkError) throw checkError;
+      if (checkError) throw checkError;
 
-      if(canInteract !== true) {
+      if (canInteract !== true) {
         mutualIds.splice(i, 1);
       }
     }
 
-
-    if(!mutualIds.length){
-      status("messagesStatus","No conversations yet. You need a mutual match to chat.");
+    if (!mutualIds.length) {
+      status(
+        "messagesStatus",
+        "No conversations yet. You need a mutual match to chat."
+      );
+      await updateAccountCounts();
       return;
     }
 
-    const {data:profiles,error:profileError}=await db
+    const { data: profiles, error: profileError } = await db
       .from("profiles")
       .select("id,display_name,age,city")
-      .in("id",mutualIds);
+      .in("id", mutualIds);
 
-    if(profileError)throw profileError;
+    if (profileError) throw profileError;
 
-    
-    (profiles||[]).forEach(p=>{
-      const button=document.createElement("button");
-      button.type="button";
-      button.className="btn secondary";
-      button.style.cssText="display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px;margin-bottom:8px;";
+    const conversations = [];
 
-      const avatar=document.createElement("img");
-      avatar.alt="";
-      avatar.style.cssText="width:48px;height:48px;border-radius:50%;object-fit:cover;background:#292929;";
+    for (const p of profiles || []) {
+      const { data: messages, error: messagesError } = await db
+        .from("messages")
+        .select("id,sender_id,receiver_id,body,created_at,read_at")
+        .or(
+          "and(sender_id.eq." + me +
+          ",receiver_id.eq." + p.id +
+          "),and(sender_id.eq." + p.id +
+          ",receiver_id.eq." + me + ")"
+        )
+        .order("created_at", { ascending: false })
+        .limit(1000);
 
-      const details=document.createElement("div");
-      details.style.cssText="display:flex;flex-direction:column;gap:4px;";
+      if (messagesError) throw messagesError;
 
-      const name=document.createElement("strong");
-      name.textContent=p.display_name||"Member";
+      const chatMessages = messages || [];
+      const latest = chatMessages[0] || null;
 
-      const age=document.createElement("span");
-      age.style.cssText="font-size:13px;opacity:.75;";
-      age.textContent=p.age ? String(p.age)+" years old" : "Age not provided";
+      const unreadCount = chatMessages.filter(message =>
+        message.receiver_id === me &&
+        message.sender_id === p.id &&
+        message.read_at === null
+      ).length;
 
-      details.append(name,age);
-      button.append(avatar,details);
+      conversations.push({
+        profile: p,
+        latest,
+        unreadCount
+      });
+    }
 
-      db.from("profile_photos")
+    conversations.sort((a, b) => {
+      const timeA = a.latest
+        ? new Date(a.latest.created_at).getTime()
+        : 0;
+      const timeB = b.latest
+        ? new Date(b.latest.created_at).getTime()
+        : 0;
+
+      return timeB - timeA;
+    });
+
+    for (const conversation of conversations) {
+      const p = conversation.profile;
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn secondary";
+      button.style.cssText =
+        "display:flex;align-items:center;gap:12px;width:100%;" +
+        "text-align:left;padding:12px;margin-bottom:8px;";
+
+      const avatar = document.createElement("img");
+      avatar.alt = "";
+      avatar.style.cssText =
+        "width:48px;height:48px;border-radius:50%;" +
+        "object-fit:cover;background:#292929;flex-shrink:0;";
+
+      const details = document.createElement("div");
+      details.style.cssText =
+        "display:flex;flex-direction:column;gap:4px;" +
+        "flex:1;min-width:0;";
+
+      const name = document.createElement("strong");
+      name.textContent = p.display_name || "Member";
+
+      const age = document.createElement("span");
+      age.style.cssText = "font-size:13px;opacity:.75;";
+      age.textContent = p.age
+        ? String(p.age) + " years old"
+        : "Age not provided";
+
+      const preview = document.createElement("span");
+      preview.style.cssText =
+        "font-size:13px;opacity:.8;overflow:hidden;" +
+        "text-overflow:ellipsis;white-space:nowrap;";
+
+      preview.textContent = conversation.latest
+        ? (conversation.latest.body || "New message")
+        : "No messages yet";
+
+      details.append(name, age, preview);
+      button.append(avatar, details);
+
+      if (conversation.unreadCount > 0) {
+        const badge = document.createElement("span");
+        badge.textContent = String(conversation.unreadCount);
+        badge.style.cssText =
+          "background:#e91e63;color:white;border-radius:999px;" +
+          "min-width:22px;height:22px;display:flex;" +
+          "align-items:center;justify-content:center;" +
+          "font-size:12px;font-weight:bold;padding:0 6px;" +
+          "flex-shrink:0;";
+
+        button.appendChild(badge);
+      }
+
+      const { data: photos, error: photoError } = await db
+        .from("profile_photos")
         .select("storage_path")
-        .eq("user_id",p.id)
+        .eq("user_id", p.id)
         .order("position")
-        .limit(1)
-        .then(({data})=>{
-          if(data && data.length){
-            avatar.src=db.storage.from("profile-photos")
-              .getPublicUrl(data[0].storage_path).data.publicUrl;
-          }
-        });
+        .limit(1);
 
-      button.onclick=()=>{
-        openChat(p.id,p.display_name||"Member");
+      if (photoError) {
+        console.warn("Could not load profile photo:", photoError);
+      }
+
+      if (photos && photos.length) {
+        avatar.src = db.storage
+          .from("profile-photos")
+          .getPublicUrl(photos[0].storage_path).data.publicUrl;
+      }
+
+      button.onclick = () => {
+        openChat(p.id, p.display_name || "Member");
       };
 
       list.appendChild(button);
-    });
+    }
 
+    status(
+      "messagesStatus",
+      "Choose a mutual match to open your conversation."
+    );
 
-    status("messagesStatus","Choose a mutual match to open your conversation.");
-  }catch(e){
-        status("messagesStatus","Could not load conversations: "+friendly(e),true);
+    await updateAccountCounts();
+  } catch (e) {
+    status(
+      "messagesStatus",
+      "Could not load conversations: " + friendly(e),
+      true
+    );
   }
 }
- 
+
 async function openChat(userId, userName){
   if(!currentUser || !userId || userId === currentUser.id){
     status("messagesStatus","Unable to open this conversation.",true);

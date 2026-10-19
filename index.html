@@ -4587,8 +4587,6 @@ async function loadChatMessages(){
           return;
         }
 
-  }
-
         const mine = message.sender_id === me;
         const bubble = document.createElement("div");
         bubble.dataset.messageId = message.id;

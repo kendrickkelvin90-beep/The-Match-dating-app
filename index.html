@@ -4624,16 +4624,24 @@ if(mine){
   receipt.style.marginLeft = "6px";
   receipt.style.fontWeight = "bold";
 
-  if(message.read_at){
+  
+  if (message.read_at && isPremiumSender) {
     receipt.textContent = "✓✓ Seen";
     receipt.style.color = "#60d8ff";
-  } else if(message.delivered_at){
+  } else if (message.read_at) {
+    receipt.textContent =
+      "Want to know if your message has been seen? Tap here to explore Premium.";
+    receipt.style.color = "#ffffff";
+    receipt.style.cursor = "pointer";
+    receipt.onclick = () => show("premium");
+  } else if (message.delivered_at) {
     receipt.textContent = "✓✓ Delivered";
     receipt.style.color = "#ffffff";
   } else {
     receipt.textContent = "✓ Sent";
     receipt.style.color = "#ffffff";
   }
+
 
   timestamp.appendChild(receipt);
 }

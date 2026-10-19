@@ -2963,6 +2963,66 @@ $("storyMediaFile").onchange = async () => {
   const input = $("storyMediaFile");
   const files = Array.from(input.files || []);
   if (!files.length) return;
+  
+  // Check whether this member has already used their free Story.
+  try {
+    const { data: membership, error: membershipError } = await db
+      .from("premium_memberships")
+      .select("premium_until")
+      .eq("user_id", currentUser.id)
+      .maybeSingle();
+
+    if (membershipError) throw membershipError;
+
+    const isPremium = !!membership &&
+      new Date(membership.premium_until).getTime() > Date.now();
+
+    if (!isPremium) {
+      const cutoff = new Date(
+        Date.now() - 24 * 60 * 60 * 1000
+      ).toISOString();
+
+      const { data: recentStories, error: storiesError } = await db
+        .from("stories")
+        .select("story_group_id")
+        .eq("user_id", currentUser.id)
+        .gte("created_at", cutoff);
+
+      if (storiesError) throw storiesError;
+
+      const recentGroups = new Set(
+        (recentStories || []).map(story => story.story_group_id)
+      );
+
+      if (recentGroups.size >= 1) {
+        status(
+          "storiesStatus",
+          "You've already posted your free Story in the last 24 hours. Upgrade to Premium to post more Stories.",
+          true
+        );
+
+        input.value = "";
+
+        if (confirm(
+          "You've used your free Story for the last 24 hours. Would you like to view Premium plans?"
+        )) {
+          show("premium");
+        }
+
+        return;
+      }
+    }
+  } catch (e) {
+    console.error("Could not check Story upload eligibility:", e);
+    status(
+      "storiesStatus",
+      "We couldn't verify your Story limit. Please try again.",
+      true
+    );
+    input.value = "";
+    return;
+  }
+
 
   const allowedTypes = [
     "image/jpeg", "image/png", "image/webp",

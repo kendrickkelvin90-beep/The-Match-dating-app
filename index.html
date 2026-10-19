@@ -2994,23 +2994,23 @@ $("storyMediaFile").onchange = async () => {
         (recentStories || []).map(story => story.story_group_id)
       );
 
-      if (recentGroups.size >= 1) {
+            if (recentGroups.size >= 1) {
         status(
           "storiesStatus",
-          "You've already posted your free Story in the last 24 hours. Upgrade to Premium to post more Stories.",
+          "Unlock More Stories with Premium. You've used your free Story for the last 24 hours. Subscribe to Premium to share more moments.",
           true
         );
 
         input.value = "";
 
         if (confirm(
-          "You've used your free Story for the last 24 hours. Would you like to view Premium plans?"
+          "You've used your free Story for the last 24 hours. Subscribe to Premium to upload more Stories. View Premium plans now?"
         )) {
           show("premium");
         }
 
         return;
-      }
+            }
     }
   } catch (e) {
     console.error("Could not check Story upload eligibility:", e);

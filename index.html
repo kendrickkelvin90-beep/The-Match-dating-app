@@ -4327,7 +4327,7 @@ async function openChat(userId, userName){
 
 
 
-$("backFromChatPage").onclick = () => {
+  $("backFromChatPage").onclick = async () => {
   if (chatRefreshTimer) {
     clearInterval(chatRefreshTimer);
     chatRefreshTimer = null;
@@ -4340,8 +4340,11 @@ $("backFromChatPage").onclick = () => {
   window.chatReturnPage = null;
 
   show(returnPage);
-};
 
+  if (returnPage === "messages") {
+    await loadMyConversations();
+  }
+};
 
 
 

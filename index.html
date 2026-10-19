@@ -1187,8 +1187,21 @@ async function loadNotificationBadge() {
     console.error("Notification badge failed:", error);
   }
   }
-function show(id){
-  panels.forEach(p => $(p).classList.toggle("hidden", p !== id));
+
+const pageHistory = [];
+let currentPage = null;
+let isHandlingBackNavigation = false;
+
+function show(id, addToHistory = true) {
+  if (currentPage && currentPage !== id && addToHistory) {
+    pageHistory.push(currentPage);
+  }
+
+  currentPage = id;
+
+  panels.forEach(p =>
+    $(p).classList.toggle("hidden", p !== id)
+  );
 
   $("heroSection").classList.toggle(
     "hidden",
@@ -1202,6 +1215,19 @@ function show(id){
 
   window.scrollTo(0, 0);
 }
+
+function goBackInApp() {
+  if (pageHistory.length === 0) {
+    show("discover", false);
+    return;
+  }
+
+  const previousPage = pageHistory.pop();
+  isHandlingBackNavigation = true;
+  show(previousPage, false);
+  isHandlingBackNavigation = false;
+}
+
 function status(id,msg,error){
 $(id).textContent=msg||"";
 $(id).style.color=error?"#ff91aa":"#ffc4d4";

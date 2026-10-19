@@ -4412,7 +4412,8 @@ async function loadChatMessages(){
     // Refresh the unread-message count.
     await updateAccountCounts();
 
-    if (!data || !data.length) {
+        if (!data || !data.length) {
+      if (!chat.querySelector("[data-empty-message]")) {
         const empty = document.createElement("p");
         empty.dataset.emptyMessage = "true";
         empty.textContent = "No messages yet. Say hello!";

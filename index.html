@@ -3026,19 +3026,14 @@ $("storyMediaFile").onchange = async () => {
       ).toISOString();
 
       const { data: recentStories, error: storiesError } = await db
-        .from("stories")
-        .select("story_group_id")
-        .eq("user_id", currentUser.id)
-        .gte("created_at", cutoff);
+  .from("stories")
+  .select("id")
+  .eq("user_id", currentUser.id)
+  .gte("created_at", cutoff);
 
-      if (storiesError) throw storiesError;
+if (storiesError) throw storiesError;
 
-      
-      const recentGroups = new Set(
-        (recentStories || [])
-          .map(story => story.story_group_id)
-          .filter(Boolean)
-      );
+if ((recentStories || []).length >= 1) {
 
       if (recentGroups.size >= 1) {
         const premiumLimitMessage =

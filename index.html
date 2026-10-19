@@ -1188,9 +1188,9 @@ async function loadNotificationBadge() {
   }
   }
 
+
 const pageHistory = [];
 let currentPage = null;
-let isHandlingBackNavigation = false;
 
 function show(id, addToHistory = true) {
   if (currentPage && currentPage !== id && addToHistory) {
@@ -1218,15 +1218,32 @@ function show(id, addToHistory = true) {
 
 function goBackInApp() {
   if (pageHistory.length === 0) {
-    show("discover", false);
+    if (currentPage !== "discover") {
+      show("discover", false);
+    }
     return;
   }
 
   const previousPage = pageHistory.pop();
-  isHandlingBackNavigation = true;
   show(previousPage, false);
-  isHandlingBackNavigation = false;
 }
+
+history.pushState(
+  { theMatchBackTrap: true },
+  "",
+  window.location.pathname + window.location.search
+);
+
+window.addEventListener("popstate", () => {
+  goBackInApp();
+
+  history.pushState(
+    { theMatchBackTrap: true },
+    "",
+    window.location.pathname + window.location.search
+  );
+});
+
 
 function status(id,msg,error){
 $(id).textContent=msg||"";

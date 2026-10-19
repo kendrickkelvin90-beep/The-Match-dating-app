@@ -3119,7 +3119,8 @@ $("storyMediaFile").onchange = async () => {
       "Your Story with " + files.length + " photo(s)/video(s) is live for 24 hours."
     );
 
-    await loadStories();
+        await loadStories();
+    await loadNotificationBadge();
   } catch (e) {
     if (uploadedPaths.length) {
       const { error: cleanupError } = await db.storage

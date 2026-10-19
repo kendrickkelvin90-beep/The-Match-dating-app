@@ -1762,44 +1762,53 @@ function showMatchNotification(title, body, type) {
 }
 
 
+
 async function updateAccountCounts() {
-if (!currentUser) return;
+  if (!currentUser) return;
 
-try {
-const me = currentUser.id;
+  try {
+    const me = currentUser.id;
 
-const [likesResult, messagesResult] = await Promise.all([
-  db.from("likes")
-    .select("*", { count: "exact", head: true })
-    .eq("liked_id", me),
+    const [likesResult, unreadResult] = await Promise.all([
+      db.from("likes")
+        .select("*", { count: "exact", head: true })
+        .eq("liked_id", me),
 
-  db.from("messages")
-    .select("*", { count: "exact", head: true })
-    .eq("receiver_id", me)
-]);
+      db.from("messages")
+        .select("sender_id")
+        .eq("receiver_id", me)
+        .is("read_at", null)
+    ]);
 
-if (likesResult.error) throw likesResult.error;
-if (messagesResult.error) throw messagesResult.error;
+    if (likesResult.error) throw likesResult.error;
+    if (unreadResult.error) throw unreadResult.error;
 
-const likesBadge = document.getElementById("likesCount");
-const messagesBadge = document.getElementById("messagesCount");
+    const likesBadge = document.getElementById("likesCount");
+    const messagesBadge = document.getElementById("messagesCount");
 
-if (likesBadge) {
-  likesBadge.textContent = likesResult.count || 0;
-  likesBadge.style.display =
-    likesResult.count > 0 ? "inline-block" : "none";
+    const unreadSenders = new Set(
+      (unreadResult.data || []).map(message => message.sender_id)
+    );
+
+    const unreadConversationCount = unreadSenders.size;
+    const likesCount = likesResult.count || 0;
+
+    if (likesBadge) {
+      likesBadge.textContent = likesCount;
+      likesBadge.style.display =
+        likesCount > 0 ? "inline-block" : "none";
+    }
+
+    if (messagesBadge) {
+      messagesBadge.textContent = unreadConversationCount;
+      messagesBadge.style.display =
+        unreadConversationCount > 0 ? "inline-block" : "none";
+    }
+  } catch (error) {
+    console.error("Account count update failed:", error);
+  }
 }
 
-if (messagesBadge) {
-  messagesBadge.textContent = messagesResult.count || 0;
-  messagesBadge.style.display =
-    messagesResult.count > 0 ? "inline-block" : "none";
-}
-
-} catch (error) {
-console.error("Account count update failed:", error);
-}
-}
   let notificationBaselineReady = false;
 
 async function checkMatchNotifications() {

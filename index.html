@@ -2309,6 +2309,9 @@ let notificationPolling = false;
   
 async function showProfile(user){
 currentUser=user;
+  startOnlinePresence(user).catch(error => {
+  console.warn("Online presence could not start:", error);
+});
     try {
       const { error: expiryNoticeError } = await db.rpc("notify_expired_premium");
       if (expiryNoticeError) {

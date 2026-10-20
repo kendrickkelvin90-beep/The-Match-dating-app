@@ -3156,13 +3156,13 @@ async function loadNearby(){
           : null
     }));
 
-    if (approxLocation) {
-      people.sort((a, b) =>
-        a._distance == null ? 1 :
-        b._distance == null ? -1 :
-        a._distance - b._distance
-      );
+    
+    // Randomize Discover profile order.
+    for (let i = people.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [people[i], people[j]] = [people[j], people[i]];
     }
+
 
 
     const {data:myLikes,error:myLikesError}=await db.from("likes")

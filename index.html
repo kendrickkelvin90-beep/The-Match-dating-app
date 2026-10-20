@@ -46,12 +46,20 @@
   font-weight: 700;
 }
 
+
 #discover #profileList {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 440px);
+  justify-content: center;
   gap: 12px;
   margin-top: 18px;
 }
+
+#discover #profileList > * {
+  min-width: 0;
+  width: 100%;
+}
+
 
 #discover #profileList > * {
   min-width: 0;

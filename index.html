@@ -4777,12 +4777,10 @@ async function loadLikesPage(){
       new Date(membership.premium_until).getTime()>Date.now();
 
     if(!isPremium){
-      const {count,error:countError}=await db
-        .from("likes")
-        .select("liker_id",{count:"exact",head:true})
-        .eq("liked_id",currentUser.id);
+      const {data:count,error:countError}=await db
+  .rpc("get_my_incoming_like_count");
 
-      if(countError)throw countError;
+if(countError)throw countError;
 
       const lockedCard=document.createElement("div");
       lockedCard.className="member-card";

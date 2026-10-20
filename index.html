@@ -1084,7 +1084,9 @@ window.addEventListener("unhandledrejection", function(event) {
   const message =
     "JavaScript Promise Error!\n\n" +
     "Message: " +
-    (reason && reason.message ? reason.message : String(reason));
+    (reason && reason.message ? reason.message : String(reason)) +
+    "\n\nStack:\n" +
+    (reason && reason.stack ? reason.stack : "No stack trace available");
 
   console.error(message, reason || "");
   alert(message);

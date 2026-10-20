@@ -2537,6 +2537,12 @@ function renderOnboardingQuestion() {
     input.maxLength = q.key === "phone_number" ? 20 : 254;
     input.id = "onboardingAnswerInput";
     $("onboardingAnswers").appendChild(input);
+
+input.addEventListener("input", () => {
+  onboardingAnswers[q.key] = input.value.trim();
+  $("onboardingNext").disabled =
+    !q.optional && !onboardingAnswers[q.key];
+});
   } else {
     q.options.forEach((option, i) => {
       const button = document.createElement("button");

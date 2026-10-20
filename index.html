@@ -1078,10 +1078,20 @@ body:has(#profile:not(.hidden)) .hero {
   <div id="chatHeader" style="position:absolute;top:0;left:0;right:0;min-height:70px;padding:10px 12px;background:#101010;display:flex;align-items:center;gap:10px;border-bottom:1px solid #292929;">
   <button id="backFromChatHeader" type="button" aria-label="Back" style="background:none;border:0;color:white;font-size:25px;padding:4px;">‹</button>
   <img id="chatPartnerAvatar" alt="Member profile photo" src="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;background:#292929;">
-  <div style="flex:1;min-width:0;">
-    <div id="chatPageTitle" style="font-size:16px;font-weight:bold;color:white;overflow-wrap:anywhere;">Member</div>
-    <div id="chatPartnerLocation" style="font-size:12px;color:#bbb;margin-top:4px;">Location unavailable</div>
+  
+<div style="flex:1;min-width:0;">
+  <div id="chatPageTitle" style="font-size:16px;font-weight:bold;color:white;overflow-wrap:anywhere;">Member</div>
+
+  <div id="chatOnlineRow" style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+    <span id="chatOnlineDot" aria-hidden="true"
+      style="width:7px;height:7px;border-radius:50%;background:#777;display:inline-block;"></span>
+    <span id="chatOnlineStatus" style="font-size:12px;color:#aaa;">Offline</span>
   </div>
+
+  <div id="chatPartnerLocation"
+    style="font-size:12px;color:#bbb;margin-top:3px;">Loading location…</div>
+</div>
+
   
   </div>
   <div id="chatPageContent"></div>

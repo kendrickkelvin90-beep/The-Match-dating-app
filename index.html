@@ -2773,6 +2773,16 @@ async function loadNearby(){
 
   try{
 
+    
+    const savedPreferences = JSON.parse(
+      localStorage.getItem("theMatchDiscoveryPreferences") || "{}"
+    );
+
+    const preferredLocation = (savedPreferences.location || "").trim();
+    const maxDistance = Number(savedPreferences.distance) || 50;
+    const minAge = Number(savedPreferences.minAge) || 18;
+    const maxAge = Number(savedPreferences.maxAge) || 79;
+
     const {data:peopleData,error}=await db.from("profiles")
       .select("id,display_name,age,gender_identity,city,bio,latitude,longitude,location_sharing,sexual_roles")
       .neq("id",currentUser.id)
@@ -2781,6 +2791,7 @@ async function loadNearby(){
     if(error)throw error;
 
     let people=peopleData||[];
+
 
     for(let i=people.length-1;i>=0;i--){
       const {data:canInteract,error:checkError}=await db.rpc(

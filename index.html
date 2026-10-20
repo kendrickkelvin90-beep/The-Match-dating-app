@@ -4367,9 +4367,10 @@ async function openChat(userId, userName){
     $("chatPartnerLocation").textContent = "Loading profile...";
 
    
-    const currentPage = panels.find(
-      page => !$(`${page}`).classList.contains("hidden")
-    );
+        const currentPage = panels.find(page => {
+      const panel = $(page);
+      return panel && !panel.classList.contains("hidden");
+    });
     window.chatReturnPage =
       currentPage && currentPage !== "chatPage"
         ? currentPage

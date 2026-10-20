@@ -3947,8 +3947,67 @@ async function loadLikesPage(){
   sentList.replaceChildren();
   status("likesStatus","Loading your likes...");
 
+  
   try{
+    const {data:membership,error:membershipError}=await db
+      .from("premium_memberships")
+      .select("premium_until")
+      .eq("user_id",currentUser.id)
+      .maybeSingle();
+
+    if(membershipError)throw membershipError;
+
+    const isPremium=!!membership &&
+      new Date(membership.premium_until).getTime()>Date.now();
+
+    if(!isPremium){
+      const {count,error:countError}=await db
+        .from("likes")
+        .select("liker_id",{count:"exact",head:true})
+        .eq("liked_id",currentUser.id);
+
+      if(countError)throw countError;
+
+      const lockedCard=document.createElement("div");
+      lockedCard.className="member-card";
+      lockedCard.style.cssText=
+        "padding:24px;margin:12px 0;text-align:center;" +
+        "border:1px solid #493040;border-radius:20px;" +
+        "background:linear-gradient(145deg,#160b12,#080808);";
+
+      const lockIcon=document.createElement("div");
+      lockIcon.textContent="💖 🔒";
+      lockIcon.style.cssText="font-size:42px;margin-bottom:12px;";
+
+      const lockTitle=document.createElement("h3");
+      lockTitle.textContent="Someone likes you!";
+      lockTitle.style.cssText="color:#ffe5ef;margin:8px 0;";
+
+      const lockMessage=document.createElement("p");
+      lockMessage.textContent=
+        "Upgrade to Premium to reveal who likes you and see their photos.";
+      lockMessage.style.cssText="color:#d8bdca;line-height:1.6;";
+
+      const upgradeButton=document.createElement("button");
+      upgradeButton.type="button";
+      upgradeButton.className="btn primary";
+      upgradeButton.textContent="⭐ Upgrade to Premium";
+      upgradeButton.onclick=()=>show("premium");
+
+      lockedCard.append(
+        lockIcon,lockTitle,lockMessage,upgradeButton
+      );
+      receivedList.appendChild(lockedCard);
+
+      status(
+        "likesStatus",
+        "People who like you: "+(count||0)
+      );
+      return;
+    }
+
     const {data:received,error:receivedError}=await db
+
       .from("likes")
       .select("liker_id")
       .eq("liked_id",currentUser.id);

@@ -3268,19 +3268,24 @@ photoBox.appendChild(onlineBadge);
       photoBox.append(previous,nextPhoto);
       card.appendChild(photoBox);
 
-      const name=document.createElement("h2");
-      name.textContent=p.display_name||"The Match member";
-      card.appendChild(name);
+      
+const name=document.createElement("h2");
+name.textContent=p.display_name||"The Match member";
+name.style.cssText="font-size:28px;font-weight:800;letter-spacing:-0.6px;line-height:1.15;margin:14px 4px 6px;color:#fff;overflow-wrap:anywhere;";
+card.appendChild(name);
 
-      const distance=document.createElement("div");
-      distance.className="distance";
-      distance.textContent=p._distance==null?"Distance unavailable":distanceLabel(p._distance);
-      card.appendChild(distance);
+const distance=document.createElement("div");
+distance.className="distance";
+distance.textContent=p._distance==null?"Distance unavailable":distanceLabel(p._distance);
+distance.style.cssText="font-size:14px;color:#ff9abb;margin:0 4px 8px;";
+card.appendChild(distance);
 
-      const details=document.createElement("p");
-      details.className="small";
-      details.textContent=[p.age?String(p.age):"",p.gender_identity||"",p.city||""].filter(Boolean).join(" · ");
-      card.appendChild(details);
+const details=document.createElement("p");
+details.className="small";
+details.textContent=[p.age?String(p.age):"",p.gender_identity||"",p.city||""].filter(Boolean).join(" · ");
+details.style.cssText="font-size:14px;line-height:1.5;color:#d9cbd1;margin:0 4px 10px;";
+card.appendChild(details);
+
 
       if(Array.isArray(p.sexual_roles)&&p.sexual_roles.length){
         const roles=document.createElement("p");

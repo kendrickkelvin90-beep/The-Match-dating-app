@@ -501,6 +501,170 @@ body:has(#profile:not(.hidden)) .hero {
   background: #444;
 }
 
+/* ==========================================
+   THE MATCH — OBSIDIAN LUXURY CHAT THEME
+   Scoped to chat page only
+   ========================================== */
+
+#chatPage {
+  background: #050505 !important;
+  color: #f5f5f5 !important;
+  padding: 82px 16px calc(14px + env(safe-area-inset-bottom));
+}
+
+#chatPage #chatHeader {
+  background: #0a0a0a !important;
+  border-bottom: 1px solid #292929 !important;
+  padding: 12px 16px !important;
+  min-height: 76px !important;
+}
+
+#chatPage #backFromChatHeader {
+  color: #f2f2f2 !important;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+}
+
+#chatPage #chatPartnerAvatar {
+  border: 1px solid #393939;
+}
+
+#chatPage #chatPageTitle {
+  color: #f5f5f5 !important;
+  font-size: 16px;
+  font-weight: 650 !important;
+  letter-spacing: 0.1px;
+}
+
+#chatPage #chatPartnerLocation {
+  color: #a3a3a3 !important;
+}
+
+#chatPage #chatPageContent,
+#chatPage #activeConversation {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+#chatPage #chatMessages {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none !important;
+  flex-direction: column;
+  gap: 3px !important;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px 10px !important;
+  border: 1px solid #202020;
+  border-radius: 16px !important;
+  background: #0b0b0d !important;
+  scrollbar-width: thin;
+  scrollbar-color: #393939 transparent;
+}
+
+#chatPage #chatMessages .chat-bubble {
+  max-width: 84% !important;
+  width: fit-content;
+  padding: 11px 14px !important;
+  margin: 6px 0 !important;
+  border: 1px solid #343438;
+  border-radius: 16px !important;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  box-shadow: none !important;
+}
+
+#chatPage #chatMessages .chat-bubble.sent {
+  background: #29272c !important;
+  border-color: #51414a !important;
+  color: #ffffff !important;
+}
+
+#chatPage #chatMessages .chat-bubble.received {
+  background: #171719 !important;
+  border-color: #303034 !important;
+  color: #f1f1f1 !important;
+}
+
+#chatPage #chatMessages .chat-bubble small {
+  display: block;
+  margin-top: 5px;
+  color: #aaa9b0 !important;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.1px;
+  text-align: right;
+}
+
+#chatPage #chatMessages .chat-bubble small span {
+  color: #d6a0b4 !important;
+  font-size: 10px;
+}
+
+#chatPage #chatMessageInput {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 50px;
+  max-height: 120px;
+  background: #111113 !important;
+  color: #f5f5f5 !important;
+  border: 1px solid #353539 !important;
+  border-radius: 16px !important;
+  padding: 14px 16px !important;
+  margin: 10px 0 8px !important;
+  resize: none;
+}
+
+#chatPage #chatMessageInput::placeholder {
+  color: #85858b;
+}
+
+#chatPage #chatMessageInput:focus {
+  border-color: #8c5269 !important;
+  box-shadow: 0 0 0 2px rgba(140, 82, 105, 0.12);
+  outline: none;
+}
+
+#chatPage #sendChatMessage {
+  display: block;
+  width: auto !important;
+  min-width: 76px;
+  min-height: 46px;
+  align-self: flex-end;
+  padding: 0 22px !important;
+  margin: 0 0 8px !important;
+  border-radius: 13px !important;
+  background: #29272c !important;
+  color: #f8eaf0 !important;
+  border: 1px solid #51404a !important;
+  font-weight: 600;
+  box-shadow: none !important;
+}
+
+#chatPage #sendChatMessage:active {
+  background: #393139 !important;
+}
+
+#chatPage #sendChatMessage:disabled {
+  opacity: 0.55;
+}
+
+#chatPage #chatPageStatus {
+  flex-shrink: 0;
+  min-height: 18px;
+  margin: 4px 0;
+  color: #a6a1a7 !important;
+  font-size: 12px;
+}
+
+#chatPage #backFromChatPage {
+  display: none;
+}
+
 </style>
 </head>
 <body>

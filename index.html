@@ -1484,13 +1484,31 @@ async function startOnlinePresence(user) {
     }
   });
 
-  onlinePresenceChannel
-    .on("presence", { event: "sync" }, () => {
-      onlinePresenceState = onlinePresenceChannel.presenceState();
-      if (activeChatUserId) {
-        updateChatOnlineStatus(activeChatUserId);
-      }
-    })
+  
+.on("presence", { event: "sync" }, () => {
+  onlinePresenceState = onlinePresenceChannel.presenceState();
+
+  if (activeChatUserId) {
+    updateChatOnlineStatus(activeChatUserId);
+  }
+
+  document.querySelectorAll("[data-discover-online-user]").forEach(badge => {
+    const userId = badge.dataset.discoverOnlineUser;
+    const online = isUserOnline(userId);
+    const dot = badge.querySelector("[data-online-dot]");
+    const label = badge.querySelector("[data-online-label]");
+
+    if (dot) {
+      dot.style.background = online ? "#52e39a" : "#777";
+    }
+
+    if (label) {
+      label.textContent = online ? "Online" : "Offline";
+      label.style.color = online ? "#b9ffd8" : "#ddd";
+    }
+  });
+})
+
     .subscribe(async state => {
       if (state === "SUBSCRIBED") {
         await onlinePresenceChannel.track({

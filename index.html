@@ -1485,7 +1485,8 @@ async function startOnlinePresence(user) {
   });
 
   
-.on("presence", { event: "sync" }, () => {
+  onlinePresenceChannel
+    .on("presence", { event: "sync" }, () => {
   onlinePresenceState = onlinePresenceChannel.presenceState();
 
   if (activeChatUserId) {

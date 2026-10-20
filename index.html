@@ -2527,6 +2527,12 @@ const photo=document.createElement("img");
 photo.alt="Profile photo";
 photo.style.cssText="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:1;";
 photoBox.appendChild(photo);
+      
+const photoFallback=document.createElement("div");
+photoFallback.textContent=(p.display_name||"M").trim().charAt(0).toUpperCase();
+photoFallback.style.cssText="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:76px;font-weight:800;letter-spacing:-2px;color:#ffd4e3;text-shadow:0 0 35px rgba(255,65,125,.45);z-index:0;";
+photoBox.appendChild(photoFallback);
+
 
 
 

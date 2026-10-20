@@ -2636,24 +2636,86 @@ $("login").onclick=()=>openAuth(true);
 $("back").onclick=()=>show("welcome");
 $("switch").onclick=()=>openAuth(!loginMode);
 
-$("authForm").onsubmit=async e=>{
-e.preventDefault();
-let b=$("submit");b.disabled=true;
-status("authStatus","Please wait...");
-try{
-let email=$("email").value.trim(),password=$("password").value;
-let r=loginMode
-?await db.auth.signInWithPassword({email,password})
-:await db.auth.signUp({email,password,options:{emailRedirectTo:SITE_URL}});
-if(r.error)throw r.error;
-if(!loginMode&&!r.data.session){
-status("authStatus","Account created! Confirm your email, then return and log in.");
-}else if(r.data.session){
-await showProfile(r.data.session.user);
-}
-}catch(e){status("authStatus",friendly(e),true);}
-finally{b.disabled=false;}
+
+$("authForm").onsubmit = async e => {
+  e.preventDefault();
+
+  const button = $("submit");
+  button.disabled = true;
+  status("authStatus", "Please wait...");
+
+  try {
+    const email = $("email").value.trim();
+    const password = $("password").value;
+
+    const result = loginMode
+      ? await db.auth.signInWithPassword({ email, password })
+      : await db.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: SITE_URL }
+        });
+
+    if (result.error) throw result.error;
+
+    if (!loginMode && !result.data.session) {
+      status(
+        "authStatus",
+        "Account created! Confirm your email, then log in to continue."
+      );
+      return;
+    }
+
+    if (result.data.session) {
+      const user = result.data.session.user;
+
+      if (!loginMode && Object.keys(onboardingAnswers).length) {
+        const answers = { ...onboardingAnswers };
+
+        // Keep private contact details out of the general answers.
+        delete answers.phone_number;
+        delete answers.recovery_email;
+
+        const now = new Date().toISOString();
+
+        const { error: onboardingError } = await db
+          .from("member_onboarding")
+          .upsert({
+            user_id: user.id,
+            current_step: 3,
+            answers,
+            safety_accepted: onboardingAnswers.respect_boundaries === "yes"
+              && onboardingAnswers.community_safety === "yes",
+            terms_accepted: onboardingAnswers.terms_accepted === "yes",
+            age_confirmed: onboardingAnswers.age_confirmed === "yes",
+            completed_at: now,
+            updated_at: now
+          }, { onConflict: "user_id" });
+
+        if (onboardingError) throw onboardingError;
+
+        const { error: detailsError } = await db
+          .from("member_private_details")
+          .upsert({
+            user_id: user.id,
+            phone_number: onboardingAnswers.phone_number || null,
+            recovery_email: onboardingAnswers.recovery_email || null,
+            updated_at: now
+          }, { onConflict: "user_id" });
+
+        if (detailsError) throw detailsError;
+      }
+
+      await showProfile(user);
+    }
+  } catch (error) {
+    console.error("Signup/login error:", error);
+    status("authStatus", friendly(error), true);
+  } finally {
+    button.disabled = false;
+  }
 };
+
 
 $("forgot").onclick=()=>{
 $("resetEmail").value=$("email").value.trim();

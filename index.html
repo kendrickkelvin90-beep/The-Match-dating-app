@@ -2783,44 +2783,45 @@ async function loadNearby(){
     const minAge = Number(savedPreferences.minAge) || 18;
     const maxAge = Number(savedPreferences.maxAge) || 79;
 
-    const {data:peopleData,error}=await db.from("profiles")
-      .select("id,display_name,age,gender_identity,city,bio,latitude,longitude,location_sharing,sexual_roles")
-      .neq("id",currentUser.id)
-      .limit(100);
-
-    if(error)throw error;
-
-    let people=peopleData||[];
-
-
     
-    people = people.filter(p => {
-      const age = Number(p.age);
-
-      if (!Number.isFinite(age) || age < minAge || age > maxAge) {
-        return false;
+    const { data: peopleData, error } = await db.rpc(
+      "discover_profiles_filtered",
+      {
+        p_lat: approxLocation ? approxLocation.latitude : null,
+        p_lon: approxLocation ? approxLocation.longitude : null,
+        p_max_distance_km: maxDistance,
+        p_min_age: minAge,
+        p_max_age: maxAge,
+        p_city: preferredLocation || null
       }
+    );
 
-      if (preferredLocation) {
-        const selectedArea = preferredLocation.toLowerCase();
-        const profileCity = (p.city || "").trim().toLowerCase();
+    if (error) throw error;
 
-        if (!profileCity.includes(selectedArea)) {
-          return false;
-        }
-      }
+    let people = (peopleData || []).map(p => ({
+      ...p,
+      _distance:
+        approxLocation &&
+        p.location_sharing &&
+        p.latitude != null &&
+        p.longitude != null
+          ? kmBetween(
+              approxLocation.latitude,
+              approxLocation.longitude,
+              p.latitude,
+              p.longitude
+            )
+          : null
+    }));
 
-      return true;
-    });
-
-
-    if(approxLocation){
-      people=people.map(p=>({...p,_distance:
-        p.location_sharing&&p.latitude!=null&&p.longitude!=null
-          ?kmBetween(approxLocation.latitude,approxLocation.longitude,p.latitude,p.longitude)
-          :null
-      })).sort((a,b)=>a._distance==null?1:b._distance==null?-1:a._distance-b._distance);
+    if (approxLocation) {
+      people.sort((a, b) =>
+        a._distance == null ? 1 :
+        b._distance == null ? -1 :
+        a._distance - b._distance
+      );
     }
+
 
     const {data:myLikes,error:myLikesError}=await db.from("likes")
       .select("liked_id").eq("liker_id",currentUser.id);

@@ -2520,20 +2520,12 @@ card.style.cssText="width:100%;max-width:520px;box-sizing:border-box;margin:14px
       photoBox.style.cssText="position:relative;width:100%;height:min(62vh,560px);min-height:300px;background:radial-gradient(ellipse at 50% 20%,#512038,#160b12 65%,#080608);border-radius:19px;overflow:hidden;";
 
       
+
 const photo=document.createElement("img");
 photo.alt="Profile photo";
 photo.style.cssText="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:1;";
-photo.onerror=()=>{
-  photo.style.display="none";
-  photoCount.textContent="Photo unavailable";
-};
-photo.onload=()=>{
-  photo.style.display="block";
-  photoCount.textContent=photoUrls.length
-    ? (photoIndex+1)+" / "+photoUrls.length
-    : "Profile photo";
-};
 photoBox.appendChild(photo);
+
 
 
       const photoCount=document.createElement("div");

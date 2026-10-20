@@ -4194,6 +4194,41 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
   $("discoveryDistance").addEventListener("input", event => {
   $("discoveryDistanceValue").textContent = event.target.value + " km";
 });
+  $("saveDiscoveryPreferences").addEventListener("click", () => {
+  const minAge = Number($("discoveryAgeMin").value);
+  const maxAge = Number($("discoveryAgeMax").value);
+
+  if (minAge < 18 || maxAge > 99 || minAge > maxAge) {
+    $("discoveryPreferencesStatus").textContent =
+      "Please enter a valid age range from 18 to 99.";
+    return;
+  }
+
+  const preferences = {
+    location: $("discoveryLocation").value.trim(),
+    distance: Number($("discoveryDistance").value),
+    minAge,
+    maxAge,
+    showMe: $("discoveryShowMe").value,
+    lookingFor: $("discoveryLookingFor").value,
+    interests: $("discoveryInterests").value.trim(),
+    verifiedOnly: $("discoveryVerifiedOnly").checked,
+    recentlyActive: $("discoveryRecentlyActive").checked,
+    expandRange: $("discoveryExpandRange").checked
+  };
+
+  try {
+    localStorage.setItem(
+      "theMatchDiscoveryPreferences",
+      JSON.stringify(preferences)
+    );
+    $("discoveryPreferencesStatus").textContent =
+      "Preferences saved on this device.";
+  } catch (error) {
+    $("discoveryPreferencesStatus").textContent =
+      "Could not save preferences. Please try again.";
+  }
+});
 $("settingsPrivacyProfile").onclick=()=>{
 show("profile");
 };

@@ -1537,9 +1537,17 @@ window.addEventListener("popstate", () => {
 });
 
 
-function status(id,msg,error){
-$(id).textContent=msg||"";
-$(id).style.color=error?"#ff91aa":"#ffc4d4";
+function status(id, msg, error) {
+  const element = $(id);
+
+  // Some pages do not contain every status element.
+  if (!element) {
+    console.warn("Status element not found:", id);
+    return;
+  }
+
+  element.textContent = msg || "";
+  element.style.color = error ? "#ff91aa" : "#ffc4d4";
 }
 function friendly(e){
 let m=e&&e.message?e.message:"Something went wrong.";

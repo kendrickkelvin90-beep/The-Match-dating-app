@@ -4201,7 +4201,10 @@ show("profile");
   loadDiscoveryPreferences();
   show("discoveryPreferencesPage");
 });
-
+$("openDiscoveryPreferencesTop").addEventListener("click", () => {
+  loadDiscoveryPreferences();
+  show("discoveryPreferencesPage");
+});
 $("backFromDiscoveryPreferences").addEventListener("click", () => {
   show("settings");
 });

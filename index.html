@@ -4981,6 +4981,34 @@ bubble.append(body,timestamp);
   input.style.height=Math.min(input.scrollHeight,120)+"px";
   $("chatPageStatus").textContent="";
 });
+  
+$("chatEmojiToggle").addEventListener("click", () => {
+  $("chatEmojiPicker").classList.toggle("hidden");
+});
+
+$("chatEmojiPicker").addEventListener("click", event => {
+  const emojiButton = event.target.closest("[data-chat-emoji]");
+  if (!emojiButton) return;
+
+  const input = $("chatMessageInput");
+  const emoji = emojiButton.dataset.chatEmoji;
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? input.value.length;
+
+  input.value =
+    input.value.slice(0, start) +
+    emoji +
+    input.value.slice(end);
+
+  input.focus();
+
+  const cursor = start + emoji.length;
+  input.setSelectionRange(cursor, cursor);
+
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  $("chatEmojiPicker").classList.add("hidden");
+});
+
   $("chatMessageInput").addEventListener("keydown",e=>{
   if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){
     e.preventDefault();

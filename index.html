@@ -4146,10 +4146,29 @@ avatar.onclick = (event) => {
 async function loadMyConversations() {
   if (!currentUser) return;
 
+  
   const list = $("conversationList");
+  const activeConversation = $("activeConversation");
+
+  // Prevent a missing messages element from crashing the function.
+  if (!list || !activeConversation) {
+    console.error("Messages UI is incomplete", {
+      conversationListFound: !!list,
+      activeConversationFound: !!activeConversation
+    });
+
+    status(
+      "messagesStatus",
+      "The messages panel did not load correctly. Please refresh the page and try again.",
+      true
+    );
+    return;
+  }
+
   list.replaceChildren();
-  $("activeConversation").classList.add("hidden");
+  activeConversation.classList.add("hidden");
   status("messagesStatus", "Loading your conversations...");
+
 
   try {
     const me = currentUser.id;

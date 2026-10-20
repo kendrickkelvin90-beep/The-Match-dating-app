@@ -876,6 +876,64 @@ body.light-theme .bottom-nav button.active {
   background: #fff0f4 !important;
 }
 
+/* Light Theme readability and notification fixes only */
+body.light-theme #discover > .small,
+body.light-theme #discover .small,
+body.light-theme #discover .status,
+body.light-theme #discover p,
+body.light-theme #discover h2,
+body.light-theme #discover h3 {
+  color: #25212a !important;
+  opacity: 1 !important;
+}
+
+body.light-theme #discover #storiesSection {
+  border-bottom-color: #e5dce2 !important;
+}
+
+body.light-theme #discover #refreshNearby {
+  background: #fff0f5 !important;
+  color: #b51f50 !important;
+  border-color: #e8a4bd !important;
+}
+
+body.light-theme #discover .story-circle,
+body.light-theme #discover .story-item {
+  color: #29212a !important;
+}
+
+body.light-theme #discover .story-circle span,
+body.light-theme #discover .story-item span {
+  color: #29212a !important;
+  opacity: 1 !important;
+}
+
+body.light-theme #openNotifications {
+  color: #24202a !important;
+  background: #ffffff !important;
+  border-radius: 50%;
+}
+
+body.light-theme #notificationBadge {
+  background: #d92355 !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff;
+  font-weight: 800 !important;
+}
+
+body.light-theme header {
+  color: #24202a !important;
+}
+
+body.light-theme #discover #profileList:empty::after {
+  content: "No profiles to show right now. Try refreshing later.";
+  display: block;
+  grid-column: 1 / -1;
+  padding: 16px 0;
+  color: #55505a;
+  line-height: 1.6;
+}
+
 </style>
 </head>
 <body>

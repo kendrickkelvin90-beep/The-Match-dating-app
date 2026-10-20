@@ -3044,8 +3044,28 @@ approxLocation=p.location_sharing&&p.latitude!=null&&p.longitude!=null
 $("locationButton").textContent=approxLocation?"📍 Nearby discovery is on":"📍 Turn on nearby discovery";
 status("profileStatus","Your profile is loaded. Check your details and save when ready.");
 }else{
-$("displayName").value=fallback;
-status("profileStatus","Add your details, then tap Save profile and discover.");
+  $("displayName").value=fallback;
+
+  const { error: createProfileError } = await db
+    .from("profiles")
+    .insert({
+      id: user.id,
+      display_name: fallback
+    });
+
+  if(createProfileError){
+    console.error("Profile creation failed:", createProfileError);
+    status(
+      "profileStatus",
+      "Could not create your profile: " + friendly(createProfileError),
+      true
+    );
+  }else{
+    status(
+      "profileStatus",
+      "Your profile has been created. Add your details and tap Save profile."
+    );
+  }
 }
 }catch(e){status("profileStatus","Could not load profile: "+friendly(e),true);}
   await loadMyPhotos();

@@ -2542,6 +2542,23 @@ photoFallback.textContent=(p.display_name||"M").trim().charAt(0).toUpperCase();
 photoFallback.style.cssText="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:76px;font-weight:800;letter-spacing:-2px;color:#ffd4e3;text-shadow:0 0 35px rgba(255,65,125,.45);z-index:0;";
 photoBox.appendChild(photoFallback);
 
+const onlineBadge = document.createElement("div");
+onlineBadge.dataset.discoverOnlineUser = p.id;
+onlineBadge.style.cssText = "position:absolute;top:12px;left:12px;z-index:3;display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:20px;background:#07120ddd;border:1px solid #52e39a66;color:#b9ffd8;font-size:12px;font-weight:700;";
+
+const onlineDot = document.createElement("span");
+onlineDot.dataset.onlineDot = "true";
+onlineDot.style.cssText = "width:7px;height:7px;border-radius:50%;display:inline-block;background:#777;";
+
+const onlineLabel = document.createElement("span");
+onlineLabel.dataset.onlineLabel = "true";
+onlineLabel.textContent = isUserOnline(p.id) ? "Online" : "Offline";
+onlineDot.style.background = isUserOnline(p.id) ? "#52e39a" : "#777";
+onlineLabel.style.color = isUserOnline(p.id) ? "#b9ffd8" : "#ddd";
+
+onlineBadge.append(onlineDot, onlineLabel);
+photoBox.appendChild(onlineBadge);
+
 
 
 

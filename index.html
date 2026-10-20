@@ -3284,6 +3284,16 @@ photoBox.appendChild(onlineBadge);
           photoCount.textContent=(photoIndex+1)+" / "+photoUrls.length;
         }
       };
+            photo.style.cursor = "pointer";
+      photo.onclick = (event) => {
+        event.stopPropagation();
+        if (photoUrls.length > 1) {
+          photoIndex = (photoIndex + 1) % photoUrls.length;
+          photo.src = photoUrls[photoIndex];
+          photoCount.textContent =
+            (photoIndex + 1) + " / " + photoUrls.length;
+        }
+      };
 
       photoBox.append(previous,nextPhoto);
       card.appendChild(photoBox);

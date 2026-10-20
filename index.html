@@ -1014,13 +1014,29 @@ body:has(#profile:not(.hidden)) .hero {
     <h3 id="chatPartnerName">Conversation</h3>
     <div id="chatMessages"></div>
 
-    <textarea id="chatMessageInput" maxlength="2000"
-  placeholder="Write your message..." rows="2"></textarea>
+    
+<div id="chatComposer">
+  <button id="chatEmojiToggle" type="button" aria-label="Choose emoji">☺</button>
+  <textarea id="chatMessageInput" maxlength="2000"
+    placeholder="Write a message..." rows="1"></textarea>
+  <button class="btn primary" id="sendChatMessage"
+    type="button" aria-label="Send message">➤</button>
+</div>
 
-    <button class="btn primary" id="sendChatMessage" type="button" aria-label="Send message">
-  Send
-    </button>
-  </div>
+<div id="chatEmojiPicker" class="hidden" role="group" aria-label="Emoji picker">
+  <button type="button" data-chat-emoji="😀">😀</button>
+  <button type="button" data-chat-emoji="😂">😂</button>
+  <button type="button" data-chat-emoji="😍">😍</button>
+  <button type="button" data-chat-emoji="🥰">🥰</button>
+  <button type="button" data-chat-emoji="😘">😘</button>
+  <button type="button" data-chat-emoji="😉">😉</button>
+  <button type="button" data-chat-emoji="😊">😊</button>
+  <button type="button" data-chat-emoji="❤️">❤️</button>
+  <button type="button" data-chat-emoji="🔥">🔥</button>
+  <button type="button" data-chat-emoji="👍">👍</button>
+  <button type="button" data-chat-emoji="👏">👏</button>
+  <button type="button" data-chat-emoji="🥹">🥹</button>
+</div>
 
   <p class="status" id="messagesStatus"></p>
 

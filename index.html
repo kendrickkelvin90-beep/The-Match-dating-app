@@ -2477,8 +2477,11 @@ async function loadPremiumNearby(){
 $("refreshNearby").onclick=loadNearby;
   $("refreshNearbyMembers").onclick=loadPremiumNearby;
  
+let storiesLoading = false;
+
 async function loadStories(){
-  if(!currentUser)return;
+  if (!currentUser || storiesLoading) return;
+  storiesLoading = true;
 
   const list=$("storiesList");
   const createButton=$("createStoryButton");
@@ -3000,10 +3003,11 @@ if(current.user_id!==currentUser.id){
       list.appendChild(button);
     });
 
-
-    status("storiesStatus","");
-  }catch(e){
-    status("storiesStatus","Could not load stories: "+friendly(e),true);
+    
+  } catch (e) {
+    status("storiesStatus", "Could not load stories: " + friendly(e), true);
+  } finally {
+    storiesLoading = false;
   }
 }
 

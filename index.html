@@ -3301,22 +3301,26 @@ card.appendChild(details);
         card.appendChild(bio);
       }
 
-      const actions=document.createElement("div");
-      actions.style.cssText="display:flex;gap:12px;margin-top:14px;";
+      
+const actions=document.createElement("div");
+actions.style.cssText="display:flex;justify-content:center;align-items:center;gap:18px;margin:20px 4px 8px;padding:4px 0;";
 
-      const pass=document.createElement("button");
-      pass.className="btn secondary";
-      pass.textContent="✖ Pass";
-      pass.style.flex="1";
-      pass.onclick=async()=>{
-        personIndex++;
-        await showPerson();
-      };
+const pass=document.createElement("button");
+pass.type="button";
+pass.className="btn secondary";
+pass.textContent="✕  Pass";
+pass.style.cssText="flex:1;min-height:54px;border-radius:18px;border:1px solid #55404a;background:#171116;color:#fff;font-size:16px;font-weight:800;box-shadow:0 5px 16px #0005;";
+pass.onclick=async()=>{
+  personIndex++;
+  await showPerson();
+};
 
-      const like=document.createElement("button");
-      like.className="btn primary";
-      like.textContent="❤️ Like";
-      like.style.flex="1";
+const like=document.createElement("button");
+like.type="button";
+like.className="btn primary";
+like.textContent="♥  Like";
+like.style.cssText="flex:1;min-height:54px;border-radius:18px;border:1px solid #ff6b9d;background:linear-gradient(135deg,#ff397b,#d91659);color:#fff;font-size:16px;font-weight:800;box-shadow:0 5px 18px #ff397b35;";
+
       
 like.onclick=async()=>{
   like.disabled=true;

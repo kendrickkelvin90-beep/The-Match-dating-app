@@ -806,6 +806,76 @@ body:has(#profile:not(.hidden)) .hero {
   font-size: 21px;
 }
 
+/* The Match Light Theme */
+body.light-theme {
+  background: #ffffff !important;
+  color: #202020 !important;
+}
+
+body.light-theme:has(#discover:not(.hidden)),
+body.light-theme:has(#matches:not(.hidden)),
+body.light-theme:has(#likes:not(.hidden)),
+body.light-theme:has(#messages:not(.hidden)),
+body.light-theme:has(#settings:not(.hidden)),
+body.light-theme:has(#memberProfilePage:not(.hidden)),
+body.light-theme:has(#chatPage:not(.hidden)),
+body.light-theme:has(#profile:not(.hidden)),
+body.light-theme:has(#nearbyPage:not(.hidden)),
+body.light-theme:has(#notificationsPage:not(.hidden)) {
+  background: #ffffff !important;
+  color: #202020 !important;
+}
+
+body.light-theme #discover {
+  background: #ffffff !important;
+  color: #202020 !important;
+}
+
+body.light-theme .panel,
+body.light-theme .member-card {
+  background: #ffffff !important;
+  color: #202020 !important;
+  border-color: #e5e5e5 !important;
+}
+
+body.light-theme h1,
+body.light-theme h2,
+body.light-theme h3,
+body.light-theme h4,
+body.light-theme p,
+body.light-theme label,
+body.light-theme .small,
+body.light-theme .status {
+  color: #202020;
+}
+
+body.light-theme input,
+body.light-theme textarea,
+body.light-theme select {
+  background: #ffffff !important;
+  color: #202020 !important;
+  border-color: #d0d0d0 !important;
+}
+
+body.light-theme input::placeholder,
+body.light-theme textarea::placeholder {
+  color: #777777 !important;
+}
+
+body.light-theme .bottom-nav {
+  background: #ffffff !important;
+  border-color: #e5e5e5 !important;
+}
+
+body.light-theme .bottom-nav button {
+  color: #444444 !important;
+}
+
+body.light-theme .bottom-nav button.active {
+  color: #d92759 !important;
+  background: #fff0f4 !important;
+}
+
 </style>
 </head>
 <body>

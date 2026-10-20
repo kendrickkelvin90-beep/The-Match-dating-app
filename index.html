@@ -3950,6 +3950,59 @@ $("backFromNotifications").onclick = () => {
       );
     });
 };
+ 
+function applyAppTheme(theme) {
+  const selectedTheme = theme === "light" ? "light" : "dark";
+
+  document.body.classList.toggle(
+    "light-theme",
+    selectedTheme === "light"
+  );
+
+  const themeSelect = $("appThemeSelect");
+  if (themeSelect) {
+    themeSelect.value = selectedTheme;
+  }
+
+  const themeColor = document.querySelector(
+    'meta[name="theme-color"]'
+  );
+
+  if (themeColor) {
+    themeColor.setAttribute(
+      "content",
+      selectedTheme === "light" ? "#ffffff" : "#10050a"
+    );
+  }
+
+  try {
+    localStorage.setItem("theMatchTheme", selectedTheme);
+  } catch (error) {
+    console.warn("Could not save theme preference:", error);
+  }
+}
+
+let savedAppTheme = "dark";
+
+try {
+  savedAppTheme = localStorage.getItem("theMatchTheme") || "dark";
+} catch (error) {
+  console.warn("Could not read saved theme preference:", error);
+}
+
+applyAppTheme(savedAppTheme);
+
+$("appThemeSelect").addEventListener("change", event => {
+  applyAppTheme(event.target.value);
+
+  status(
+    "settingsStatus",
+    event.target.value === "light"
+      ? "Light theme enabled."
+      : "Dark theme enabled."
+  );
+});
+
   $("settingsEditProfile").onclick=()=>{
 show("profile");
 };

@@ -4541,59 +4541,91 @@ async function loadMyMatches(){
     if(profileError)throw profileError;
 
     
-    (profiles||[]).forEach(p=>{
-      const card=document.createElement("div");
-      card.className="profile-card";
-      card.style.cssText="display:flex;align-items:center;gap:14px;padding:14px;margin-bottom:12px;background:#000000;border:1px solid #292929;border-radius:16px;";
-      
-card.style.cursor = "pointer";
-card.onclick = () => openMemberProfile(p.id);
+    
+(profiles||[]).forEach(p=>{
+  const card=document.createElement("div");
+  card.className="profile-card";
+  card.style.cssText=
+    "display:flex;align-items:center;gap:18px;padding:18px;" +
+    "margin-bottom:16px;background:#000;border:1px solid #292929;" +
+    "border-radius:24px;min-height:220px;box-sizing:border-box;" +
+    "width:100%;cursor:pointer;";
 
+  card.onclick=()=>openMemberProfile(p.id);
 
-      
-const avatar=document.createElement("img");
-avatar.alt="Profile photo";
-avatar.style.cssText="width:60px;height:60px;border-radius:50%;object-fit:cover;background:#292929;flex-shrink:0;cursor:pointer;";
-avatar.onclick = (event) => {
-  event.stopPropagation();
-  openMemberProfile(p.id);
-};
+  const avatar=document.createElement("img");
+  avatar.alt=(p.display_name||"Member")+" profile photo";
+  avatar.style.cssText=
+    "width:120px;height:160px;min-width:120px;border-radius:18px;" +
+    "object-fit:cover;background:#24131c;flex-shrink:0;";
 
+  const showPhotoFallback=()=>{
+    avatar.style.display="none";
+    if(!avatar.parentElement.querySelector("[data-match-photo-fallback]")){
+      const fallback=document.createElement("div");
+      fallback.dataset.matchPhotoFallback="true";
+      fallback.textContent=(p.display_name||"M").trim().charAt(0).toUpperCase();
+      fallback.style.cssText=
+        "width:120px;height:160px;min-width:120px;border-radius:18px;" +
+        "display:flex;align-items:center;justify-content:center;" +
+        "background:linear-gradient(145deg,#42142b,#10090e);" +
+        "color:#ff8db6;font-size:54px;font-weight:800;flex-shrink:0;";
+      avatar.parentElement.insertBefore(fallback,avatar);
+    }
+  };
 
-      const details=document.createElement("div");
-      details.style.cssText="display:flex;flex-direction:column;gap:6px;";
+  avatar.onerror=showPhotoFallback;
 
-      const name=document.createElement("button");
-      name.className="btn secondary";
-      name.type="button";
-      name.textContent=p.display_name||"Member";
-      name.onclick=()=>openMemberProfile(p.id);
+  const details=document.createElement("div");
+  details.style.cssText=
+    "display:flex;flex-direction:column;align-items:flex-start;" +
+    "justify-content:center;gap:12px;min-width:0;flex:1;";
 
-      const age=document.createElement("span");
-      age.className="small";
-      age.textContent=p.age ? String(p.age)+" years old" : "Age not provided";
+  const name=document.createElement("div");
+  name.textContent=p.display_name||"Member";
+  name.style.cssText=
+    "font-size:22px;font-weight:800;color:#ffe5ef;" +
+    "overflow-wrap:anywhere;";
 
-      const hint=document.createElement("span");
-      hint.className="small";
-      hint.textContent="Tap to view profile";
+  const age=document.createElement("div");
+  age.textContent=p.age ? String(p.age)+" years old" : "Age not provided";
+  age.style.cssText="font-size:16px;color:#cdb8c2;";
 
-      details.append(name,age,hint);
-      card.append(avatar,details);
+  const hint=document.createElement("div");
+  hint.textContent="Tap to view profile";
+  hint.style.cssText="font-size:14px;color:#ff8db6;";
 
-      db.from("profile_photos")
-        .select("storage_path")
-        .eq("user_id",p.id)
-        .order("position")
-        .limit(1)
-        .then(({data})=>{
-          if(data && data.length){
-            avatar.src=db.storage.from("profile-photos")
-              .getPublicUrl(data[0].storage_path).data.publicUrl;
-          }
-        });
+  details.append(name,age,hint);
+  card.append(avatar,details);
 
-      list.appendChild(card);
+  db.from("profile_photos")
+    .select("storage_path")
+    .eq("user_id",p.id)
+    .order("position")
+    .limit(1)
+    .then(({data,error})=>{
+      if(error){
+        console.warn("Could not load match photo:",error);
+        showPhotoFallback();
+        return;
+      }
+
+      if(data && data.length && data[0].storage_path){
+        avatar.src=db.storage
+          .from("profile-photos")
+          .getPublicUrl(data[0].storage_path).data.publicUrl;
+      }else{
+        showPhotoFallback();
+      }
+    })
+    .catch(error=>{
+      console.warn("Could not load match photo:",error);
+      showPhotoFallback();
     });
+
+  list.appendChild(card);
+});
+
 
 
     status("matchesStatus","You have "+profiles.length+" mutual match(es)!");

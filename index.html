@@ -1039,7 +1039,66 @@ body.light-theme #notificationBadge {
 <p class="status" id="welcomeStatus"></p>
 </section>
 
-<section class="panel hidden" id="auth">
+
+<section class="panel hidden" id="onboarding">
+  <h2>Let's get to know you ❤️</h2>
+  <p class="small">
+    A few important questions help us keep The Match safe
+    and help you find meaningful connections.
+  </p>
+
+  <div style="margin:18px 0;">
+    <div style="display:flex;justify-content:space-between;gap:10px;">
+      <strong id="onboardingStepLabel">Step 1 of 3</strong>
+      <span class="small" id="onboardingProgressText">Question 1 of 10</span>
+    </div>
+    <div style="height:6px;background:#333;border-radius:10px;margin-top:10px;overflow:hidden;">
+      <div id="onboardingProgress"
+           style="height:100%;width:10%;background:#ff3c79;border-radius:10px;transition:width .2s;">
+      </div>
+    </div>
+  </div>
+
+  <div class="member-card" style="margin:18px 0;">
+    <h3 id="onboardingQuestion">
+      Welcome to The Match! Are you 18 years old or older?
+    </h3>
+    <p class="small" id="onboardingHelp">
+      The Match is strictly for adults aged 18 and above.
+    </p>
+
+    <div id="onboardingAnswers" style="display:grid;gap:12px;margin-top:18px;">
+      <button class="btn secondary" type="button"
+              data-onboarding-answer="yes">
+        Yes, I'm 18 or older
+      </button>
+      <button class="btn secondary" type="button"
+              data-onboarding-answer="no">
+        No, I'm under 18
+      </button>
+    </div>
+  </div>
+
+  <p class="status" id="onboardingStatus" aria-live="polite"></p>
+
+  <div style="display:flex;gap:10px;margin-top:16px;">
+    <button class="btn secondary" id="onboardingBack"
+            type="button" disabled>
+      Back
+    </button>
+    <button class="btn primary" id="onboardingNext"
+            type="button" disabled>
+      Continue
+    </button>
+  </div>
+
+  <p class="small" style="margin-top:16px;">
+    Your identity and dating preferences will be kept private
+    unless you choose to share them on your profile.
+  </p>
+</section>
+
+  <section class="panel hidden" id="auth">
 <h2 id="authTitle">Create your account</h2>
 <p class="small" style="font-weight:700;">Start your journey with The Match.</p>
 <p style="font-weight:800;font-size:14px;color:#ff3c79;text-align:center;letter-spacing:0.5px;">STRICTLY FOR THE LGBTQ+ COMMUNITY · ADULTS 18+</p>

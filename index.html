@@ -1377,6 +1377,65 @@ const $=id=>document.getElementById(id);
 let loginMode=false,currentUser=null,approxLocation=null;
 let activeChatUserId = null;
 let chatRefreshTimer = null;
+  
+
+let onlinePresenceChannel = null;
+let onlinePresenceUserId = null;
+let onlinePresenceState = {};
+
+function updateChatOnlineStatus(userId) {
+  const statusLabel = $("chatOnlineStatus");
+  const statusDot = $("chatOnlineDot");
+
+  if (!statusLabel || !statusDot) return;
+
+  const isOnline = Object.values(onlinePresenceState).some(
+    entries => Array.isArray(entries) &&
+      entries.some(entry => entry.user_id === userId)
+  );
+
+  statusLabel.textContent = isOnline ? "Online" : "Offline";
+  statusLabel.style.color = isOnline ? "#52e39a" : "#aaa";
+  statusDot.style.background = isOnline ? "#52e39a" : "#777";
+}
+
+async function startOnlinePresence(user) {
+  if (!user?.id) return;
+
+  if (onlinePresenceUserId === user.id && onlinePresenceChannel) {
+    return;
+  }
+
+  if (onlinePresenceChannel) {
+    await db.removeChannel(onlinePresenceChannel);
+    onlinePresenceChannel = null;
+  }
+
+  onlinePresenceUserId = user.id;
+  onlinePresenceState = {};
+
+  onlinePresenceChannel = db.channel("match-online-users", {
+    config: {
+      presence: { key: user.id }
+    }
+  });
+
+  onlinePresenceChannel
+    .on("presence", { event: "sync" }, () => {
+      onlinePresenceState = onlinePresenceChannel.presenceState();
+      if (activeChatUserId) {
+        updateChatOnlineStatus(activeChatUserId);
+      }
+    })
+    .subscribe(async state => {
+      if (state === "SUBSCRIBED") {
+        await onlinePresenceChannel.track({
+          user_id: user.id,
+          online_at: new Date().toISOString()
+        });
+      }
+    });
+}
 
 
 

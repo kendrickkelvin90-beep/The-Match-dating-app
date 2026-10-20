@@ -10,7 +10,62 @@
   <link rel="apple-touch-icon" href="/icons/file_00000000194481f48390cd96271ae5c9.png">
 <link rel="icon" type="image/png" href="/icons/file_00000000194481f48390cd96271ae5c9.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
+
+/* The Match — Premium Discover refresh */
+#discover {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 35, 112, 0.12), transparent 48%),
+    #050505;
+  color: #fff;
+}
+
+#discover > h2 {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.7px;
+  margin-bottom: 8px;
+}
+
+#discover > .small {
+  color: #c5b1bb;
+  line-height: 1.5;
+}
+
+#discover #storiesSection {
+  border-bottom: 1px solid rgba(255, 65, 125, 0.16);
+  padding-bottom: 18px;
+}
+
+#discover #refreshNearby {
+  border: 1px solid rgba(255, 65, 125, 0.55);
+  border-radius: 14px;
+  background: #13080e;
+  color: #ff6b9d;
+  font-weight: 700;
+}
+
+#discover #profileList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+#discover #profileList > * {
+  min-width: 0;
+}
+
+#discover .status {
+  color: #ffc1d5;
+}
+
+@media (max-width: 360px) {
+  #discover #profileList {
+    gap: 8px;
+  }
+}
+
+  <style>
   
 #storyMediaFile {
   display: none !important;

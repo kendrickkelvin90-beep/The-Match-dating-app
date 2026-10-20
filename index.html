@@ -4191,6 +4191,9 @@ $("openDiscoveryPreferences").addEventListener("click", () => {
 $("backFromDiscoveryPreferences").addEventListener("click", () => {
   show("settings");
 });
+  $("discoveryDistance").addEventListener("input", event => {
+  $("discoveryDistanceValue").textContent = event.target.value + " km";
+});
 $("settingsPrivacyProfile").onclick=()=>{
 show("profile");
 };

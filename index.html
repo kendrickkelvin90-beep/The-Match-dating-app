@@ -2439,6 +2439,192 @@ document.querySelectorAll("[data-toggle-password]").forEach(button=>{
   });
 });
 
+ 
+const onboardingQuestions = [
+  {
+    key: "age_confirmed",
+    title: "Are you 18 years old or older?",
+    help: "The Match is only for adults aged 18 and above.",
+    options: ["Yes, I'm 18 or older", "No, I'm under 18"],
+    values: ["yes", "no"],
+    safety: true
+  },
+  {
+    key: "respect_boundaries",
+    title: "Will you respect other members' boundaries, consent, and privacy?",
+    options: ["Yes, I agree", "No, I don't agree"],
+    values: ["yes", "no"],
+    safety: true
+  },
+  {
+    key: "community_safety",
+    title: "Will you avoid harassment, threats, impersonation, scams, and sharing private information without permission?",
+    options: ["Yes, I agree", "No, I don't agree"],
+    values: ["yes", "no"],
+    safety: true
+  },
+  {
+    key: "terms_accepted",
+    title: "Do you agree to The Match Community Guidelines and Terms of Service?",
+    options: ["Yes, I agree", "No, I don't agree"],
+    values: ["yes", "no"],
+    safety: true
+  },
+  {
+    key: "gender_identity",
+    title: "How do you describe your gender identity?",
+    options: ["Man", "Woman", "Trans man", "Trans woman", "Non-binary", "Another identity", "Prefer not to say"]
+  },
+  {
+    key: "sexual_orientation",
+    title: "How do you describe your sexual orientation?",
+    options: ["Gay", "Lesbian", "Bisexual", "Straight", "Pansexual", "Queer", "Asexual", "Another orientation", "Prefer not to say"]
+  },
+  {
+    key: "interested_in",
+    title: "Who would you like to meet?",
+    help: "Choose the option that best describes your preference.",
+    options: ["Men", "Women", "All genders", "I'll decide later"]
+  },
+  {
+    key: "relationship_goal",
+    title: "What are you looking for?",
+    options: ["A relationship", "Dating", "Friendship", "Still figuring it out"]
+  },
+  {
+    key: "phone_number",
+    title: "Your phone number",
+    help: "Include your country code, for example +234. This number will be private.",
+    input: true
+  },
+  {
+    key: "recovery_email",
+    title: "Recovery email (optional)",
+    help: "You can provide another email to help recover your account.",
+    input: true,
+    optional: true
+  }
+];
+
+let onboardingIndex = 0;
+let onboardingAnswers = {};
+
+function renderOnboardingQuestion() {
+  const q = onboardingQuestions[onboardingIndex];
+  if (!q) return;
+
+  $("onboardingStepLabel").textContent =
+    onboardingIndex < 4 ? "Step 1 of 3" :
+    onboardingIndex < 8 ? "Step 2 of 3" : "Step 3 of 3";
+
+  $("onboardingProgressText").textContent =
+    `Question ${onboardingIndex + 1} of ${onboardingQuestions.length}`;
+
+  $("onboardingProgress").style.width =
+    `${((onboardingIndex + 1) / onboardingQuestions.length) * 100}%`;
+
+  $("onboardingQuestion").textContent = q.title;
+  $("onboardingHelp").textContent = q.help || "";
+  $("onboardingAnswers").replaceChildren();
+
+  if (q.input) {
+    const input = document.createElement("input");
+    input.type = q.key === "recovery_email" ? "email" : "tel";
+    input.autocomplete = q.key === "phone_number" ? "tel" : "email";
+    input.placeholder = q.key === "phone_number" ? "+234..." : "name@example.com";
+    input.value = onboardingAnswers[q.key] || "";
+    input.required = !q.optional;
+    input.maxLength = q.key === "phone_number" ? 20 : 254;
+    input.id = "onboardingAnswerInput";
+    $("onboardingAnswers").appendChild(input);
+  } else {
+    q.options.forEach((option, i) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn secondary";
+      button.textContent = option;
+      button.dataset.answerValue = q.values ? q.values[i] : option;
+      button.setAttribute("aria-pressed",
+        String(onboardingAnswers[q.key] === button.dataset.answerValue));
+
+      button.onclick = () => {
+        onboardingAnswers[q.key] = button.dataset.answerValue;
+        $("onboardingAnswers").querySelectorAll("button").forEach(b => {
+          b.setAttribute("aria-pressed", String(b === button));
+        });
+        $("onboardingNext").disabled = false;
+      };
+
+      $("onboardingAnswers").appendChild(button);
+    });
+  }
+
+  $("onboardingBack").disabled = onboardingIndex === 0;
+  $("onboardingNext").textContent =
+    onboardingIndex === onboardingQuestions.length - 1
+      ? "Continue to account creation"
+      : "Continue";
+
+  $("onboardingNext").disabled =
+    q.input
+      ? (!q.optional && !onboardingAnswers[q.key])
+      : !onboardingAnswers[q.key];
+
+  status("onboardingStatus", "");
+}
+
+$("onboardingBack").onclick = () => {
+  if (onboardingIndex > 0) {
+    onboardingIndex--;
+    renderOnboardingQuestion();
+  }
+};
+
+$("onboardingNext").onclick = () => {
+  const q = onboardingQuestions[onboardingIndex];
+
+  if (q.input) {
+    const input = $("onboardingAnswerInput");
+    const value = input ? input.value.trim() : "";
+
+    if (!q.optional && !value) {
+      status("onboardingStatus", "Please fill in this answer.", true);
+      return;
+    }
+
+    if (q.key === "phone_number" && value &&
+        !/^\+?[0-9\s()-]{7,20}$/.test(value)) {
+      status("onboardingStatus", "Enter a valid phone number with country code.", true);
+      return;
+    }
+
+    onboardingAnswers[q.key] = value;
+  }
+
+  if (q.safety && onboardingAnswers[q.key] !== "yes") {
+    status("onboardingStatus",
+      "You must agree to this requirement to continue.", true);
+    return;
+  }
+
+  if (onboardingIndex < onboardingQuestions.length - 1) {
+    onboardingIndex++;
+    renderOnboardingQuestion();
+    return;
+  }
+
+  status("onboardingStatus",
+    "Answers collected. Next, we'll connect them to your account securely.");
+  openAuth(false);
+};
+
+function startOnboarding() {
+  onboardingIndex = 0;
+  onboardingAnswers = {};
+  renderOnboardingQuestion();
+  show("onboarding");
+}
+
   $("signup").onclick=()=>openAuth(false);
 $("login").onclick=()=>openAuth(true);
 $("back").onclick=()=>show("welcome");

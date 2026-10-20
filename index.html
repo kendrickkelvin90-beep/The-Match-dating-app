@@ -2543,6 +2543,7 @@ function showMatchNotification(title, body, type) {
 
 
 
+
 async function updateAccountCounts() {
   if (!currentUser) return;
 
@@ -2555,7 +2556,7 @@ async function updateAccountCounts() {
         .eq("liked_id", me),
 
       db.from("messages")
-        .select("sender_id")
+        .select("*", { count: "exact", head: true })
         .eq("receiver_id", me)
         .is("read_at", null)
     ]);
@@ -2566,28 +2567,26 @@ async function updateAccountCounts() {
     const likesBadge = document.getElementById("likesCount");
     const messagesBadge = document.getElementById("messagesCount");
 
-    const unreadSenders = new Set(
-      (unreadResult.data || []).map(message => message.sender_id)
-    );
-
-    const unreadConversationCount = unreadSenders.size;
     const likesCount = likesResult.count || 0;
+    const unreadMessageCount = unreadResult.count || 0;
 
     if (likesBadge) {
-      likesBadge.textContent = likesCount;
+      likesBadge.textContent = likesCount > 99 ? "99+" : String(likesCount);
       likesBadge.style.display =
         likesCount > 0 ? "inline-block" : "none";
     }
 
     if (messagesBadge) {
-      messagesBadge.textContent = unreadConversationCount;
+      messagesBadge.textContent =
+        unreadMessageCount > 99 ? "99+" : String(unreadMessageCount);
       messagesBadge.style.display =
-        unreadConversationCount > 0 ? "inline-block" : "none";
+        unreadMessageCount > 0 ? "inline-block" : "none";
     }
   } catch (error) {
     console.error("Account count update failed:", error);
   }
 }
+
 
   let notificationBaselineReady = false;
 

@@ -1438,6 +1438,15 @@ let onlinePresenceChannel = null;
 let onlinePresenceUserId = null;
 let onlinePresenceState = {};
 
+function isUserOnline(userId) {
+  return Object.values(onlinePresenceState).some(
+    entries =>
+      Array.isArray(entries) &&
+      entries.some(entry => entry.user_id === userId)
+  );
+}
+
+
 function updateChatOnlineStatus(userId) {
   const statusLabel = $("chatOnlineStatus");
   const statusDot = $("chatOnlineDot");

@@ -4229,6 +4229,29 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
       "Could not save preferences. Please try again.";
   }
 });
+  function loadDiscoveryPreferences() {
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem("theMatchDiscoveryPreferences") || "{}"
+    );
+
+    if (saved.location !== undefined) $("discoveryLocation").value = saved.location;
+    if (saved.distance !== undefined) $("discoveryDistance").value = saved.distance;
+    if (saved.minAge !== undefined) $("discoveryAgeMin").value = saved.minAge;
+    if (saved.maxAge !== undefined) $("discoveryAgeMax").value = saved.maxAge;
+    if (saved.showMe !== undefined) $("discoveryShowMe").value = saved.showMe;
+    if (saved.lookingFor !== undefined) $("discoveryLookingFor").value = saved.lookingFor;
+    if (saved.interests !== undefined) $("discoveryInterests").value = saved.interests;
+    if (saved.verifiedOnly !== undefined) $("discoveryVerifiedOnly").checked = saved.verifiedOnly;
+    if (saved.recentlyActive !== undefined) $("discoveryRecentlyActive").checked = saved.recentlyActive;
+    if (saved.expandRange !== undefined) $("discoveryExpandRange").checked = saved.expandRange;
+
+    $("discoveryDistanceValue").textContent =
+      $("discoveryDistance").value + " km";
+  } catch (error) {
+    console.error("Could not load discovery preferences:", error);
+  }
+  }
 $("settingsPrivacyProfile").onclick=()=>{
 show("profile");
 };

@@ -1220,9 +1220,12 @@ function show(id, addToHistory = true) {
 
   currentPage = id;
 
-  panels.forEach(p =>
-    $(p).classList.toggle("hidden", p !== id)
-  );
+    panels.forEach(p => {
+    const panel = $(p);
+    if (panel) {
+      panel.classList.toggle("hidden", p !== id);
+    }
+  });
 
   $("heroSection").classList.toggle(
     "hidden",

@@ -4717,6 +4717,13 @@ async function openChat(userId, userName){
     status("messagesStatus","Opening conversation...");
 
     activeChatUserId = userId;
+    
+$("chatOnlineStatus").textContent = "Checking status...";
+$("chatOnlineStatus").style.color = "#aaa";
+$("chatOnlineDot").style.background = "#777";
+
+updateChatOnlineStatus(userId);
+
 
     $("chatPageTitle").textContent = userName || "Conversation";
     $("chatPageTitle").style.cursor = "pointer";

@@ -3068,10 +3068,11 @@ $("storyMediaFile").onchange = async () => {
           show("premium");
         }
 
-        return;
+              return;
       }
-
+    }
   } catch (e) {
+    console.error("Could not check Story upload eligibility:", e);
     console.error("Could not check Story upload eligibility:", e);
     status(
       "storiesStatus",

@@ -2793,14 +2793,26 @@ async function loadNearby(){
     let people=peopleData||[];
 
 
-    for(let i=people.length-1;i>=0;i--){
-      const {data:canInteract,error:checkError}=await db.rpc(
-        "can_interact_with_member",
-        {target_user_id:people[i].id}
-      );
-      if(checkError)throw checkError;
-      if(canInteract!==true)people.splice(i,1);
-    }
+    
+    people = people.filter(p => {
+      const age = Number(p.age);
+
+      if (!Number.isFinite(age) || age < minAge || age > maxAge) {
+        return false;
+      }
+
+      if (preferredLocation) {
+        const selectedArea = preferredLocation.toLowerCase();
+        const profileCity = (p.city || "").trim().toLowerCase();
+
+        if (!profileCity.includes(selectedArea)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
 
     if(approxLocation){
       people=people.map(p=>({...p,_distance:

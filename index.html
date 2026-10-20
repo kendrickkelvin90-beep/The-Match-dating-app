@@ -4007,7 +4007,6 @@ async function loadLikesPage(){
     }
 
     const {data:received,error:receivedError}=await db
-
       .from("likes")
       .select("liker_id")
       .eq("liked_id",currentUser.id);

@@ -4184,7 +4184,13 @@ $("appThemeSelect").addEventListener("change", event => {
   $("settingsEditProfile").onclick=()=>{
 show("profile");
 };
+$("openDiscoveryPreferences").addEventListener("click", () => {
+  show("discoveryPreferencesPage");
+});
 
+$("backFromDiscoveryPreferences").addEventListener("click", () => {
+  show("settings");
+});
 $("settingsPrivacyProfile").onclick=()=>{
 show("profile");
 };

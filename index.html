@@ -2625,7 +2625,7 @@ function startOnboarding() {
   show("onboarding");
 }
 
-  $("signup").onclick=()=>openAuth(false);
+  $("signup").onclick=()=>startOnboarding();
 $("login").onclick=()=>openAuth(true);
 $("back").onclick=()=>show("welcome");
 $("switch").onclick=()=>openAuth(!loginMode);

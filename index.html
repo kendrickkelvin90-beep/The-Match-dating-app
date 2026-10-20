@@ -4253,6 +4253,27 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
     console.error("Could not load discovery preferences:", error);
   }
   }
+  $("resetDiscoveryPreferences").addEventListener("click", () => {
+  $("discoveryLocation").value = "";
+  $("discoveryDistance").value = 50;
+  $("discoveryAgeMin").value = 18;
+  $("discoveryAgeMax").value = 79;
+  $("discoveryShowMe").value = "everyone";
+  $("discoveryLookingFor").value = "";
+  $("discoveryInterests").value = "";
+  $("discoveryVerifiedOnly").checked = false;
+  $("discoveryRecentlyActive").checked = false;
+  $("discoveryExpandRange").checked = true;
+
+  $("discoveryDistanceValue").textContent = "50 km";
+
+  try {
+    localStorage.removeItem("theMatchDiscoveryPreferences");
+    status("discoveryPreferencesStatus", "Preferences reset to defaults.");
+  } catch (error) {
+    status("discoveryPreferencesStatus", "Could not reset saved preferences.", true);
+  }
+});
 $("settingsPrivacyProfile").onclick=()=>{
 show("profile");
 };

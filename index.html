@@ -1400,6 +1400,62 @@ body.light-theme #notificationBadge {
 </section>
 
     
+<section class="panel hidden" id="discoveryPreferencesPage">
+  <button class="btn secondary" id="backFromDiscoveryPreferences" type="button">← Back to Settings</button>
+  <h2>🧭 Discovery Preferences</h2>
+  <p class="small">Choose who you'd like to discover on The Match.</p>
+
+  <div class="member-card">
+    <h3>📍 Location and distance</h3>
+    <label for="discoveryLocation">Preferred location</label>
+    <input id="discoveryLocation" type="text" placeholder="Enter city or area">
+    <label for="discoveryDistance">Maximum distance: <span id="discoveryDistanceValue">50 km</span></label>
+    <input id="discoveryDistance" type="range" min="1" max="500" value="50">
+  </div>
+
+  <div class="member-card">
+    <h3>🎂 Age range</h3>
+    <label for="discoveryAgeMin">Minimum age</label>
+    <input id="discoveryAgeMin" type="number" min="18" max="99" value="18">
+    <label for="discoveryAgeMax">Maximum age</label>
+    <input id="discoveryAgeMax" type="number" min="18" max="99" value="79">
+    <label for="discoveryShowMe">Show me</label>
+    <select id="discoveryShowMe">
+      <option value="everyone">Everyone</option>
+      <option value="men">Men</option>
+      <option value="women">Women</option>
+      <option value="nonbinary">Non-binary people</option>
+    </select>
+  </div>
+
+  <div class="member-card">
+    <h3>💞 What are you looking for?</h3>
+    <select id="discoveryLookingFor">
+      <option value="">Choose an option</option>
+      <option value="relationship">A relationship</option>
+      <option value="dating">Dating</option>
+      <option value="friendship">Friendship</option>
+      <option value="casual">Something casual</option>
+      <option value="exploring">Still figuring it out</option>
+    </select>
+    <label for="discoveryInterests">Interests and hobbies</label>
+    <input id="discoveryInterests" type="text" placeholder="Music, movies, travel...">
+  </div>
+
+  <div class="member-card">
+    <h3>✨ Discovery options</h3>
+    <label><input id="discoveryVerifiedOnly" type="checkbox"> Prefer verified profiles</label>
+    <label><input id="discoveryRecentlyActive" type="checkbox"> Prioritize recently active members</label>
+    <label><input id="discoveryExpandRange" type="checkbox" checked> Show people outside my preferences when profiles are limited</label>
+  </div>
+
+  <div class="member-card">
+    <button class="btn secondary" id="resetDiscoveryPreferences" type="button">Reset preferences</button>
+    <button class="btn primary" id="saveDiscoveryPreferences" type="button">Save preferences</button>
+    <p class="status" id="discoveryPreferencesStatus" role="status"></p>
+  </div>
+</section>
+
       <section class="panel hidden" id="settings">
   <h2>⚙️ Settings</h2>
   

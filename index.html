@@ -5419,17 +5419,15 @@ async function loadMyMatches(){
 
     const mutualIds=[];
 
-    for(const item of (sent||[])){
-      const {data:back,error:backError}=await db
-        .from("likes")
-        .select("liker_id")
-        .eq("liker_id",item.liked_id)
-        .eq("liked_id",currentUser.id)
-        .maybeSingle();
+        for (const item of (sent || [])) {
+      const { data: back, error: backError } = await db
+        .rpc("check_mutual_like", {
+          p_other_user_id: item.liked_id
+        });
 
-      if(backError)throw backError;
-      if(back)mutualIds.push(item.liked_id);
-    }
+      if (backError) throw backError;
+      if (back === true) mutualIds.push(item.liked_id);
+        }
     
     
     for(let i = mutualIds.length - 1; i >= 0; i--) {

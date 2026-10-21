@@ -5586,12 +5586,15 @@ async function loadMyConversations() {
   try {
     const me = currentUser.id;
 
-    const { data: sent, error } = await db
-      .from("likes")
-      .select("liked_id")
-      .eq("liker_id", me);
+    for (const item of (sent || [])) {
+  const { data: back, error: backError } = await db
+    .rpc("check_mutual_like", {
+      p_other_user_id: item.liked_id
+    });
 
-    if (error) throw error;
+  if (backError) throw backError;
+  if (back === true) mutualIds.push(item.liked_id);
+    }
 
     const mutualIds = [];
 

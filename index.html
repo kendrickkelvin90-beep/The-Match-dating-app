@@ -4102,17 +4102,17 @@ if(current.user_id!==currentUser.id){
             }
           }
           if(current.media_url){
-            const {data,error}=await db.storage
-              .from("story-media")
-              .createSignedUrl(current.media_url,3600);
+  const {data,error}=await db.storage
+    .from("story-media")
+    .createSignedUrl(current.media_url,300);
 
-            if(!overlay.isConnected)return;
-            if(error){
-              mediaArea.textContent="Could not load this Story media.";
-            }else{
-              .createSignedUrl(current.media_url,300);
-                current.media_type==="video"?"video":"img"
-              );
+  if(!overlay.isConnected)return;
+  if(error){
+    mediaArea.textContent="Could not load this Story media.";
+  }else{
+    const media=document.createElement(
+      current.media_type==="video"?"video":"img"
+    );
               
               if (current.media_type === "video") {
                 media.controls = false;

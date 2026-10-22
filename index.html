@@ -1243,6 +1243,27 @@ body.light-theme #notificationBadge {
 <div id="storiesSection" class="stories-section">
   <h3>Stories ✨</h3>
   <p class="small">Share a moment. Discover someone's world.</p>
+  
+<div id="storyAudiencePicker" style="margin:12px 0;padding:14px;background:#1a111d;border:1px solid #49324f;border-radius:14px;">
+  <p style="margin:0 0 10px;font-weight:600;color:#fff;">Who can see your Story?</p>
+
+  <label style="display:flex;align-items:center;gap:10px;padding:10px 0;color:#fff;">
+    <input type="radio" name="storyAudience" value="everyone" checked>
+    <span>
+      <strong>Everyone</strong><br>
+      <small>People who can discover your profile, including non-matches.</small>
+    </span>
+  </label>
+
+  <label style="display:flex;align-items:center;gap:10px;padding:10px 0;color:#fff;">
+    <input type="radio" name="storyAudience" value="matches">
+    <span>
+      <strong>Your Matches</strong><br>
+      <small>Only people you've mutually matched with.</small>
+    </span>
+  </label>
+</div>
+
   <div id="storiesList" class="stories-list">
     <button type="button" id="createStoryButton" class="story-circle">
       <span class="story-plus">＋</span>

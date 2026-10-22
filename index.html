@@ -2873,16 +2873,16 @@ async function updateAccountCounts() {
   try {
     const me = currentUser.id;
 
+    
     const [likesResult, unreadResult] = await Promise.all([
-      db.from("likes")
-        .select("*", { count: "exact", head: true })
-        .eq("liked_id", me),
+      db.rpc("get_my_incoming_like_count"),
 
       db.from("messages")
         .select("*", { count: "exact", head: true })
         .eq("receiver_id", me)
         .is("read_at", null)
     ]);
+
 
     if (likesResult.error) throw likesResult.error;
     if (unreadResult.error) throw unreadResult.error;

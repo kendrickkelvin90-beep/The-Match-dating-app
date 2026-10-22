@@ -4315,6 +4315,9 @@ const storyAudience =
 
       storyRows.push({
   user_id: currentUser.id,
+        
+  audience: storyAudience,
+
   story_group_id: groupId,
   media_url: path,
   media_type: file.type.startsWith("video/") ? "video" : "image",

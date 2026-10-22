@@ -5668,38 +5668,40 @@ mutualIds.splice(
 
     if (profileError) throw profileError;
 
-    const conversations = [];
+    
+const conversations = await Promise.all(
+  (profiles || []).map(async p => {
+    const { data: messages, error: messagesError } = await db
+      .from("messages")
+      .select("id,sender_id,receiver_id,body,created_at,read_at")
+      .or(
+        "and(sender_id.eq." + me +
+        ",receiver_id.eq." + p.id +
+        "),and(sender_id.eq." + p.id +
+        ",receiver_id.eq." + me + ")"
+      )
+      .order("created_at", { ascending: false })
+      .limit(1000);
 
-    for (const p of profiles || []) {
-      const { data: messages, error: messagesError } = await db
-        .from("messages")
-        .select("id,sender_id,receiver_id,body,created_at,read_at")
-        .or(
-          "and(sender_id.eq." + me +
-          ",receiver_id.eq." + p.id +
-          "),and(sender_id.eq." + p.id +
-          ",receiver_id.eq." + me + ")"
-        )
-        .order("created_at", { ascending: false })
-        .limit(1000);
+    if (messagesError) throw messagesError;
 
-      if (messagesError) throw messagesError;
+    const chatMessages = messages || [];
+    const latest = chatMessages[0] || null;
 
-      const chatMessages = messages || [];
-      const latest = chatMessages[0] || null;
+    const unreadCount = chatMessages.filter(message =>
+      message.receiver_id === me &&
+      message.sender_id === p.id &&
+      message.read_at === null
+    ).length;
 
-      const unreadCount = chatMessages.filter(message =>
-        message.receiver_id === me &&
-        message.sender_id === p.id &&
-        message.read_at === null
-      ).length;
+    return {
+      profile: p,
+      latest,
+      unreadCount
+    };
+  })
+);
 
-      conversations.push({
-        profile: p,
-        latest,
-        unreadCount
-      });
-    }
 
     conversations.sort((a, b) => {
       const timeA = a.latest

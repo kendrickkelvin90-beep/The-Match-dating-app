@@ -6300,6 +6300,33 @@ $("sendChatMessage").addEventListener("click", async () => {
       return;
     }
 
+      const { data: membership, error: membershipError } = await db
+      .from("premium_memberships")
+      .select("premium_until")
+      .eq("user_id", senderId)
+      .maybeSingle();
+
+    if (membershipError) throw membershipError;
+
+    const isPremium = !!membership &&
+      !!membership.premium_until &&
+      new Date(membership.premium_until).getTime() > Date.now();
+
+    if (!isPremium) {
+      status(
+        "chatPageStatus",
+        "Messaging is a Premium feature. Subscribe to Premium to send messages.",
+        true
+      );
+
+      const viewPremium = confirm(
+        "Messaging is a Premium feature.\n\n" +
+        "Would you like to view Premium plans now?"
+      );
+
+      if (viewPremium) show("premium");
+      return;
+    }
     const { error } = await db
       .from("messages")
       .insert({

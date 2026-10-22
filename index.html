@@ -997,6 +997,22 @@ body.light-theme #notificationBadge {
   background: #d92355 !important;
 }
 
+/* Force the Messages page to pure black */
+body:has(#messages:not(.hidden)) {
+  background: #000000 !important;
+}
+
+body:has(#messages:not(.hidden)) #messages {
+  background: #000000 !important;
+  color: #ffffff !important;
+  min-height: 100vh;
+}
+
+body:has(#messages:not(.hidden)) #messages h2,
+body:has(#messages:not(.hidden)) #messages p {
+  color: #ffffff !important;
+}
+
 </style>
 </head>
 <body>

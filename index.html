@@ -4267,6 +4267,10 @@ $("storyMediaFile").onchange = async () => {
     return;
   }
 
+const storyAudience =
+  document.querySelector('input[name="storyAudience"]:checked')?.value
+  || "everyone";
+
   const caption = prompt("Add a caption for this Story (optional, maximum 500 characters):");
   if (caption === null) {
     input.value = "";

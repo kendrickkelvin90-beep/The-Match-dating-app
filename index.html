@@ -2890,7 +2890,7 @@ async function updateAccountCounts() {
     const likesBadge = document.getElementById("likesCount");
     const messagesBadge = document.getElementById("messagesCount");
 
-    const likesCount = likesResult.count || 0;
+    const likesCount = likesResult.data || 0;
     const unreadMessageCount = unreadResult.count || 0;
 
     if (likesBadge) {

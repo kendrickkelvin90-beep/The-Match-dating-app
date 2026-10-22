@@ -2938,13 +2938,11 @@ async function checkMatchNotifications() {
     if (likesResult.error) throw likesResult.error;
     if (messagesResult.error) throw messagesResult.error;
 
-    const newLikes = likesResult.data || [];
+        const likeCount = likesResult.data || 0;
     const newMessages = messagesResult.data || [];
 
     if (!notificationBaselineReady) {
-      knownReceivedLikes = new Set(
-        newLikes.map(item => item.liker_id)
-      );
+      knownReceivedLikeCount = likeCount;
 
       knownReceivedMessageIds = new Set(
         newMessages.map(item => item.id)
@@ -2954,19 +2952,15 @@ async function checkMatchNotifications() {
       return;
     }
 
-    for (const item of newLikes) {
-      if (!knownReceivedLikes.has(item.liker_id)) {
-        showMatchNotification(
-          "New like ❤️",
-          "Someone likes you on The Match!",
-          "like"
-        );
-      }
+    if (likeCount > knownReceivedLikeCount) {
+      showMatchNotification(
+        "New like ❤️",
+        "Someone likes you on The Match!",
+        "like"
+      );
     }
 
-    knownReceivedLikes = new Set(
-      newLikes.map(item => item.liker_id)
-    );
+    knownReceivedLikeCount = likeCount;
 
     for (const message of newMessages) {
       if (!knownReceivedMessageIds.has(message.id)) {

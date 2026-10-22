@@ -2923,10 +2923,15 @@ async function checkMatchNotifications() {
     await updateAccountCounts();
     await loadNotificationBadge();
 
-    const [likesResult, messagesResult] = await Promise.all([
-      db.from("likes")
-        .select("liker_id")
-        .eq("liked_id", me),
+        const [likesResult, messagesResult] = await Promise.all([
+      db.rpc("get_my_incoming_like_count"),
+
+      db.from("messages")
+        .select("id,sender_id,receiver_id,body,created_at")
+        .eq("receiver_id", me)
+        .order("created_at", { ascending: false })
+        .limit(50)
+    ]);
 
       db.from("messages")
         .select("id,sender_id,receiver_id,body,created_at")

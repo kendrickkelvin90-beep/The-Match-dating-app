@@ -2933,12 +2933,7 @@ async function checkMatchNotifications() {
         .limit(50)
     ]);
 
-      db.from("messages")
-        .select("id,sender_id,receiver_id,body,created_at")
-        .eq("receiver_id", me)
-        .order("created_at", { ascending: false })
-        .limit(50)
-    ]);
+    
 
     if (likesResult.error) throw likesResult.error;
     if (messagesResult.error) throw messagesResult.error;

@@ -3719,6 +3719,31 @@ async function loadStories(){
           fontWeight: "600",
           textShadow: "0 1px 5px #000"
         });
+        
+        const storyProfileButton = document.createElement("button");
+        storyProfileButton.type = "button";
+        storyProfileButton.textContent = "👤 " + name + " · View profile";
+        storyProfileButton.setAttribute(
+          "aria-label",
+          "View " + name + "'s profile"
+        );
+        storyProfileButton.style.cssText =
+          "position:absolute;top:max(52px,calc(env(safe-area-inset-top) + 42px));" +
+          "left:16px;z-index:10;padding:9px 13px;" +
+          "border:1px solid #555;border-radius:22px;" +
+          "background:#202020;color:white;font-size:13px;font-weight:600;";
+
+        if (story.user_id === currentUser.id) {
+          storyProfileButton.style.display = "none";
+        }
+
+        storyProfileButton.onclick = event => {
+          event.stopPropagation();
+          if (story.user_id === currentUser.id) return;
+          closeStory();
+          openMemberProfile(story.user_id);
+        };
+
         const discardStoryButton = document.createElement("button");
 discardStoryButton.type = "button";
 discardStoryButton.textContent = "Discard Story";

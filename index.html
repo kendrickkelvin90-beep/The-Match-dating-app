@@ -4110,7 +4110,7 @@ if(current.user_id!==currentUser.id){
             if(error){
               mediaArea.textContent="Could not load this Story media.";
             }else{
-              const media=document.createElement(
+              .createSignedUrl(current.media_url,300);
                 current.media_type==="video"?"video":"img"
               );
               

@@ -5788,22 +5788,15 @@ const firstPhotoByUser = new Map();
         button.appendChild(badge);
       }
 
-      const { data: photos, error: photoError } = await db
-        .from("profile_photos")
-        .select("storage_path")
-        .eq("user_id", p.id)
-        .order("position")
-        .limit(1);
+      
+const photoPath = firstPhotoByUser.get(p.id);
 
-      if (photoError) {
-        console.warn("Could not load profile photo:", photoError);
-      }
+if (photoPath) {
+  avatar.src = db.storage
+    .from("profile-photos")
+    .getPublicUrl(photoPath).data.publicUrl;
+}
 
-      if (photos && photos.length) {
-        avatar.src = db.storage
-          .from("profile-photos")
-          .getPublicUrl(photos[0].storage_path).data.publicUrl;
-      }
 
       button.onclick = () => {
         openChat(p.id, p.display_name || "Member");

@@ -4248,9 +4248,30 @@ $("storyMediaFile").onchange = async () => {
     return;
   }
 
-const storyAudience =
-  document.querySelector('input[name="storyAudience"]:checked')?.value
-  || "everyone";
+
+  const audienceChoice = prompt(
+    "WHO CAN SEE YOUR STORY?\n\nType 1 for Everyone\nType 2 for Your Matches",
+    "1"
+  );
+
+  if (audienceChoice === null) {
+    input.value = "";
+    return;
+  }
+
+  const audienceAnswer = audienceChoice.trim();
+
+  if (audienceAnswer !== "1" && audienceAnswer !== "2") {
+    status(
+      "storiesStatus",
+      "Please choose 1 for Everyone or 2 for Your Matches.",
+      true
+    );
+    input.value = "";
+    return;
+  }
+
+  const storyAudience = audienceAnswer === "2" ? "matches" : "everyone";
 
   const caption = prompt("Add a caption for this Story (optional, maximum 500 characters):");
   if (caption === null) {

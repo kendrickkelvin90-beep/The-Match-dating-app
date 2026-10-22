@@ -5701,6 +5701,25 @@ const conversations = await Promise.all(
     };
   })
 );
+    
+const { data: allPhotos, error: allPhotosError } = await db
+  .from("profile_photos")
+  .select("user_id,storage_path,position")
+  .in("user_id", (profiles || []).map(profile => profile.id))
+  .order("position");
+
+if (allPhotosError) {
+  console.warn("Could not load profile photos:", allPhotosError);
+}
+
+const firstPhotoByUser = new Map();
+
+(allPhotos || []).forEach(photo => {
+  if (!firstPhotoByUser.has(photo.user_id)) {
+    firstPhotoByUser.set(photo.user_id, photo.storage_path);
+  }
+});
+
 
 
     conversations.sort((a, b) => {

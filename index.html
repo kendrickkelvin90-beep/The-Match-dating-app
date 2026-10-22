@@ -2784,6 +2784,7 @@ status("profileStatus",err.code===1?"Permission denied. You can still save your 
 
 let notificationSoundContext = null;
 let knownReceivedLikes = new Set();
+  let knownReceivedLikeCount = 0;
 let knownReceivedMessageIds = new Set();
 
 function playMatchSound(type) {

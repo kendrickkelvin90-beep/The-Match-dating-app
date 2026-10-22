@@ -5418,49 +5418,65 @@ $("reportMemberButton").onclick = async () => {
 
 
 
+
 $("messageMemberButton").onclick = async () => {
   if (!selectedMemberId || !currentUser) return;
 
+  const memberId = selectedMemberId;
+
   try {
-    const { data: membership, error } = await db
-      .from("premium_memberships")
-      .select("premium_until")
-      .eq("user_id", currentUser.id)
-      .maybeSingle();
+    const { data: isMatch, error: matchError } = await db.rpc(
+      "are_users_mutual_matches",
+      {
+        p_user_a: currentUser.id,
+        p_user_b: memberId
+      }
+    );
 
-    if (error) throw error;
+    if (matchError) throw matchError;
 
-    const isPremium = !!membership &&
-      !!membership.premium_until &&
-      new Date(membership.premium_until).getTime() > Date.now();
+    if (!isMatch) {
+      const { data: membership, error: membershipError } = await db
+        .from("premium_memberships")
+        .select("premium_until")
+        .eq("user_id", currentUser.id)
+        .maybeSingle();
 
-    if (!isPremium) {
-      const subscribe = confirm(
-        "Messaging is a Premium feature.\n\n" +
-        "Subscribe to Premium to message this member. " +
-        "Would you like to view Premium plans now?"
-      );
+      if (membershipError) throw membershipError;
 
-      if (subscribe) show("premium");
-      return;
+      const isPremium = !!membership &&
+        !!membership.premium_until &&
+        new Date(membership.premium_until).getTime() > Date.now();
+
+      if (!isPremium) {
+        const subscribe = confirm(
+          "This member is not your match.\n\n" +
+          "Subscribe to Premium to message this member. " +
+          "Would you like to view Premium plans now?"
+        );
+
+        if (subscribe) show("premium");
+        return;
+      }
     }
 
-    const memberId = selectedMemberId;
     const memberName = $("memberProfileName")
       .textContent.replace(/ ❤️$/, "");
 
     show("messages");
     await loadMyConversations();
     await openChat(memberId, memberName);
+
   } catch (error) {
     status(
       "memberProfileStatus",
-      "Could not verify your Premium membership: " +
+      "Could not check match or Premium status: " +
         friendly(error),
       true
     );
   }
 };
+
 
 async function loadMyMatches(){
   if(!currentUser)return;

@@ -1137,7 +1137,9 @@ body:has(#messages:not(.hidden)) #messages p {
 </div>
 <div
   class="cf-turnstile"
-  data-sitekey="0x4AAAAAAFia9n0bS09wiH_cbbQLuqb3psQ">
+  data-sitekey="0x4AAAAAAFia9n0bS09wiH_cbbQLuqb3psQ"
+  data-callback="onTurnstileSuccess"
+  data-expired-callback="onTurnstileExpired">
 </div>
 <button class="btn primary" id="submit" type="submit">Create account</button>
 </form>

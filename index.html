@@ -1166,6 +1166,60 @@ body:has(#messages:not(.hidden)) #messages p {
 <body>
 <div id="stars" aria-hidden="true"></div>
 
+<div id="matchLogoutModal" class="match-confirm-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="matchLogoutTitle" aria-describedby="matchLogoutMessage">
+  <div class="match-confirm-card" role="document">
+
+    <div class="match-confirm-header">
+      <div class="match-confirm-logo" aria-hidden="true">♡</div>
+
+      <div>
+        <h2 class="match-confirm-brand">The Match</h2>
+        <p class="match-confirm-tagline">A little pause before you go</p>
+      </div>
+
+      <button
+        type="button"
+        class="match-confirm-close"
+        id="matchLogoutClose"
+        aria-label="Close confirmation"
+      >×</button>
+    </div>
+
+    <div class="match-confirm-divider"></div>
+
+    <div class="match-confirm-content">
+      <div class="match-confirm-icon" aria-hidden="true">↪</div>
+
+      <h2 class="match-confirm-title" id="matchLogoutTitle">
+        Leaving so soon?
+      </h2>
+
+      <p class="match-confirm-message" id="matchLogoutMessage">
+        Are you sure you want to log out of The Match?
+      </p>
+    </div>
+
+    <div class="match-confirm-actions">
+      <button
+        type="button"
+        class="match-confirm-stay"
+        id="matchLogoutStay"
+      >Stay signed in</button>
+
+      <button
+        type="button"
+        class="match-confirm-logout"
+        id="matchLogoutConfirm"
+      >Log out</button>
+    </div>
+
+    <p class="match-confirm-footer">
+      THE MATCH · CONNECTIONS WITH CARE
+    </p>
+
+  </div>
+</div>
+
 
 <header style="position:relative">
   The <span>Match</span> ♥

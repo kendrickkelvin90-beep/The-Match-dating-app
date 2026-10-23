@@ -1554,10 +1554,16 @@ body:has(#messages:not(.hidden)) #messages p {
 
   <form id="premiumPaymentForm">
     <label for="premiumPlan">Selected plan</label>
-    <select id="premiumPlan" required>
-      <option value="">Choose a plan</option>
-      <option value="monthly">Monthly — ₦3,000</option>
-      <option value="yearly">Yearly — ₦20,000</option>
+    
+<div class="member-card">
+  <h3>Yearly Premium</h3>
+  <p>₦50,000 / year</p>
+  <button class="btn primary" type="button"
+    onclick="document.getElementById('premiumPlan').value='yearly'; document.getElementById('premiumAmount').textContent='₦50,000';">
+    Choose Yearly
+  </button>
+</div>
+
     </select>
 
     <p>Amount to transfer: <strong id="premiumAmount">Choose a plan above</strong></p>

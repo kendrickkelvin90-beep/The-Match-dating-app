@@ -1161,6 +1161,93 @@ body:has(#messages:not(.hidden)) #messages p {
   }
 }
 
+/* THE MATCH — Midnight Charcoal & Champagne Gold Theme */
+:root {
+  --match-bg: #111214;
+  --match-surface: #25262B;
+  --match-gold: #C6A66B;
+  --match-gold-hover: #D4B878;
+  --match-text: #F2F0EB;
+  --match-muted: #A0A4AC;
+  --match-border: #35363C;
+}
+
+/* Main app background and typography */
+html,
+body {
+  background-color: var(--match-bg);
+  color: var(--match-text);
+}
+
+/* Panels and member cards */
+.panel,
+.member-card {
+  background-color: var(--match-surface) !important;
+  color: var(--match-text);
+  border-color: var(--match-border) !important;
+}
+
+/* Form fields */
+input,
+select,
+textarea {
+  background-color: var(--match-surface) !important;
+  color: var(--match-text) !important;
+  border-color: var(--match-border) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--match-muted);
+}
+
+/* Main action buttons */
+button.primary,
+.primary {
+  background: var(--match-gold) !important;
+  color: #171717 !important;
+  border-color: var(--match-gold) !important;
+}
+
+/* Secondary actions */
+button.secondary,
+.secondary {
+  background: var(--match-surface) !important;
+  color: var(--match-text) !important;
+  border: 1px solid var(--match-border) !important;
+}
+
+/* Links and subtle text */
+.link {
+  color: var(--match-gold) !important;
+}
+
+small,
+.muted,
+.subtitle {
+  color: var(--match-muted);
+}
+
+/* Borders and separators */
+hr {
+  border-color: var(--match-border);
+}
+
+/* Premium highlights */
+.premium,
+.premium-badge {
+  color: var(--match-gold);
+  border-color: var(--match-gold);
+}
+
+/* Keep the theme consistent on mobile */
+@media (max-width: 600px) {
+  html,
+  body {
+    background-color: var(--match-bg);
+  }
+}
+
 </style>
 </head>
 <body>

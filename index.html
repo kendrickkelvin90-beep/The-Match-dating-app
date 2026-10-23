@@ -7081,12 +7081,72 @@ $("backFromPremium").onclick=()=>show("profile");
 
 
 
-$("premiumPlan").onchange=()=>{
-  const plan=$("premiumPlan").value;
-  $("premiumAmount").textContent=
-    plan==="monthly"?"₦3,000":
-    plan==="yearly"?"₦20,000":"Choose a plan above";
+
+$("premiumPlan").onchange = () => {
+  const plan = $("premiumPlan").value;
+  $("premiumAmount").textContent =
+    plan === "monthly" ? "₦5,000" :
+    plan === "yearly" ? "₦50,000" :
+    "Choose a plan above";
 };
+
+$("premiumPaymentForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  if (!currentUser) {
+    status("premiumStatus", "Please sign in first.", true);
+    return;
+  }
+
+  const plan = $("premiumPlan").value;
+  const amount = plan === "monthly" ? 5000 :
+    plan === "yearly" ? 50000 : 0;
+  const sender = $("premiumSender").value.trim();
+  const reference = $("premiumReference").value.trim();
+  const btn = $("submitPremiumPayment");
+
+  if (!amount) {
+    status("premiumStatus", "Please choose a Premium plan.", true);
+    return;
+  }
+
+  if (reference.length < 4) {
+    status("premiumStatus", "Enter a valid transfer reference.", true);
+    return;
+  }
+
+  btn.disabled = true;
+  status("premiumStatus", "Submitting your payment request...");
+
+  try {
+    const { error } = await db
+      .from("premium_payment_requests")
+      .insert({
+        user_id: currentUser.id,
+        plan: plan,
+        amount_ngn: amount,
+        sender_name: sender,
+        transfer_reference: reference,
+        status: "pending"
+      });
+
+    if (error) throw error;
+
+    status(
+      "premiumStatus",
+      "Request submitted successfully! Your payment is pending admin review. Premium is not active yet."
+    );
+
+    $("premiumPaymentForm").reset();
+    $("premiumAmount").textContent = "Choose a plan above";
+
+  } catch (e) {
+    status("premiumStatus", "Submission failed: " + friendly(e), true);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
 
 
 $("premiumPlan").onchange=()=>{

@@ -2513,6 +2513,7 @@ $("password").autocomplete=isLogin?"current-password":"new-password";
 $("switch").textContent=isLogin?"New here? Create an account":"Already registered? Log in";
 status("authStatus","");
 show("auth");
+  renderAuthCaptcha();
 }
 
 document.querySelectorAll("[data-toggle-password]").forEach(button=>{

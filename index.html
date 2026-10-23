@@ -1803,6 +1803,24 @@ const db=window.supabase.createClient(
 "https://rxbdmgzmwhjnkcclyrcq.supabase.co",
 "sb_publishable_5OirCcmy8L5n3isPvi-P0w_Dgeb13U_"
 );
+let authCaptchaToken = "";
+let resetCaptchaToken = "";
+
+window.onTurnstileSuccess = token => {
+  authCaptchaToken = token || "";
+};
+
+window.onTurnstileExpired = () => {
+  authCaptchaToken = "";
+};
+
+window.onResetTurnstileSuccess = token => {
+  resetCaptchaToken = token || "";
+};
+
+window.onResetTurnstileExpired = () => {
+  resetCaptchaToken = "";
+};  
 const $=id=>document.getElementById(id);
 let loginMode=false,currentUser=null,approxLocation=null;
 let activeChatUserId = null;

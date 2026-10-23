@@ -1015,6 +1015,152 @@ body:has(#messages:not(.hidden)) #messages p {
   color: #ffffff !important;
 }
 
+/* The Match branded confirmation modal */
+.match-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, .78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.match-confirm-backdrop.hidden {
+  display: none !important;
+}
+
+.match-confirm-card {
+  width: min(100%, 430px);
+  box-sizing: border-box;
+  padding: 24px;
+  border: 1px solid rgba(255, 90, 150, .28);
+  border-radius: 28px;
+  color: #fff;
+  background: radial-gradient(ellipse at top, rgba(255, 50, 120, .12), transparent 55%), #0b070a;
+  box-shadow: 0 24px 80px rgba(0,0,0,.6), 0 0 34px rgba(255,45,115,.12);
+}
+
+.match-confirm-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.match-confirm-logo {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  background: #25101c;
+  color: #ff5b99;
+  font-size: 30px;
+}
+
+.match-confirm-brand {
+  margin: 0;
+  color: #fff;
+  font-size: 23px;
+  font-weight: 800;
+}
+
+.match-confirm-tagline {
+  margin: 5px 0 0;
+  color: #ff82ad;
+  font-size: 14px;
+}
+
+.match-confirm-close {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: #bcaab3;
+  font-size: 26px;
+  padding: 6px 8px;
+}
+
+.match-confirm-divider {
+  height: 1px;
+  margin: 22px 0;
+  background: rgba(255,120,170,.18);
+}
+
+.match-confirm-content {
+  text-align: center;
+  padding: 2px 0 18px;
+}
+
+.match-confirm-icon {
+  color: #ff6ba3;
+  font-size: 34px;
+  margin-bottom: 14px;
+}
+
+.match-confirm-title {
+  margin: 0 0 12px;
+  font-size: 27px;
+  font-weight: 800;
+}
+
+.match-confirm-message {
+  margin: 0;
+  color: #d1c1c9;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.match-confirm-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.match-confirm-actions button {
+  min-height: 56px;
+  border-radius: 17px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.match-confirm-stay {
+  border: 0;
+  color: #fff;
+  background: linear-gradient(135deg,#ff4d91,#e92f78);
+}
+
+.match-confirm-logout {
+  border: 1px solid #704057;
+  color: #ffd0e0;
+  background: transparent;
+}
+
+.match-confirm-footer {
+  margin: 20px 0 0;
+  text-align: center;
+  color: #8f7d87;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+
+@media (max-width: 380px) {
+  .match-confirm-card {
+    padding: 19px;
+    border-radius: 23px;
+  }
+
+  .match-confirm-title {
+    font-size: 24px;
+  }
+}
+
 </style>
 </head>
 <body>

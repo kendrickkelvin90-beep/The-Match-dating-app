@@ -1841,7 +1841,13 @@ let authCaptchaWidgetId = null;
 let resetCaptchaWidgetId = null;
 
 function renderAuthCaptcha() {
-  if (!window.turnstile || authCaptchaWidgetId !== null) return;
+  if (authCaptchaWidgetId !== null) return;
+
+  if (!window.turnstile) {
+    setTimeout(renderAuthCaptcha, 500);
+    return;
+  }
+
   authCaptchaWidgetId = window.turnstile.render("#authCaptcha", {
     sitekey: "0x4AAAAAAFia9n0bS09wiH_cbbQLuqb3psQ",
     callback: window.onTurnstileSuccess,

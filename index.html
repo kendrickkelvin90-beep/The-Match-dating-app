@@ -1156,6 +1156,12 @@ body:has(#messages:not(.hidden)) #messages p {
 <form id="resetForm">
 <label for="resetEmail">Email address</label>
 <input id="resetEmail" type="email" required>
+<div
+  class="cf-turnstile"
+  data-sitekey="0x4AAAAAAFia9n0bS09wiH_cbbQLuqb3psQ"
+  data-callback="onResetTurnstileSuccess"
+  data-expired-callback="onResetTurnstileExpired">
+</div>
 <button class="btn primary" type="submit">Send reset link</button>
 </form>
 <form id="newPasswordForm" class="hidden">

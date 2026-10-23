@@ -2791,7 +2791,18 @@ $("resetBack").onclick=()=>show("welcome");
 $("resetForm").onsubmit=async e=>{
 e.preventDefault();
 try{
-let r=await db.auth.resetPasswordForEmail($("resetEmail").value.trim(),{redirectTo:SITE_URL});
+if (!resetCaptchaToken) {
+  status("resetStatus", "Please complete the CAPTCHA check first.", true);
+  return;
+}
+
+let r = await db.auth.resetPasswordForEmail(
+  $("resetEmail").value.trim(),
+  {
+    redirectTo: SITE_URL,
+    captchaToken: resetCaptchaToken
+  }
+);
 if(r.error)throw r.error;
 status("resetStatus","If the account exists, a reset email has been sent. Check inbox and spam.");
 }catch(e){status("resetStatus",friendly(e),true);}

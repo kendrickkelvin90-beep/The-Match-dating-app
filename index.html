@@ -5054,15 +5054,45 @@ show("blockedMembers");
 await loadBlockedMembers();
 };
 
-$("settingsLogout").onclick=async()=>{
-if(!currentUser){
-show("welcome");
-return;
+
+function openMatchLogoutModal() {
+  if (!currentUser) {
+    show("welcome");
+    return;
+  }
+
+  $("matchLogoutModal").classList.remove("hidden");
 }
 
-if(!confirm("Are you sure you want to log out?"))return;
-await logout();
+function closeMatchLogoutModal() {
+  $("matchLogoutModal").classList.add("hidden");
+}
+
+$("matchLogoutClose").onclick = closeMatchLogoutModal;
+$("matchLogoutStay").onclick = closeMatchLogoutModal;
+
+$("matchLogoutModal").addEventListener("click", (event) => {
+  if (event.target === $("matchLogoutModal")) {
+    closeMatchLogoutModal();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (
+    event.key === "Escape" &&
+    !$("matchLogoutModal").classList.contains("hidden")
+  ) {
+    closeMatchLogoutModal();
+  }
+});
+
+$("matchLogoutConfirm").onclick = async () => {
+  closeMatchLogoutModal();
+  await logout();
 };
+
+$("settingsLogout").onclick = openMatchLogoutModal;
+
 $("bottomNavigation").querySelectorAll("button[data-page]").forEach(button=>{
   button.onclick=async()=>{
     const page=button.dataset.page;

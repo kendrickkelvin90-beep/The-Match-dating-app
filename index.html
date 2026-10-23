@@ -1838,6 +1838,28 @@ window.onResetTurnstileSuccess = token => {
 window.onResetTurnstileExpired = () => {
   resetCaptchaToken = "";
 };  
+  
+let authCaptchaWidgetId = null;
+let resetCaptchaWidgetId = null;
+
+function renderAuthCaptcha() {
+  if (!window.turnstile || authCaptchaWidgetId !== null) return;
+  authCaptchaWidgetId = window.turnstile.render("#authCaptcha", {
+    sitekey: "0x4AAAAAAFia9n0bS09wiH_cbbQLuqb3psQ",
+    callback: window.onTurnstileSuccess,
+    "expired-callback": window.onTurnstileExpired
+  });
+}
+
+function renderResetCaptcha() {
+  if (!window.turnstile || resetCaptchaWidgetId !== null) return;
+  resetCaptchaWidgetId = window.turnstile.render("#resetCaptcha", {
+    sitekey: "0x4AAAAAAFia9n0bS09wiH_cbbQLuqb3psQ",
+    callback: window.onResetTurnstileSuccess,
+    "expired-callback": window.onResetTurnstileExpired
+  });
+}
+
 const $=id=>document.getElementById(id);
 let loginMode=false,currentUser=null,approxLocation=null;
 let activeChatUserId = null;

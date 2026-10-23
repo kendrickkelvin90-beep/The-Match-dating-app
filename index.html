@@ -7088,25 +7088,14 @@ $("premiumPlan").onchange=()=>{
     plan==="yearly"?"₦20,000":"Choose a plan above";
 };
 
-$("premiumPaymentForm").addEventListener("submit",async(e)=>{
-  e.preventDefault();
 
-  if(!currentUser){
-    status("premiumStatus","Please sign in first.",true);
-    return;
-  }
-
+$("premiumPlan").onchange=()=>{
   const plan=$("premiumPlan").value;
-  const amount=plan==="monthly"?3000:
-    plan==="yearly"?20000:0;
-  const sender=$("premiumSender").value.trim();
-  const reference=$("premiumReference").value.trim();
-  const btn=$("submitPremiumPayment");
+  $("premiumAmount").textContent=
+    plan==="monthly"?"₦5,000":
+    plan==="yearly"?"₦50,000":"Choose a plan above";
+};
 
-  if(!amount){
-    status("premiumStatus","Please choose a Premium plan.",true);
-    return;
-  }
 
   if(reference.length<4){
     status("premiumStatus","Enter a valid transfer reference.",true);

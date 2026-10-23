@@ -1139,7 +1139,7 @@ body:has(#messages:not(.hidden)) #messages p {
 </div>
 <div
   id="authCaptcha"
-  data-sitekey="0x4AAAAAAFia9n0bS09wiH_cbbQLuqb3psQ"
+  data-sitekey="0x4AAAAAAFia9mw39tR1pGuq"
   data-callback="onTurnstileSuccess"
   data-expired-callback="onTurnstileExpired">
 </div>
@@ -1160,7 +1160,7 @@ body:has(#messages:not(.hidden)) #messages p {
 <input id="resetEmail" type="email" required>
 <div
   id="resetCaptcha"
-  data-sitekey="0x4AAAAAAFia9n0bS09wiH_cbbQLuqb3psQ"
+  data-sitekey="0x4AAAAAAFia9mw39tR1pGuq"
   data-callback="onResetTurnstileSuccess"
   data-expired-callback="onResetTurnstileExpired">
 </div>
@@ -1849,7 +1849,7 @@ function renderAuthCaptcha() {
   }
 
   authCaptchaWidgetId = window.turnstile.render("#authCaptcha", {
-    sitekey: "0x4AAAAAAFia9n0bS09wiH_cbbQLuqb3psQ",
+    sitekey: "0x4AAAAAAFia9mw39tR1pGuq",
     callback: window.onTurnstileSuccess,
     "expired-callback": window.onTurnstileExpired
   });
@@ -1858,7 +1858,7 @@ function renderAuthCaptcha() {
 function renderResetCaptcha() {
   if (!window.turnstile || resetCaptchaWidgetId !== null) return;
   resetCaptchaWidgetId = window.turnstile.render("#resetCaptcha", {
-    sitekey: "0x4AAAAAAFia9n0bS09wiH_cbbQLuqb3psQ",
+    sitekey: "0x4AAAAAAFia9mw39tR1pGuq",
     callback: window.onResetTurnstileSuccess,
     "expired-callback": window.onResetTurnstileExpired
   });

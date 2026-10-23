@@ -2518,6 +2518,7 @@ show("auth");
 document.querySelectorAll("[data-toggle-password]").forEach(button=>{
   button.addEventListener("click",()=>{
     const input=document.getElementById(button.dataset.togglePassword);
+    renderAuthCaptcha();
     if(!input)return;
     const showing=input.type==="password";
     input.type=showing?"text":"password";

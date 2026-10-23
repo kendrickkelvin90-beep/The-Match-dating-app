@@ -1519,27 +1519,25 @@ body:has(#messages:not(.hidden)) #messages p {
   <p class="status" id="blockedMembersStatus"></p>
   <button class="btn secondary" id="backFromBlockedMembers" type="button">← Back to Discover</button>
 </section>
+
 <section class="panel hidden" id="premium">
   <h2>⭐ The Match Premium</h2>
   <p class="small">Unlock a more exciting dating experience.</p>
 
   <div class="member-card">
     <h3>Monthly Premium</h3>
-    
-<div class="member-card">
-  <h3>Monthly Premium</h3>
-  <p>₦5,000 / month</p>
-  <button class="btn primary" type="button"
-    onclick="document.getElementById('premiumPlan').value='monthly'; document.getElementById('premiumAmount').textContent='₦5,000';">
-    Choose Monthly
-  </button>
-</div>
+    <p>₦5,000 / month</p>
+    <button class="btn primary" type="button"
+      onclick="document.getElementById('premiumPlan').value='monthly'; document.getElementById('premiumAmount').textContent='₦5,000';">
+      Choose Monthly
+    </button>
+  </div>
 
   <div class="member-card">
     <h3>Yearly Premium</h3>
-    <p>₦20,000 / year</p>
+    <p>₦50,000 / year</p>
     <button class="btn primary" type="button"
-      onclick="document.getElementById('premiumPlan').value='yearly'; document.getElementById('premiumAmount').textContent='₦20,000';">
+      onclick="document.getElementById('premiumPlan').value='yearly'; document.getElementById('premiumAmount').textContent='₦50,000';">
       Choose Yearly
     </button>
   </div>
@@ -1554,16 +1552,10 @@ body:has(#messages:not(.hidden)) #messages p {
 
   <form id="premiumPaymentForm">
     <label for="premiumPlan">Selected plan</label>
-    
-<div class="member-card">
-  <h3>Yearly Premium</h3>
-  <p>₦50,000 / year</p>
-  <button class="btn primary" type="button"
-    onclick="document.getElementById('premiumPlan').value='yearly'; document.getElementById('premiumAmount').textContent='₦50,000';">
-    Choose Yearly
-  </button>
-</div>
-
+    <select id="premiumPlan" required>
+      <option value="">Choose a plan</option>
+      <option value="monthly">Monthly — ₦5,000</option>
+      <option value="yearly">Yearly — ₦50,000</option>
     </select>
 
     <p>Amount to transfer: <strong id="premiumAmount">Choose a plan above</strong></p>
@@ -1580,21 +1572,21 @@ body:has(#messages:not(.hidden)) #messages p {
     <p class="status" id="premiumStatus"></p>
   </form>
 
- 
-<div class="member-card">
-  <h3>My Payment Requests 📋</h3>
-  <button class="btn secondary" id="refreshPremiumRequests" type="button">
-    Refresh Payment Status
-  </button>
-  <div id="premiumRequestList">
-    <p class="small">Tap refresh to check your payment requests.</p>
+  <div class="member-card">
+    <h3>My Payment Requests 📋</h3>
+    <button class="btn secondary" id="refreshPremiumRequests" type="button">
+      Refresh Payment Status
+    </button>
+    <div id="premiumRequestList">
+      <p class="small">Tap refresh to check your payment requests.</p>
+    </div>
   </div>
-</div>
 
   <button class="btn secondary" id="backFromPremium" type="button">
     ← Back to profile
   </button>
 </section>
+
 
 <section class="panel hidden" id="matches">
   <h2>❤️ Your Matches</h2>

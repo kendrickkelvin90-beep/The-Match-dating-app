@@ -2698,12 +2698,19 @@ $("authForm").onsubmit = async e => {
     const password = $("password").value;
 
     const result = loginMode
-      ? await db.auth.signInWithPassword({ email, password })
-      : await db.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: SITE_URL }
-        });
+  ? await db.auth.signInWithPassword({
+      email,
+      password,
+      options: { captchaToken: authCaptchaToken }
+    })
+  : await db.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: SITE_URL,
+        captchaToken: authCaptchaToken
+      }
+    });
 
     if (result.error) throw result.error;
 

@@ -2595,6 +2595,38 @@ display: flex;
   color: #999999 !important;
 }
 
+/* Hide app navigation only while the full-screen chat is open */
+body:has(#chatPage:not(.hidden)) #bottomNavigation {
+  display: none !important;
+}
+
+/* Gold message bubbles and timestamps */
+#chatPage #chatMessages .chat-bubble.sent {
+  background: #2a2417 !important;
+  border: 1px solid #c6a15b !important;
+  color: #ffffff !important;
+}
+
+#chatPage #chatMessages .chat-bubble.received {
+  background: #171717 !important;
+  border: 1px solid #393939 !important;
+  color: #f5f5f5 !important;
+}
+
+#chatPage #chatMessages .chat-bubble small {
+  color: #c6a15b !important;
+}
+
+#chatPage #chatMessages .chat-bubble small span {
+  color: #c6a15b !important;
+}
+
+/* Gold composer border */
+#chatPage #chatComposer {
+  border: 1px solid #c6a15b !important;
+  background: #101010 !important;
+}
+
 </style>
 </head>
 <body>

@@ -7755,7 +7755,7 @@ mutualIds.splice(
 
     const { data: profiles, error: profileError } = await db
       .from("profiles")
-      .select("id,display_name,age,city")
+      .select("id,display_name,age,city,is_verified,verification_level")
       .in("id", mutualIds);
 
     if (profileError) throw profileError;

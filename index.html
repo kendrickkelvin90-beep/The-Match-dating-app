@@ -1470,47 +1470,129 @@ textarea:focus {
   color: #C2C3C8;
 }
 
-/* THE MATCH — Final Dark Theme Override */
-body,
-body.light-theme {
+
+/* THE MATCH — Correct Dark and Light Theme Separation */
+
+/* DARK MODE: charcoal, ivory and champagne gold */
+body:not(.light-theme) {
   background: #111214 !important;
   color: #F2F0EB !important;
 }
 
-body.light-theme:has(#discover:not(.hidden)),
-body.light-theme:has(#matches:not(.hidden)),
-body.light-theme:has(#likes:not(.hidden)),
-body.light-theme:has(#messages:not(.hidden)),
-body.light-theme:has(#settings:not(.hidden)),
-body.light-theme:has(#profile:not(.hidden)),
-body.light-theme:has(#nearbyPage:not(.hidden)),
-body.light-theme:has(#chatPage:not(.hidden)),
-body.light-theme:has(#memberProfilePage:not(.hidden)),
-body.light-theme:has(#notificationsPage:not(.hidden)) {
+body:not(.light-theme) header,
+body:not(.light-theme) main,
+body:not(.light-theme) footer {
+  background-color: #111214;
+  color: #F2F0EB;
+}
+
+body:not(.light-theme) .bottom-nav {
   background: #111214 !important;
+  border-top: 1px solid #35363C !important;
+}
+
+body:not(.light-theme) .bottom-nav button {
+  background: transparent !important;
+  color: #A0A4AC !important;
+}
+
+body:not(.light-theme) .bottom-nav button.active {
+  background: #25262B !important;
+  color: #C6A66B !important;
+}
+
+body:not(.light-theme) .panel,
+body:not(.light-theme) .member-card,
+body:not(.light-theme) .card {
+  background: #25262B;
+  color: #F2F0EB;
+  border-color: #35363C;
+}
+
+body:not(.light-theme) h1,
+body:not(.light-theme) h2,
+body:not(.light-theme) h3,
+body:not(.light-theme) h4,
+body:not(.light-theme) p,
+body:not(.light-theme) label,
+body:not(.light-theme) .small {
+  color: #F2F0EB;
+}
+
+body:not(.light-theme) .btn.primary,
+body:not(.light-theme) button.primary {
+  background: #C6A66B !important;
+  color: #171717 !important;
+  border-color: #C6A66B !important;
+}
+
+body:not(.light-theme) .btn.secondary,
+body:not(.light-theme) button.btn.secondary {
+  background: #202125 !important;
   color: #F2F0EB !important;
+  border-color: #35363C !important;
+}
+
+body:not(.light-theme) input,
+body:not(.light-theme) textarea,
+body:not(.light-theme) select {
+  background: #191A1E !important;
+  color: #F2F0EB !important;
+  border-color: #414249 !important;
+}
+
+body:not(.light-theme) input:focus,
+body:not(.light-theme) textarea:focus,
+body:not(.light-theme) select:focus {
+  border-color: #C6A66B !important;
+}
+
+body:not(.light-theme) a,
+body:not(.light-theme) .link,
+body:not(.light-theme) header span,
+body:not(.light-theme) h1 span,
+body:not(.light-theme) .eyebrow,
+body:not(.light-theme) #openDiscoveryPreferencesTop {
+  color: #C6A66B !important;
+}
+
+body:not(.light-theme) #notificationBadge,
+body:not(.light-theme) .bottom-nav .nav-badge {
+  background: #C6A66B !important;
+  color: #171717 !important;
+}
+
+body:not(.light-theme) #stars .star {
+  color: #C6A66B !important;
+  text-shadow: 0 0 8px #C6A66B44 !important;
+}
+
+body:not(.light-theme) #discover #refreshNearby {
+  background: #C6A66B !important;
+  color: #171717 !important;
+  border-color: #C6A66B !important;
+}
+
+/* LIGHT MODE: preserve the original white appearance */
+body.light-theme {
+  background: #ffffff !important;
+  color: #24202a !important;
 }
 
 body.light-theme header,
 body.light-theme main,
 body.light-theme footer,
 body.light-theme #discover {
-  background: #111214 !important;
-  color: #F2F0EB !important;
+  background: #ffffff !important;
+  color: #24202a !important;
 }
 
 body.light-theme .panel,
 body.light-theme .member-card,
-body.light-theme .card,
-body.light-theme #notificationsList > *,
-body.light-theme #conversationList > *,
-body.light-theme #profileList > *,
-body.light-theme #likesList > *,
-body.light-theme #matchesList > * {
-  background: #25262B !important;
-  color: #F2F0EB !important;
-  border-color: #35363C !important;
-  box-shadow: none !important;
+body.light-theme .card {
+  background: #ffffff !important;
+  color: #24202a !important;
+  border-color: #e5e5e5 !important;
 }
 
 body.light-theme h1,
@@ -1519,87 +1601,81 @@ body.light-theme h3,
 body.light-theme h4,
 body.light-theme p,
 body.light-theme label,
-body.light-theme strong,
 body.light-theme .small,
 body.light-theme .status {
-  color: #F2F0EB;
+  color: #25212a;
 }
 
 body.light-theme .bottom-nav {
-  background: #111214 !important;
-  border-top: 1px solid #35363C !important;
+  background: #ffffff !important;
+  border-top: 1px solid #e5e5e5 !important;
 }
 
 body.light-theme .bottom-nav button {
   background: transparent !important;
-  color: #A0A4AC !important;
+  color: #444444 !important;
 }
 
 body.light-theme .bottom-nav button.active {
-  background: #25262B !important;
-  color: #C6A66B !important;
+  background: #fff0f4 !important;
+  color: #d92759 !important;
 }
 
 body.light-theme .btn.primary,
-body.light-theme button.primary,
-body.light-theme #discover #refreshNearby {
-  background: #C6A66B !important;
-  color: #171717 !important;
-  border: 1px solid #C6A66B !important;
+body.light-theme button.primary {
+  background: linear-gradient(100deg, #d70d3d, #ff416d) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
 }
 
 body.light-theme .btn.secondary,
 body.light-theme button.btn.secondary {
-  background: #202125 !important;
-  color: #F2F0EB !important;
-  border: 1px solid #35363C !important;
+  background: #ffffff !important;
+  color: #b51f50 !important;
+  border-color: #b86b83 !important;
 }
 
 body.light-theme input,
 body.light-theme textarea,
 body.light-theme select {
-  background: #191A1E !important;
-  color: #F2F0EB !important;
-  border-color: #414249 !important;
+  background: #ffffff !important;
+  color: #202020 !important;
+  border-color: #d0d0d0 !important;
 }
 
-body.light-theme input::placeholder,
-body.light-theme textarea::placeholder {
-  color: #A0A4AC !important;
-}
-
-body.light-theme .link,
-body.light-theme a,
 body.light-theme header span,
 body.light-theme h1 span,
-body.light-theme .eyebrow {
-  color: #C6A66B !important;
+body.light-theme .eyebrow,
+body.light-theme .link {
+  color: #d92759 !important;
 }
 
 body.light-theme #openDiscoveryPreferencesTop {
-  color: #C6A66B !important;
+  color: #d92355 !important;
 }
 
 body.light-theme #openNotifications {
-  background: transparent !important;
-  color: #F2F0EB !important;
+  background: #ffffff !important;
+  color: #24202a !important;
 }
 
-body.light-theme #notificationBadge,
-body.light-theme .bottom-nav .nav-badge {
-  background: #C6A66B !important;
-  color: #171717 !important;
-  border-color: #111214 !important;
+body.light-theme #notificationBadge {
+  background: #d92355 !important;
+  color: #ffffff !important;
+  border-color: #ffffff !important;
 }
 
 body.light-theme #stars .star {
-  color: #C6A66B !important;
-  text-shadow: 0 0 8px #C6A66B44 !important;
+  color: #d9c9a5 !important;
+  text-shadow: none !important;
 }
 
-body.light-theme #discover #storiesSection {
-  border-color: #35363C !important;
+body.light-theme #discover #refreshNearby {
+  background: #fff0f5 !important;
+  color: #b51f50 !important;
+  border-color: #e8a4bd !important;
 }
+
 
 </style>
 </head>

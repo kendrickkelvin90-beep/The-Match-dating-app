@@ -1383,6 +1383,93 @@ h1 span {
   }
 }
 
+/* THE MATCH — Unified Charcoal & Champagne Gold */
+:root {
+  --match-bg: #111214;
+  --match-surface: #25262B;
+  --match-gold: #C6A66B;
+  --match-gold-light: #D4B878;
+  --match-text: #F2F0EB;
+  --match-muted: #A0A4AC;
+  --match-border: #35363C;
+}
+
+/* Navigation bar */
+.bottom-nav {
+  background: #111214 !important;
+  border-top: 1px solid var(--match-border) !important;
+}
+
+.bottom-nav button {
+  color: var(--match-muted) !important;
+  background: transparent !important;
+}
+
+.bottom-nav button.active {
+  color: var(--match-gold) !important;
+  background: #25262B !important;
+}
+
+.bottom-nav .nav-badge {
+  background: var(--match-gold) !important;
+  color: #171717 !important;
+}
+
+/* Header and navigation controls */
+#openDiscoveryPreferencesTop {
+  color: var(--match-gold) !important;
+}
+
+header span,
+h1 span {
+  color: var(--match-gold) !important;
+}
+
+/* Remove pink from headings and community labels */
+.hero .eyebrow,
+.hero p[style*="color:#ff3c79"],
+#auth > p[style*="color:#ff3c79"] {
+  color: var(--match-gold) !important;
+}
+
+/* Buttons and links */
+.btn.primary,
+button.primary {
+  background: var(--match-gold) !important;
+  border-color: var(--match-gold) !important;
+  color: #171717 !important;
+}
+
+.link,
+a {
+  color: var(--match-gold);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--match-gold) !important;
+}
+
+/* Replace red decorative star glow with subtle gold */
+#stars .star {
+  color: var(--match-gold) !important;
+  text-shadow: 0 0 8px #C6A66B44 !important;
+}
+
+/* Shared page surfaces */
+.panel,
+.member-card {
+  background-color: var(--match-surface);
+  border-color: var(--match-border);
+}
+
+/* Keep secondary text understated */
+.intro,
+.small {
+  color: #C2C3C8;
+}
+
 </style>
 </head>
 <body>

@@ -5540,7 +5540,7 @@ async function loadPremiumNearby(){
       distance.className="distance";
       distance.textContent=distanceLabel(p._distance)+" away";
 
-      card.append(name,details,distance);
+      card.append(avatar,name,details,distance);
 
       if(p.bio){
         const bio=document.createElement("p");

@@ -7622,8 +7622,13 @@ updateChatOnlineStatus(userId);
         chatRefreshTimer = null;
       }
 
-      $("conversationList").appendChild($("activeConversation"));
-      $("activeConversation").classList.add("hidden");
+      const conversationListNode = document.getElementById("conversationList");
+const activeConversationNode = document.getElementById("activeConversation");
+
+if (conversationListNode && activeConversationNode instanceof HTMLElement) {
+  conversationListNode.appendChild(activeConversationNode);
+  activeConversationNode.classList.add("hidden");
+}
 
       const returnPage = window.chatReturnPage || "messages";
       window.chatReturnPage = null;
@@ -7701,8 +7706,13 @@ updateChatOnlineStatus(userId);
     chatRefreshTimer = null;
   }
 
-  $("conversationList").appendChild($("activeConversation"));
-  $("activeConversation").classList.add("hidden");
+  const conversationListNode = document.getElementById("conversationList");
+const activeConversationNode = document.getElementById("activeConversation");
+
+if (conversationListNode && activeConversationNode instanceof HTMLElement) {
+  conversationListNode.appendChild(activeConversationNode);
+  activeConversationNode.classList.add("hidden");
+}
 
   const returnPage = window.chatReturnPage || "messages";
   window.chatReturnPage = null;

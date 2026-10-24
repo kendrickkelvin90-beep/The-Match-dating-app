@@ -2376,6 +2376,85 @@ body:not(.light-theme) #reset .link {
   color: #E2BC70 !important;
 }
 
+/* THE MATCH — Full-height chat layout fix */
+
+#chatPage {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  box-sizing: border-box !important;
+  padding: 82px 12px calc(8px + env(safe-area-inset-bottom)) !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+/* Let the conversation occupy all available vertical space */
+#chatPage #chatPageContent {
+  display: flex !important;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  flex-direction: column !important;
+}
+
+/* Stretch the active conversation */
+#chatPage #activeConversation {
+  display: flex !important;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+}
+
+/* Expand the message history downwards */
+#chatPage #chatMessages {
+  flex: 1 1 0 !important;
+  min-height: 120px !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+}
+
+/* Keep the message composer below the conversation */
+#chatPage #chatComposer {
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  margin: 8px 0 4px !important;
+}
+
+/* Keep status compact */
+#chatPage #chatPageStatus {
+  flex: 0 0 auto !important;
+  margin: 2px 0 4px !important;
+  min-height: 0 !important;
+}
+
+/* Put Back to Matches at the bottom */
+#chatPage #backFromChatPage {
+  display: block !important;
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  margin: 6px 0 0 !important;
+  padding: 12px !important;
+  background: #C6A15B !important;
+  color: #111111 !important;
+  border: 1px solid #C6A15B !important;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+}
+
+/* Prevent the bottom button from being squeezed */
+#chatPage #backFromChatPage,
+#chatPage #chatComposer,
+#chatPage #chatPageStatus {
+  flex-shrink: 0 !important;
+}
+
 </style>
 </head>
 <body>

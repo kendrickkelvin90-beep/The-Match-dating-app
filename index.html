@@ -3787,6 +3787,23 @@ let currentPage = null;
 
 function show(id, addToHistory = true) {
   if (currentPage && currentPage !== id && addToHistory) {
+      const publicPages = ["welcome", "onboarding", "auth", "reset"];
+
+  if (
+    currentUser &&
+    !hasRequiredProfilePhoto &&
+    id !== "profile" &&
+    !publicPages.includes(id)
+  ) {
+    id = "profile";
+    setTimeout(() => {
+      status(
+        "photoStatus",
+        "Please upload your main profile photo before using The Match.",
+        true
+      );
+    }, 0);
+  }
     pageHistory.push(currentPage);
   }
 

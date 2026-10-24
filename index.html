@@ -8580,6 +8580,47 @@ if ($("logoutDiscover")) {
 }
 
 
+$("settingsDeleteAccount").onclick = async () => {
+  if (!currentUser) {
+    alert("Please sign in first.");
+    return;
+  }
+
+  if (!confirm(
+    "Permanently delete your account and associated data? This cannot be undone."
+  )) return;
+
+  if (prompt('Type DELETE to confirm permanent account deletion.') !== "DELETE") {
+    alert("Deletion cancelled.");
+    return;
+  }
+
+  const button = $("settingsDeleteAccount");
+  button.disabled = true;
+  button.textContent = "Deleting account...";
+
+  try {
+    const { data, error } = await db.functions.invoke("delete-account", {
+      body: { confirm: "DELETE_MY_ACCOUNT" }
+    });
+
+    if (error) throw error;
+    if (!data || !data.success) {
+      throw new Error(data?.error || "Account deletion failed.");
+    }
+
+    await db.auth.signOut();
+    currentUser = null;
+    approxLocation = null;
+    alert("Your account has been deleted.");
+    show("welcome");
+  } catch (error) {
+    alert("Could not delete your account: " + (error.message || error));
+    button.disabled = false;
+    button.textContent = "Delete my account permanently";
+  }
+};
+
 db.auth.onAuthStateChange((event,session)=>{
 if(event==="PASSWORD_RECOVERY"){
 $("resetForm").classList.add("hidden");

@@ -7694,16 +7694,27 @@ if (conversationListNode && activeConversationNode instanceof HTMLElement) {
 
     if(chatRefreshTimer) clearInterval(chatRefreshTimer);
 
-    chatRefreshTimer = setInterval(() => {
-      if(
-        activeChatUserId &&
-        !$("chatPage").classList.contains("hidden")
-      ){
-        loadChatMessages().catch(error => {
-          console.error("Chat refresh failed:",error);
-        });
+    
+    chatRefreshTimer = setInterval(async () => {
+      if (
+        chatRefreshInProgress ||
+        !activeChatUserId ||
+        $("chatPage").classList.contains("hidden")
+      ) {
+        return;
       }
-        },8000);
+
+      chatRefreshInProgress = true;
+
+      try {
+        await loadChatMessages();
+      } catch (error) {
+        console.error("Chat refresh failed:", error);
+      } finally {
+        chatRefreshInProgress = false;
+      }
+    }, 8000);
+
 
     await loadChatMessages();
 

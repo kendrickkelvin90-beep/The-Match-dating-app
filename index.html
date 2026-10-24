@@ -5479,7 +5479,7 @@ async function loadPremiumNearby(){
 
     const {data:peopleData,error}=await db
       .from("profiles")
-      .select("id,display_name,age,gender_identity,city,bio,latitude,longitude,location_sharing")
+      .select("id,display_name,age,gender_identity,city,bio,latitude,longitude,location_sharing,is_verified,verification_level")
       .neq("id",currentUser.id)
       .eq("location_sharing",true)
       .not("latitude","is",null)

@@ -8534,9 +8534,11 @@ $("sendChatMessage").addEventListener("click", async () => {
         "A main profile photo is required before you can continue.",
         true
       );
+    
     } else if (!hadRequiredPhoto && currentPage === "profile") {
       show("discover", false);
-  }
+    }
+
     photos.forEach(p=>{
       const url=db.storage.from("profile-photos")
         .getPublicUrl(p.storage_path).data.publicUrl;

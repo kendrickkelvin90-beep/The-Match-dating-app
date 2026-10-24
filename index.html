@@ -3783,6 +3783,7 @@ async function loadNotificationBadge() {
 
 const pageHistory = [];
 let currentPage = null;
+  let hasRequiredProfilePhoto = false;
 
 function show(id, addToHistory = true) {
   if (currentPage && currentPage !== id && addToHistory) {

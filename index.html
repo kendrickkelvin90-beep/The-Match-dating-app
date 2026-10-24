@@ -5520,6 +5520,18 @@ async function loadPremiumNearby(){
       card.className="member-card";
 
       const name=document.createElement("h3");
+name.appendChild(
+  document.createTextNode(p.display_name || "The Match member")
+);
+
+if (p.is_verified || p.verification_level === "basic" ||
+    p.verification_level === "enhanced") {
+  const tick=document.createElement("span");
+  tick.textContent=" ✓";
+  tick.style.color="#D4AF37";
+  tick.title="Verified profile";
+  name.appendChild(tick);
+  }
       name.textContent=p.display_name||"The Match member";
       const avatar=document.createElement("img");
       avatar.alt=(p.display_name||"Member")+"'s profile photo";

@@ -3786,8 +3786,7 @@ let currentPage = null;
   let hasRequiredProfilePhoto = false;
 
 function show(id, addToHistory = true) {
-  if (currentPage && currentPage !== id && addToHistory) {
-      const publicPages = ["welcome", "onboarding", "auth", "reset"];
+  const publicPages = ["welcome", "onboarding", "auth", "reset"];
 
   if (
     currentUser &&
@@ -3804,12 +3803,14 @@ function show(id, addToHistory = true) {
       );
     }, 0);
   }
+
+  if (currentPage && currentPage !== id && addToHistory) {
     pageHistory.push(currentPage);
   }
 
   currentPage = id;
 
-    panels.forEach(p => {
+  panels.forEach(p => {
     const panel = $(p);
     if (panel) {
       panel.classList.toggle("hidden", p !== id);
@@ -3827,7 +3828,7 @@ function show(id, addToHistory = true) {
   );
 
   window.scrollTo(0, 0);
-}
+  }
 
 function goBackInApp() {
   if (pageHistory.length === 0) {

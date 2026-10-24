@@ -2927,8 +2927,31 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
     <p class="small">2. Submit it privately for review.</p>
     <p class="small">3. Your request will remain pending until reviewed.</p>
     <p class="small">Your verification selfie is for review and is not a public profile photo.</p>
-    <label for="verificationSelfie">Choose your verification selfie</label>
-    <input id="verificationSelfie" type="file" accept="image/*" capture="user">
+    
+<div class="verification-camera">
+  <video id="verificationCamera" autoplay playsinline muted
+    style="display:none;width:100%;max-width:320px;border-radius:12px;background:#111;">
+  </video>
+
+  <canvas id="verificationCanvas" style="display:none;"></canvas>
+
+  <button class="btn secondary" id="startVerificationCamera" type="button">
+    Open Camera
+  </button>
+
+  <button class="btn secondary" id="captureVerificationSelfie" type="button" disabled>
+    Take Selfie
+  </button>
+
+  <p class="small" id="verificationCameraStatus">
+    Open the camera to take your verification selfie.
+  </p>
+
+  <label for="verificationSelfie">Or choose a selfie from your phone</label>
+  <input id="verificationSelfie" type="file"
+    accept="image/jpeg,image/png,image/webp">
+</div>
+
     <button class="btn primary" id="requestVerification" type="button">Submit for verification</button>
     <p class="status" id="verificationStatus"></p>
   </div>

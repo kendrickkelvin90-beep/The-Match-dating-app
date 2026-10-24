@@ -1248,6 +1248,141 @@ hr {
   }
 }
 
+/* THE MATCH — Welcome Screen Refinement */
+:root {
+  --match-bg: #111214;
+  --match-surface: #25262B;
+  --match-gold: #C6A66B;
+  --match-gold-light: #D4B878;
+  --match-text: #F2F0EB;
+  --match-muted: #A0A4AC;
+  --match-border: #35363C;
+}
+
+/* Brand header */
+header {
+  background: var(--match-bg) !important;
+  border-bottom: 1px solid var(--match-border) !important;
+}
+
+header span,
+h1 span {
+  color: var(--match-gold) !important;
+}
+
+/* Welcome hero */
+.hero {
+  background: var(--match-bg) !important;
+  color: var(--match-text) !important;
+}
+
+.hero .heart {
+  filter: sepia(1) saturate(.7) hue-rotate(350deg)
+          brightness(1.12)
+          drop-shadow(0 0 18px #C6A66B55);
+}
+
+.hero .eyebrow {
+  color: var(--match-gold) !important;
+}
+
+.hero p[style*="color:#ff3c79"] {
+  color: var(--match-gold) !important;
+}
+
+.hero .intro {
+  color: var(--match-muted) !important;
+}
+
+/* Welcome and authentication cards */
+#welcome,
+#auth,
+#onboarding,
+#reset {
+  box-sizing: border-box;
+  padding: 24px 20px !important;
+  background: var(--match-surface) !important;
+  color: var(--match-text) !important;
+  border: 1px solid var(--match-border) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 12px 32px #00000024;
+}
+
+#welcome h2,
+#auth h2,
+#onboarding h2,
+#reset h2 {
+  color: var(--match-text) !important;
+}
+
+#welcome .small,
+#auth .small,
+#onboarding .small,
+#reset .small {
+  color: #C2C3C8 !important;
+}
+
+/* Gold primary buttons */
+#welcome .btn.primary,
+#auth .btn.primary,
+#onboarding .btn.primary,
+#reset .btn.primary {
+  background: var(--match-gold) !important;
+  color: #171717 !important;
+  border: 1px solid var(--match-gold) !important;
+  border-radius: 14px !important;
+}
+
+/* Dark secondary buttons */
+#welcome .btn.secondary,
+#auth .btn.secondary,
+#onboarding .btn.secondary,
+#reset .btn.secondary {
+  background: #202125 !important;
+  color: var(--match-text) !important;
+  border: 1px solid #3A3B41 !important;
+  border-radius: 14px !important;
+}
+
+/* Authentication inputs */
+#auth input,
+#auth select,
+#auth textarea,
+#reset input {
+  background: #191A1E !important;
+  color: var(--match-text) !important;
+  border-color: #414249 !important;
+}
+
+#auth input:focus,
+#auth select:focus,
+#auth textarea:focus,
+#reset input:focus {
+  border-color: var(--match-gold) !important;
+}
+
+#auth .link {
+  color: var(--match-gold) !important;
+}
+
+/* Subtle background decorations */
+#stars .star {
+  color: var(--match-gold) !important;
+  text-shadow: 0 0 8px #C6A66B55,
+               0 0 18px #C6A66B22 !important;
+}
+
+/* Mobile spacing */
+@media (max-width: 600px) {
+  #welcome,
+  #auth,
+  #onboarding,
+  #reset {
+    padding: 22px 18px !important;
+    border-radius: 20px !important;
+  }
+}
+
 </style>
 </head>
 <body>

@@ -7860,8 +7860,19 @@ const firstPhotoByUser = new Map();
         "display:flex;flex-direction:column;gap:4px;" +
         "flex:1;min-width:0;";
 
+      
       const name = document.createElement("strong");
       name.textContent = p.display_name || "Member";
+
+      if (p.is_verified || p.verification_level === "basic" ||
+          p.verification_level === "enhanced") {
+        const tick = document.createElement("span");
+        tick.textContent = " ✓";
+        tick.style.color = "#D4AF37";
+        tick.title = "Verified profile";
+        name.appendChild(tick);
+      }
+
 
       const age = document.createElement("span");
       age.style.cssText = "font-size:13px;opacity:.75;";

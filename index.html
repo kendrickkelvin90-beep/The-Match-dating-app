@@ -8485,6 +8485,21 @@ $("sendChatMessage").addEventListener("click", async () => {
       });
 
     if (error) throw error;
+        const hadRequiredPhoto = hasRequiredProfilePhoto;
+    hasRequiredProfilePhoto = (photos || []).some(
+      photo => photo.position === 0
+    );
+
+    if (!hasRequiredProfilePhoto) {
+      show("profile", false);
+      status(
+        "photoStatus",
+        "A main profile photo is required before you can continue.",
+        true
+      );
+    } else if (!hadRequiredPhoto && currentPage === "profile") {
+      show("discover", false);
+    }
 
     input.value = "";
     input.style.height = "auto";

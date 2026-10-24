@@ -4569,10 +4569,15 @@ function showTopNotification(title, body, type) {
     } else if (type === "match") {
       show("matches");
       loadMyMatches();
+    
     } else if (type === "message") {
       show("messages");
       loadMyConversations();
+    } else if (type === "premium") {
+      show("premium");
     }
+  };
+
   };
 
   toast.style.opacity = "1";

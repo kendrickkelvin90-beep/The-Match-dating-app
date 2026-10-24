@@ -8642,27 +8642,16 @@ async function loadVerificationStatus() {
     const level = profile?.verification_level ||
       (profile?.is_verified ? "basic" : "none");
 
-    if (level === "enhanced") {
-      button.textContent = "✓ Blue Verified";
-      button.style.background = "#1687f8";
-      button.style.color = "#ffffff";
-      section.querySelector("h2").textContent =
-        "Identity verified ✓";
-      box.textContent =
-        "Your enhanced identity verification is complete.";
+    
+    if (level === "enhanced" || level === "basic" || profile?.is_verified) {
+      button.textContent = "✓ Verified";
+      button.style.background = "#D4AF37";
+      button.style.color = "#111111";
+      section.querySelector("h2").textContent = "Profile verified ✓";
+      box.textContent = "Your selfie was reviewed and approved by the admin.";
       return;
     }
 
-    if (level === "basic" || profile?.is_verified) {
-      button.textContent = "✓ Basic Verified";
-      button.style.background = "#111111";
-      button.style.color = "#ffffff";
-      section.querySelector("h2").textContent =
-        "Profile reviewed ✓";
-      box.textContent =
-        "Your selfie was reviewed and approved by the admin.";
-      return;
-    }
 
     button.textContent = "🛡️ Get Verified";
     button.style.background = "";

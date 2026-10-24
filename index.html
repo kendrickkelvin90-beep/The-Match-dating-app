@@ -4848,9 +4848,15 @@ status("profileStatus","Your profile is loaded. Check your details and save when
   }
 }
 }catch(e){status("profileStatus","Could not load profile: "+friendly(e),true);}
+  
   await loadMyPhotos();
   await loadVerificationStatus();
+
+  setTimeout(() => {
+    maybeShowPremiumPromotion();
+  }, 15000);
 }
+
 
 $("profileForm").onsubmit=async e=>{
 e.preventDefault();

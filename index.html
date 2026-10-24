@@ -8704,6 +8704,109 @@ $("backFromVerification").onclick=()=>{
   show("profile");
 };
 
+const verificationCamera = $("verificationCamera");
+const verificationCanvas = $("verificationCanvas");
+const startVerificationCamera = $("startVerificationCamera");
+const captureVerificationSelfie = $("captureVerificationSelfie");
+const verificationCameraStatus = $("verificationCameraStatus");
+const verificationSelfieInput = $("verificationSelfie");
+
+let verificationCameraStream = null;
+
+startVerificationCamera.onclick = async () => {
+  try {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      verificationCameraStatus.textContent =
+        "Camera unavailable. Open The Match using HTTPS in a supported browser.";
+      return;
+    }
+
+    if (verificationCameraStream) {
+      verificationCameraStream.getTracks().forEach(track => track.stop());
+    }
+
+    verificationCameraStatus.textContent = "Opening camera...";
+
+    verificationCameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user" },
+      audio: false
+    });
+
+    verificationCamera.srcObject = verificationCameraStream;
+    verificationCamera.style.display = "block";
+    await verificationCamera.play();
+
+    captureVerificationSelfie.disabled = false;
+    verificationCameraStatus.textContent =
+      "Camera ready. Position your face and tap Take Selfie.";
+  } catch (error) {
+    verificationCameraStatus.textContent =
+      "Camera could not open. Allow camera permission and try again.";
+    console.error("Verification camera error:", error);
+  }
+};
+
+captureVerificationSelfie.onclick = async () => {
+  const box = verificationCameraStatus;
+
+  try {
+    if (!verificationCameraStream ||
+        !verificationCamera.videoWidth ||
+        !verificationCamera.videoHeight) {
+      box.textContent = "Open the camera and wait for the preview first.";
+      return;
+    }
+
+    const maxWidth = 900;
+    const scale = Math.min(
+      1,
+      maxWidth / verificationCamera.videoWidth
+    );
+
+    verificationCanvas.width =
+      Math.round(verificationCamera.videoWidth * scale);
+    verificationCanvas.height =
+      Math.round(verificationCamera.videoHeight * scale);
+
+    const ctx = verificationCanvas.getContext("2d");
+    ctx.drawImage(
+      verificationCamera,
+      0,
+      0,
+      verificationCanvas.width,
+      verificationCanvas.height
+    );
+
+    const blob = await new Promise(resolve =>
+      verificationCanvas.toBlob(resolve, "image/jpeg", 0.75)
+    );
+
+    if (!blob) throw new Error("Image capture failed.");
+
+    const selfieFile = new File(
+      [blob],
+      "verification-selfie.jpg",
+      { type: "image/jpeg" }
+    );
+
+    const transfer = new DataTransfer();
+    transfer.items.add(selfieFile);
+    verificationSelfieInput.files = transfer.files;
+
+    verificationCameraStream.getTracks().forEach(track => track.stop());
+    verificationCameraStream = null;
+    verificationCamera.srcObject = null;
+    verificationCamera.style.display = "none";
+    captureVerificationSelfie.disabled = true;
+
+    box.textContent =
+      "Selfie captured and compressed. You can now submit for verification.";
+  } catch (error) {
+    box.textContent = "Could not capture selfie. Please try again.";
+    console.error("Selfie capture error:", error);
+  }
+};
+
   $("requestVerification").onclick=async()=>{
 if(!currentUser){
 $("verificationStatus").textContent="Please sign in first.";

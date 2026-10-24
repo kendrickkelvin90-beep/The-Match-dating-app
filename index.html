@@ -1801,6 +1801,286 @@ body.light-theme #storiesSection {
   border-color: #E5E1D8 !important;
 }
 
+/* =========================================
+   THE MATCH — PREMIUM BLACK, WHITE & GOLD
+   Shared visual theme for all app pages
+   ========================================= */
+
+:root {
+  --tm-black: #050505;
+  --tm-dark: #111111;
+  --tm-card: #191919;
+  --tm-gold: #C6A15B;
+  --tm-gold-light: #E2BC70;
+  --tm-white: #F7F5F0;
+  --tm-muted: #A7A7A7;
+  --tm-border: #303030;
+}
+
+/* ========== DARK MODE ========== */
+
+body:not(.light-theme) {
+  background: var(--tm-black) !important;
+  color: var(--tm-white) !important;
+}
+
+body:not(.light-theme) header,
+body:not(.light-theme) main,
+body:not(.light-theme) footer,
+body:not(.light-theme) #welcome,
+body:not(.light-theme) #onboarding,
+body:not(.light-theme) #auth,
+body:not(.light-theme) #reset,
+body:not(.light-theme) #profile,
+body:not(.light-theme) #discover,
+body:not(.light-theme) #nearbyPage,
+body:not(.light-theme) #matches,
+body:not(.light-theme) #likes,
+body:not(.light-theme) #messages,
+body:not(.light-theme) #settings,
+body:not(.light-theme) #premium,
+body:not(.light-theme) #chatPage,
+body:not(.light-theme) #memberProfilePage,
+body:not(.light-theme) #notificationsPage,
+body:not(.light-theme) #discoveryPreferencesPage {
+  background-color: var(--tm-black) !important;
+  color: var(--tm-white) !important;
+}
+
+body:not(.light-theme) .panel,
+body:not(.light-theme) .member-card,
+body:not(.light-theme) .card {
+  background: var(--tm-card) !important;
+  color: var(--tm-white) !important;
+  border-color: var(--tm-border) !important;
+  box-shadow: none !important;
+}
+
+body:not(.light-theme) h1,
+body:not(.light-theme) h2,
+body:not(.light-theme) h3,
+body:not(.light-theme) h4,
+body:not(.light-theme) p,
+body:not(.light-theme) label,
+body:not(.light-theme) .small,
+body:not(.light-theme) .status {
+  color: var(--tm-white);
+}
+
+/* Dark navigation */
+body:not(.light-theme) .bottom-nav {
+  background: var(--tm-black) !important;
+  border-top: 1px solid var(--tm-border) !important;
+}
+
+body:not(.light-theme) .bottom-nav button {
+  color: var(--tm-muted) !important;
+  background: transparent !important;
+}
+
+body:not(.light-theme) .bottom-nav button.active {
+  background: #211B10 !important;
+  color: var(--tm-gold-light) !important;
+}
+
+body:not(.light-theme) .bottom-nav .nav-icon {
+  filter: grayscale(1) sepia(.85) saturate(1.8);
+}
+
+/* Gold notification counts */
+body:not(.light-theme) .nav-badge,
+body:not(.light-theme) #notificationBadge {
+  background: var(--tm-gold) !important;
+  color: #111111 !important;
+  border-color: var(--tm-black) !important;
+}
+
+/* Story circle and plus */
+body:not(.light-theme) #createStoryButton,
+body:not(.light-theme) .story-circle {
+  background: #050505 !important;
+  border: 3px dashed var(--tm-gold) !important;
+  color: var(--tm-gold) !important;
+}
+
+body:not(.light-theme) #createStoryButton .story-plus,
+body:not(.light-theme) .story-plus {
+  color: var(--tm-gold) !important;
+}
+
+/* Gold action buttons */
+body:not(.light-theme) #refreshNearby,
+body:not(.light-theme) #refreshNearbyMembers,
+body:not(.light-theme) .btn.primary,
+body:not(.light-theme) button.primary {
+  background: var(--tm-gold) !important;
+  color: #111111 !important;
+  border-color: var(--tm-gold) !important;
+}
+
+body:not(.light-theme) .btn.secondary,
+body:not(.light-theme) button.btn.secondary {
+  background: #111111 !important;
+  color: var(--tm-gold-light) !important;
+  border-color: var(--tm-border) !important;
+}
+
+/* Gold links and accents */
+body:not(.light-theme) a,
+body:not(.light-theme) .link,
+body:not(.light-theme) .eyebrow,
+body:not(.light-theme) #openDiscoveryPreferencesTop {
+  color: var(--tm-gold-light) !important;
+}
+
+/* Dark form fields */
+body:not(.light-theme) input,
+body:not(.light-theme) textarea,
+body:not(.light-theme) select {
+  background: #111111 !important;
+  color: var(--tm-white) !important;
+  border-color: #414141 !important;
+}
+
+body:not(.light-theme) input:focus,
+body:not(.light-theme) textarea:focus,
+body:not(.light-theme) select:focus {
+  border-color: var(--tm-gold) !important;
+}
+
+/* ========== LIGHT MODE ========== */
+
+body.light-theme,
+body.light-theme header,
+body.light-theme main,
+body.light-theme footer,
+body.light-theme #welcome,
+body.light-theme #onboarding,
+body.light-theme #auth,
+body.light-theme #reset,
+body.light-theme #profile,
+body.light-theme #discover,
+body.light-theme #nearbyPage,
+body.light-theme #matches,
+body.light-theme #likes,
+body.light-theme #messages,
+body.light-theme #settings,
+body.light-theme #premium,
+body.light-theme #chatPage,
+body.light-theme #memberProfilePage,
+body.light-theme #notificationsPage,
+body.light-theme #discoveryPreferencesPage {
+  background: #FFFFFF !important;
+  color: #111111 !important;
+}
+
+body.light-theme .panel,
+body.light-theme .member-card,
+body.light-theme .card {
+  background: #FFFFFF !important;
+  color: #111111 !important;
+  border-color: #E5E1D8 !important;
+  box-shadow: none !important;
+}
+
+body.light-theme h1,
+body.light-theme h2,
+body.light-theme h3,
+body.light-theme h4,
+body.light-theme p,
+body.light-theme label,
+body.light-theme .small,
+body.light-theme .status {
+  color: #111111;
+}
+
+/* Light navigation */
+body.light-theme .bottom-nav {
+  background: #FFFFFF !important;
+  border-top: 1px solid #E5E1D8 !important;
+}
+
+body.light-theme .bottom-nav button {
+  color: #8D6725 !important;
+  background: transparent !important;
+}
+
+body.light-theme .bottom-nav button.active {
+  background: #F7EEDB !important;
+  color: #8D6725 !important;
+}
+
+body.light-theme .bottom-nav .nav-icon {
+  filter: grayscale(1) sepia(.85) saturate(1.8);
+}
+
+/* Gold notification counts */
+body.light-theme .nav-badge,
+body.light-theme #notificationBadge {
+  background: var(--tm-gold) !important;
+  color: #111111 !important;
+  border-color: #FFFFFF !important;
+}
+
+/* Black story circle with gold dashed ring and plus */
+body.light-theme #createStoryButton,
+body.light-theme .story-circle {
+  background: #050505 !important;
+  border: 3px dashed var(--tm-gold) !important;
+  color: var(--tm-gold) !important;
+}
+
+body.light-theme #createStoryButton .story-plus,
+body.light-theme .story-plus {
+  color: var(--tm-gold) !important;
+}
+
+/* Gold action buttons */
+body.light-theme #refreshNearby,
+body.light-theme #refreshNearbyMembers,
+body.light-theme .btn.primary,
+body.light-theme button.primary {
+  background: var(--tm-gold) !important;
+  color: #111111 !important;
+  border-color: var(--tm-gold) !important;
+}
+
+body.light-theme .btn.secondary,
+body.light-theme button.btn.secondary {
+  background: #FFFFFF !important;
+  color: #8D6725 !important;
+  border-color: var(--tm-gold) !important;
+}
+
+/* Gold links and accents */
+body.light-theme a,
+body.light-theme .link,
+body.light-theme .eyebrow,
+body.light-theme #openDiscoveryPreferencesTop {
+  color: #8D6725 !important;
+}
+
+/* Light form fields */
+body.light-theme input,
+body.light-theme textarea,
+body.light-theme select {
+  background: #FFFFFF !important;
+  color: #111111 !important;
+  border-color: #D8D2C6 !important;
+}
+
+body.light-theme input:focus,
+body.light-theme textarea:focus,
+body.light-theme select:focus {
+  border-color: var(--tm-gold) !important;
+}
+
+/* Consistent separators */
+body.light-theme hr,
+body:not(.light-theme) hr {
+  border-color: var(--tm-border) !important;
+}
+
 </style>
 </head>
 <body>

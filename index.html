@@ -7569,7 +7569,7 @@ async function loadMyMatches(){
     const {data:profiles,error:profileError}=await db
       .from("profiles")
       
-.select("id,display_name,age,city,bio")
+.select("id,display_name,age,city,bio,is_verified,verification_level")
 
       .in("id",mutualIds);
 

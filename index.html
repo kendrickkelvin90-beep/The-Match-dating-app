@@ -5278,8 +5278,21 @@ photoBox.appendChild(onlineBadge);
       card.appendChild(photoBox);
 
       
+
 const name=document.createElement("h2");
-name.textContent=p.display_name||"The Match member";
+name.appendChild(
+  document.createTextNode(p.display_name || "The Match member")
+);
+
+if (p.is_verified || p.verification_level === "basic" ||
+    p.verification_level === "enhanced") {
+  const tick = document.createElement("span");
+  tick.textContent = " ✓";
+  tick.style.color = "#D4AF37";
+  tick.title = "Verified profile";
+  name.appendChild(tick);
+}
+
 name.style.cssText="font-size:28px;font-weight:800;letter-spacing:-0.6px;line-height:1.15;margin:14px 4px 6px;color:#fff;overflow-wrap:anywhere;";
 card.appendChild(name);
 

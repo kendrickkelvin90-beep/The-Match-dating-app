@@ -2081,6 +2081,153 @@ body:not(.light-theme) hr {
   border-color: var(--tm-border) !important;
 }
 
+/* THE MATCH — Final Discover and Match Readability Fix */
+
+/* Gold refresh button in BOTH themes */
+body.light-theme #discover #refreshNearby,
+body:not(.light-theme) #discover #refreshNearby {
+  background: #C6A15B !important;
+  background-image: none !important;
+  color: #111111 !important;
+  border: 1px solid #C6A15B !important;
+  box-shadow: none !important;
+}
+
+/* Remove the unwanted rectangular story-button frame */
+body.light-theme #discover #createStoryButton,
+body:not(.light-theme) #discover #createStoryButton {
+  display: flex !important;
+  width: 72px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  gap: 7px !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+/* One black circle, gold dashed ring, gold plus */
+body.light-theme #discover #createStoryButton .story-plus,
+body:not(.light-theme) #discover #createStoryButton .story-plus {
+  display: flex !important;
+  width: 72px !important;
+  height: 72px !important;
+  min-width: 72px !important;
+  min-height: 72px !important;
+  flex: 0 0 72px !important;
+  box-sizing: border-box !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 3px dashed #C6A15B !important;
+  border-radius: 50% !important;
+  background: #050505 !important;
+  color: #C6A15B !important;
+  font-size: 32px !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+}
+
+body.light-theme #discover #createStoryButton > span:last-child {
+  color: #111111 !important;
+}
+
+body:not(.light-theme) #discover #createStoryButton > span:last-child {
+  color: #F7F5F0 !important;
+}
+
+/* Make every match-card label readable in light mode */
+body.light-theme #matchesList,
+body.light-theme #matchesList > *,
+body.light-theme #matchesList > * * {
+  color: #111111 !important;
+}
+
+body.light-theme #matchesList > * {
+  background: #FFFFFF !important;
+  border-color: #E5E1D8 !important;
+}
+
+body.light-theme #matchesList a,
+body.light-theme #matchesList button {
+  color: #8D6725 !important;
+}
+
+/* Keep match cards dark and readable in dark mode */
+body:not(.light-theme) #matchesList,
+body:not(.light-theme) #matchesList > *,
+body:not(.light-theme) #matchesList > * * {
+  color: #F7F5F0 !important;
+}
+
+body:not(.light-theme) #matchesList > * {
+  background: #111111 !important;
+  border-color: #303030 !important;
+}
+
+/* Logout confirmation: gold instead of pink */
+body.light-theme #matchLogoutModal .match-confirm-card {
+  background: #FFFFFF !important;
+  color: #111111 !important;
+  border: 1px solid #C6A15B !important;
+}
+
+body.light-theme #matchLogoutModal .match-confirm-card h2,
+body.light-theme #matchLogoutModal .match-confirm-card p {
+  color: #111111 !important;
+}
+
+body.light-theme #matchLogoutModal .match-confirm-logo,
+body.light-theme #matchLogoutModal .match-confirm-icon,
+body.light-theme #matchLogoutModal .match-confirm-close {
+  color: #9B742E !important;
+}
+
+body.light-theme #matchLogoutModal .match-confirm-stay {
+  background: #C6A15B !important;
+  color: #111111 !important;
+  border: 1px solid #C6A15B !important;
+}
+
+body.light-theme #matchLogoutModal .match-confirm-logout {
+  background: #FFFFFF !important;
+  color: #8D6725 !important;
+  border: 1px solid #C6A15B !important;
+}
+
+body:not(.light-theme) #matchLogoutModal .match-confirm-card {
+  background: #111111 !important;
+  color: #F7F5F0 !important;
+  border: 1px solid #C6A15B !important;
+}
+
+body:not(.light-theme) #matchLogoutModal .match-confirm-card h2,
+body:not(.light-theme) #matchLogoutModal .match-confirm-card p {
+  color: #F7F5F0 !important;
+}
+
+body:not(.light-theme) #matchLogoutModal .match-confirm-logo,
+body:not(.light-theme) #matchLogoutModal .match-confirm-icon,
+body:not(.light-theme) #matchLogoutModal .match-confirm-close {
+  color: #E2BC70 !important;
+}
+
+body:not(.light-theme) #matchLogoutModal .match-confirm-stay {
+  background: #C6A15B !important;
+  color: #111111 !important;
+  border: 1px solid #C6A15B !important;
+}
+
+body:not(.light-theme) #matchLogoutModal .match-confirm-logout {
+  background: #111111 !important;
+  color: #E2BC70 !important;
+  border: 1px solid #C6A15B !important;
+}
+
 </style>
 </head>
 <body>

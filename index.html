@@ -4590,6 +4590,43 @@ function showTopNotification(title, body, type) {
   }, 5000);
 }
 
+async function maybeShowPremiumPromotion() {
+  if (!currentUser) return;
+
+  const key = "matchPremiumPromoLastShown_" + currentUser.id;
+  const lastShown = Number(localStorage.getItem(key) || 0);
+
+  if (Date.now() - lastShown < 24 * 60 * 60 * 1000) {
+    return;
+  }
+
+  try {
+    const { data: membership, error } = await db
+      .from("premium_memberships")
+      .select("premium_until")
+      .eq("user_id", currentUser.id)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    const isPremium = !!membership &&
+      !!membership.premium_until &&
+      new Date(membership.premium_until).getTime() > Date.now();
+
+    if (isPremium) return;
+
+    localStorage.setItem(key, String(Date.now()));
+
+    showTopNotification(
+      "Discover more with Premium ⭐",
+      "Reveal who likes you and unlock Nearby discovery.",
+      "premium"
+    );
+  } catch (error) {
+    console.warn("Premium promotion unavailable:", error);
+  }
+}
+
 function showMatchNotification(title, body, type) {
   playMatchSound(type);
   showTopNotification(title, body, type);

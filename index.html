@@ -5109,6 +5109,33 @@ async function loadNearby(){
     }));
 
     
+    const discoverIds = people.map(p => p.id);
+
+    if (discoverIds.length) {
+      const { data: verificationProfiles, error: verificationError } =
+        await db
+          .from("profiles")
+          .select("id,is_verified,verification_level")
+          .in("id", discoverIds);
+
+      if (verificationError) throw verificationError;
+
+      const verificationById = new Map(
+        (verificationProfiles || []).map(profile => [
+          profile.id,
+          {
+            is_verified: profile.is_verified,
+            verification_level: profile.verification_level
+          }
+        ])
+      );
+
+      people = people.map(person => ({
+        ...person,
+        ...(verificationById.get(person.id) || {})
+      }));
+    }
+
     // Randomize Discover profile order.
     for (let i = people.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));

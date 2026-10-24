@@ -2378,7 +2378,7 @@ body:not(.light-theme) #reset .link {
 
 /* THE MATCH — Full-height chat layout fix */
 
-#chatPage {
+display: flex;
   position: fixed !important;
   inset: 0 !important;
   width: 100% !important;
@@ -2481,7 +2481,9 @@ body:not(.light-theme) #reset .link {
   right: 0 !important;
   z-index: 9999 !important;
 }
-
+#chatPage.hidden {
+  display: none !important;
+}
 </style>
 </head>
 <body>

@@ -7616,11 +7616,25 @@ async function loadMyMatches(){
     "display:flex;flex-direction:column;align-items:flex-start;" +
     "justify-content:center;gap:12px;min-width:0;flex:1;";
 
+  
   const name=document.createElement("div");
-  name.textContent=p.display_name||"Member";
   name.style.cssText=
     "font-size:22px;font-weight:800;color:#ffe5ef;" +
     "overflow-wrap:anywhere;";
+
+  name.appendChild(
+    document.createTextNode(p.display_name || "Member")
+  );
+
+  if (p.is_verified || p.verification_level === "basic" ||
+      p.verification_level === "enhanced") {
+    const tick = document.createElement("span");
+    tick.textContent = " ✓";
+    tick.style.color = "#D4AF37";
+    tick.title = "Verified profile";
+    name.appendChild(tick);
+  }
+
 
   const age=document.createElement("div");
   age.textContent=p.age ? String(p.age)+" years old" : "Age not provided";

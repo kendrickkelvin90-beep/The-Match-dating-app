@@ -2928,7 +2928,7 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
     <p class="small">3. Your request will remain pending until reviewed.</p>
     <p class="small">Your verification selfie is for review and is not a public profile photo.</p>
     <label for="verificationSelfie">Choose your verification selfie</label>
-    <input id="verificationSelfie" type="file" accept="image/jpeg,image/png,image/webp">
+    <input id="verificationSelfie" type="file" accept="image/*" capture="user">
     <button class="btn primary" id="requestVerification" type="button">Submit for verification</button>
     <p class="status" id="verificationStatus"></p>
   </div>

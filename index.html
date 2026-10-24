@@ -2455,6 +2455,33 @@ body:not(.light-theme) #reset .link {
   flex-shrink: 0 !important;
 }
 
+/* FIX: Keep chat above the bottom navigation */
+#chatPage {
+  bottom: 90px !important;
+  height: auto !important;
+  max-height: calc(100dvh - 90px) !important;
+  box-sizing: border-box !important;
+  overflow-y: auto !important;
+  z-index: 100 !important;
+}
+
+#chatPage #chatPageContent {
+  min-height: 0 !important;
+}
+
+#chatPage #chatMessages {
+  min-height: 120px !important;
+  overflow-y: auto !important;
+}
+
+#bottomNavigation {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 9999 !important;
+}
+
 </style>
 </head>
 <body>

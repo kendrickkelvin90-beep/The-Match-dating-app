@@ -7185,16 +7185,16 @@ badge.style.fontSize = "0.8em";
 badge.style.fontWeight = "bold";
 badge.style.marginLeft = "6px";
 
-if (p.verification_level === "enhanced") {
+
+if (p.verification_level === "enhanced" ||
+    p.verification_level === "basic" ||
+    p.is_verified) {
   badge.textContent = "✓";
-  badge.style.color = "#1687f8";
-  badge.title = "Enhanced identity verification";
-} else if (p.verification_level === "basic" || p.is_verified) {
-  badge.textContent = "✓";
-  badge.style.color = "#111111";
-  badge.style.textShadow = "0 0 1px #ffffff";
-  badge.title = "Selfie reviewed by admin";
+  badge.style.color = "#D4AF37";
+  badge.style.textShadow = "0 0 2px rgba(212,175,55,0.35)";
+  badge.title = "Verified profile";
 }
+
 
 const name = $("memberProfileName");
 name.replaceChildren(

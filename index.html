@@ -7811,15 +7811,16 @@ async function loadChatMessages(){
       new Date(myMembership.premium_until).getTime() > Date.now();
 
 
-    const {data,error} = await db
+        const {data,error} = await db
       .from("messages")
       .select("id,sender_id,receiver_id,body,created_at,delivered_at,read_at")
       .or("and(sender_id.eq."+me+",receiver_id.eq."+them+"),and(sender_id.eq."+them+",receiver_id.eq."+me+")")
-      .order("created_at",{ascending:true});
+      .order("created_at",{ascending:false})
+      .limit(100);
 
-        if (error) throw error;
+    if (error) throw error;
 
-    for (const message of (data || [])) {
+    if (data) data.reverse();
       if (message.receiver_id === me && !message.read_at) {
         const { error: receiptError } = await db.rpc(
           "mark_message_receipt",

@@ -4410,6 +4410,50 @@ $("backFromReferrals").addEventListener("click", () => {
   show("settings");
 });
 
+$("copyReferralLink").addEventListener("click", async () => {
+  const link = $("referralLink").value;
+  if (!link) {
+    alert("Load your referral dashboard first.");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(link);
+    alert("Referral link copied successfully!");
+  } catch (error) {
+    alert("Could not copy the link. Please try again.");
+  }
+});
+
+$("shareReferralLink").addEventListener("click", async () => {
+  const link = $("referralLink").value;
+  if (!link) {
+    alert("Load your referral dashboard first.");
+    return;
+  }
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: "Join me on The Match",
+        text: "Join The Match using my referral link:",
+        url: link
+      });
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        alert("Could not share the link.");
+      }
+    }
+  } else {
+    try {
+      await navigator.clipboard.writeText(link);
+      alert("Referral link copied successfully!");
+    } catch (error) {
+      alert("Could not copy the link.");
+    }
+  }
+});
+
 $("copyReferralCode").addEventListener("click", async () => {
   const code = $("referralCode").textContent.trim();
 

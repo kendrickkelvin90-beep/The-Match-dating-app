@@ -4728,14 +4728,22 @@ $("authForm").onsubmit = async e => {
       password,
       options: { captchaToken: authCaptchaToken }
     })
-  : await db.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: SITE_URL,
-        captchaToken: authCaptchaToken
+  
+: await db.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: SITE_URL,
+      captchaToken: authCaptchaToken,
+      data: {
+        referral_code: new URLSearchParams(window.location.search)
+          .get("ref")
+          ?.trim()
+          .toUpperCase() || null
       }
-    });
+    }
+  });
+
 
     if (result.error) throw result.error;
 

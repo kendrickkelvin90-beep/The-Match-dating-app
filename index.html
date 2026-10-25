@@ -3644,14 +3644,26 @@ function renderAuthCaptcha() {
   });
 }
 
+
 function renderResetCaptcha() {
-  if (!window.turnstile || resetCaptchaWidgetId !== null) return;
+  if (!window.turnstile) {
+    setTimeout(renderResetCaptcha, 500);
+    return;
+  }
+
+  if (resetCaptchaWidgetId !== null) {
+    window.turnstile.reset(resetCaptchaWidgetId);
+    resetCaptchaToken = "";
+    return;
+  }
+
   resetCaptchaWidgetId = window.turnstile.render("#resetCaptcha", {
     sitekey: "0x4AAAAAAFia9mw39tR1pGuq",
     callback: window.onResetTurnstileSuccess,
     "expired-callback": window.onResetTurnstileExpired
   });
 }
+
 
 const $=id=>document.getElementById(id);
 let loginMode=false,currentUser=null,approxLocation=null;

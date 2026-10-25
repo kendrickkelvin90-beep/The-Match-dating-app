@@ -9483,7 +9483,7 @@ show("reset");
 if(event==="SIGNED_IN"&&session&&session.user){
   enforceOneAccountPerDevice(session.user)
     .then(allowed => {
-      if (allowed) showProfile(session.user);
+      if (allowed) showProfile(session.user, true);
     })
     .catch(error => {
       console.error("Device lock check failed:", error);

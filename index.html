@@ -4844,7 +4844,7 @@ $("authForm").onsubmit = async e => {
         if (detailsError) throw detailsError;
       }
 
-      await showProfile(user);
+      await showProfile(user, loginMode);
     }
   } catch (error) {
     console.error("Signup/login error:", error);

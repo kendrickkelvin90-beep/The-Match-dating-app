@@ -4983,7 +4983,7 @@ let fallback=(email.split("@")[0]||"Member")
 .replace(/[._-]+/g," ")
 .replace(/\b\w/g,ch=>ch.toUpperCase());
 $("greeting").textContent="Welcome, "+fallback+"! ❤️";
-show("discover");
+show("profile");
 $("bottomNavigation").querySelector('[data-page="discover"]').classList.add("active");
   await loadNearby();
 await loadStories();

@@ -9492,13 +9492,12 @@ if(event==="SIGNED_IN"&&session&&session.user){
 });
 
 
-(async function init() {
-  let r = await db.auth.getSession();
 
-  if (r.data && r.data.session && r.data.session.user) {
-    const allowed = await enforceOneAccountPerDevice(r.data.session.user);
-    if (allowed) await showProfile(r.data.session.user);
-  }
+(async function init() {
+  await db.auth.getSession();
+  show("welcome", false);
+})();
+
 })();
 
 })();

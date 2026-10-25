@@ -9477,8 +9477,18 @@ $("newPasswordForm").classList.remove("hidden");
 status("resetStatus","Choose a new password below.");
 show("reset");
 }
-if(event==="SIGNED_IN"&&session&&session.user)showProfile(session.user);
-});
+if(event==="SIGNED_IN"&&session&&session.user){
+  enforceOneAccountPerDevice(session.user)
+    .then(allowed => {
+      if (allowed) showProfile(session.user);
+    })
+    .catch(error => {
+      console.error("Device lock check failed:", error);
+      status("authStatus", "Could not verify this device. Please sign in again.", true);
+      db.auth.signOut();
+      show("welcome");
+    });
+}
 
 
 async function init(){

@@ -4757,6 +4757,24 @@ $("authForm").onsubmit = async e => {
 
     if (result.data.session) {
       const user = result.data.session.user;
+      
+      const savedReferralCode = user.user_metadata?.referral_code;
+
+      if (savedReferralCode) {
+        const { error: referralError } = await db.rpc(
+          "apply_referral_code",
+          { p_code: savedReferralCode }
+        );
+
+        if (referralError) {
+          console.error("Referral code application failed:", referralError);
+        } else {
+          await db.auth.updateUser({
+            data: { referral_code: null }
+          });
+        }
+      }
+
 
       if (!loginMode && Object.keys(onboardingAnswers).length) {
         const answers = { ...onboardingAnswers };

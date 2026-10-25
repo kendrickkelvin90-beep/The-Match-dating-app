@@ -5339,11 +5339,11 @@ await loadVerificationStatus();
 if (restoreToDiscover && hasRequiredProfilePhoto) {
   show("discover", false);
 }
-  }
+  
 setTimeout(() => {
   maybeShowPremiumPromotion();
 }, 15000);
-
+}
 
 $("profileForm").onsubmit=async e=>{
 e.preventDefault();

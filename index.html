@@ -4788,7 +4788,7 @@ $("authForm").onsubmit = async e => {
 
     if (result.data.session) {
       const user = result.data.session.user;
-      
+      if (!(await enforceOneAccountPerDevice(user))) return;
       const savedReferralCode = user.user_metadata?.referral_code;
 
       if (savedReferralCode) {

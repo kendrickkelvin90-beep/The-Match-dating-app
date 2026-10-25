@@ -4867,13 +4867,17 @@ $("authForm").onsubmit = async e => {
 };
 
 
-$("forgot").onclick=()=>{
-$("resetEmail").value=$("email").value.trim();
-status("resetStatus","");
-$("resetForm").classList.remove("hidden");
-$("newPasswordForm").classList.add("hidden");
-show("reset");
+
+$("forgot").onclick = () => {
+  $("resetEmail").value = $("email").value.trim();
+  resetCaptchaToken = "";
+  status("resetStatus", "");
+  $("resetForm").classList.remove("hidden");
+  $("newPasswordForm").classList.add("hidden");
+  show("reset");
+  renderResetCaptcha();
 };
+
 $("resetBack").onclick=()=>show("welcome");
 
 $("resetForm").onsubmit=async e=>{

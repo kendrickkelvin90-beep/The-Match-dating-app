@@ -4303,9 +4303,113 @@ $("openAdminDashboardBtn").addEventListener("click", async () => {
   show("adminPanel");
   await loadAdminDashboard();
 });
+
+async function loadReferralDashboard() {
+  const statusEl = $("referralsStatus");
+  const rewardsEl = $("referralRewardsList");
+
+  if (!currentUser) {
+    statusEl.textContent = "Please sign in to view referrals.";
+    return;
+  }
+
+  statusEl.textContent = "Loading referral details...";
+  rewardsEl.replaceChildren();
+
+  try {
+    const { data: codeData, error: codeError } =
+      await db.rpc("get_my_referral_code");
+
+    if (codeError) throw codeError;
+
+    const code = typeof codeData === "string"
+      ? codeData
+      : codeData?.code || codeData?.referral_code;
+
+    if (!code) throw new Error("No referral code was returned.");
+
+    $("referralCode").textContent = code;
+    $("referralLink").value =
+      SITE_URL + window.location.pathname +
+      "?ref=" + encodeURIComponent(code);
+
+    const { data: referrals, error: referralsError } = await db
+      .from("referrals")
+      .select("id,status,created_at")
+      .eq("referrer_id", currentUser.id);
+
+    if (referralsError) throw referralsError;
+
+    const rows = referrals || [];
+
+    $("successfulReferralCount").textContent =
+      rows.filter(r => r.status === "successful").length;
+
+    $("pendingReferralCount").textContent =
+      rows.filter(r => r.status === "pending").length;
+
+    const { data: rewards, error: rewardsError } = await db
+      .from("referral_rewards")
+      .select("id,reward_type,premium_days,milestone_count,created_at")
+      .eq("recipient_id", currentUser.id)
+      .order("created_at", { ascending: false });
+
+    if (rewardsError) throw rewardsError;
+
+    rewardsEl.replaceChildren();
+
+    if (!rewards || rewards.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "small";
+      empty.textContent = "No rewards yet. Invite friends to earn Premium days.";
+      rewardsEl.appendChild(empty);
+    } else {
+      rewards.forEach(reward => {
+        const item = document.createElement("p");
+        item.className = "small";
+
+        const label = reward.reward_type === "milestone"
+          ? "Referral milestone"
+          : reward.reward_type === "new_member"
+            ? "New member reward"
+            : "Successful referral reward";
+
+        item.textContent =
+          label + ": " + Number(reward.premium_days || 0) +
+          " Premium day(s)" +
+          (reward.milestone_count
+            ? " — " + reward.milestone_count + " referrals"
+            : "") +
+          (reward.created_at
+            ? " — " + new Date(reward.created_at).toLocaleDateString()
+            : "");
+
+        rewardsEl.appendChild(item);
+      });
+    }
+
+    statusEl.textContent = "Referral dashboard loaded successfully.";
+  } catch (error) {
+    console.error("Referral dashboard error:", error);
+    statusEl.textContent =
+      "Could not load referrals: " + (error.message || String(error));
+  }
+}
+
 $("openReferrals").addEventListener("click", async () => {
   show("referralsPage");
+  await loadReferralDashboard();
 });
+
+$("refreshReferrals").addEventListener(
+  "click",
+  loadReferralDashboard
+);
+
+$("backFromReferrals").addEventListener("click", () => {
+  show("settings");
+});
+
 $("copyReferralCode").addEventListener("click", async () => {
   const code = $("referralCode").textContent.trim();
 

@@ -5261,7 +5261,7 @@ async function checkMatchNotifications() {
   let notificationPollTimer = null;
 let notificationPolling = false; 
   
-async function showProfile(user){
+async function showProfile(user, restoreToDiscover = false){
 currentUser=user;
   startOnlinePresence(user).catch(error => {
   console.warn("Online presence could not start:", error);

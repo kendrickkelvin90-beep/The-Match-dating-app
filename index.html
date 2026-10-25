@@ -9497,8 +9497,26 @@ if(event==="SIGNED_IN"&&session&&session.user){
 
 
 (async function init() {
-  await db.auth.getSession();
-  show("welcome", false);
+  try {
+    const { data, error } = await db.auth.getSession();
+    if (error) throw error;
+
+    if (data.session && data.session.user) {
+      const user = data.session.user;
+      const allowed = await enforceOneAccountPerDevice(user);
+
+      if (allowed) {
+        await showProfile(user, true);
+      }
+    } else {
+      currentUser = null;
+      show("welcome", false);
+    }
+  } catch (error) {
+    console.error("Session restore failed:", error);
+    currentUser = null;
+    show("welcome", false);
+  }
 })();
 
 })();

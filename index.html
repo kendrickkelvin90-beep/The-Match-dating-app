@@ -4306,7 +4306,22 @@ $("openAdminDashboardBtn").addEventListener("click", async () => {
 $("openReferrals").addEventListener("click", async () => {
   show("referralsPage");
 });
-$("adminRefreshBtn").addEventListener("click", async () => {
+$("copyReferralCode").addEventListener("click", async () => {
+  const code = $("referralCode").textContent.trim();
+
+  if (!code || code === "Loading...") {
+    alert("Your referral code is not ready yet.");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(code);
+    alert("Referral code copied successfully!");
+  } catch (error) {
+    alert("Could not copy the referral code. Please try again.");
+  }
+});
+  $("adminRefreshBtn").addEventListener("click", async () => {
   if (!(await checkMatchAdmin())) {
     show("settings");
     status("settingsStatus", "Admin access denied.", true);

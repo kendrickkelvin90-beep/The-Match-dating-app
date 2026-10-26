@@ -8372,7 +8372,7 @@ name.appendChild(document.createTextNode(" ❤️"));
         ? p.sexual_roles.join(", ")
         : "Not listed"
     );
-    addProfileDetail("About this member",p.bio || "No description added yet.");
+    addProfileDetail("About this member",sanitizeProfileBio(p.bio) || "No description added yet.");
 
     status("memberProfileStatus","");
   }catch(e){

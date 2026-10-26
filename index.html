@@ -6583,41 +6583,99 @@ if(current.user_id!==currentUser.id){
               console.warn("Could not record Story view:",viewError.message);
             }
 }
-                    viewersInfo.textContent="";
-          viewersInfo.style.display="none";
+                    viewersInfo.textContent = "👁 0 views";
+viewersInfo.style.display =
+  current.user_id === currentUser.id ? "block" : "none";
 
-          if(current.user_id===currentUser.id){
-            viewersInfo.style.display="block";
-            viewersInfo.textContent="Loading viewers...";
+viewersInfo.onclick = async event => {
+  event.stopPropagation();
 
-            const {data:viewRows,error:viewsError}=await db
-              .from("story_views")
-              .select("viewer_id,viewed_at")
-              .eq("story_id",current.id)
-              .order("viewed_at",{ascending:false});
+  const storyToView = memberStories[index];
+  if (!storyToView || storyToView.user_id !== currentUser.id) return;
 
-            if(viewsError){
-              viewersInfo.textContent="Could not load Story viewers.";
-            }else if(!viewRows||viewRows.length===0){
-              viewersInfo.textContent="No views yet.";
-            }else{
-              const viewerIds=[...new Set(viewRows.map(v=>v.viewer_id))];
-              const {data:viewerProfiles,error:viewerProfilesError}=await db
-                .from("profiles")
-                .select("id,display_name")
-                .in("id",viewerIds);
+  viewersInfo.disabled = true;
+  viewersInfo.textContent = "👁 Loading views...";
 
-              if(viewerProfilesError){
-                viewersInfo.textContent="Views: "+viewerIds.length;
-              }else{
-                const viewerNames=new Map((viewerProfiles||[]).map(p=>[
-                  p.id,p.display_name||"The Match member"
-                ]));
-                viewersInfo.textContent="Viewed by ("+viewerIds.length+"): "+
-                  viewerIds.map(id=>viewerNames.get(id)||"The Match member").join(", ");
-              }
-            }
-          }
+  try {
+    const { data: viewRows, error: viewsError } = await db
+      .from("story_views")
+      .select("viewer_id,viewed_at")
+      .eq("story_id", storyToView.id)
+      .order("viewed_at", { ascending: false });
+
+    if (viewsError) throw viewsError;
+
+    const viewerIds = [
+      ...new Set((viewRows || []).map(view => view.viewer_id))
+    ];
+
+    viewersInfo.textContent = "👁 " + viewerIds.length + " views";
+
+    const viewerList = document.createElement("div");
+    viewerList.style.cssText =
+      "position:absolute;left:12px;right:12px;bottom:64px;z-index:20;" +
+      "max-height:45vh;overflow-y:auto;padding:16px;" +
+      "border:1px solid #c9a45e;border-radius:16px;" +
+      "background:#111;color:white;box-sizing:border-box;";
+
+    const title = document.createElement("h3");
+    title.textContent = "Story viewers";
+    title.style.margin = "0 0 12px";
+    viewerList.appendChild(title);
+
+    const closeButton = document.createElement("button");
+    closeButton.type = "button";
+    closeButton.textContent = "Close";
+    closeButton.style.cssText =
+      "float:right;background:#c9a45e;color:#111;border:0;" +
+      "border-radius:18px;padding:6px 12px;font-weight:700;";
+    closeButton.onclick = () => viewerList.remove();
+    title.appendChild(closeButton);
+
+    if (!viewerIds.length) {
+      const empty = document.createElement("p");
+      empty.textContent = "No views yet.";
+      viewerList.appendChild(empty);
+    } else {
+      const { data: profiles, error: profilesError } = await db
+        .from("profiles")
+        .select("id,display_name")
+        .in("id", viewerIds);
+
+      if (profilesError) throw profilesError;
+
+      const profileMap = new Map(
+        (profiles || []).map(profile => [profile.id, profile])
+      );
+
+      viewerIds.forEach(viewerId => {
+        const profile = profileMap.get(viewerId);
+        const row = document.createElement("button");
+        row.type = "button";
+        row.textContent = "👤 " +
+          (profile?.display_name || "The Match member") +
+          " · View profile";
+        row.style.cssText =
+          "display:block;width:100%;text-align:left;padding:12px 4px;" +
+          "border:0;border-bottom:1px solid #333;background:transparent;" +
+          "color:white;font-size:14px;";
+        row.onclick = () => {
+          viewerList.remove();
+          closeStory();
+          openMemberProfile(viewerId);
+        };
+        viewerList.appendChild(row);
+      });
+    }
+
+    overlay.appendChild(viewerList);
+  } catch (error) {
+    viewersInfo.textContent = "👁 Couldn't load views";
+    console.error("Story viewer list failed:", error);
+  } finally {
+    viewersInfo.disabled = false;
+  }
+};
           if(current.media_url){
   const {data,error}=await db.storage
     .from("story-media")

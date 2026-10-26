@@ -9534,11 +9534,11 @@ del.setAttribute("aria-label", "Delete photo");
       grid.appendChild(add);
     }
 
-    status("photoStatus",photos.length+" of 5 photos added.");
+    status("photoStatus",photos.length+" of 7 photos added.");
 
       
-    $("photoFiles").disabled=photos.length>=5;
-    $("uploadPhotos").disabled=photos.length>=5;
+    $("photoFiles").disabled=photos.length>=7;
+    $("uploadPhotos").disabled=photos.length>=7;
 
   }catch(e){
     status("photoStatus","Could not load photos: "+friendly(e),true);

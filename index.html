@@ -5451,6 +5451,13 @@ status("profileStatus","Saving your profile...");
 try{
 let age=Number($("age").value);
 if(age<18||age>120)throw Error("The Match is for adults aged 18 and above.");
+
+if(!$("displayName").value.trim())throw Error("Please enter your display name.");
+if(!$("gender").value.trim())throw Error("Please select your gender identity.");
+if(!$("interest").value.trim())throw Error("Please select who you're interested in.");
+if(!$("city").value.trim())throw Error("Please enter your city.");
+if(!$("bio").value.trim())throw Error("Please tell members a little about yourself.");
+if(!document.querySelector('input[name="sexualRole"]:checked'))throw Error("Please select at least one role.");
 let p={
 id:currentUser.id,
 display_name:$("displayName").value.trim(),

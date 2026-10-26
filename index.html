@@ -6964,29 +6964,118 @@ $("storyMediaFile").onchange = async () => {
   }
 
 
-  const audienceChoice = prompt(
-    "WHO CAN SEE YOUR STORY?\n\nType 1 for Everyone\nType 2 for Your Matches",
-    "1"
-  );
+  
+  const audienceAnswer = await new Promise(resolve => {
+    const overlay = document.createElement("div");
+    overlay.style.cssText =
+      "position:fixed;inset:0;z-index:100000;" +
+      "background:rgba(0,0,0,.82);display:flex;" +
+      "align-items:center;justify-content:center;padding:20px;";
 
-  if (audienceChoice === null) {
-    input.value = "";
-    return;
-  }
+    const card = document.createElement("div");
+    card.style.cssText =
+      "position:relative;width:100%;max-width:390px;" +
+      "padding:26px 20px 20px;border-radius:24px;" +
+      "background:linear-gradient(160deg,#1c1a17,#080808 75%);" +
+      "border:1px solid #c6a15b;color:#fff;";
 
-  const audienceAnswer = audienceChoice.trim();
+    const close = document.createElement("button");
+    close.type = "button";
+    close.textContent = "✕";
+    close.setAttribute("aria-label", "Close story audience selector");
+    close.style.cssText =
+      "position:absolute;right:14px;top:14px;width:38px;" +
+      "height:38px;border-radius:50%;border:1px solid #555;" +
+      "background:#242424;color:#fff;font-size:18px;";
+    close.onclick = () => {
+      overlay.remove();
+      resolve(null);
+    };
 
-  if (audienceAnswer !== "1" && audienceAnswer !== "2") {
-    status(
-      "storiesStatus",
-      "Please choose 1 for Everyone or 2 for Your Matches.",
-      true
+    const heading = document.createElement("h2");
+    heading.textContent = "Who can see your Story?";
+    heading.style.cssText =
+      "font-size:23px;line-height:1.25;margin:0 42px 8px 0;color:#fff;";
+
+    const description = document.createElement("p");
+    description.textContent = "Choose who can view this moment.";
+    description.style.cssText =
+      "font-size:14px;line-height:1.5;color:#bdb8b0;margin:0 0 20px;";
+
+    function makeChoice(icon, titleText, detail, value) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.style.cssText =
+        "display:flex;align-items:center;gap:13px;width:100%;" +
+        "padding:15px 13px;margin:0 0 10px;border-radius:15px;" +
+        "border:1px solid #66532f;background:#211d16;" +
+        "color:#fff;text-align:left;cursor:pointer;";
+
+      const emoji = document.createElement("span");
+      emoji.textContent = icon;
+      emoji.style.fontSize = "24px";
+
+      const textWrap = document.createElement("span");
+      textWrap.style.cssText = "flex:1;";
+
+      const title = document.createElement("strong");
+      title.textContent = titleText;
+      title.style.cssText = "display:block;font-size:15px;";
+
+      const subtitle = document.createElement("small");
+      subtitle.textContent = detail;
+      subtitle.style.cssText =
+        "display:block;color:#bdb8b0;margin-top:4px;line-height:1.4;";
+
+      const arrow = document.createElement("span");
+      arrow.textContent = "›";
+      arrow.style.cssText = "font-size:24px;color:#d8b46b;";
+
+      textWrap.append(title, subtitle);
+      button.append(emoji, textWrap, arrow);
+      button.onclick = () => {
+        overlay.remove();
+        resolve(value);
+      };
+      return button;
+    }
+
+    card.append(
+      close,
+      heading,
+      description,
+      makeChoice(
+        "🌍",
+        "Everyone",
+        "Anyone on The Match can see it",
+        "1"
+      ),
+      makeChoice(
+        "❤️",
+        "Your Matches",
+        "Only your matches can see it",
+        "2"
+      )
     );
+
+    overlay.appendChild(card);
+    overlay.addEventListener("click", event => {
+      if (event.target === overlay) {
+        overlay.remove();
+        resolve(null);
+      }
+    });
+
+    document.body.appendChild(overlay);
+  });
+
+  if (audienceAnswer === null) {
     input.value = "";
     return;
   }
 
-  const storyAudience = audienceAnswer === "2" ? "matches" : "everyone";
+  const storyAudience =
+    audienceAnswer === "2" ? "matches" : "everyone";
 
   const caption = prompt("Add a caption for this Story (optional, maximum 500 characters):");
   if (caption === null) {

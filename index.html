@@ -5666,13 +5666,7 @@ if (Array.isArray(p.sexual_roles) && p.sexual_roles.length) {
   detailsPanel.appendChild(roles);
 }
 
-if (p.bio) {
-  const bio = document.createElement("p");
-  bio.className = "small";
-  bio.textContent = p.bio;
-  bio.style.cssText = "font-size:14px;line-height:1.6;margin:8px 0;";
-  detailsPanel.appendChild(bio);
-}
+pass.style.cssText="flex:1;min-width:0;min-height:48px;border-radius:15px;border:1px solid #51452f;background:#17140f;color:#e5c782;font-size:15px;font-weight:800;";
 
 detailsToggle.onclick = () => {
   const expanded = detailsPanel.style.display !== "none";

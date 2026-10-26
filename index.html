@@ -8330,21 +8330,50 @@ name.appendChild(document.createTextNode(" ❤️"));
         photo.style.cssText =
           "width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:16px;background:#171116;cursor:pointer;";
 
-        photo.onclick = () => {
-          const viewer = document.createElement("div");
-          viewer.style.cssText =
-            "position:fixed;inset:0;z-index:99999;background:#000f;display:flex;align-items:center;justify-content:center;padding:16px;";
+        
+photo.onclick = () => {
+  const viewer = document.createElement("div");
+  viewer.setAttribute("role", "dialog");
+  viewer.setAttribute("aria-modal", "true");
+  viewer.setAttribute("aria-label", "Enlarged profile photo");
+  viewer.style.cssText =
+    "position:fixed;inset:0;z-index:99999;background:#000f;" +
+    "display:flex;align-items:center;justify-content:center;padding:16px;";
 
-          const enlarged = document.createElement("img");
-          enlarged.src = photoUrl;
-          enlarged.alt = photo.alt;
-          enlarged.style.cssText =
-            "max-width:100%;max-height:90vh;object-fit:contain;border-radius:12px;";
+  const enlarged = document.createElement("img");
+  enlarged.src = photoUrl;
+  enlarged.alt = photo.alt;
+  enlarged.style.cssText =
+    "max-width:100%;max-height:85vh;object-fit:contain;border-radius:12px;";
 
-          viewer.appendChild(enlarged);
-          viewer.onclick = () => viewer.remove();
-          document.body.appendChild(viewer);
-        };
+  const closeButton = document.createElement("button");
+  closeButton.type = "button";
+  closeButton.textContent = "✕";
+  closeButton.setAttribute("aria-label", "Close photo");
+  closeButton.style.cssText =
+    "position:absolute;top:18px;right:18px;width:46px;height:46px;" +
+    "border:1px solid #555;border-radius:50%;background:#222;color:white;" +
+    "font-size:25px;cursor:pointer;z-index:2;";
+
+  const closeViewer = () => {
+    viewer.remove();
+    document.removeEventListener("keydown", handlePhotoKey);
+  };
+
+  const handlePhotoKey = event => {
+    if (event.key === "Escape") closeViewer();
+  };
+
+  closeButton.onclick = closeViewer;
+  viewer.onclick = closeViewer;
+  enlarged.onclick = event => event.stopPropagation();
+
+  viewer.appendChild(enlarged);
+  viewer.appendChild(closeButton);
+  document.body.appendChild(viewer);
+  document.addEventListener("keydown", handlePhotoKey);
+  closeButton.focus();
+};
 
         gallery.appendChild(photo);
       });

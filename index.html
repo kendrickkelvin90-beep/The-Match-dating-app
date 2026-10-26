@@ -7656,6 +7656,38 @@ $("appThemeSelect").addEventListener("change", event => {
 show("profile");
 };
   
+$("enablePushNotifications").addEventListener("click", () => {
+  const statusEl = $("pushNotificationStatus");
+
+  if (!("Notification" in window)) {
+    statusEl.textContent =
+      "Your browser does not support notifications. Please try Chrome.";
+    return;
+  }
+
+  if (Notification.permission === "denied") {
+    statusEl.textContent =
+      "Notifications are blocked. Open Chrome site settings for The Match and allow notifications.";
+    return;
+  }
+
+  statusEl.textContent = "Opening notification prompt...";
+
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  window.OneSignalDeferred.push(async function (OneSignal) {
+    try {
+      await OneSignal.Slidedown.promptPush();
+      statusEl.textContent =
+        "If no prompt appeared, check your Chrome notification settings.";
+    } catch (error) {
+      console.error("OneSignal prompt error:", error);
+      statusEl.textContent =
+        "Could not open the prompt. Please try again.";
+    }
+  });
+});
+
+  
 $("openDiscoveryPreferencesTop").addEventListener("click", () => {
   loadDiscoveryPreferences();
   show("discoveryPreferencesPage");

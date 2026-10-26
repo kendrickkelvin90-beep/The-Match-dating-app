@@ -5475,12 +5475,26 @@ async function loadNearby(){
 
 
 
-    const {data:myLikes,error:myLikesError}=await db.from("likes")
-      .select("liked_id").eq("liker_id",currentUser.id);
-    if(myLikesError)throw myLikesError;
+    const { data: myLikes, error: myLikesError } = await db
+  .from("likes")
+  .select("liked_id")
+  .eq("liker_id", currentUser.id);
 
-    const alreadyLiked=new Set((myLikes||[]).map(x=>x.liked_id));
-    people=people.filter(p=>!alreadyLiked.has(p.id));
+if (myLikesError) throw myLikesError;
+
+const { data: myPasses, error: myPassesError } = await db
+  .from("profile_passes")
+  .select("passed_id")
+  .eq("passer_id", currentUser.id);
+
+if (myPassesError) throw myPassesError;
+
+const alreadyLiked = new Set((myLikes || []).map(x => x.liked_id));
+const alreadyPassed = new Set((myPasses || []).map(x => x.passed_id));
+
+people = people.filter(p =>
+  !alreadyLiked.has(p.id) && !alreadyPassed.has(p.id)
+);
 
     if(!people.length){
       status("discoverStatus","No new profiles to show right now.");

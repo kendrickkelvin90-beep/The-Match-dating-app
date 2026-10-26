@@ -5357,6 +5357,150 @@ function showReferralToast() {
     toast.style.opacity = "1";
   });
 }
+
+async function enforceVerificationGracePeriod(user) {
+  try {
+    const { data: profile, error } = await db
+      .from("profiles")
+      .select("is_verified,verification_level,verification_grace_started_at")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!profile) return true;
+
+    const verified =
+      profile.is_verified === true ||
+      ["basic", "enhanced"].includes(
+        profile.verification_level || "none"
+      );
+
+    if (verified) {
+      if (profile.verification_grace_started_at) {
+        await db.from("profiles")
+          .update({ verification_grace_started_at: null })
+          .eq("id", user.id);
+      }
+      return true;
+    }
+
+    let startedAt = profile.verification_grace_started_at;
+
+    if (!startedAt) {
+      startedAt = new Date().toISOString();
+
+      const { error: startError } = await db.from("profiles")
+        .update({ verification_grace_started_at: startedAt })
+        .eq("id", user.id);
+
+      if (startError) throw startError;
+    }
+
+    const elapsedMs = Date.now() - new Date(startedAt).getTime();
+    const daysLeft = Math.max(
+      0,
+      14 - Math.ceil(elapsedMs / 86400000)
+    );
+
+    if (elapsedMs >= 14 * 86400000) {
+      await db.auth.signOut();
+      currentUser = null;
+      approxLocation = null;
+      show("welcome", false);
+
+      alert(
+        "Your 14-day verification grace period has ended. " +
+        "Please sign in again and complete profile verification."
+      );
+
+      return false;
+    }
+
+    try {
+      const { data: recent } = await db.from("notifications")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("type", "verification_reminder")
+        .gte(
+          "created_at",
+          new Date(Date.now() - 3 * 86400000).toISOString()
+        )
+        .limit(1);
+
+      if (!recent || recent.length === 0) {
+        await db.from("notifications").insert({
+          user_id: user.id,
+          type: "verification_reminder",
+          title: "Verify your Match profile 🛡️",
+          body:
+            "Please verify your profile within " +
+            daysLeft +
+            " day(s) to keep using The Match."
+        });
+      }
+    } catch (noticeError) {
+      console.warn(
+        "Verification reminder could not be saved:",
+        noticeError
+      );
+    }
+
+    if (!sessionStorage.getItem("matchVerificationReminderShown")) {
+      sessionStorage.setItem("matchVerificationReminderShown", "1");
+
+      const overlay = document.createElement("div");
+      overlay.style.cssText =
+        "position:fixed;inset:0;z-index:12000;background:#000b;" +
+        "display:flex;align-items:center;justify-content:center;padding:18px;";
+
+      const card = document.createElement("div");
+      card.style.cssText =
+        "width:100%;max-width:400px;padding:24px;border-radius:18px;" +
+        "background:#171117;border:1px solid #673047;color:#fff;" +
+        "font-family:Arial,sans-serif;";
+
+      const heading = document.createElement("h2");
+      heading.textContent = "Verify your profile 🛡️";
+      heading.style.color = "#ff6b98";
+
+      const message = document.createElement("p");
+      message.textContent =
+        "Your profile is not verified yet. You have " +
+        daysLeft +
+        " day(s) left in your 14-day grace period. " +
+        "Free and Premium members are both included.";
+      message.style.lineHeight = "1.6";
+
+      const verify = document.createElement("button");
+      verify.textContent = "Go to verification";
+      verify.style.cssText =
+        "width:100%;padding:12px;border:0;border-radius:10px;" +
+        "background:#ff416d;color:#fff;font-weight:bold;margin-top:10px;";
+      verify.onclick = () => {
+        overlay.remove();
+        show("verificationPage");
+        loadVerificationStatus();
+      };
+
+      const later = document.createElement("button");
+      later.textContent = "Continue for now";
+      later.style.cssText =
+        "width:100%;padding:12px;border:1px solid #673047;" +
+        "border-radius:10px;background:transparent;color:#fff;margin-top:8px;";
+      later.onclick = () => overlay.remove();
+
+      card.append(heading, message, verify, later);
+      overlay.appendChild(card);
+      document.body.appendChild(overlay);
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Verification grace-period check failed:", error);
+    // Do not lock members out if the verification check itself fails.
+    return true;
+  }
+}
  
 async function showProfile(user, restoreToDiscover = false){
 currentUser=user;

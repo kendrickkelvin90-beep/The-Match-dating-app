@@ -8929,7 +8929,9 @@ $("sendChatMessage").addEventListener("click", async () => {
       }
 
       const del=document.createElement("button");
-      del.textContent="Delete photo";
+      del.textContent = "✕";
+del.title = "Delete photo";
+del.setAttribute("aria-label", "Delete photo");
       del.onclick=async()=>{
         if(!confirm("Delete this photo?"))return;
         const {error}=await db.storage.from("profile-photos")

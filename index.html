@@ -5970,7 +5970,7 @@ if (Array.isArray(p.sexual_roles) && p.sexual_roles.length) {
 if (p.bio) {
   const bio = document.createElement("p");
   bio.className = "small";
-  bio.textContent = p.bio;
+  bio.textContent = sanitizeProfileBio(p.bio);
   bio.style.cssText =
     "font-size:14px;line-height:1.6;margin:8px 0;";
   detailsPanel.appendChild(bio);
@@ -6362,7 +6362,7 @@ if (p.is_verified || p.verification_level === "basic" ||
       if(p.bio){
         const bio=document.createElement("p");
         bio.className="small";
-        bio.textContent=p.bio;
+        bio.textContent=sanitizeProfileBio(p.bio);
         card.appendChild(bio);
       }
 

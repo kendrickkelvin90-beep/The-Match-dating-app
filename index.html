@@ -5295,6 +5295,7 @@ function showReferralToast() {
   message.textContent =
     "🎁 Invite friends to The Match and share your referral link!";
   message.style.cssText =
+  
     "font-size:15px;line-height:1.5;font-weight:600;";
 
   const close = document.createElement("button");
@@ -5344,6 +5345,7 @@ let fallback=(email.split("@")[0]||"Member")
 .replace(/\b\w/g,ch=>ch.toUpperCase());
 $("greeting").textContent="Welcome, "+fallback+"! ❤️";
 show("profile");
+  setTimeout(showReferralToast, 1200);
 $("bottomNavigation").querySelector('[data-page="discover"]').classList.add("active");
   await loadNearby();
 await loadStories();

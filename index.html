@@ -5638,6 +5638,11 @@ if(!$("gender").value.trim())throw Error("Please select your gender identity.");
 if(!$("interest").value.trim())throw Error("Please select who you're interested in.");
 if(!$("city").value.trim())throw Error("Please enter your city.");
 if(!$("bio").value.trim())throw Error("Please tell members a little about yourself.");
+  
+if(profileBioHasPhoneNumber($("bio").value)) {
+  throw Error("For your safety, phone numbers are not allowed in profile details. Please remove the number and save again.");
+}
+
 if(!document.querySelector('input[name="sexualRole"]:checked'))throw Error("Please select at least one role.");
 let p={
 id:currentUser.id,

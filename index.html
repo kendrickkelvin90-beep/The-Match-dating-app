@@ -5518,6 +5518,22 @@ async function enforceVerificationGracePeriod(user) {
   }
 }
  
+function sanitizeProfileBio(value) {
+  return String(value || "").replace(
+    /(?:\+?\d[\d\s().-]{7,}\d)/g,
+    match => {
+      const digits = match.replace(/\D/g, "");
+      return digits.length >= 9 && digits.length <= 15
+        ? "[phone number removed]"
+        : match;
+    }
+  );
+}
+
+function profileBioHasPhoneNumber(value) {
+  return sanitizeProfileBio(value) !== String(value || "");
+}
+
 async function showProfile(user, restoreToDiscover = false){
 currentUser=user;
   if (!(await enforceVerificationGracePeriod(user))) return;

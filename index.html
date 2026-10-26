@@ -6641,9 +6641,28 @@ if(current.user_id!==currentUser.id){
               console.warn("Could not record Story view:",viewError.message);
             }
 }
-                    viewersInfo.textContent = "👁 0 views";
+                    
+viewersInfo.textContent = "👁 Loading views...";
 viewersInfo.style.display =
   current.user_id === currentUser.id ? "block" : "none";
+
+if (current.user_id === currentUser.id) {
+  db.from("story_views")
+    .select("viewer_id", { count: "exact", head: true })
+    .eq("story_id", current.id)
+    .then(({ count, error }) => {
+      if (error) {
+        console.warn("Could not load Story view count:", error.message);
+        viewersInfo.textContent = "👁 Views unavailable";
+        return;
+      }
+
+      if (memberStories[index]?.id === current.id) {
+        viewersInfo.textContent = "👁 " + (count ?? 0) + " views";
+      }
+    });
+}
+
 
 viewersInfo.onclick = async event => {
   event.stopPropagation();

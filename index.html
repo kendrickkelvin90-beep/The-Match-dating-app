@@ -4741,23 +4741,7 @@ async function enforceOneAccountPerDevice(user) {
   // Allow authenticated users to continue into the app.
   return true;
 }
-  const { data, error } = await db.rpc("claim_account_device", {
-    p_device_id: getMatchDeviceId()
-  });
-
-  if (error) throw error;
-
-  if (data !== true) {
-    await db.auth.signOut();
-    currentUser = null;
-    show("welcome");
-    status("authStatus", "This device is already linked to another account.", true);
-    return false;
-  }
-
-  localStorage.setItem(MATCH_DEVICE_ACCOUNT_KEY, user.id);
-  return true;
-}
+  
 $("authForm").onsubmit = async e => {
   e.preventDefault();
 

@@ -4764,7 +4764,10 @@ $("authForm").onsubmit = async e => {
   try {
     const email = $("email").value.trim();
     const password = $("password").value;
-
+if (!authCaptchaToken) {
+  status("authStatus", "Please complete the CAPTCHA check first.", true);
+  return;
+  }
     const result = loginMode
   ? await db.auth.signInWithPassword({
       email,

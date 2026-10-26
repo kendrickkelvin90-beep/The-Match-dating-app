@@ -4737,6 +4737,10 @@ function getMatchDeviceId() {
 }
 
 async function enforceOneAccountPerDevice(user) {
+  // Device-based account blocking disabled.
+  // Allow authenticated users to continue into the app.
+  return true;
+}
   const { data, error } = await db.rpc("claim_account_device", {
     p_device_id: getMatchDeviceId()
   });

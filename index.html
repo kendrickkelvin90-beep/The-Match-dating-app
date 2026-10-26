@@ -5722,12 +5722,16 @@ pass.onclick = async () => {
     const { error } = await db
       .from("profile_passes")
       .upsert(
-        {
-          passer_id: currentUser.id,
-passed_id: p.id,
-created_at: new Date().toISOString()
-        { onConflict: "passer_id,passed_id" }
-      );
+        
+          
+{
+  passer_id: currentUser.id,
+  passed_id: p.id,
+  created_at: new Date().toISOString()
+},
+{ onConflict: "passer_id,passed_id" }
+
+      
 
     if (error) throw error;
 

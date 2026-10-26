@@ -3313,7 +3313,14 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
   <p class="small">The Match helps people connect, but members are responsible for their own interactions and decisions. Features may change as the app improves.</p>
 </div>
    
-    
+    <div class="member-card" id="pushNotificationSettingsCard">
+  <h3>🔔 Push notifications</h3>
+  <p class="small">Turn on notifications to hear about new activity in The Match.</p>
+  <button class="btn primary" id="enablePushNotifications" type="button">
+    Turn on notifications
+  </button>
+  <p class="small" id="pushNotificationStatus" role="status" aria-live="polite"></p>
+    </div>
   <div class="member-card">
     <h3>👤 Account</h3>
     <button class="btn secondary" id="settingsEditProfile" type="button">Edit my profile</button>

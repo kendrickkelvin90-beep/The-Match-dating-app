@@ -2628,6 +2628,15 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
 }
 
 </style>
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "c5deb192-536d-4498-ba4b-b973d50d5ba6",
+    });
+  });
+</script>
 </head>
 <body>
 <div id="stars" aria-hidden="true"></div>

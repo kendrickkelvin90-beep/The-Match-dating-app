@@ -9496,18 +9496,9 @@ $("newPasswordForm").classList.remove("hidden");
 status("resetStatus","Choose a new password below.");
 show("reset");
 }
-if(event==="SIGNED_IN"&&session&&session.user){
-  enforceOneAccountPerDevice(session.user)
-    .then(allowed => {
-      if (allowed) showProfile(session.user, true);
-    })
-    .catch(error => {
-      console.error("Device lock check failed:", error);
-      status("authStatus", "Could not verify this device. Please sign in again.", true);
-      db.auth.signOut();
-      show("welcome");
-    });
-}
+// SIGNED_IN is handled by the login form after its device check.
+// Avoid duplicate device claims during sign-in.
+// Session restoration is handled by init() below.
 });
 
 

@@ -3886,12 +3886,38 @@ const pageHistory = [];
 let currentPage = null;
   let hasRequiredProfilePhoto = false;
 
+function profileDetailsAreComplete() {
+  const age = Number($("age")?.value);
+  const displayName = $("displayName")?.value?.trim();
+  const gender = $("genderIdentity")?.value?.trim();
+  const interest = $("interestedIn")?.value?.trim();
+  const city = $("city")?.value?.trim();
+  const bio = $("bio")?.value?.trim();
+  const roles = document.querySelectorAll(
+    'input[name="sexualRole"]:checked'
+  );
+
+  const invalid = ["", "not listed", "unknown", "member"];
+
+  return (
+    age >= 18 &&
+    age <= 120 &&
+    !invalid.includes((displayName || "").toLowerCase()) &&
+    !invalid.includes((gender || "").toLowerCase()) &&
+    !invalid.includes((interest || "").toLowerCase()) &&
+    !invalid.includes((city || "").toLowerCase()) &&
+    !!bio &&
+    bio.toLowerCase() !== "no description added yet." &&
+    roles.length > 0
+  );
+}
+
 function show(id, addToHistory = true) {
   const publicPages = ["welcome", "onboarding", "auth", "reset"];
 
   if (
     currentUser &&
-    !hasRequiredProfilePhoto &&
+    (!hasRequiredProfilePhoto || !profileDetailsAreComplete()) &&
     id !== "profile" &&
     !publicPages.includes(id)
   ) {

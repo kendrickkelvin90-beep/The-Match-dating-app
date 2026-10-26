@@ -5536,7 +5536,9 @@ photoBox.style.cssText="position:relative;width:100%;height:clamp(420px,62vh,620
 
 const photo=document.createElement("img");
 photo.alt="Profile photo";
-photo.style.cssText="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:1;";
+
+photo.style.cssText="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center center;background:#050505;display:none;z-index:1;";
+
 photoBox.appendChild(photo);
       
 const photoFallback=document.createElement("div");

@@ -5724,8 +5724,8 @@ pass.onclick = async () => {
       .upsert(
         {
           passer_id: currentUser.id,
-          passed_id: p.id
-        },
+passed_id: p.id,
+created_at: new Date().toISOString()
         { onConflict: "passer_id,passed_id" }
       );
 

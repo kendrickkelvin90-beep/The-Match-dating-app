@@ -9566,9 +9566,9 @@ async function uploadSelectedPhotos(){
     return;
   }
 
-  if(files.length>5-existing.length){
-    status("photoStatus","You can add only "+(5-existing.length)+" more photo(s).",true);
-    return;
+  if(files.length>7-existing.length){
+  status("photoStatus","You can add only "+(7-existing.length)+" more photo(s).",true);
+  return;
   }
 
   const btn=$("uploadPhotos");

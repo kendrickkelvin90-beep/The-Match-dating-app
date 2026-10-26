@@ -6652,11 +6652,74 @@ $("storyMediaFile").onchange = async () => {
         status("storiesStatus", premiumLimitMessage, true);
         input.value = "";
 
-        if (confirm(
-          premiumLimitMessage + " View Premium plans now?"
-        )) {
+                const premiumOverlay = document.createElement("div");
+        premiumOverlay.style.cssText =
+          "position:fixed;inset:0;z-index:100000;" +
+          "display:flex;align-items:center;justify-content:center;" +
+          "padding:22px;background:rgba(0,0,0,.78);";
+
+        const premiumCard = document.createElement("div");
+        premiumCard.style.cssText =
+          "position:relative;width:100%;max-width:380px;" +
+          "padding:26px 22px 22px;border-radius:24px;" +
+          "background:linear-gradient(160deg,#201b13,#101010 65%);" +
+          "border:1px solid #66502d;color:#fff;" +
+          "box-shadow:0 20px 70px rgba(0,0,0,.65);";
+
+        const closePremium = document.createElement("button");
+        closePremium.type = "button";
+        closePremium.textContent = "✕";
+        closePremium.style.cssText =
+          "position:absolute;right:14px;top:14px;" +
+          "width:36px;height:36px;border-radius:50%;" +
+          "border:1px solid #51483b;background:#29251e;" +
+          "color:#fff;font-size:19px;";
+        closePremium.onclick = () => premiumOverlay.remove();
+
+        const crown = document.createElement("div");
+        crown.textContent = "♛";
+        crown.style.cssText =
+          "font-size:38px;color:#d8b36a;margin-bottom:10px;";
+
+        const title = document.createElement("h2");
+        title.textContent = "Unlock more Stories";
+        title.style.cssText =
+          "font-size:25px;line-height:1.2;margin:0 35px 10px 0;" +
+          "color:#f0d49b;";
+
+        const message = document.createElement("p");
+        message.textContent =
+          "You've shared your free Story in the last 24 hours. " +
+          "Upgrade to Premium to share more moments.";
+        message.style.cssText =
+          "font-size:15px;line-height:1.6;color:#d1cbc1;margin:0 0 22px;";
+
+        const explorePremium = document.createElement("button");
+        explorePremium.type = "button";
+        explorePremium.textContent = "Explore Premium";
+        explorePremium.style.cssText =
+          "width:100%;padding:14px;border:0;border-radius:13px;" +
+          "background:linear-gradient(90deg,#b58b45,#f0d18a);" +
+          "color:#17120a;font-weight:800;font-size:16px;";
+        explorePremium.onclick = () => {
+          premiumOverlay.remove();
           show("premium");
-        }
+        };
+
+        const later = document.createElement("button");
+        later.type = "button";
+        later.textContent = "Maybe later";
+        later.style.cssText =
+          "width:100%;padding:13px;margin-top:10px;" +
+          "border:1px solid #51483b;border-radius:13px;" +
+          "background:transparent;color:#eee;font-size:15px;";
+        later.onclick = () => premiumOverlay.remove();
+
+        premiumCard.append(
+          closePremium, crown, title, message, explorePremium, later
+        );
+        premiumOverlay.appendChild(premiumCard);
+        document.body.appendChild(premiumOverlay);
 
               return;
       }

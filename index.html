@@ -7994,16 +7994,89 @@ $("messageMemberButton").onclick = async () => {
         !!membership.premium_until &&
         new Date(membership.premium_until).getTime() > Date.now();
 
-      if (!isPremium) {
-        const subscribe = confirm(
-          "This member is not your match.\n\n" +
-          "Subscribe to Premium to message this member. " +
-          "Would you like to view Premium plans now?"
-        );
+          if (!isMatch) {
+      const { data: membership, error: membershipError } = await db
+        .from("premium_memberships")
+        .select("premium_until")
+        .eq("user_id", currentUser.id)
+        .maybeSingle();
 
-        if (subscribe) show("premium");
+      if (membershipError) throw membershipError;
+
+      const isPremium = !!membership &&
+        !!membership.premium_until &&
+        new Date(membership.premium_until).getTime() > Date.now();
+
+      if (!isPremium) {
+        const overlay = document.createElement("div");
+        overlay.style.cssText =
+          "position:fixed;inset:0;z-index:100000;" +
+          "display:flex;align-items:center;justify-content:center;" +
+          "padding:22px;background:rgba(0,0,0,.8);";
+
+        const card = document.createElement("div");
+        card.style.cssText =
+          "position:relative;width:100%;max-width:380px;" +
+          "padding:26px 22px 22px;border-radius:24px;" +
+          "background:linear-gradient(160deg,#211b12,#101010 70%);" +
+          "border:1px solid #66502d;color:#fff;" +
+          "box-shadow:0 20px 70px rgba(0,0,0,.65);";
+
+        const close = document.createElement("button");
+        close.type = "button";
+        close.textContent = "✕";
+        close.setAttribute("aria-label", "Close Premium prompt");
+        close.style.cssText =
+          "position:absolute;right:14px;top:14px;width:36px;height:36px;" +
+          "border:1px solid #51483b;border-radius:50%;" +
+          "background:#29251e;color:white;font-size:18px;";
+        close.onclick = () => overlay.remove();
+
+        const icon = document.createElement("div");
+        icon.textContent = "♛";
+        icon.style.cssText =
+          "font-size:38px;color:#d8b36a;margin-bottom:10px;";
+
+        const title = document.createElement("h2");
+        title.textContent = "Unlock more connections";
+        title.style.cssText =
+          "font-size:24px;line-height:1.25;margin:0 35px 12px 0;" +
+          "color:#f0d49b;";
+
+        const message = document.createElement("p");
+        message.textContent =
+          "You haven't matched with this member yet. " +
+          "Premium lets you message members before a mutual match.";
+        message.style.cssText =
+          "font-size:15px;line-height:1.6;color:#d1cbc1;margin:0 0 22px;";
+
+        const upgrade = document.createElement("button");
+        upgrade.type = "button";
+        upgrade.textContent = "Explore Premium";
+        upgrade.style.cssText =
+          "width:100%;padding:14px;border:0;border-radius:13px;" +
+          "background:linear-gradient(90deg,#b58b45,#f0d18a);" +
+          "color:#17120a;font-weight:800;font-size:16px;";
+        upgrade.onclick = () => {
+          overlay.remove();
+          show("premium");
+        };
+
+        const cancel = document.createElement("button");
+        cancel.type = "button";
+        cancel.textContent = "Cancel";
+        cancel.style.cssText =
+          "width:100%;padding:13px;margin-top:10px;" +
+          "border:1px solid #51483b;border-radius:13px;" +
+          "background:transparent;color:#eee;font-size:15px;";
+        cancel.onclick = () => overlay.remove();
+
+        card.append(close, icon, title, message, upgrade, cancel);
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
         return;
       }
+          }
     }
 
     const memberName = $("memberProfileName")

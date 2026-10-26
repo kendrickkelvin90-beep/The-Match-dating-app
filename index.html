@@ -5272,7 +5272,56 @@ async function checkMatchNotifications() {
 
   let notificationPollTimer = null;
 let notificationPolling = false; 
-  
+ 
+function showReferralToast() {
+  if (!currentUser || sessionStorage.getItem("referralToastDismissed")) {
+    return;
+  }
+
+  if (document.getElementById("referralToast")) return;
+
+  const toast = document.createElement("div");
+  toast.id = "referralToast";
+  toast.style.cssText =
+    "position:fixed;top:12px;left:12px;right:12px;" +
+    "z-index:4000;max-width:440px;margin:0 auto;" +
+    "padding:18px;background:#171717;color:#fff;" +
+    "border:1px solid #c9a45e;border-radius:16px;" +
+    "box-shadow:0 12px 35px #0009;text-align:center;" +
+    "transform:translateY(-150%);opacity:0;" +
+    "transition:transform .65s ease,opacity .65s ease;";
+
+  const message = document.createElement("div");
+  message.textContent =
+    "🎁 Invite friends to The Match and share your referral link!";
+  message.style.cssText =
+    "font-size:15px;line-height:1.5;font-weight:600;";
+
+  const close = document.createElement("button");
+  close.type = "button";
+  close.textContent = "✕";
+  close.setAttribute("aria-label", "Dismiss referral notification");
+  close.style.cssText =
+    "display:block;margin:14px auto 0;padding:8px 24px;" +
+    "border:1px solid #555;border-radius:20px;" +
+    "background:#292929;color:#fff;font-weight:700;";
+
+  close.onclick = () => {
+    sessionStorage.setItem("referralToastDismissed", "1");
+    toast.style.transform = "translateY(-150%)";
+    toast.style.opacity = "0";
+    setTimeout(() => toast.remove(), 700);
+  };
+
+  toast.append(message, close);
+  document.body.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    toast.style.transform = "translateY(0)";
+    toast.style.opacity = "1";
+  });
+}
+ 
 async function showProfile(user, restoreToDiscover = false){
 currentUser=user;
   startOnlinePresence(user).catch(error => {

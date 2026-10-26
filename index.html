@@ -6349,6 +6349,20 @@ reactionsInfo.onclick = async event => {
           overlay.querySelectorAll("video").forEach(video => video.pause());
           overlay.remove();
         };
+                const closeStoryButton = document.createElement("button");
+        closeStoryButton.type = "button";
+        closeStoryButton.textContent = "✕";
+        closeStoryButton.setAttribute("aria-label", "Close Story");
+        closeStoryButton.style.cssText =
+          "position:absolute;top:max(12px,env(safe-area-inset-top));" +
+          "left:12px;z-index:100000;width:42px;height:42px;" +
+          "border:1px solid #555;border-radius:50%;" +
+          "background:rgba(20,20,20,.85);color:white;" +
+          "font-size:24px;font-weight:bold;";
+        closeStoryButton.onclick = event => {
+          event.stopPropagation();
+          closeStory();
+        };
 
         overlay.addEventListener("touchstart", event => {
           touchStartY = event.changedTouches[0].clientY;

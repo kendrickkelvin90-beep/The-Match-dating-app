@@ -5484,17 +5484,19 @@ if (myLikesError) throw myLikesError;
 
 const { data: myPasses, error: myPassesError } = await db
   .from("profile_passes")
-  .select("passed_id")
-  .eq("passer_id", currentUser.id);
+  .select("passed_id,created_at")
+  .eq("passer_id", currentUser.id)
+  .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
 if (myPassesError) throw myPassesError;
 
 const alreadyLiked = new Set((myLikes || []).map(x => x.liked_id));
-const alreadyPassed = new Set((myPasses || []).map(x => x.passed_id));
+const recentlyPassed = new Set((myPasses || []).map(x => x.passed_id));
 
 people = people.filter(p =>
-  !alreadyLiked.has(p.id) && !alreadyPassed.has(p.id)
+  !alreadyLiked.has(p.id) && !recentlyPassed.has(p.id)
 );
+
 
     if(!people.length){
       status("discoverStatus","No new profiles to show right now.");

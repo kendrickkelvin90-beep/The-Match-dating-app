@@ -3088,25 +3088,27 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
   <p class="status" id="matchesStatus"></p>
   <button class="btn secondary" id="backFromMatches" type="button">Back to Discover</button>
 </section>
- <section class="panel hidden" id="matchCelebrationPage" style="text-align:center;padding:24px 16px;">
-  <h1 style="font-size:34px;">💖 It's a Match!</h1>
-  <p>You both liked each other!</p>
+ <section class="panel hidden" id="matchCelebrationPage" style="position:fixed;inset:0;z-index:9998;box-sizing:border-box;width:100%;height:100dvh;min-height:100vh;margin:0;padding:calc(env(safe-area-inset-top) + 28px) 20px calc(env(safe-area-inset-bottom) + 22px);overflow-y:auto;display:flex;flex-direction:column;justify-content:center;text-align:center;background:radial-gradient(ellipse at 50% 42%,rgba(201,164,94,.13),transparent 55%),#050505;color:#fff;">
+  <div style="font-size:13px;letter-spacing:4px;color:#d2ad68;font-weight:700;margin-bottom:18px;">THE MATCH</div>
+  <h1 style="font-size:clamp(34px,8vw,54px);line-height:1.08;font-weight:850;letter-spacing:-1.5px;margin:0 0 12px;color:#f5f0e6;">It's a <span style="color:#d8b46b;">Match!</span></h1>
+  <p style="font-size:clamp(16px,4vw,21px);color:#d9d4cc;margin:0 0 28px;">You both liked each other!</p>
 
-  <div style="display:flex;justify-content:center;align-items:center;gap:14px;margin:24px 0;">
-    <div>
-      <img id="matchMyPhoto" alt="Your photo" style="width:100px;height:100px;border-radius:50%;object-fit:cover;">
-      <p id="matchMyName">You</p>
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin:0 0 28px;width:100%;">
+    <div style="min-width:0;border:2px solid #d8b46b;border-radius:18px;overflow:hidden;background:#121212;">
+      <img id="matchMyPhoto" alt="Your photo" style="display:block;width:100%;aspect-ratio:1/1;object-fit:cover;background:#111;">
+      <p id="matchMyName" style="margin:0;padding:12px 4px;font-weight:700;font-size:15px;overflow-wrap:anywhere;">You</p>
     </div>
-    <div style="font-size:28px;">❤️</div>
-    <div>
-      <img id="matchOtherPhoto" alt="Match photo" style="width:100px;height:100px;border-radius:50%;object-fit:cover;">
-      <p id="matchOtherName">Your match</p>
+    <div style="min-width:0;border:2px solid #d8b46b;border-radius:18px;overflow:hidden;background:#121212;">
+      <img id="matchOtherPhoto" alt="Match photo" style="display:block;width:100%;aspect-ratio:1/1;object-fit:cover;background:#111;">
+      <p id="matchOtherName" style="margin:0;padding:12px 4px;font-weight:700;font-size:15px;overflow-wrap:anywhere;">Your match</p>
     </div>
   </div>
 
-  <button class="btn primary" id="matchSendMessage" type="button">💬 Send a Message</button>
-  <button class="btn secondary" id="matchContinueDiscover" type="button" style="margin-top:10px;">Continue Discovering</button>
-  <p class="status" id="matchCelebrationStatus"></p>
+  <div style="margin-top:auto;display:grid;gap:12px;">
+    <button class="btn primary" id="matchSendMessage" type="button" style="width:100%;min-height:58px;border-radius:999px;background:linear-gradient(110deg,#b98b35,#e3c477);color:#100d07;font-weight:800;">Send a Message</button>
+    <button class="btn secondary" id="matchContinueDiscover" type="button" style="width:100%;min-height:58px;border-radius:999px;border:1px solid #c9a45e;color:#e0bd79;background:#080808;font-weight:800;">Continue Discovering</button>
+    <p class="status" id="matchCelebrationStatus" style="margin:4px 0 0;"></p>
+  </div>
  </section>
   <section class="panel hidden" id="memberProfilePage">
   <h2 id="memberProfileName">Member Profile ❤️</h2>

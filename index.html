@@ -5666,7 +5666,14 @@ if (Array.isArray(p.sexual_roles) && p.sexual_roles.length) {
   detailsPanel.appendChild(roles);
 }
 
-pass.style.cssText="flex:1;min-width:0;min-height:48px;border-radius:15px;border:1px solid #51452f;background:#17140f;color:#e5c782;font-size:15px;font-weight:800;";
+if (p.bio) {
+  const bio = document.createElement("p");
+  bio.className = "small";
+  bio.textContent = p.bio;
+  bio.style.cssText =
+    "font-size:14px;line-height:1.6;margin:8px 0;";
+  detailsPanel.appendChild(bio);
+}
 
 detailsToggle.onclick = () => {
   const expanded = detailsPanel.style.display !== "none";
@@ -5679,8 +5686,13 @@ detailsToggle.onclick = () => {
 
 card.append(detailsToggle, detailsPanel);
 
+const actions = document.createElement("div");
+actions.style.cssText =
+  "display:flex;justify-content:center;align-items:center;" +
+  "gap:12px;margin:8px 12px 12px;padding:0;";
+
       
-const actions=document.createElement("div");
+
 actions.style.cssText="display:flex;justify-content:center;align-items:center;gap:18px;margin:20px 4px 8px;padding:4px 0;";
 
 const pass=document.createElement("button");

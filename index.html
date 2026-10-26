@@ -5714,9 +5714,34 @@ pass.type="button";
 pass.className="btn secondary";
 pass.textContent="✕  Pass";
 pass.style.cssText="flex:1;min-height:54px;border-radius:18px;border:1px solid #55404a;background:#171116;color:#fff;font-size:16px;font-weight:800;box-shadow:0 5px 16px #0005;";
-pass.onclick=async()=>{
-  personIndex++;
-  await showPerson();
+pass.onclick = async () => {
+  pass.disabled = true;
+  like.disabled = true;
+
+  try {
+    const { error } = await db
+      .from("profile_passes")
+      .upsert(
+        {
+          passer_id: currentUser.id,
+          passed_id: p.id
+        },
+        { onConflict: "passer_id,passed_id" }
+      );
+
+    if (error) throw error;
+
+    personIndex++;
+    await showPerson();
+  } catch (error) {
+    status(
+      "discoverStatus",
+      "Couldn't save your pass: " + friendly(error),
+      true
+    );
+    pass.disabled = false;
+    like.disabled = false;
+  }
 };
 
 const like=document.createElement("button");

@@ -5845,14 +5845,51 @@ async function loadPremiumNearby(){
       return;
     }
 
-    if(!approxLocation){
-      status(
-        "nearbyMembersStatus",
-        "Please enable location sharing in your profile to find nearby members.",
-        true
-      );
-      return;
-    }
+        if (!approxLocation) {
+      if (!navigator.geolocation) {
+        status(
+          "nearbyMembersStatus",
+          "Location isn't supported here. Open The Match in Chrome and check location permissions.",
+          true
+        );
+        return;
+      }
+
+      status("nearbyMembersStatus", "Requesting your location...");
+
+      try {
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            resolve,
+            reject,
+            { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 }
+          );
+        });
+
+        approxLocation = {
+          latitude: Math.round(position.coords.latitude * 100) / 100,
+          longitude: Math.round(position.coords.longitude * 100) / 100
+        };
+
+        const { error: saveLocationError } = await db
+          .from("profiles")
+          .update({
+            latitude: approxLocation.latitude,
+            longitude: approxLocation.longitude,
+            location_sharing: true
+          })
+          .eq("id", currentUser.id);
+
+        if (saveLocationError) throw saveLocationError;
+      } catch (error) {
+        const message = error.code === 1
+          ? "Location permission was denied. Allow location for The Match in your browser or phone settings, then tap Refresh again."
+          : "Couldn't get your location. Check your GPS and browser permission, then try again.";
+
+        status("nearbyMembersStatus", message, true);
+        return;
+      }
+        }
 
     status("nearbyMembersStatus","Finding nearby members...");
 

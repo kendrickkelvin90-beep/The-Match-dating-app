@@ -6238,16 +6238,30 @@ async function loadStories(){
       return;
     }
 
-    const userIds=[...new Set(stories.map(s=>s.user_id))];
-    const {data:profiles,error:profileError}=await db
+        const userIds = [...new Set(stories.map(s => s.user_id))];
+
+    const { data: profiles, error: profileError } = await db
       .from("profiles")
       .select("id,display_name")
-      .in("id",userIds);
+      .in("id", userIds);
 
-    if(profileError)throw profileError;
+    if (profileError) throw profileError;
 
-    const names=new Map((profiles||[]).map(p=>[
-      p.id,p.display_name||"The Match member"
+    const names = new Map((profiles || []).map(p => [
+      p.id, p.display_name || "The Match member"
+    ]));
+
+    const { data: profilePhotos, error: photosError } = await db
+      .from("profile_photos")
+      .select("user_id,storage_path")
+      .in("user_id", userIds)
+      .eq("position", 0);
+
+    if (photosError) throw photosError;
+
+    const avatars = new Map((profilePhotos || []).map(p => [
+      p.user_id,
+      db.storage.from("profile-photos").getPublicUrl(p.storage_path).data.publicUrl
     ]));
 
     

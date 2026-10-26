@@ -2893,10 +2893,11 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
   <label><input type="checkbox" name="sexualRole" value="Prefer not to say"> Prefer not to say</label>
 </div>
 
-  <label for="city">City (optional)</label>
-<input id="city" maxlength="100" placeholder="Your city">
-<label for="bio">About you (optional)</label>
-<textarea id="bio" maxlength="1000" placeholder="Share a little about yourself"></textarea>
+    <label for="city">City *</label>
+  <input id="city" maxlength="100" required placeholder="Your city">
+
+  <label for="bio">About you *</label>
+  <textarea id="bio" maxlength="1000" required placeholder="Share a little about yourself"></textarea>
 <button class="btn secondary" id="locationButton" type="button">📍 Turn on nearby discovery</button>
 <p class="small" id="locationHelp">Location is optional. If enabled, rounded coordinates are saved for approximate distance.</p>
 <button class="btn primary" id="saveProfile" type="submit">Save profile and discover</button>

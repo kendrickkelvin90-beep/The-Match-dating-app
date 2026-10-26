@@ -5504,6 +5504,7 @@ async function enforceVerificationGracePeriod(user) {
  
 async function showProfile(user, restoreToDiscover = false){
 currentUser=user;
+  if (!(await enforceVerificationGracePeriod(user))) return;
   startOnlinePresence(user).catch(error => {
   console.warn("Online presence could not start:", error);
 });

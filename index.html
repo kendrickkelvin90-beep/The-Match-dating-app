@@ -5633,26 +5633,57 @@ distance.textContent=p._distance==null?"Distance unavailable":distanceLabel(p._d
 distance.style.cssText="font-size:14px;color:#ff9abb;margin:0 4px 8px;";
 card.appendChild(distance);
 
-const details=document.createElement("p");
-details.className="small";
-details.textContent=[p.age?String(p.age):"",p.gender_identity||"",p.city||""].filter(Boolean).join(" · ");
-details.style.cssText="font-size:14px;line-height:1.5;color:#d9cbd1;margin:0 4px 10px;";
-card.appendChild(details);
+const detailsToggle = document.createElement("button");
+detailsToggle.type = "button";
+detailsToggle.textContent = "⌄  View details";
+detailsToggle.setAttribute("aria-expanded", "false");
+detailsToggle.style.cssText =
+  "display:flex;align-items:center;justify-content:center;gap:8px;" +
+  "width:calc(100% - 24px);margin:4px 12px 10px;padding:11px;" +
+  "border:1px solid #51452f;border-radius:14px;" +
+  "background:#17140f;color:#e5c782;font-size:14px;font-weight:700;";
 
+const detailsPanel = document.createElement("div");
+detailsPanel.style.cssText =
+  "display:none;padding:4px 14px 12px;color:#ddd;";
 
-      if(Array.isArray(p.sexual_roles)&&p.sexual_roles.length){
-        const roles=document.createElement("p");
-        roles.className="small";
-        roles.textContent="🏳️‍🌈 Role: "+p.sexual_roles.join(", ");
-        card.appendChild(roles);
-      }
+const details = document.createElement("p");
+details.className = "small";
+details.textContent = [
+  p.age ? String(p.age) : "",
+  p.gender_identity || "",
+  p.city || ""
+].filter(Boolean).join(" · ");
+details.style.cssText =
+  "font-size:14px;line-height:1.5;margin:4px 0 10px;";
+detailsPanel.appendChild(details);
 
-      if(p.bio){
-        const bio=document.createElement("p");
-        bio.className="small";
-        bio.textContent=p.bio;
-        card.appendChild(bio);
-      }
+if (Array.isArray(p.sexual_roles) && p.sexual_roles.length) {
+  const roles = document.createElement("p");
+  roles.className = "small";
+  roles.textContent = "🏳️‍🌈 Role: " + p.sexual_roles.join(", ");
+  roles.style.cssText = "font-size:14px;margin:8px 0;";
+  detailsPanel.appendChild(roles);
+}
+
+if (p.bio) {
+  const bio = document.createElement("p");
+  bio.className = "small";
+  bio.textContent = p.bio;
+  bio.style.cssText = "font-size:14px;line-height:1.6;margin:8px 0;";
+  detailsPanel.appendChild(bio);
+}
+
+detailsToggle.onclick = () => {
+  const expanded = detailsPanel.style.display !== "none";
+  detailsPanel.style.display = expanded ? "none" : "block";
+  detailsToggle.textContent = expanded
+    ? "⌄  View details"
+    : "⌃  Hide details";
+  detailsToggle.setAttribute("aria-expanded", String(!expanded));
+};
+
+card.append(detailsToggle, detailsPanel);
 
       
 const actions=document.createElement("div");

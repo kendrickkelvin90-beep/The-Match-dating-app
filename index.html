@@ -3317,6 +3317,13 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
 
 <section class="panel hidden" id="messages">
   <h2>💬 Your Private Messages</h2>
+  <button
+  class="btn secondary"
+  type="button"
+  onclick="loadMyConversations()"
+>
+  ↻ Refresh conversations
+  </button>
   <p class="small">Chat privately with your mutual matches.</p>
   <button class="btn secondary" type="button" onclick="show('premium')">Want to know if your message has been seen? Tap here to explore Premium.</button>
 
@@ -3868,6 +3875,7 @@ let chatRefreshTimer = null;
   let chatRefreshInProgress = false;
   let conversationListRefreshTimer = null;
 let conversationListRefreshInProgress = false;
+  let conversationListLoadInProgress = false;
   
 
 let onlinePresenceChannel = null;
@@ -5588,7 +5596,24 @@ async function enforceVerificationGracePeriod(user) {
       0,
       14 - Math.ceil(elapsedMs / 86400000)
     );
+const gracePeriodExpired = elapsedMs >= 14 * 86400000;
 
+
+if (gracePeriodExpired) {
+  try {
+    const { error: notificationError } = await db.rpc(
+      "notify_admins_verification_grace_expired"
+    );
+
+    if (notificationError) throw notificationError;
+  } catch (notificationError) {
+    console.error(
+      "Supervisor expiry notification failed:",
+      notificationError
+    );
+  }
+}
+                                         
     if (elapsedMs >= 14 * 86400000) {
       await db.auth.signOut();
       currentUser = null;
@@ -9052,7 +9077,9 @@ async function loadMyMatches(){
  
 
 async function loadMyConversations() {
-  if (!currentUser) return;
+  if (!currentUser || conversationListLoadInProgress) return;
+
+  conversationListLoadInProgress = true;
 
   
   const list = $("conversationList");
@@ -9070,6 +9097,7 @@ async function loadMyConversations() {
       "The messages panel did not load correctly. Please refresh the page and try again.",
       true
     );
+        conversationListLoadInProgress = false;
     return;
   }
 
@@ -9103,7 +9131,7 @@ const mutualResults = await Promise.all(
   })
 );
 
-const mutualIds = mutualResults.filter(Boolean);
+const mutualIds = [...new Set(mutualResults.filter(Boolean))];
 
 const interactionResults = await Promise.all(
   mutualIds.map(async id => {
@@ -9121,7 +9149,7 @@ const interactionResults = await Promise.all(
 mutualIds.splice(
   0,
   mutualIds.length,
-  ...interactionResults.filter(Boolean)
+  ...new Set(interactionResults.filter(Boolean))
 );
 
 
@@ -9301,12 +9329,14 @@ if (photoPath) {
     );
 
     await updateAccountCounts();
-  } catch (e) {
+    } catch (e) {
     status(
       "messagesStatus",
       "Could not load conversations: " + friendly(e),
       true
     );
+  } finally {
+    conversationListLoadInProgress = false;
   }
 }
 function refreshMessagesAfterReconnect() {
@@ -9331,45 +9361,11 @@ function refreshMessagesAfterReconnect() {
     return;
   }
 
-  if (currentPage === "messages") {
-    if (conversationListRefreshInProgress) return;
-
-    conversationListRefreshInProgress = true;
-
-    loadMyConversations()
-      .catch(error =>
-        console.error("Reconnect preview refresh failed:", error)
-      )
-      .finally(() => {
-        conversationListRefreshInProgress = false;
-      });
-  }
+  
 }  
   
-if (!conversationListRefreshTimer) {
-  conversationListRefreshTimer = setInterval(() => {
-    if (
-      !currentUser ||
-      document.hidden ||
-      currentPage !== "messages" ||
-      conversationListRefreshInProgress
-    ) {
-      return;
-    }
-
-    if (chatRefreshInProgress) return;
-
-    conversationListRefreshInProgress = true;
-
-    loadMyConversations()
-      .catch(error => {
-        console.error("Conversation preview refresh failed:", error);
-      })
-      .finally(() => {
-        conversationListRefreshInProgress = false;
-      });
-  }, 12000);
-}
+// Conversation list refresh is manual only.
+// The user refreshes the list using the Refresh button.
 
 window.addEventListener("online", refreshMessagesAfterReconnect);
 

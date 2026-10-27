@@ -3803,7 +3803,9 @@ window.addEventListener("unhandledrejection", function(event) {
     (reason && reason.stack ? reason.stack : "No stack trace available");
 
   console.error(message, reason || "");
+  if (window.__matchAdminDebugEnabled) {
   alert(message);
+  }
 });
 
 const SITE_URL=window.location.origin;

@@ -5997,6 +5997,7 @@ if (!people.length && (preferredLocation || maxDistance < 500)) {
   });
 
   if (expandedError) throw expandedError;
+  expandedCandidateCount = (expandedData || []).length;
 
   people = (expandedData || []).map(p => ({
     ...p,

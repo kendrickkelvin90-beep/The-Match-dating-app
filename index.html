@@ -10310,6 +10310,42 @@ $("settingsDeleteAccount").onclick = async () => {
   }
 };
 
+$("chatMediaButton").onclick = () => {
+  if (!currentUser) {
+    status("messagesStatus", "Please sign in to send media.", true);
+    return;
+  }
+
+  $("chatMediaInput").click();
+};
+
+$("chatMediaInput").onchange = () => {
+  const file = $("chatMediaInput").files?.[0];
+  if (!file) return;
+
+  const isImage = file.type.startsWith("image/");
+  const isVideo = file.type.startsWith("video/");
+
+  if (!isImage && !isVideo) {
+    status("messagesStatus", "Please choose a photo or video.", true);
+    $("chatMediaInput").value = "";
+    return;
+  }
+
+  const maxSize = 25 * 1024 * 1024;
+
+  if (file.size > maxSize) {
+    status("messagesStatus", "Please choose a file smaller than 25 MB.", true);
+    $("chatMediaInput").value = "";
+    return;
+  }
+
+  status(
+    "messagesStatus",
+    `${isImage ? "Photo" : "Video"} selected: ${file.name}. Media sending is the next step.`
+  );
+};
+
 db.auth.onAuthStateChange((event,session)=>{
 if(event==="PASSWORD_RECOVERY"){
 $("resetForm").classList.add("hidden");

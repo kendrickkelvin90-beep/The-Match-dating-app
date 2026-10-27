@@ -9637,6 +9637,7 @@ data.reverse();
         const mine = message.sender_id === me;
         const bubble = document.createElement("div");
         bubble.dataset.messageId = message.id;
+        bubble.dataset.createdAt = message.created_at;
         bubble.className = mine ? "chat-bubble sent" : "chat-bubble received";
 
         Object.assign(bubble.style,{

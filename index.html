@@ -10884,27 +10884,6 @@ previewButton.textContent = "➤ Send media";
 }
 };
 
-const previewButton = $("chatMediaPreviewSend");
-const composerToggle = $("chatViewOnce");
-
-previewButton.disabled = true;
-previewButton.textContent = "Sending...";
-
-try {
-composerToggle.checked = $("chatViewOncePreview").checked;
-
-// Hide preview before invoking the existing send handler.
-$("chatMediaPreview").classList.add("hidden");
-$("sendChatMessage").click();
-
-// The existing handler owns the upload and displays its status.
-// Do not clear the selected file here.
-
-} finally {
-previewButton.disabled = false;
-previewButton.textContent = "➤ Send media";
-}
-};
 
 db.auth.onAuthStateChange((event,session)=>{
 if(event==="PASSWORD_RECOVERY"){

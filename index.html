@@ -9308,7 +9308,42 @@ if (photoPath) {
     );
   }
 }
+function refreshMessagesAfterReconnect() {
+  if (!currentUser || document.hidden) return;
 
+  if (
+    activeChatUserId &&
+    !$("chatPage").classList.contains("hidden")
+  ) {
+    if (chatRefreshInProgress) return;
+
+    chatRefreshInProgress = true;
+
+    loadChatMessages()
+      .catch(error =>
+        console.error("Reconnect chat refresh failed:", error)
+      )
+      .finally(() => {
+        chatRefreshInProgress = false;
+      });
+
+    return;
+  }
+
+  if (currentPage === "messages") {
+    if (conversationListRefreshInProgress) return;
+
+    conversationListRefreshInProgress = true;
+
+    loadMyConversations()
+      .catch(error =>
+        console.error("Reconnect preview refresh failed:", error)
+      )
+      .finally(() => {
+        conversationListRefreshInProgress = false;
+      });
+  }
+      }
 async function openChat(userId, userName){
   if(!currentUser || !userId || userId === currentUser.id){
     status("messagesStatus","Unable to open this conversation.",true);

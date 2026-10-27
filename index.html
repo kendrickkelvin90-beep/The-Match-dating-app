@@ -9344,6 +9344,40 @@ function refreshMessagesAfterReconnect() {
       });
   }
 }  
+  
+if (!conversationListRefreshTimer) {
+  conversationListRefreshTimer = setInterval(() => {
+    if (
+      !currentUser ||
+      document.hidden ||
+      currentPage !== "messages" ||
+      conversationListRefreshInProgress
+    ) {
+      return;
+    }
+
+    if (chatRefreshInProgress) return;
+
+    conversationListRefreshInProgress = true;
+
+    loadMyConversations()
+      .catch(error => {
+        console.error("Conversation preview refresh failed:", error);
+      })
+      .finally(() => {
+        conversationListRefreshInProgress = false;
+      });
+  }, 12000);
+}
+
+window.addEventListener("online", refreshMessagesAfterReconnect);
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    refreshMessagesAfterReconnect();
+  }
+});
+
 async function openChat(userId, userName){
   if(!currentUser || !userId || userId === currentUser.id){
     status("messagesStatus","Unable to open this conversation.",true);

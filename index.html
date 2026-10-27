@@ -9331,19 +9331,7 @@ function refreshMessagesAfterReconnect() {
     return;
   }
 
-  if (currentPage === "messages") {
-    if (conversationListRefreshInProgress) return;
-
-    conversationListRefreshInProgress = true;
-
-    loadMyConversations()
-      .catch(error =>
-        console.error("Reconnect preview refresh failed:", error)
-      )
-      .finally(() => {
-        conversationListRefreshInProgress = false;
-      });
-  }
+  
 }  
   
 // Conversation list refresh is manual only.

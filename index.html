@@ -9311,12 +9311,14 @@ if (photoPath) {
     );
 
     await updateAccountCounts();
-  } catch (e) {
+    } catch (e) {
     status(
       "messagesStatus",
       "Could not load conversations: " + friendly(e),
       true
     );
+  } finally {
+    conversationListLoadInProgress = false;
   }
 }
 function refreshMessagesAfterReconnect() {

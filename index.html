@@ -9956,6 +9956,13 @@ const viewOnceToggle = $("chatViewOnce");
 
 const body = input.value.trim();
 const file = fileInput?.files?.[0];
+  if (file) {
+  status(
+    "chatPageStatus",
+    "Please use the media preview's Send media button to send your photo or video."
+  );
+  return;
+  }
 
 if (button.disabled) return;
 

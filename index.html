@@ -9128,7 +9128,7 @@ const interactionResults = await Promise.all(
 mutualIds.splice(
   0,
   mutualIds.length,
-  ...interactionResults.filter(Boolean)
+  ...new Set(interactionResults.filter(Boolean))
 );
 
 

@@ -6558,11 +6558,6 @@ try {
 
     let people=peopleData||[];
 
-let people = (peopleData || []).filter(p => {
-  const refreshedAt = Date.parse(p.location_updated_at || "");
-  return Number.isFinite(refreshedAt) &&
-    refreshedAt >= locationFreshnessCutoff;
-});
 
     for(let i=people.length-1;i>=0;i--){
       const {data:canInteract,error:checkError}=await db.rpc(

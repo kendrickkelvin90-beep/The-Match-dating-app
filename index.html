@@ -10978,6 +10978,13 @@ if (previewStatus) {
   } catch (error) {
     console.error("Media preview send failed:", error);
 
+    if (previewStatus) {
+      previewStatus.textContent =
+        "Could not send: " + (error?.message || friendly(error));
+    }
+
+    // Keep the preview open so the user can retry.
+
     // Keep the preview open so the user can retry.
     if (!saved && storagePath) {
       try {

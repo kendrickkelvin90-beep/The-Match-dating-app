@@ -3230,7 +3230,21 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
 </div>
 
 </div>
-
+<!-- Black-and-gold media preview --><div id="chatMediaPreview" class="hidden" role="dialog" aria-modal="true" aria-label="Preview media">
+  <header class="chat-media-preview-header">
+    <button type="button" id="chatMediaPreviewClose" aria-label="Cancel media">✕</button>
+    <strong>Preview media</strong>
+    <span></span>
+  </header>  <div id="chatMediaPreviewStage">
+    <p id="chatMediaPreviewPlaceholder">Your selected photo or video will appear here.</p>
+  </div>  <label class="chat-media-preview-once" for="chatViewOncePreview">
+    <input type="checkbox" id="chatViewOncePreview">
+    <strong>View Once</strong>
+    <span>Optional</span>
+  </label>  <button type="button" id="chatMediaPreviewSend">
+    ➤ Send media
+  </button>
+</div>
 <div id="chatEmojiPicker" class="hidden" role="group" aria-label="Emoji picker">
   <button type="button" data-chat-emoji="😀">😀</button>
   <button type="button" data-chat-emoji="😂">😂</button>

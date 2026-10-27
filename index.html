@@ -5598,46 +5598,22 @@ async function enforceVerificationGracePeriod(user) {
     );
 const gracePeriodExpired = elapsedMs >= 14 * 86400000;
 
+
 if (gracePeriodExpired) {
   try {
-    const { data: admins, error: adminError } = await db
-      .from("app_admins")
-      .select("user_id");
+    const { error: notificationError } = await db.rpc(
+      "notify_admins_verification_grace_expired"
+    );
 
-    if (adminError) throw adminError;
-
-    for (const admin of admins || []) {
-      const { data: existing, error: existingError } = await db
-        .from("notifications")
-        .select("id")
-        .eq("user_id", admin.user_id)
-        .eq("type", "verification_grace_expired")
-        .eq("related_user_id", user.id)
-        .limit(1);
-
-      if (existingError) throw existingError;
-
-      if (!existing || existing.length === 0) {
-        const { error: notificationError } = await db
-          .from("notifications")
-          .insert({
-            user_id: admin.user_id,
-            type: "verification_grace_expired",
-            title: "Verification grace period expired",
-            body: "A member has reached the end of their 14-day verification grace period. Review their verification status.",
-            related_user_id: user.id
-          });
-
-        if (notificationError) throw notificationError;
-      }
-    }
+    if (notificationError) throw notificationError;
   } catch (notificationError) {
     console.error(
       "Supervisor expiry notification failed:",
       notificationError
     );
   }
-  }                                         
+}
+                                         
     if (elapsedMs >= 14 * 86400000) {
       await db.auth.signOut();
       currentUser = null;

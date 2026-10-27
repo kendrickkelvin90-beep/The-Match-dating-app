@@ -9662,7 +9662,75 @@ if(mine){
 }
 
 bubble.append(body,timestamp);
-        chat.appendChild(bubble);
+
+if (message.unsent_at) {
+body.textContent = "This message was unsent.";
+body.style.fontStyle = "italic";
+timestamp.replaceChildren();
+} else {
+const optionsButton = document.createElement("button");
+optionsButton.type = "button";
+optionsButton.textContent = "⋮";
+optionsButton.setAttribute("aria-label", "Message options");
+optionsButton.title = "Message options";
+Object.assign(optionsButton.style, {
+display: "block",
+marginTop: "6px",
+marginLeft: "auto",
+padding: "2px 8px",
+border: "1px solid #d0aa63",
+borderRadius: "8px",
+background: "#17130d",
+color: "#f5e3bd",
+cursor: "pointer"
+});
+
+optionsButton.onclick = async () => {
+const choices = mine
+? "Choose an option:\n1. Copy message\n2. Delete for me\n3. Unsend for everyone"
+: "Choose an option:\n1. Copy message\n2. Delete for me";
+
+const choice = prompt(choices);
+if (!choice) return;
+
+try {
+  if (choice === "1") {
+    await navigator.clipboard.writeText(message.body);
+    status("chatPageStatus", "Message copied.");
+  } else if (choice === "2") {
+    if (!confirm("Delete this message from your chat?")) return;
+
+    const { error } = await db.rpc("hide_chat_message_for_me", {
+      p_message_id: message.id
+    });
+    if (error) throw error;
+
+    bubble.remove();
+    status("chatPageStatus", "Message deleted from your chat.");
+  } else if (choice === "3" && mine) {
+    if (!confirm("Unsend this message for everyone? This cannot be undone.")) return;
+
+    const { error } = await db.rpc("unsend_chat_message", {
+      p_message_id: message.id
+    });
+    if (error) throw error;
+
+    await loadChatMessages();
+    status("chatPageStatus", "Message unsent for everyone.");
+  } else {
+    status("chatPageStatus", "Please choose a valid option.", true);
+  }
+} catch (err) {
+  console.error("Message action failed:", err);
+  status("chatPageStatus", err.message || "Could not complete that action.", true);
+}
+
+};
+
+bubble.appendChild(optionsButton);
+}
+
+chat.appendChild(bubble);
       });
     }
 // Display private photo and video attachments in the conversation.

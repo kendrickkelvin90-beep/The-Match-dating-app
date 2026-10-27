@@ -9995,7 +9995,7 @@ for (const media of mediaRows || []) {
   timestamp.style.textAlign = "right";
   bubble.appendChild(timestamp);
 
-  chat.appendChild(bubble);
+  insertBubbleInTimeOrder(bubble, media.created_at);
         }
     chat.scrollTop = chat.scrollHeight;
     status("chatPageStatus","Conversation loaded.");

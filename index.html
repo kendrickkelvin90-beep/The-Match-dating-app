@@ -9249,9 +9249,15 @@ const firstPhotoByUser = new Map();
         "font-size:13px;opacity:.8;overflow:hidden;" +
         "text-overflow:ellipsis;white-space:nowrap;";
 
+      
       preview.textContent = conversation.latest
-        ? (conversation.latest.body || "New message")
+        ? (
+            conversation.latest.sender_id === me
+              ? "You: " + (conversation.latest.body || "New message")
+              : (conversation.latest.body || "New message")
+          )
         : "No messages yet";
+
 
       details.append(name, age, preview);
       button.append(avatar, details);

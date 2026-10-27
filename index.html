@@ -9069,8 +9069,9 @@ async function loadMyConversations() {
   }
 
   list.replaceChildren();
-  activeConversation.classList.add("hidden");
-  status("messagesStatus", "Loading your conversations...");
+activeConversation.classList.add("hidden");
+list.appendChild(activeConversation);
+status("messagesStatus", "Loading your conversations...");
 
 
   try {

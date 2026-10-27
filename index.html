@@ -5157,16 +5157,16 @@ status("profileStatus","Location is not supported by this browser. You can still
 status("profileStatus","Requesting location permission...");
 navigator.geolocation.getCurrentPosition(pos=>{
 approxLocation={
-latitude:Math.round(pos.coords.latitude*100)/100,
-longitude:Math.round(pos.coords.longitude*100)/100
-};
+  latitude:pos.coords.latitude,
+  longitude:pos.coords.longitude
+}; 
 $("locationButton").textContent="📍 Nearby discovery is on";
-$("locationHelp").textContent="Your location is rounded to roughly 1 km precision before saving.";
+$("locationHelp").textContent="Your device location is used to calculate nearby distances.";
 status("profileStatus","Location enabled. Save your profile to continue.");
 },err=>{
 approxLocation=null;
 status("profileStatus",err.code===1?"Permission denied. You can still save your profile without location.":"Could not get location. Check your phone settings and try again.",true);
-},{enableHighAccuracy:false,timeout:12000,maximumAge:300000});
+},{enableHighAccuracy:true,timeout:20000,maximumAge:0});
 };
 
 
@@ -5859,6 +5859,7 @@ bio:$("bio").value.trim(),
 latitude:approxLocation?approxLocation.latitude:null,
 longitude:approxLocation?approxLocation.longitude:null,
 location_sharing:!!approxLocation,
+location_updated_at:approxLocation?new Date().toISOString():null,
 updated_at:new Date().toISOString()
 };
 let r=await db.from("profiles").upsert(p,{onConflict:"id"});
@@ -5980,7 +5981,7 @@ people = people.filter(p =>
 );
 
 
-    
+  
 if (!people.length && (preferredLocation || maxDistance < 500)) {
   status("discoverStatus", "Searching a wider area...");
 
@@ -5997,6 +5998,7 @@ if (!people.length && (preferredLocation || maxDistance < 500)) {
   });
 
   if (expandedError) throw expandedError;
+  
 
   people = (expandedData || []).map(p => ({
     ...p,
@@ -6063,6 +6065,7 @@ if (!people.length) {
   );
   return;
 }
+  
 
 
     let personIndex=0;
@@ -6492,57 +6495,59 @@ async function loadPremiumNearby(){
       return;
     }
 
-        if (!approxLocation) {
+      
       if (!navigator.geolocation) {
-        status(
-          "nearbyMembersStatus",
-          "Location isn't supported here. Open The Match in Chrome and check location permissions.",
-          true
-        );
-        return;
+  status(
+    "nearbyMembersStatus",
+    "Location isn't supported here. Open The Match in Chrome and check location permissions.",
+    true
+  );
+  return;
+}
+
+status("nearbyMembersStatus", "Getting your current GPS location...");
+
+try {
+  const position = await new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      resolve,
+      reject,
+      {
+        enableHighAccuracy: true,
+        timeout: 20000,
+        maximumAge: 0
       }
+    );
+  });
 
-      status("nearbyMembersStatus", "Requesting your location...");
+  approxLocation = {
+    latitude: position.coords.latitude,
+    longitude: position.coords.longitude
+  };
 
-      try {
-        const position = await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(
-            resolve,
-            reject,
-            { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 }
-          );
-        });
+  const { error: saveLocationError } = await db
+    .from("profiles")
+    .update({
+  latitude: approxLocation.latitude,
+  longitude: approxLocation.longitude,
+  location_sharing: true,
+  location_updated_at: new Date().toISOString()
+})
+    .eq("id", currentUser.id);
 
-        approxLocation = {
-          latitude: Math.round(position.coords.latitude * 100) / 100,
-          longitude: Math.round(position.coords.longitude * 100) / 100
-        };
+  if (saveLocationError) throw saveLocationError;
+} catch (error) {
+  const message = error.code === 1
+    ? "Location permission was denied. Allow location for The Match in your browser or phone settings, then try again."
+    : "Couldn't get your current location. Check your GPS and browser permission, then try again.";
 
-        const { error: saveLocationError } = await db
-          .from("profiles")
-          .update({
-            latitude: approxLocation.latitude,
-            longitude: approxLocation.longitude,
-            location_sharing: true
-          })
-          .eq("id", currentUser.id);
-
-        if (saveLocationError) throw saveLocationError;
-      } catch (error) {
-        const message = error.code === 1
-          ? "Location permission was denied. Allow location for The Match in your browser or phone settings, then tap Refresh again."
-          : "Couldn't get your location. Check your GPS and browser permission, then try again.";
-
-        status("nearbyMembersStatus", message, true);
-        return;
-      }
-        }
-
+  status("nearbyMembersStatus", message, true);
+  return;
+  }
     status("nearbyMembersStatus","Finding nearby members...");
-
     const {data:peopleData,error}=await db
       .from("profiles")
-      .select("id,display_name,age,gender_identity,city,bio,latitude,longitude,location_sharing,is_verified,verification_level")
+      .select("id,display_name,age,gender_identity,city,bio,latitude,longitude,location_sharing,location_updated_at,is_verified,verification_level")
       .neq("id",currentUser.id)
       .eq("location_sharing",true)
       .not("latitude","is",null)
@@ -6552,6 +6557,7 @@ async function loadPremiumNearby(){
     if(error)throw error;
 
     let people=peopleData||[];
+
 
     for(let i=people.length-1;i>=0;i--){
       const {data:canInteract,error:checkError}=await db.rpc(
@@ -6563,15 +6569,27 @@ async function loadPremiumNearby(){
       if(canInteract!==true)people.splice(i,1);
     }
 
-    people=people.map(p=>({
-      ...p,
-      _distance:kmBetween(
-        approxLocation.latitude,
-        approxLocation.longitude,
-        p.latitude,
-        p.longitude
-      )
-    })).sort((a,b)=>a._distance-b._distance);
+        const nearbyRadiusKm = 50;
+
+    people = people.map(p => {
+      const latitude = Number(p.latitude);
+      const longitude = Number(p.longitude);
+
+      return {
+        ...p,
+        _distance: kmBetween(
+          approxLocation.latitude,
+          approxLocation.longitude,
+          latitude,
+          longitude
+        )
+      };
+    })
+    .filter(p =>
+      Number.isFinite(p._distance) &&
+      p._distance <= nearbyRadiusKm
+    )
+    .sort((a, b) => a._distance - b._distance);
 
     if(!people.length){
       status("nearbyMembersStatus","No nearby members are available yet.");

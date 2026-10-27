@@ -9822,12 +9822,12 @@ for (const media of mediaRows || []) {
       fontWeight: "600"
     });
 
-        openButton.onclick = async () => {
+        
+    openButton.onclick = async () => {
       openButton.disabled = true;
       openButton.textContent = "Opening...";
 
       try {
-        // Claim View Once before creating a media access link.
         if (media.view_once && !mine) {
           const { data: claimed, error: claimError } = await db.rpc(
             "claim_view_once_chat_media",
@@ -9863,28 +9863,99 @@ for (const media of mediaRows || []) {
           element.preload = "auto";
         }
 
-        openButton.replaceWith(element);
+        if (!isOnce) {
+          openButton.replaceWith(element);
+          return;
+        }
 
-        if (isOnce) {
-          media.opened_at = new Date().toISOString();
+        media.opened_at = new Date().toISOString();
 
-          const finishViewOnce = () => {
-            if (element.dataset.viewOnceFinished === "true") return;
-            element.dataset.viewOnceFinished = "true";
+        const session = document.createElement("div");
+        session.style.marginTop = "6px";
+        session.appendChild(element);
 
-            if (element._viewOnceTimer) {
-              clearTimeout(element._viewOnceTimer);
+        const actions = document.createElement("div");
+        actions.style.display = "flex";
+        actions.style.gap = "8px";
+        actions.style.marginTop = "8px";
+        actions.style.flexWrap = "wrap";
+
+        const closeButton = document.createElement("button");
+        closeButton.textContent = "Close viewing";
+        closeButton.style.padding = "8px 12px";
+        closeButton.style.borderRadius = "8px";
+
+        const replayButton = document.createElement("button");
+        replayButton.textContent = "Replay video";
+        replayButton.style.padding = "8px 12px";
+        replayButton.style.borderRadius = "8px";
+        replayButton.style.display = "none";
+
+        let finished = false;
+        let photoTimer = null;
+
+        const finishViewOnce = () => {
+          if (finished) return;
+          finished = true;
+
+          if (photoTimer) clearTimeout(photoTimer);
+
+          element.pause?.();
+          element.removeAttribute("src");
+          element.load?.();
+
+          const used = document.createElement("div");
+          used.textContent = "Already opened";
+          used.style.padding = "12px 0";
+          session.replaceWith(used);
+        };
+
+        closeButton.onclick = finishViewOnce;
+
+        if (isImage) {
+          session.appendChild(actions);
+          actions.appendChild(closeButton);
+          photoTimer = setTimeout(finishViewOnce, 10000);
+        } else {
+          replayButton.onclick = async () => {
+            if (finished) return;
+
+            replayButton.style.display = "none";
+
+            try {
+              element.currentTime = 0;
+              await element.play();
+            } catch (err) {
+              console.error("Video replay failed:", err);
+              replayButton.style.display = "inline-block";
             }
-
-            element.pause?.();
-            element.removeAttribute("src");
-            element.load?.();
-
-            const used = document.createElement("div");
-            used.textContent = "Already opened";
-            used.style.padding = "12px 0";
-            element.replaceWith(used);
           };
+
+          element.addEventListener("ended", () => {
+            if (!finished) {
+              replayButton.style.display = "inline-block";
+            }
+          });
+
+          actions.appendChild(replayButton);
+          actions.appendChild(closeButton);
+          session.appendChild(actions);
+        }
+
+        openButton.replaceWith(session);
+      } catch (err) {
+        console.error("Opening chat media failed:", err);
+        openButton.disabled = false;
+        openButton.textContent = "Try again";
+
+        status(
+          "chatPageStatus",
+          "Could not open media: " + (err.message || friendly(err)),
+          true
+        );
+      }
+    };
+
 
           if (isImage) {
             element._viewOnceTimer = setTimeout(finishViewOnce, 10000);

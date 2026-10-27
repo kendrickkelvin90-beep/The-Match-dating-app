@@ -3787,7 +3787,9 @@ window.addEventListener("error", function(event) {
     return;
   }
 
+  if (window.__matchAdminDebugEnabled) {
   alert(message);
+  }
 });
 
 

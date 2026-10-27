@@ -9505,6 +9505,24 @@ async function loadChatMessages(){
   }
 
     const chat = $("chatMessages");
+  function insertBubbleInTimeOrder(bubble, createdAt) {
+  const messageTime = new Date(createdAt).getTime();
+  bubble.dataset.createdAt = createdAt;
+
+  const nextBubble = Array.from(chat.children).find(node => {
+    const time = node.dataset.createdAt
+      ? new Date(node.dataset.createdAt).getTime()
+      : NaN;
+
+    return Number.isFinite(time) && time > messageTime;
+  });
+
+  if (nextBubble) {
+    chat.insertBefore(bubble, nextBubble);
+  } else {
+    chat.appendChild(bubble);
+  }
+  }
   Object.assign(chat.style,{
     display:"flex",
     flexDirection:"column",

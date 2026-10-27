@@ -3294,6 +3294,26 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
   <p class="status" id="chatPageStatus"></p>
   <button class="btn secondary" id="backFromChatPage" type="button">← Back to Matches</button>
 </section>
+  <!-- Black-and-gold media preview -->
+  <div id="chatMediaPreview" class="hidden" role="dialog" aria-modal="true" aria-label="Preview media">
+  <header class="chat-media-preview-header">
+    <button type="button" id="chatMediaPreviewClose" aria-label="Cancel media">✕</button>
+    <strong>Preview media</strong>
+    <span></span>
+  </header>  <div id="chatMediaPreviewStage">
+    <p id="chatMediaPreviewPlaceholder">Your selected photo or video will appear here.</p>
+  </div>  <label class="chat-media-preview-once" for="chatViewOncePreview">
+    <input type="checkbox" id="chatViewOncePreview">
+    <strong>View Once</strong>
+    <span>Optional</span>
+  </label>
+  <button type="button" id="chatMediaPreviewSend"
+  style="position:relative;z-index:10002;pointer-events:auto;touch-action:manipulation;">
+  ➤ Send media
+</button>
+<p id="chatMediaPreviewStatus" role="status"
+  style="color:#f5e3bd;text-align:center;margin:0;"></p>
+  </div>
 
 <section class="panel hidden" id="messages">
   <h2>💬 Your Private Messages</h2>
@@ -3332,25 +3352,7 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
 </div>
 
 </div>
-<!-- Black-and-gold media preview --><div id="chatMediaPreview" class="hidden" role="dialog" aria-modal="true" aria-label="Preview media">
-  <header class="chat-media-preview-header">
-    <button type="button" id="chatMediaPreviewClose" aria-label="Cancel media">✕</button>
-    <strong>Preview media</strong>
-    <span></span>
-  </header>  <div id="chatMediaPreviewStage">
-    <p id="chatMediaPreviewPlaceholder">Your selected photo or video will appear here.</p>
-  </div>  <label class="chat-media-preview-once" for="chatViewOncePreview">
-    <input type="checkbox" id="chatViewOncePreview">
-    <strong>View Once</strong>
-    <span>Optional</span>
-  </label>
-  <button type="button" id="chatMediaPreviewSend"
-  style="position:relative;z-index:10002;pointer-events:auto;touch-action:manipulation;">
-  ➤ Send media
-</button>
-<p id="chatMediaPreviewStatus" role="status"
-  style="color:#f5e3bd;text-align:center;margin:0;"></p>
-</div>
+
 <div id="chatEmojiPicker" class="hidden" role="group" aria-label="Emoji picker">
   <button type="button" data-chat-emoji="😀">😀</button>
   <button type="button" data-chat-emoji="😂">😂</button>
@@ -9069,8 +9071,9 @@ async function loadMyConversations() {
   }
 
   list.replaceChildren();
-  activeConversation.classList.add("hidden");
-  status("messagesStatus", "Loading your conversations...");
+activeConversation.classList.add("hidden");
+list.appendChild(activeConversation);
+status("messagesStatus", "Loading your conversations...");
 
 
   try {
@@ -9955,6 +9958,13 @@ const viewOnceToggle = $("chatViewOnce");
 
 const body = input.value.trim();
 const file = fileInput?.files?.[0];
+  if (file) {
+  status(
+    "chatPageStatus",
+    "Please use the media preview's Send media button to send your photo or video."
+  );
+  return;
+  }
 
 if (button.disabled) return;
 
@@ -10859,7 +10869,7 @@ $("chatMediaPreviewSend").onclick = async () => {
 const previewStatus = $("chatMediaPreviewStatus");
 
 if (previewStatus) {
-  previewStatus.textContent = "Preparing to send...";
+  previewStatus.textContent = "";
 }
 
 
@@ -10969,6 +10979,13 @@ if (previewStatus) {
 
   } catch (error) {
     console.error("Media preview send failed:", error);
+
+    if (previewStatus) {
+      previewStatus.textContent =
+        "Could not send: " + (error?.message || friendly(error));
+    }
+
+    // Keep the preview open so the user can retry.
 
     // Keep the preview open so the user can retry.
     if (!saved && storagePath) {

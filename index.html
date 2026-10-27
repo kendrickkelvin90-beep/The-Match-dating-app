@@ -9524,7 +9524,7 @@ async function loadChatMessages(){
 
             const {data,error} = await db
       .from("messages")
-      .select("id,sender_id,receiver_id,body,created_at,delivered_at,read_at")
+      .select("id,sender_id,receiver_id,body,created_at,delivered_at,read_at,unsent_at")
       .or("and(sender_id.eq."+me+",receiver_id.eq."+them+"),and(sender_id.eq."+them+",receiver_id.eq."+me+")")
       .order("created_at",{ascending:false})
       .limit(100);

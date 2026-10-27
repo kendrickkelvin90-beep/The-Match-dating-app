@@ -9957,25 +9957,6 @@ for (const media of mediaRows || []) {
     };
 
 
-          if (isImage) {
-            element._viewOnceTimer = setTimeout(finishViewOnce, 10000);
-          } else {
-            element.addEventListener("ended", finishViewOnce, { once: true });
-          }
-        }
-      } catch (err) {
-        console.error("Opening chat media failed:", err);
-        openButton.disabled = false;
-        openButton.textContent = "Try again";
-
-        status(
-          "chatPageStatus",
-          "Could not open media: " + (err.message || friendly(err)),
-          true
-        );
-      }
-    };
-
     bubble.appendChild(openButton);
   }
 

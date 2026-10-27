@@ -9346,30 +9346,8 @@ function refreshMessagesAfterReconnect() {
   }
 }  
   
-if (!conversationListRefreshTimer) {
-  conversationListRefreshTimer = setInterval(() => {
-    if (
-      !currentUser ||
-      document.hidden ||
-      currentPage !== "messages" ||
-      conversationListRefreshInProgress
-    ) {
-      return;
-    }
-
-    if (chatRefreshInProgress) return;
-
-    conversationListRefreshInProgress = true;
-
-    loadMyConversations()
-      .catch(error => {
-        console.error("Conversation preview refresh failed:", error);
-      })
-      .finally(() => {
-        conversationListRefreshInProgress = false;
-      });
-  }, 12000);
-}
+// Conversation list refresh is manual only.
+// The user refreshes the list using the Refresh button.
 
 window.addEventListener("online", refreshMessagesAfterReconnect);
 

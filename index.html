@@ -3343,9 +3343,12 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
     <input type="checkbox" id="chatViewOncePreview">
     <strong>View Once</strong>
     <span>Optional</span>
-  </label>  <button type="button" id="chatMediaPreviewSend">
-    ➤ Send media
-  </button>
+  <button type="button" id="chatMediaPreviewSend"
+  style="position:relative;z-index:10002;pointer-events:auto;touch-action:manipulation;">
+  ➤ Send media
+</button>
+<p id="chatMediaPreviewStatus" role="status"
+  style="color:#f5e3bd;text-align:center;margin:0;"></p>
 </div>
 <div id="chatEmojiPicker" class="hidden" role="group" aria-label="Emoji picker">
   <button type="button" data-chat-emoji="😀">😀</button>

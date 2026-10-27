@@ -9572,79 +9572,146 @@ $("chatEmojiPicker").addEventListener("click", event => {
   
 
 $("sendChatMessage").addEventListener("click", async () => {
-  
-  const button = $("sendChatMessage");
-  const input = $("chatMessageInput");
+const button = $("sendChatMessage");
+const input = $("chatMessageInput");
+const fileInput = $("chatMediaInput");
+const viewOnceToggle = $("chatViewOnce");
 
-  if (button.disabled) return;
+const body = input.value.trim();
+const file = fileInput?.files?.[0];
 
-  if (!currentUser) {
-    status("chatPageStatus", "Please log in again before sending a message.", true);
-    return;
-  }
+if (button.disabled) return;
 
-  if (!activeChatUserId) {
-    status("chatPageStatus", "No conversation is selected. Reopen the person's chat.", true);
-    return;
-  }
+if (!currentUser) {
+status("chatPageStatus", "Please log in again before sending.", true);
+return;
+}
 
-  const body = input.value.trim();
+if (!activeChatUserId) {
+status("chatPageStatus", "Please open a conversation first.", true);
+return;
+}
 
-  if (!body) {
-    status("chatPageStatus", "Please type a message first.", true);
-    input.focus();
-    return;
-  }
+if (!body && !file) {
+status("chatPageStatus", "Type a message or attach a photo/video first.", true);
+return;
+}
 
-  const senderId = currentUser.id;
-  const receiverId = activeChatUserId;
+if (file) {
+if (
+!file.type.startsWith("image/") &&
+!file.type.startsWith("video/")
+) {
+status("chatPageStatus", "Choose a photo or video.", true);
+return;
+}
 
-  button.disabled = true;
-  button.textContent = "Sending...";
-  status("chatPageStatus", "Sending message...");
+if (file.size > 25 * 1024 * 1024) {
+  status("chatPageStatus", "The file must be smaller than 25 MB.", true);
+  return;
+}
 
-  try {
-    const blockCheck = await db.rpc("can_interact_with_member", {
-      target_user_id: receiverId
+}
+
+const senderId = currentUser.id;
+const receiverId = activeChatUserId;
+const viewOnce = Boolean(file && viewOnceToggle?.checked);
+
+button.disabled = true;
+button.textContent = "Sending...";
+
+try {
+const { data: allowed, error: blockError } = await db.rpc(
+"can_interact_with_member",
+{ target_user_id: receiverId }
+);
+
+if (blockError) throw blockError;
+
+if (allowed !== true) {
+  throw new Error("This conversation is unavailable.");
+}
+
+// Send an ordinary text message if one was entered.
+if (body) {
+  const { error } = await db.from("messages").insert({
+    sender_id: senderId,
+    receiver_id: receiverId,
+    body: body
+  });
+
+  if (error) throw error;
+}
+
+// Upload an attachment to the private chat-media bucket.
+if (file) {
+  const safeName =
+    file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) ||
+    "media";
+
+  const storagePath =
+    senderId + "/" + crypto.randomUUID() + "-" + safeName;
+
+  const mediaType = file.type.startsWith("image/")
+    ? "image"
+    : "video";
+
+  const { error: uploadError } = await db.storage
+    .from("chat-media")
+    .upload(storagePath, file, {
+      contentType: file.type,
+      upsert: false
     });
 
-    if (blockCheck.error) throw blockCheck.error;
+  if (uploadError) throw uploadError;
 
-    if (blockCheck.data !== true) {
-      status(
-        "chatPageStatus",
-        "Message not sent. This conversation is unavailable because either member has blocked the other.",
-        true
-      );
-      return;
-    }
+  const { error: saveError } = await db
+    .from("chat_media")
+    .insert({
+      sender_id: senderId,
+      receiver_id: receiverId,
+      storage_path: storagePath,
+      media_type: mediaType,
+      view_once: viewOnce
+    });
 
-    const { error } = await db
-      .from("messages")
-      .insert({
-        sender_id: senderId,
-        receiver_id: receiverId,
-        body: body
-      });
-
-    if (error) throw error;
-      
-    input.value = "";
-    input.style.height = "auto";
-    await loadChatMessages();
-    status("chatPageStatus", "Message sent successfully.");
-  } catch (error) {
-    console.error("Message send failed:", error);
-    status(
-      "chatPageStatus",
-      "Message not sent: " +
-        (error && error.message ? error.message : friendly(error)),
-      true
-    );
-  } finally {
-    button.disabled = false;
-    button.textContent = "Send";
+  if (saveError) {
+    await db.storage.from("chat-media").remove([storagePath]);
+    throw saveError;
   }
+}
+
+input.value = "";
+input.style.height = "auto";
+
+if (fileInput) fileInput.value = "";
+if (viewOnceToggle) viewOnceToggle.checked = false;
+
+await loadChatMessages();
+
+status(
+  "chatPageStatus",
+  file && body
+    ? "Message and attachment sent."
+    : file
+      ? "Photo/video sent."
+      : "Message sent successfully."
+);
+
+} catch (error) {
+console.error("Chat send failed:", error);
+
+status(
+  "chatPageStatus",
+  "Could not send: " +
+    (error?.message || friendly(error)),
+  true
+);
+
+} finally {
+button.disabled = false;
+button.textContent = "➤";
+}
 });
 
 

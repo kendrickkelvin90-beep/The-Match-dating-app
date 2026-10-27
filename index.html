@@ -3863,8 +3863,11 @@ function renderResetCaptcha() {
 const $=id=>document.getElementById(id);
 let loginMode=false,currentUser=null,approxLocation=null;
 let activeChatUserId = null;
+  let chatLoadRequestId = 0;
 let chatRefreshTimer = null;
   let chatRefreshInProgress = false;
+  let conversationListRefreshTimer = null;
+let conversationListRefreshInProgress = false;
   
 
 let onlinePresenceChannel = null;
@@ -9249,9 +9252,15 @@ const firstPhotoByUser = new Map();
         "font-size:13px;opacity:.8;overflow:hidden;" +
         "text-overflow:ellipsis;white-space:nowrap;";
 
+      
       preview.textContent = conversation.latest
-        ? (conversation.latest.body || "New message")
+        ? (
+            conversation.latest.sender_id === me
+              ? "You: " + (conversation.latest.body || "New message")
+              : (conversation.latest.body || "New message")
+          )
         : "No messages yet";
+
 
       details.append(name, age, preview);
       button.append(avatar, details);
@@ -9300,6 +9309,75 @@ if (photoPath) {
     );
   }
 }
+function refreshMessagesAfterReconnect() {
+  if (!currentUser || document.hidden) return;
+
+  if (
+    activeChatUserId &&
+    !$("chatPage").classList.contains("hidden")
+  ) {
+    if (chatRefreshInProgress) return;
+
+    chatRefreshInProgress = true;
+
+    loadChatMessages()
+      .catch(error =>
+        console.error("Reconnect chat refresh failed:", error)
+      )
+      .finally(() => {
+        chatRefreshInProgress = false;
+      });
+
+    return;
+  }
+
+  if (currentPage === "messages") {
+    if (conversationListRefreshInProgress) return;
+
+    conversationListRefreshInProgress = true;
+
+    loadMyConversations()
+      .catch(error =>
+        console.error("Reconnect preview refresh failed:", error)
+      )
+      .finally(() => {
+        conversationListRefreshInProgress = false;
+      });
+  }
+}  
+  
+if (!conversationListRefreshTimer) {
+  conversationListRefreshTimer = setInterval(() => {
+    if (
+      !currentUser ||
+      document.hidden ||
+      currentPage !== "messages" ||
+      conversationListRefreshInProgress
+    ) {
+      return;
+    }
+
+    if (chatRefreshInProgress) return;
+
+    conversationListRefreshInProgress = true;
+
+    loadMyConversations()
+      .catch(error => {
+        console.error("Conversation preview refresh failed:", error);
+      })
+      .finally(() => {
+        conversationListRefreshInProgress = false;
+      });
+  }, 12000);
+}
+
+window.addEventListener("online", refreshMessagesAfterReconnect);
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    refreshMessagesAfterReconnect();
+  }
+});
 
 async function openChat(userId, userName){
   if(!currentUser || !userId || userId === currentUser.id){
@@ -9309,7 +9387,7 @@ async function openChat(userId, userName){
 
   try{
     status("messagesStatus","Opening conversation...");
-
+$("chatMessages").replaceChildren();
     activeChatUserId = userId;
     
 $("chatOnlineStatus").textContent = "Checking status...";
@@ -9477,12 +9555,28 @@ if (conversationListNode && activeConversationNode instanceof HTMLElement) {
 show("messages");
 
 
+
 async function loadChatMessages(){
-  if(!currentUser || !activeChatUserId)return;
+  if (!currentUser || !activeChatUserId) return;
+
+  
+  const requestedChatUserId = activeChatUserId;
+  const requestedUserId = currentUser.id;
+  const thisChatLoadRequestId = ++chatLoadRequestId;
+
+  const isCurrentChatLoad = () =>
+    thisChatLoadRequestId === chatLoadRequestId &&
+    requestedChatUserId === activeChatUserId &&
+    requestedUserId === currentUser?.id;
 
   const blockCheck = await db.rpc("can_interact_with_member", {
-    target_user_id: activeChatUserId
+    target_user_id: requestedChatUserId
   });
+
+  // Ignore results from an older request or a conversation no longer open.
+  if (!isCurrentChatLoad()) return;
+
+
 
   if(blockCheck.error) throw blockCheck.error;
 
@@ -9499,6 +9593,24 @@ async function loadChatMessages(){
   }
 
     const chat = $("chatMessages");
+  function insertBubbleInTimeOrder(bubble, createdAt) {
+  const messageTime = new Date(createdAt).getTime();
+  bubble.dataset.createdAt = createdAt;
+
+  const nextBubble = Array.from(chat.children).find(node => {
+    const time = node.dataset.createdAt
+      ? new Date(node.dataset.createdAt).getTime()
+      : NaN;
+
+    return Number.isFinite(time) && time > messageTime;
+  });
+
+  if (nextBubble) {
+    chat.insertBefore(bubble, nextBubble);
+  } else {
+    chat.appendChild(bubble);
+  }
+  }
   Object.assign(chat.style,{
     display:"flex",
     flexDirection:"column",
@@ -9515,7 +9627,7 @@ async function loadChatMessages(){
     
     
     const me = currentUser.id;
-    const them = activeChatUserId;
+    const them = requestedChatUserId;
 
     const { data: myMembership, error: membershipError } = await db
       .from("premium_memberships")
@@ -9631,6 +9743,7 @@ data.reverse();
         const mine = message.sender_id === me;
         const bubble = document.createElement("div");
         bubble.dataset.messageId = message.id;
+        bubble.dataset.createdAt = message.created_at;
         bubble.className = mine ? "chat-bubble sent" : "chat-bubble received";
 
         Object.assign(bubble.style,{
@@ -9756,7 +9869,7 @@ try {
 bubble.appendChild(optionsButton);
 }
 
-chat.appendChild(bubble);
+insertBubbleInTimeOrder(bubble, message.created_at);
       });
     }
 // Display private photo and video attachments in the conversation.
@@ -9970,7 +10083,7 @@ for (const media of mediaRows || []) {
   timestamp.style.textAlign = "right";
   bubble.appendChild(timestamp);
 
-  chat.appendChild(bubble);
+  insertBubbleInTimeOrder(bubble, media.created_at);
         }
     chat.scrollTop = chat.scrollHeight;
     status("chatPageStatus","Conversation loaded.");

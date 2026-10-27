@@ -9781,7 +9781,7 @@ try {
 bubble.appendChild(optionsButton);
 }
 
-chat.appendChild(bubble);
+insertBubbleInTimeOrder(bubble, message.created_at);
       });
     }
 // Display private photo and video attachments in the conversation.

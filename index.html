@@ -9386,7 +9386,7 @@ async function openChat(userId, userName){
 
   try{
     status("messagesStatus","Opening conversation...");
-
+$("chatMessages").replaceChildren();
     activeChatUserId = userId;
     
 $("chatOnlineStatus").textContent = "Checking status...";

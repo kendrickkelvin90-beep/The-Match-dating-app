@@ -6494,7 +6494,7 @@ async function loadPremiumNearby(){
       return;
     }
 
-        if (!approxLocation) {
+      
       if (!navigator.geolocation) {
   status(
     "nearbyMembersStatus",
@@ -6542,6 +6542,7 @@ try {
   status("nearbyMembersStatus", message, true);
   return;
   }
+    status("nearbyMembersStatus","Finding nearby members...");
     const {data:peopleData,error}=await db
       .from("profiles")
       .select("id,display_name,age,gender_identity,city,bio,latitude,longitude,location_sharing,is_verified,verification_level")

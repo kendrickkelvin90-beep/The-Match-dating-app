@@ -9559,14 +9559,23 @@ show("messages");
 async function loadChatMessages(){
   if (!currentUser || !activeChatUserId) return;
 
+  
   const requestedChatUserId = activeChatUserId;
+  const requestedUserId = currentUser.id;
+  const thisChatLoadRequestId = ++chatLoadRequestId;
+
+  const isCurrentChatLoad = () =>
+    thisChatLoadRequestId === chatLoadRequestId &&
+    requestedChatUserId === activeChatUserId &&
+    requestedUserId === currentUser?.id;
 
   const blockCheck = await db.rpc("can_interact_with_member", {
     target_user_id: requestedChatUserId
   });
 
-  // Stop if the user switched conversations while this request was waiting.
-  if (requestedChatUserId !== activeChatUserId) return;
+  // Ignore results from an older request or a conversation no longer open.
+  if (!isCurrentChatLoad()) return;
+
 
 
   if(blockCheck.error) throw blockCheck.error;

@@ -3177,12 +3177,25 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
     <div id="chatMessages"></div>
 
     
+
 <div id="chatComposer">
   <button id="chatEmojiToggle" type="button" aria-label="Choose emoji">☺</button>
+
+  <button id="chatMediaButton" type="button" aria-label="Attach photo or video"
+    style="background:#222;color:white;border:1px solid #444;border-radius:50%;width:40px;height:40px;font-size:20px;">
+    ＋
+  </button>
+
+  <input id="chatMediaInput" type="file" accept="image/*,video/*"
+    capture="environment" hidden>
+
   <textarea id="chatMessageInput" maxlength="2000"
     placeholder="Write a message..." rows="1"></textarea>
+
   <button class="btn primary" id="sendChatMessage"
     type="button" aria-label="Send message">➤</button>
+</div>
+
 </div>
 
 <div id="chatEmojiPicker" class="hidden" role="group" aria-label="Emoji picker">

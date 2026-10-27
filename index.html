@@ -9339,6 +9339,13 @@ if (photoPath) {
     conversationListLoadInProgress = false;
   }
 }
+  document
+  .getElementById("refreshConversationsButton")
+  ?.addEventListener("click", () => {
+    loadMyConversations().catch(error => {
+      console.error("Conversation refresh failed:", error);
+    });
+  });
 function refreshMessagesAfterReconnect() {
   if (!currentUser || document.hidden) return;
 

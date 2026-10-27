@@ -5980,10 +5980,90 @@ people = people.filter(p =>
 );
 
 
-    if(!people.length){
-      status("discoverStatus","No new profiles to show right now.");
-      return;
+    
+if (!people.length && (preferredLocation || maxDistance < 500)) {
+  status("discoverStatus", "Searching a wider area...");
+
+  const {
+    data: expandedData,
+    error: expandedError
+  } = await db.rpc("discover_profiles_filtered", {
+    p_lat: approxLocation ? approxLocation.latitude : null,
+    p_lon: approxLocation ? approxLocation.longitude : null,
+    p_max_distance_km: 500,
+    p_min_age: minAge,
+    p_max_age: maxAge,
+    p_city: null
+  });
+
+  if (expandedError) throw expandedError;
+
+  people = (expandedData || []).map(p => ({
+    ...p,
+    _distance:
+      approxLocation &&
+      p.location_sharing &&
+      p.latitude != null &&
+      p.longitude != null
+        ? kmBetween(
+            approxLocation.latitude,
+            approxLocation.longitude,
+            p.latitude,
+            p.longitude
+          )
+        : null
+  }));
+
+  const expandedIds = people.map(p => p.id);
+
+  if (expandedIds.length) {
+    const {
+      data: expandedVerification,
+      error: expandedVerificationError
+    } = await db
+      .from("profiles")
+      .select("id,is_verified,verification_level")
+      .in("id", expandedIds);
+
+    if (expandedVerificationError) {
+      throw expandedVerificationError;
     }
+
+    const verificationById = new Map(
+      (expandedVerification || []).map(profile => [
+        profile.id,
+        {
+          is_verified: profile.is_verified,
+          verification_level: profile.verification_level
+        }
+      ])
+    );
+
+    people = people.map(person => ({
+      ...person,
+      ...(verificationById.get(person.id) || {})
+    }));
+  }
+
+  people = people.filter(p =>
+    !alreadyLiked.has(p.id) &&
+    !recentlyPassed.has(p.id)
+  );
+
+  for (let i = people.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [people[i], people[j]] = [people[j], people[i]];
+  }
+}
+
+if (!people.length) {
+  status(
+    "discoverStatus",
+    "No eligible profiles found. Try changing your age or location preferences."
+  );
+  return;
+}
+
 
     let personIndex=0;
 

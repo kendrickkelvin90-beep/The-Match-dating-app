@@ -6060,10 +6060,14 @@ if (!people.length && (preferredLocation || maxDistance < 500)) {
 if (!people.length) {
   status(
     "discoverStatus",
-    "No eligible profiles found. Try changing your age or location preferences."
+    `Debug: initial candidates=${discoverIds.length}, ` +
+    `expanded candidates=${expandedCandidateCount}, ` +
+    `liked=${alreadyLiked.size}, ` +
+    `recently passed=${recentlyPassed.size}.`
   );
   return;
 }
+  
 
 
     let personIndex=0;

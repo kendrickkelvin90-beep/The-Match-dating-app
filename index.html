@@ -10814,18 +10814,35 @@ $("chatViewOncePreview").checked = false;
 preview.classList.remove("hidden");
 };
 
+
 $("chatMediaPreviewClose").onclick = () => {
-$("chatMediaPreview").classList.add("hidden");
+  const preview = $("chatMediaPreview");
+  const mediaInput = $("chatMediaInput");
+  const previewToggle = $("chatViewOncePreview");
+  const stage = $("chatMediaPreviewStage");
 
-if (chatMediaPreviewUrl) {
-URL.revokeObjectURL(chatMediaPreviewUrl);
-chatMediaPreviewUrl = null;
-}
+  if (preview) {
+    preview.classList.add("hidden");
+  }
 
-$("chatMediaInput").value = "";
-$("chatViewOncePreview").checked = false;
-$("chatMediaPreviewStage").replaceChildren();
+  if (chatMediaPreviewUrl) {
+    URL.revokeObjectURL(chatMediaPreviewUrl);
+    chatMediaPreviewUrl = null;
+  }
+
+  if (mediaInput) {
+    mediaInput.value = "";
+  }
+
+  if (previewToggle) {
+    previewToggle.checked = false;
+  }
+
+  if (stage) {
+    stage.replaceChildren();
+  }
 };
+
 
 
 $("chatMediaPreviewSend").onclick = async () => {

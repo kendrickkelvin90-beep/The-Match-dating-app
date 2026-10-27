@@ -9110,7 +9110,7 @@ const mutualResults = await Promise.all(
   })
 );
 
-const mutualIds = mutualResults.filter(Boolean);
+const mutualIds = [...new Set(mutualResults.filter(Boolean))];
 
 const interactionResults = await Promise.all(
   mutualIds.map(async id => {

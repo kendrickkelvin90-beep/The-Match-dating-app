@@ -9822,17 +9822,12 @@ for (const media of mediaRows || []) {
       fontWeight: "600"
     });
 
-    openButton.onclick = async () => {
+        openButton.onclick = async () => {
       openButton.disabled = true;
       openButton.textContent = "Opening...";
 
       try {
-        const { data: signed, error: signedError } = await db.storage
-          .from("chat-media")
-          .createSignedUrl(media.storage_path, 60);
-
-        if (signedError) throw signedError;
-
+        // Claim View Once before creating a media access link.
         if (media.view_once && !mine) {
           const { data: claimed, error: claimError } = await db.rpc(
             "claim_view_once_chat_media",
@@ -9845,33 +9840,57 @@ for (const media of mediaRows || []) {
           }
         }
 
-        const element = document.createElement(
-          media.media_type === "image" ? "img" : "video"
-        );
+        const { data: signed, error: signedError } = await db.storage
+          .from("chat-media")
+          .createSignedUrl(media.storage_path, 60);
+
+        if (signedError) throw signedError;
+
+        const isOnce = media.view_once && !mine;
+        const isImage = media.media_type === "image";
+        const element = document.createElement(isImage ? "img" : "video");
 
         element.src = signed.signedUrl;
         element.style.maxWidth = "100%";
         element.style.maxHeight = "360px";
         element.style.borderRadius = "10px";
 
-        if (media.media_type === "image") {
+        if (isImage) {
           element.alt = "Shared photo";
         } else {
           element.controls = true;
           element.playsInline = true;
+          element.preload = "auto";
         }
 
         openButton.replaceWith(element);
 
-        if (media.view_once && !mine) {
+        if (isOnce) {
           media.opened_at = new Date().toISOString();
 
-          const note = document.createElement("small");
-          note.textContent =
-            "View Once opened. Screenshots or recording may still be possible.";
-          note.style.display = "block";
-          note.style.marginTop = "6px";
-          bubble.appendChild(note);
+          const finishViewOnce = () => {
+            if (element.dataset.viewOnceFinished === "true") return;
+            element.dataset.viewOnceFinished = "true";
+
+            if (element._viewOnceTimer) {
+              clearTimeout(element._viewOnceTimer);
+            }
+
+            element.pause?.();
+            element.removeAttribute("src");
+            element.load?.();
+
+            const used = document.createElement("div");
+            used.textContent = "Already opened";
+            used.style.padding = "12px 0";
+            element.replaceWith(used);
+          };
+
+          if (isImage) {
+            element._viewOnceTimer = setTimeout(finishViewOnce, 10000);
+          } else {
+            element.addEventListener("ended", finishViewOnce, { once: true });
+          }
         }
       } catch (err) {
         console.error("Opening chat media failed:", err);

@@ -4237,6 +4237,7 @@ async function checkMatchAdmin() {
   }
 
   isMatchAdmin = data === true;
+  window.__matchAdminDebugEnabled = isMatchAdmin;
 
   if (card) {
     card.classList.toggle("hidden", !isMatchAdmin);

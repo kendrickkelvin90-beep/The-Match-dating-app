@@ -10854,6 +10854,13 @@ $("chatMediaPreviewSend").onclick = async () => {
   const preview = $("chatMediaPreview");
   const previewToggle = $("chatViewOncePreview");
   const file = mediaInput?.files?.[0];
+  
+const previewStatus = $("chatMediaPreviewStatus");
+
+if (previewStatus) {
+  previewStatus.textContent = "Preparing to send...";
+}
+
 
   if (!currentUser) {
     status("chatPageStatus", "Please sign in again before sending media.", true);

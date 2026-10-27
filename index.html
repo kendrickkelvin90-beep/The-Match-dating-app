@@ -9617,7 +9617,7 @@ async function loadChatMessages(){
     
     
     const me = currentUser.id;
-    const them = activeChatUserId;
+    const them = requestedChatUserId;
 
     const { data: myMembership, error: membershipError } = await db
       .from("premium_memberships")

@@ -9554,12 +9554,19 @@ if (conversationListNode && activeConversationNode instanceof HTMLElement) {
 show("messages");
 
 
+
 async function loadChatMessages(){
-  if(!currentUser || !activeChatUserId)return;
+  if (!currentUser || !activeChatUserId) return;
+
+  const requestedChatUserId = activeChatUserId;
 
   const blockCheck = await db.rpc("can_interact_with_member", {
-    target_user_id: activeChatUserId
+    target_user_id: requestedChatUserId
   });
+
+  // Stop if the user switched conversations while this request was waiting.
+  if (requestedChatUserId !== activeChatUserId) return;
+
 
   if(blockCheck.error) throw blockCheck.error;
 

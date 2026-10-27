@@ -9060,7 +9060,9 @@ async function loadMyMatches(){
  
 
 async function loadMyConversations() {
-  if (!currentUser) return;
+  if (!currentUser || conversationListLoadInProgress) return;
+
+  conversationListLoadInProgress = true;
 
   
   const list = $("conversationList");

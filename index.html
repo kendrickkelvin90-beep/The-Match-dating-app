@@ -9531,7 +9531,26 @@ async function loadChatMessages(){
 
     if (error) throw error;
 
-    if (data) data.reverse();
+// Keep messages deleted by this member hidden after reopening chat.
+const { data: hiddenRows, error: hiddenError } = await db
+.from("message_hidden_for")
+.select("message_id")
+.eq("user_id", me);
+
+if (hiddenError) throw hiddenError;
+
+const hiddenMessageIds = new Set(
+(hiddenRows || []).map(row => row.message_id)
+);
+
+if (data) {
+for (let i = data.length - 1; i >= 0; i--) {
+if (hiddenMessageIds.has(data[i].id)) {
+data.splice(i, 1);
+}
+}
+data.reverse();
+}
 
     for (const message of (data || [])) {
       if (message.receiver_id === me && !message.read_at) {

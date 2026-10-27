@@ -6566,15 +6566,27 @@ try {
       if(canInteract!==true)people.splice(i,1);
     }
 
-    people=people.map(p=>({
-      ...p,
-      _distance:kmBetween(
-        approxLocation.latitude,
-        approxLocation.longitude,
-        p.latitude,
-        p.longitude
-      )
-    })).sort((a,b)=>a._distance-b._distance);
+        const nearbyRadiusKm = 50;
+
+    people = people.map(p => {
+      const latitude = Number(p.latitude);
+      const longitude = Number(p.longitude);
+
+      return {
+        ...p,
+        _distance: kmBetween(
+          approxLocation.latitude,
+          approxLocation.longitude,
+          latitude,
+          longitude
+        )
+      };
+    })
+    .filter(p =>
+      Number.isFinite(p._distance) &&
+      p._distance <= nearbyRadiusKm
+    )
+    .sort((a, b) => a._distance - b._distance);
 
     if(!people.length){
       status("nearbyMembersStatus","No nearby members are available yet.");

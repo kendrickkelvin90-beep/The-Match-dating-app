@@ -3317,6 +3317,13 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
 
 <section class="panel hidden" id="messages">
   <h2>💬 Your Private Messages</h2>
+  <button
+  class="btn secondary"
+  type="button"
+  onclick="loadMyConversations()"
+>
+  ↻ Refresh conversations
+  </button>
   <p class="small">Chat privately with your mutual matches.</p>
   <button class="btn secondary" type="button" onclick="show('premium')">Want to know if your message has been seen? Tap here to explore Premium.</button>
 

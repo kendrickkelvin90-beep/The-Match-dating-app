@@ -10827,62 +10827,143 @@ $("chatViewOncePreview").checked = false;
 $("chatMediaPreviewStage").replaceChildren();
 };
 
+
 $("chatMediaPreviewSend").onclick = async () => {
-const mediaInput =
-document.getElementById("chatMediaInput") ||
-document.querySelector('#chatComposer input[type="file"]');
+  const mediaInput = $("chatMediaInput");
+  const previewButton = $("chatMediaPreviewSend");
+  const preview = $("chatMediaPreview");
+  const previewToggle = $("chatViewOncePreview");
+  const file = mediaInput?.files?.[0];
 
-if (!mediaInput) {
-status(
-"chatPageStatus",
-"The media selector is unavailable. Please refresh the chat and try again.",
-true
-);
-return;
-}
+  if (!currentUser) {
+    status("chatPageStatus", "Please sign in again before sending media.", true);
+    return;
+  }
 
-const file = mediaInput.files?.[0];
-if (!file) {
-status("chatPageStatus", "Please select a photo or video first.", true);
-return;
-}
+  if (!activeChatUserId) {
+    status("chatPageStatus", "Please reopen the conversation and try again.", true);
+    return;
+  }
 
-const previewButton = document.getElementById("chatMediaPreviewSend");
-const preview = document.getElementById("chatMediaPreview");
-const composerToggle = document.getElementById("chatViewOnce");
-const previewToggle = document.getElementById("chatViewOncePreview");
+  if (!file) {
+    status("chatPageStatus", "Please select a photo or video first.", true);
+    return;
+  }
 
-if (!previewButton || !preview || !composerToggle || !previewToggle) {
-status("chatPageStatus", "The media preview is incomplete. Please refresh and try again.", true);
-return;
-}
+  if (
+    !file.type.startsWith("image/") &&
+    !file.type.startsWith("video/")
+  ) {
+    status("chatPageStatus", "Please choose a photo or video.", true);
+    return;
+  }
 
-if (previewButton.disabled) return;
+  if (file.size > 25 * 1024 * 1024) {
+    status("chatPageStatus", "Choose a file smaller than 25 MB.", true);
+    return;
+  }
 
-previewButton.disabled = true;
-previewButton.textContent = "Sending...";
+  if (previewButton.disabled) return;
 
-try {
-composerToggle.checked = previewToggle.checked;
+  const senderId = currentUser.id;
+  const receiverId = activeChatUserId;
+  const viewOnce = Boolean(previewToggle?.checked);
+  let storagePath = null;
+  let saved = false;
 
-// Keep the preview visible until the existing sender starts.
-const sendButton = document.getElementById("sendChatMessage");
-if (!sendButton) throw new Error("The chat send button is unavailable.");
+  previewButton.disabled = true;
+  previewButton.textContent = "Sending...";
 
-preview.classList.add("hidden");
-sendButton.click();
+  try {
+    const { data: allowed, error: blockError } = await db.rpc(
+      "can_interact_with_member",
+      { target_user_id: receiverId }
+    );
 
-// The existing sender reports success or failure.
-// Keep the selected file available if sending fails.
+    if (blockError) throw blockError;
+    if (allowed !== true) {
+      throw new Error("This conversation is unavailable.");
+    }
 
-} catch (error) {
-preview.classList.remove("hidden");
-status("chatPageStatus", error.message || "Could not send media.", true);
-} finally {
-previewButton.disabled = false;
-previewButton.textContent = "➤ Send media";
-}
+    const safeName =
+      file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) ||
+      "media";
+
+    storagePath =
+      senderId + "/" + crypto.randomUUID() + "-" + safeName;
+
+    const mediaType = file.type.startsWith("image/")
+      ? "image"
+      : "video";
+
+    const { error: uploadError } = await db.storage
+      .from("chat-media")
+      .upload(storagePath, file, {
+        contentType: file.type,
+        upsert: false
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { error: saveError } = await db
+      .from("chat_media")
+      .insert({
+        sender_id: senderId,
+        receiver_id: receiverId,
+        storage_path: storagePath,
+        media_type: mediaType,
+        view_once: viewOnce
+      });
+
+    if (saveError) throw saveError;
+
+    saved = true;
+
+    // Close the preview only after the upload and database save succeed.
+    preview.classList.add("hidden");
+
+    if (chatMediaPreviewUrl) {
+      URL.revokeObjectURL(chatMediaPreviewUrl);
+      chatMediaPreviewUrl = null;
+    }
+
+    mediaInput.value = "";
+    previewToggle.checked = false;
+    $("chatViewOnce").checked = false;
+    $("chatMediaPreviewStage").replaceChildren();
+
+    await loadChatMessages();
+
+    status(
+      "chatPageStatus",
+      mediaType === "image" ? "Photo sent." : "Video sent."
+    );
+
+  } catch (error) {
+    console.error("Media preview send failed:", error);
+
+    // Keep the preview open so the user can retry.
+    if (!saved && storagePath) {
+      try {
+        await db.storage.from("chat-media").remove([storagePath]);
+      } catch (cleanupError) {
+        console.error("Media cleanup failed:", cleanupError);
+      }
+    }
+
+    status(
+      "chatPageStatus",
+      "Could not send media: " +
+        (error?.message || friendly(error)),
+      true
+    );
+
+  } finally {
+    previewButton.disabled = false;
+    previewButton.textContent = "➤ Send media";
+  }
 };
+
 
 
 db.auth.onAuthStateChange((event,session)=>{

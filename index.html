@@ -6555,8 +6555,7 @@ try {
 
     if(error)throw error;
 
-    const locationFreshnessMs = 7 * 24 * 60 * 60 * 1000;
-const locationFreshnessCutoff = Date.now() - locationFreshnessMs;
+    let people=peopleData||[];
 
 let people = (peopleData || []).filter(p => {
   const refreshedAt = Date.parse(p.location_updated_at || "");

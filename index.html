@@ -10667,40 +10667,106 @@ $("settingsDeleteAccount").onclick = async () => {
   }
 };
 
-$("chatMediaButton").onclick = () => {
-  if (!currentUser) {
-    status("messagesStatus", "Please sign in to send media.", true);
-    return;
-  }
+let chatMediaPreviewUrl = null;
 
-  $("chatMediaInput").click();
+$("chatMediaButton").onclick = () => {
+if (!currentUser) {
+status("chatPageStatus", "Please sign in before sharing media.", true);
+return;
+}
+
+if (!activeChatUserId) {
+status("chatPageStatus", "Open a conversation first.", true);
+return;
+}
+
+$("chatMediaInput").click();
 };
 
 $("chatMediaInput").onchange = () => {
-  const file = $("chatMediaInput").files?.[0];
-  if (!file) return;
+const file = $("chatMediaInput").files?.[0];
+if (!file) return;
 
-  const isImage = file.type.startsWith("image/");
-  const isVideo = file.type.startsWith("video/");
+const isImage = file.type.startsWith("image/");
+const isVideo = file.type.startsWith("video/");
 
-  if (!isImage && !isVideo) {
-    status("messagesStatus", "Please choose a photo or video.", true);
-    $("chatMediaInput").value = "";
-    return;
-  }
+if (!isImage && !isVideo) {
+status("chatPageStatus", "Please choose a photo or video.", true);
+$("chatMediaInput").value = "";
+return;
+}
 
-  const maxSize = 25 * 1024 * 1024;
+if (file.size > 25 * 1024 * 1024) {
+status("chatPageStatus", "Choose a file smaller than 25 MB.", true);
+$("chatMediaInput").value = "";
+return;
+}
 
-  if (file.size > maxSize) {
-    status("messagesStatus", "Please choose a file smaller than 25 MB.", true);
-    $("chatMediaInput").value = "";
-    return;
-  }
+if (chatMediaPreviewUrl) {
+URL.revokeObjectURL(chatMediaPreviewUrl);
+}
 
-  status(
-    "messagesStatus",
-    `${isImage ? "Photo" : "Video"} selected: ${file.name}. Media sending is the next step.`
-  );
+chatMediaPreviewUrl = URL.createObjectURL(file);
+
+const preview = $("chatMediaPreview");
+const stage = $("chatMediaPreviewStage");
+stage.replaceChildren();
+
+const media = document.createElement(isImage ? "img" : "video");
+media.src = chatMediaPreviewUrl;
+
+if (isImage) {
+media.alt = "Selected photo preview";
+} else {
+media.controls = true;
+media.playsInline = true;
+}
+
+stage.appendChild(media);
+$("chatViewOncePreview").checked = false;
+preview.classList.remove("hidden");
+};
+
+$("chatMediaPreviewClose").onclick = () => {
+$("chatMediaPreview").classList.add("hidden");
+
+if (chatMediaPreviewUrl) {
+URL.revokeObjectURL(chatMediaPreviewUrl);
+chatMediaPreviewUrl = null;
+}
+
+$("chatMediaInput").value = "";
+$("chatViewOncePreview").checked = false;
+$("chatMediaPreviewStage").replaceChildren();
+};
+
+$("chatMediaPreviewSend").onclick = async () => {
+const file = $("chatMediaInput").files?.[0];
+if (!file) {
+status("chatPageStatus", "Please select a photo or video first.", true);
+return;
+}
+
+const previewButton = $("chatMediaPreviewSend");
+const composerToggle = $("chatViewOnce");
+
+previewButton.disabled = true;
+previewButton.textContent = "Sending...";
+
+try {
+composerToggle.checked = $("chatViewOncePreview").checked;
+
+// Hide preview before invoking the existing send handler.
+$("chatMediaPreview").classList.add("hidden");
+$("sendChatMessage").click();
+
+// The existing handler owns the upload and displays its status.
+// Do not clear the selected file here.
+
+} finally {
+previewButton.disabled = false;
+previewButton.textContent = "➤ Send media";
+}
 };
 
 db.auth.onAuthStateChange((event,session)=>{

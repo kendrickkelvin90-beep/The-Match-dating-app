@@ -10828,11 +10828,61 @@ $("chatMediaPreviewStage").replaceChildren();
 };
 
 $("chatMediaPreviewSend").onclick = async () => {
-const file = $("chatMediaInput").files?.[0];
+const mediaInput =
+document.getElementById("chatMediaInput") ||
+document.querySelector('#chatComposer input[type="file"]');
+
+if (!mediaInput) {
+status(
+"chatPageStatus",
+"The media selector is unavailable. Please refresh the chat and try again.",
+true
+);
+return;
+}
+
+const file = mediaInput.files?.[0];
 if (!file) {
 status("chatPageStatus", "Please select a photo or video first.", true);
 return;
 }
+
+const previewButton = document.getElementById("chatMediaPreviewSend");
+const preview = document.getElementById("chatMediaPreview");
+const composerToggle = document.getElementById("chatViewOnce");
+const previewToggle = document.getElementById("chatViewOncePreview");
+
+if (!previewButton || !preview || !composerToggle || !previewToggle) {
+status("chatPageStatus", "The media preview is incomplete. Please refresh and try again.", true);
+return;
+}
+
+if (previewButton.disabled) return;
+
+previewButton.disabled = true;
+previewButton.textContent = "Sending...";
+
+try {
+composerToggle.checked = previewToggle.checked;
+
+// Keep the preview visible until the existing sender starts.
+const sendButton = document.getElementById("sendChatMessage");
+if (!sendButton) throw new Error("The chat send button is unavailable.");
+
+preview.classList.add("hidden");
+sendButton.click();
+
+// The existing sender reports success or failure.
+// Keep the selected file available if sending fails.
+
+} catch (error) {
+preview.classList.remove("hidden");
+status("chatPageStatus", error.message || "Could not send media.", true);
+} finally {
+previewButton.disabled = false;
+previewButton.textContent = "➤ Send media";
+}
+};
 
 const previewButton = $("chatMediaPreviewSend");
 const composerToggle = $("chatViewOnce");

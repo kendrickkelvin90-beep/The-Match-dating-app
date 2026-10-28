@@ -6842,14 +6842,17 @@ async function loadPremiumNearby(){
 
       if (profileError) throw profileError;
 
-      if (!profile?.location_sharing) {
+            if (!profile?.location_sharing) {
         status(
           "nearbyMembersStatus",
           "Enable location sharing in your profile to use Nearby."
         );
         return;
-  } 
+      }
+
       if (!navigator.geolocation) {
+        return;
+  } 
   status(
     "nearbyMembersStatus",
     "Location isn't supported here. Open The Match in Chrome and check location permissions.",

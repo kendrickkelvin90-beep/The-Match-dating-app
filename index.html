@@ -11822,6 +11822,37 @@ if ("serviceWorker" in navigator) {
   });
 }
 </script>
+  
+<!-- The Match Install App Popup -->
+<div id="installAppModal" class="install-app-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="installAppTitle">
+  <div class="install-app-card">
+    <button type="button" id="closeInstallAppModal" class="install-app-close" aria-label="Close">&times;</button>
+
+    <div class="install-app-icon">♥</div>
+    <p class="install-app-brand">THE MATCH</p>
+    <h2 id="installAppTitle">Your next connection is one tap away.</h2>
+    <p class="install-app-description">
+      Add The Match to your home screen for quick, convenient access to your matches and conversations.
+    </p>
+
+    <div class="install-app-benefit">
+      <span>✓</span>
+      <span>Open The Match directly from your home screen</span>
+    </div>
+    <div class="install-app-benefit">
+      <span>✓</span>
+      <span>Return to your matches and chats more conveniently</span>
+    </div>
+
+    <button type="button" id="confirmInstallApp" class="install-app-primary">
+      INSTALL THE MATCH
+    </button>
+    <button type="button" id="laterInstallApp" class="install-app-secondary">
+      Maybe later
+    </button>
+  </div>
+</div>
+
 </body>
 </html>
 

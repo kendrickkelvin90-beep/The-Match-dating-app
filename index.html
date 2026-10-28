@@ -6905,7 +6905,7 @@ try {
         
     const { data: peopleData, error: peopleError } =
       await db.rpc("premium_nearby_profiles_secure", {
-        p_max_distance_km: 50
+        p_max_distance_km:100
       });
 
     if (peopleError) throw peopleError;

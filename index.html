@@ -5814,7 +5814,10 @@ $("bottomNavigation").querySelector('[data-page="discover"]').classList.add("act
 await loadStories();
 status("profileStatus","Loading your profile...");
 try{
-let r=await db.from("profiles").select("*").eq("id",user.id).maybeSingle();
+let r=await db.from("profiles")
+  .select("id,display_name,gender_identity,interested_in,bio,city,avatar_url,created_at,updated_at,age,location_sharing,is_verified,sexual_roles,verification_level,verification_grace_started_at,nearby_current_city,nearby_current_state")
+  .eq("id",user.id)
+  .maybeSingle();
 if(r.error)throw r.error;
 if(r.data){
 let p=r.data;

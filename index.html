@@ -9905,15 +9905,6 @@ const mutualResults = await Promise.all(
 const mutualIds = [...new Set(mutualResults.filter(Boolean))];
 
 
-    if (error) throw error;
-
-    return data === true ? id : null;
-  })
-);
-
-
-const mutualIds = [...new Set(mutualResults.filter(Boolean))];
-
 const interactionResults = await Promise.all(
   mutualIds.map(async id => {
     const { data, error } = await db.rpc(

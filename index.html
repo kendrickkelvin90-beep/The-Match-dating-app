@@ -9850,12 +9850,31 @@ status("messagesStatus", "Loading your conversations...");
   try {
     const me = currentUser.id;
 
-        const { data: sent, error } = await db
-      .from("likes")
-      .select("liked_id")
-      .eq("liker_id", me);
+        
+const { data: sent, error: sentError } = await db
+  .from("likes")
+  .select("liked_id")
+  .eq("liker_id", me);
 
-    if (error) throw error;
+if (sentError) throw sentError;
+
+// Include people with unread incoming messages as candidates too.
+const { data: unreadMessages, error: unreadError } = await db
+  .from("messages")
+  .select("sender_id")
+  .eq("receiver_id", me)
+  .is("read_at", null);
+
+if (unreadError) throw unreadError;
+
+const conversationCandidateIds = [
+  ...new Set([
+    ...(sent || []).map(item => item.liked_id),
+    ...(unreadMessages || [])
+      .map(message => message.sender_id)
+      .filter(id => id && id !== me)
+  ])
+];
 
     
 const mutualResults = await Promise.all(

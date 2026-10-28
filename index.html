@@ -6897,18 +6897,6 @@ if (!locationRefresh.ok) {
 
 status("nearbyMembersStatus", "Finding nearby members...");
 
-
-  if (saveLocationError) throw saveLocationError;
-
-} catch (error) {
-  const message = error.code === 1
-    ? "Location permission was denied. Allow location for The Match in your browser or phone settings, then try again."
-    : "Couldn't get your current location. Check your GPS and browser permission, then try again.";
-
-  status("nearbyMembersStatus", message, true);
-  return;
-  }
-    status("nearbyMembersStatus","Finding nearby members...");
         
         
     const { data: peopleData, error: peopleError } =

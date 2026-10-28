@@ -5907,11 +5907,7 @@ sexual_roles:Array.from(document.querySelectorAll('input[name="sexualRole"]:chec
 
 city:$("city").value.trim(),
 bio:$("bio").value.trim(),
-latitude:approxLocation?approxLocation.latitude:null,
-longitude:approxLocation?approxLocation.longitude:null,
-location_sharing:!!approxLocation,
-location_updated_at:approxLocation?new Date().toISOString():null,
-updated_at:new Date().toISOString()
+location_sharing:discoveryLocationEnabled,
 };
 let r=await db.from("profiles").upsert(p,{onConflict:"id"});
 if(r.error)throw r.error;

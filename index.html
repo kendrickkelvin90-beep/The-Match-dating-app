@@ -5909,6 +5909,29 @@ city:$("city").value.trim(),
 bio:$("bio").value.trim(),
 location_sharing:discoveryLocationEnabled,
 };
+
+if (approxLocation && discoveryLocationEnabled) {
+  const { error: locationError } = await db.rpc(
+    "save_my_discovery_location",
+    {
+      p_lat: approxLocation.latitude,
+      p_lon: approxLocation.longitude,
+      p_enabled: true
+    }
+  );
+  if (locationError) throw locationError;
+} else if (!discoveryLocationEnabled) {
+  const { error: locationError } = await db.rpc(
+    "save_my_discovery_location",
+    {
+      p_lat: null,
+      p_lon: null,
+      p_enabled: false
+    }
+  );
+  if (locationError) throw locationError;
+}
+
 let r=await db.from("profiles").upsert(p,{onConflict:"id"});
 if(r.error)throw r.error;
 await loadNearby();

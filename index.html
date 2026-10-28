@@ -11256,9 +11256,9 @@ $("premiumPaymentForm").addEventListener("submit", async (e) => {
     return;
   }
 
-  const plan = $("premiumPlan").value;
-  const amount = plan === "monthly" ? 5000 :
-    plan === "yearly" ? 50000 : 0;
+    const plan = $("premiumPlan").value;
+  const amount = premiumPlanPrices[plan] || 0;
+  const sender = $("premiumSender").value.trim();
   const sender = $("premiumSender").value.trim();
   const reference = $("premiumReference").value.trim();
   const btn = $("submitPremiumPayment");

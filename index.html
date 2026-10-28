@@ -6683,10 +6683,8 @@ try {
   }
     status("nearbyMembersStatus","Finding nearby members...");
         
-        let people = [];
-    const pageSize = 1000;
-
-    for (let from = 0; ; from += pageSize) {
+        
+    const { data: peopleData, error: peopleError } =
       await db.rpc("premium_nearby_profiles_secure", {
         p_max_distance_km: 50
       });
@@ -6698,6 +6696,7 @@ try {
       _distance:
         p.distance_km == null ? null : Number(p.distance_km)
     }));
+
 
 
     for (let i = people.length - 1; i > 0; i--) {

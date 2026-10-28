@@ -2757,6 +2757,253 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
   background: #101010 !important;
 }
 
+/* Professional The Match install popup */
+#installAppDialog {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(7px);
+}
+
+#installAppDialog.is-open {
+  display: flex;
+}
+
+#installAppDialog .install-dialog-card {
+  width: 100%;
+  max-width: 390px;
+  box-sizing: border-box;
+  padding: 28px 22px 20px;
+  border: 1px solid rgba(212, 175, 55, 0.55);
+  border-radius: 26px;
+  background: #090909;
+  color: #fff;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+  text-align: center;
+}
+
+#installAppDialog .install-dialog-icon {
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 14px;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #f5d76e, #b88a19);
+  color: #17120a;
+  font-size: 31px;
+}
+
+#installAppDialog .install-dialog-brand {
+  margin: 0;
+  color: #e4c35a;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 3px;
+}
+
+#installAppDialog .install-dialog-title {
+  margin: 12px 0 10px;
+  font-size: 27px;
+  line-height: 1.16;
+}
+
+#installAppDialog .install-dialog-copy {
+  margin: 0 auto 18px;
+  color: #c8c8c8;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+#installAppDialog .install-dialog-benefits {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0 22px;
+  text-align: left;
+}
+
+#installAppDialog .install-dialog-benefit {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: #ededed;
+  font-size: 13px;
+}
+
+#installAppDialog .install-dialog-benefit span:first-child {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 11px;
+  background: rgba(212, 175, 55, 0.12);
+  color: #e4c35a;
+}
+
+#installAppDialog .install-dialog-primary {
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f3d66d, #c49a2c);
+  color: #17120a;
+  font-weight: 800;
+}
+
+#installAppDialog .install-dialog-later {
+  margin-top: 12px;
+  padding: 10px 16px;
+  border: 0;
+  background: transparent;
+  color: #aaa;
+}
+
+#installAppDialog .install-dialog-help {
+  display: none;
+  margin-top: 13px;
+  color: #e4d7aa;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+#installAppDialog .install-dialog-help.is-visible {
+  display: block;
+}
+
+/* THE MATCH — Premium Install Popup */
+.install-app-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.install-app-overlay.hidden {
+  display: none !important;
+}
+
+.install-app-card {
+  position: relative;
+  width: 100%;
+  max-width: 390px;
+  padding: 32px 24px 24px;
+  border: 1px solid #C6A15B;
+  border-radius: 24px;
+  background: linear-gradient(160deg, #1D1B17, #090909 75%);
+  color: #F7F4EC;
+  text-align: center;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.65);
+}
+
+.install-app-close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  border: 0;
+  background: transparent;
+  color: #C6A15B;
+  font-size: 30px;
+  cursor: pointer;
+}
+
+.install-app-icon {
+  display: flex;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 14px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #C6A15B;
+  border-radius: 20px;
+  background: #292216;
+  color: #D8B56A;
+  font-size: 34px;
+}
+
+.install-app-brand {
+  margin: 0 0 12px;
+  color: #D8B56A;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 4px;
+}
+
+.install-app-card h2 {
+  margin: 0 0 12px;
+  color: #FFF9EA;
+  font-size: 25px;
+  line-height: 1.25;
+}
+
+.install-app-description {
+  margin: 0 0 22px;
+  color: #C3BFB5;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.install-app-benefit {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 12px 0;
+  color: #E9E4D8;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.install-app-benefit span:first-child {
+  color: #D8B56A;
+  font-weight: 900;
+}
+
+.install-app-primary {
+  width: 100%;
+  min-height: 50px;
+  margin-top: 18px;
+  border: 0;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #E4C477, #B88B38);
+  color: #17130B;
+  font-weight: 900;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+.install-app-secondary {
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid #484238;
+  border-radius: 12px;
+  background: transparent;
+  color: #C9C3B7;
+  cursor: pointer;
+}
+
+@media (max-width: 380px) {
+  .install-app-card {
+    padding: 30px 18px 20px;
+  }
+
+  .install-app-card h2 {
+    font-size: 22px;
+  }
+}
+
 </style>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
@@ -6722,29 +6969,33 @@ if(matchError)throw matchError;
 
 
 
+
 async function refreshNearbyCurrentLocation() {
-  if (!currentUser || !navigator.geolocation) return;
+  if (!currentUser || !navigator.geolocation) {
+    return { ok: false, reason: "unsupported" };
+  }
 
   try {
-    const { data: membership, error } = await db
-      .from("premium_memberships")
-      .select("premium_until")
-      .eq("user_id", currentUser.id)
+    const { data: profile, error: profileError } = await db
+      .from("profiles")
+      .select("location_sharing")
+      .eq("id", currentUser.id)
       .maybeSingle();
 
-    if (error) throw error;
+    if (profileError) throw profileError;
 
-    const isPremium = !!membership &&
-      new Date(membership.premium_until).getTime() > Date.now();
-
-    if (!isPremium) return;
+    if (!profile?.location_sharing) {
+      return { ok: false, reason: "sharing_disabled" };
+    }
 
     if (navigator.permissions?.query) {
       const permission = await navigator.permissions.query({
         name: "geolocation"
       });
 
-      if (permission.state !== "granted") return;
+      if (permission.state === "denied") {
+  return { ok: false, reason: "permission" };
+      }
     }
 
     const position = await new Promise((resolve, reject) => {
@@ -6761,16 +7012,12 @@ async function refreshNearbyCurrentLocation() {
 
     const latitude = position.coords.latitude;
     const longitude = position.coords.longitude;
-
     let currentCity = null;
     let currentState = null;
 
     const { data: locationData, error: locationError } =
       await db.functions.invoke("nearby-reverse-geocode", {
-        body: {
-          latitude,
-          longitude
-        }
+        body: { latitude, longitude }
       });
 
     if (locationError) {
@@ -6780,7 +7027,7 @@ async function refreshNearbyCurrentLocation() {
       currentState = locationData.state || null;
     }
 
-        const { error: saveError } = await db.rpc(
+    const { error: saveError } = await db.rpc(
       "save_my_nearby_location",
       {
         p_lat: latitude,
@@ -6791,13 +7038,20 @@ async function refreshNearbyCurrentLocation() {
     );
 
     if (saveError) throw saveError;
+
+    return { ok: true };
   } catch (error) {
     console.warn("Nearby GPS refresh failed:", error);
+
+    return {
+      ok: false,
+      reason: error?.code === 1 ? "permission" : "gps_error"
+    };
   }
 }
 
+
 async function loadPremiumNearby(){
-    await refreshNearbyCurrentLocation();
   if(!currentUser)return;
 
   const list=$("nearbyMembersList");
@@ -6838,78 +7092,63 @@ async function loadPremiumNearby(){
       return;
     }
 
-      
-      if (!navigator.geolocation) {
+           const { data: profile, error: profileError } = await db
+        .from("profiles")
+        .select("location_sharing")
+        .eq("id", currentUser.id)
+        .maybeSingle();
+
+      if (profileError) throw profileError;
+
+            if (!profile?.location_sharing) {
+        status(
+          "nearbyMembersStatus",
+          "Enable location sharing in your profile to use Nearby."
+        );
+        return;
+      }
+
+            if (!navigator.geolocation) {
+        status(
+          "nearbyMembersStatus",
+          "Location isn't supported here. Open The Match in Chrome and check location permissions.",
+          true
+        );
+        return;
+            }
+
+
+status("nearbyMembersStatus", "Getting your current GPS location...");
+
+const locationRefresh = await refreshNearbyCurrentLocation();
+
+if (!locationRefresh.ok) {
+  const messages = {
+    unsupported:
+      "Location isn't supported here. Open The Match in Chrome and check location permissions.",
+    sharing_disabled:
+      "Enable location sharing in your profile to use Nearby.",
+    permission:
+      "Location permission was denied. Allow location for The Match in your browser or phone settings, then try again.",
+    gps_error:
+      "Couldn't get or save your current location. Check your GPS and browser permission, then try again."
+  };
+
   status(
     "nearbyMembersStatus",
-    "Location isn't supported here. Open The Match in Chrome and check location permissions.",
+    messages[locationRefresh.reason] || messages.gps_error,
     true
   );
   return;
 }
 
-status("nearbyMembersStatus", "Getting your current GPS location...");
+status("nearbyMembersStatus", "Finding nearby members...");
 
-let nearbyLocation;
-
-try {
-  const position = await new Promise((resolve, reject) => {
-    navigator.geolocation.getCurrentPosition(
-      resolve,
-      reject,
-      {
-        enableHighAccuracy: true,
-        timeout: 20000,
-        maximumAge: 0
-      }
-    );
-  });
-
-    
-  nearbyLocation = {
-    latitude: position.coords.latitude,
-    longitude: position.coords.longitude
-  };
-
-  const { data: locationData, error: locationError } =
-    await db.functions.invoke("nearby-reverse-geocode", {
-      body: {
-        latitude: nearbyLocation.latitude,
-        longitude: nearbyLocation.longitude
-      }
-    });
-
-  
-  const { error: saveLocationError } = await db.rpc(
-    "save_my_nearby_location",
-    {
-      p_lat: nearbyLocation.latitude,
-      p_lon: nearbyLocation.longitude,
-      p_city: !locationError && locationData?.city
-        ? locationData.city
-        : null,
-      p_state: !locationError && locationData?.state
-        ? locationData.state
-        : null
-    }
-  );
-
-  if (saveLocationError) throw saveLocationError;
-
-} catch (error) {
-  const message = error.code === 1
-    ? "Location permission was denied. Allow location for The Match in your browser or phone settings, then try again."
-    : "Couldn't get your current location. Check your GPS and browser permission, then try again.";
-
-  status("nearbyMembersStatus", message, true);
-  return;
-  }
-    status("nearbyMembersStatus","Finding nearby members...");
         
         
     const { data: peopleData, error: peopleError } =
       await db.rpc("premium_nearby_profiles_secure", {
-        p_max_distance_km: 50
+        p_max_distance_km:100
       });
 
     if (peopleError) throw peopleError;
@@ -8171,59 +8410,115 @@ $("backFromBlockedMembers").onclick=()=>{
   show("discover");
   loadNearby();
 };
-// Install The Match — Settings button only
-let deferredInstallPrompt = null;
 
-window.addEventListener("beforeinstallprompt", (event) => {
-  event.preventDefault();
-  
-  deferredInstallPrompt = event;
-});
+
+
+/* THE MATCH — Install app popup */
+let deferredInstallPrompt = null;
 
 const installButton = document.getElementById("installAppButton");
 const installHelp = document.getElementById("installAppHelp");
+const installModal = document.getElementById("installAppModal");
+const confirmInstallButton = document.getElementById("confirmInstallApp");
+const laterInstallButton = document.getElementById("laterInstallApp");
+const closeInstallButton = document.getElementById("closeInstallAppModal");
 
-if (installButton && installHelp) {
-  installButton.addEventListener("click", async () => {
-    if (
-      window.matchMedia("(display-mode: standalone)").matches ||
-      navigator.standalone === true
-    ) {
+function isTheMatchInstalled() {
+  return window.matchMedia("(display-mode: standalone)").matches ||
+    navigator.standalone === true;
+}
+
+function closeTheMatchInstallModal() {
+  if (installModal) {
+    installModal.classList.add("hidden");
+    document.body.style.overflow = "";
+  }
+}
+
+function openTheMatchInstallModal() {
+  if (!installModal || isTheMatchInstalled()) return;
+  installModal.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+});
+
+async function requestTheMatchInstall() {
+  if (isTheMatchInstalled()) {
+    if (installHelp) {
       installHelp.textContent = "The Match is already installed on this device.";
-      return;
+    }
+    closeTheMatchInstallModal();
+    return;
+  }
+
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    const result = await deferredInstallPrompt.userChoice;
+
+    if (installHelp) {
+      installHelp.textContent = result.outcome === "accepted"
+        ? "The Match is being installed."
+        : "Installation was cancelled. You can try again.";
     }
 
-    if (deferredInstallPrompt) {
-      deferredInstallPrompt.prompt();
+    deferredInstallPrompt = null;
+    if (result.outcome === "accepted") closeTheMatchInstallModal();
+    return;
+  }
 
-      const result = await deferredInstallPrompt.userChoice;
+  if (installHelp) {
+    installHelp.textContent = /iphone|ipad|ipod/i.test(navigator.userAgent)
+      ? "To install on iPhone: open this website in Safari, tap Share, then choose Add to Home Screen."
+      : "Open your browser menu (⋮) and choose Install app or Add to Home screen.";
+  }
+}
 
-      installHelp.textContent =
-        result.outcome === "accepted"
-          ? "The Match is being installed."
-          : "Installation was cancelled. You can try again.";
+if (installButton) {
+  installButton.addEventListener("click", openTheMatchInstallModal);
+}
 
-      deferredInstallPrompt = null;
-      return;
-    }
+if (confirmInstallButton) {
+  confirmInstallButton.addEventListener("click", requestTheMatchInstall);
+}
 
-    if (/iphone|ipad|ipod/i.test(navigator.userAgent)) {
-      installHelp.textContent =
-        "To install on iPhone: open this website in Safari, tap Share, then choose Add to Home Screen.";
-    } else {
-      installHelp.textContent =
-        "Open your browser menu (⋮) and choose Install app or Add to Home screen.";
-    }
+if (laterInstallButton) {
+  laterInstallButton.addEventListener("click", closeTheMatchInstallModal);
+}
+
+if (closeInstallButton) {
+  closeInstallButton.addEventListener("click", closeTheMatchInstallModal);
+}
+
+if (installModal) {
+  installModal.addEventListener("click", (event) => {
+    if (event.target === installModal) closeTheMatchInstallModal();
   });
 }
 
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeTheMatchInstallModal();
+});
+
 window.addEventListener("appinstalled", () => {
   deferredInstallPrompt = null;
+  closeTheMatchInstallModal();
 
   if (installHelp) {
     installHelp.textContent = "The Match is installed on this device.";
   }
 });
+
+/* Show automatically after a short delay unless already installed. */
+window.addEventListener("load", () => {
+  if (!isTheMatchInstalled()) {
+    setTimeout(openTheMatchInstallModal, 9000);
+  }
+});
+
   // Settings page actions
 $("openNotifications").onclick = async () => {
   if (!currentUser) {
@@ -11711,6 +12006,37 @@ if ("serviceWorker" in navigator) {
   });
 }
 </script>
+  
+<!-- The Match Install App Popup -->
+<div id="installAppModal" class="install-app-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="installAppTitle">
+  <div class="install-app-card">
+    <button type="button" id="closeInstallAppModal" class="install-app-close" aria-label="Close">&times;</button>
+
+    <div class="install-app-icon">♥</div>
+    <p class="install-app-brand">THE MATCH</p>
+    <h2 id="installAppTitle">Your next connection is one tap away.</h2>
+    <p class="install-app-description">
+      Add The Match to your home screen for quick, convenient access to your matches and conversations.
+    </p>
+
+    <div class="install-app-benefit">
+      <span>✓</span>
+      <span>Open The Match directly from your home screen</span>
+    </div>
+    <div class="install-app-benefit">
+      <span>✓</span>
+      <span>Return to your matches and chats more conveniently</span>
+    </div>
+
+    <button type="button" id="confirmInstallApp" class="install-app-primary">
+      INSTALL THE MATCH
+    </button>
+    <button type="button" id="laterInstallApp" class="install-app-secondary">
+      Maybe later
+    </button>
+  </div>
+</div>
+
 </body>
 </html>
 

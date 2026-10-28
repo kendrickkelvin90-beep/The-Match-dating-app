@@ -6850,16 +6850,14 @@ async function loadPremiumNearby(){
         return;
       }
 
-      if (!navigator.geolocation) {
+            if (!navigator.geolocation) {
+        status(
+          "nearbyMembersStatus",
+          "Location isn't supported here. Open The Match in Chrome and check location permissions.",
+          true
+        );
         return;
-  } 
-  status(
-    "nearbyMembersStatus",
-    "Location isn't supported here. Open The Match in Chrome and check location permissions.",
-    true
-  );
-  return;
-}
+            }
 
 status("nearbyMembersStatus", "Getting your current GPS location...");
 

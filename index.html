@@ -2757,6 +2757,125 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
   background: #101010 !important;
 }
 
+/* Professional The Match install popup */
+#installAppDialog {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(7px);
+}
+
+#installAppDialog.is-open {
+  display: flex;
+}
+
+#installAppDialog .install-dialog-card {
+  width: 100%;
+  max-width: 390px;
+  box-sizing: border-box;
+  padding: 28px 22px 20px;
+  border: 1px solid rgba(212, 175, 55, 0.55);
+  border-radius: 26px;
+  background: #090909;
+  color: #fff;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+  text-align: center;
+}
+
+#installAppDialog .install-dialog-icon {
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 14px;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #f5d76e, #b88a19);
+  color: #17120a;
+  font-size: 31px;
+}
+
+#installAppDialog .install-dialog-brand {
+  margin: 0;
+  color: #e4c35a;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 3px;
+}
+
+#installAppDialog .install-dialog-title {
+  margin: 12px 0 10px;
+  font-size: 27px;
+  line-height: 1.16;
+}
+
+#installAppDialog .install-dialog-copy {
+  margin: 0 auto 18px;
+  color: #c8c8c8;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+#installAppDialog .install-dialog-benefits {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0 22px;
+  text-align: left;
+}
+
+#installAppDialog .install-dialog-benefit {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: #ededed;
+  font-size: 13px;
+}
+
+#installAppDialog .install-dialog-benefit span:first-child {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 11px;
+  background: rgba(212, 175, 55, 0.12);
+  color: #e4c35a;
+}
+
+#installAppDialog .install-dialog-primary {
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f3d66d, #c49a2c);
+  color: #17120a;
+  font-weight: 800;
+}
+
+#installAppDialog .install-dialog-later {
+  margin-top: 12px;
+  padding: 10px 16px;
+  border: 0;
+  background: transparent;
+  color: #aaa;
+}
+
+#installAppDialog .install-dialog-help {
+  display: none;
+  margin-top: 13px;
+  color: #e4d7aa;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+#installAppDialog .install-dialog-help.is-visible {
+  display: block;
+}
+
 </style>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>

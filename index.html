@@ -3153,42 +3153,272 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
   <button class="btn secondary" id="backFromBlockedMembers" type="button">← Back to Discover</button>
 </section>
 
+
 <section class="panel hidden" id="premium">
-  <h2>⭐ The Match Premium</h2>
-  <p class="small">Unlock a more exciting dating experience.</p>
+  <style>
+    #premium .premium-hero {
+      padding: 24px 18px;
+      border: 1px solid #383838;
+      border-radius: 18px;
+      background: radial-gradient(circle at top right, #302719, transparent 55%), #0b0b0b;
+      margin: 14px 0 24px;
+    }
+    #premium .premium-eyebrow {
+      color: #c6a15b;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 2px;
+    }
+    #premium .premium-hero h3 {
+      color: #f5f0e6;
+      font-size: 25px;
+      line-height: 1.25;
+      margin: 12px 0;
+    }
+    #premium .premium-hero p,
+    #premium .premium-description {
+      color: #aaa49a;
+      line-height: 1.6;
+    }
+    #premium .premium-benefits {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin: 16px 0 26px;
+    }
+    #premium .premium-benefit {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 14px;
+      background: #101010;
+      border: 1px solid #292929;
+      border-radius: 13px;
+    }
+    #premium .premium-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: #251f15;
+      color: #c6a15b;
+      font-size: 19px;
+    }
+    #premium .premium-benefit strong {
+      display: block;
+      color: #f5f5f5;
+      margin: 2px 0 5px;
+    }
+    #premium .premium-benefit span {
+      color: #aaa;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    #premium .premium-plans {
+      display: grid;
+      gap: 12px;
+      margin: 16px 0 24px;
+    }
+    #premium .premium-plan {
+      width: 100%;
+      text-align: left;
+      padding: 18px;
+      color: #f5f5f5;
+      background: linear-gradient(145deg, #171717, #0b0b0b);
+      border: 1px solid #393939;
+      border-radius: 15px;
+      cursor: pointer;
+    }
+    #premium .premium-plan:hover,
+    #premium .premium-plan:focus-visible {
+      border-color: #c6a15b;
+      outline: 2px solid #c6a15b;
+      outline-offset: 2px;
+    }
+    #premium .premium-plan.recommended {
+      border: 1px solid #c6a15b;
+      background: linear-gradient(145deg, #211b10, #0b0b0b);
+    }
+    #premium .premium-tag {
+      display: inline-block;
+      color: #090909;
+      background: #c6a15b;
+      padding: 5px 9px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+    #premium .premium-plan-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    #premium .premium-plan-name {
+      display: block;
+      font-size: 17px;
+      font-weight: 750;
+      margin-bottom: 5px;
+    }
+    #premium .premium-plan-note {
+      display: block;
+      color: #aaa49a;
+      font-size: 12px;
+    }
+    #premium .premium-price {
+      font-size: 23px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    #premium .premium-period {
+      display: block;
+      text-align: right;
+      color: #aaa;
+      font-size: 11px;
+      font-weight: 400;
+      margin-top: 4px;
+    }
+    #premium .premium-plan-cta {
+      display: flex;
+      justify-content: space-between;
+      color: #c6a15b;
+      border-top: 1px solid #303030;
+      padding-top: 13px;
+      margin-top: 15px;
+      font-size: 12px;
+      font-weight: 750;
+    }
+    #premium .premium-account {
+      padding: 17px;
+      border: 1px solid #393939;
+      border-radius: 15px;
+      background: #0d0d0d;
+      margin: 16px 0;
+      scroll-margin-top: 90px;
+    }
+    #premium .premium-account-row {
+      padding: 10px 0;
+      border-bottom: 1px solid #282828;
+    }
+    #premium .premium-account-label {
+      display: block;
+      color: #999;
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+    #premium .premium-account-value {
+      color: #f5f5f5;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+    #premium .premium-note {
+      color: #aaa;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    @media (min-width: 620px) {
+      #premium .premium-benefits {
+        grid-template-columns: 1fr 1fr;
+      }
+      #premium .premium-plans {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      #premium .premium-plan-top {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      #premium .premium-period {
+        text-align: left;
+      }
+      #premium .premium-price {
+        font-size: 21px;
+      }
+    }
+  </style>
 
-  <div class="member-card">
-    <h3>Monthly Premium</h3>
-    <p>₦5,000 / month</p>
-    <button class="btn primary" type="button"
-      onclick="document.getElementById('premiumPlan').value='monthly'; document.getElementById('premiumAmount').textContent='₦5,000';">
-      Choose Monthly
+  <div class="premium-hero">
+    <div class="premium-eyebrow">THE MATCH · MEMBERSHIP</div>
+    <h3>A more intentional way to connect.</h3>
+    <p>Discover more possibilities, see who's interested, and make more of your dating experience.</p>
+  </div>
+
+  <h3>Premium benefits</h3>
+  <p class="premium-description">Thoughtful extras for your dating experience.</p>
+
+  <div class="premium-benefits">
+    <div class="premium-benefit">
+      <div class="premium-icon">♡</div>
+      <div><strong>See who likes you</strong><span>Discover members who have already liked your profile.</span></div>
+    </div>
+    <div class="premium-benefit">
+      <div class="premium-icon">⌖</div>
+      <div><strong>Premium Nearby</strong><span>Explore eligible members around your location.</span></div>
+    </div>
+    <div class="premium-benefit">
+      <div class="premium-icon">▣</div>
+      <div><strong>More Stories</strong><span>Upload more Stories beyond the free daily allowance.</span></div>
+    </div>
+    <div class="premium-benefit">
+      <div class="premium-icon">✉</div>
+      <div><strong>Premium messaging</strong><span>Access additional messaging features available to Premium members.</span></div>
+    </div>
+    <div class="premium-benefit">
+      <div class="premium-icon">✓</div>
+      <div><strong>Read receipts</strong><span>See message-read information where supported.</span></div>
+    </div>
+    <div class="premium-benefit">
+      <div class="premium-icon">✧</div>
+      <div><strong>Exclusive access</strong><span>Enjoy the Premium features included in your membership.</span></div>
+    </div>
+  </div>
+
+  <h3>Choose your membership</h3>
+  <p class="premium-description">Select a plan to view payment account details.</p>
+
+  <div class="premium-plans">
+    <button class="premium-plan" type="button" data-premium-plan="weekly">
+      <div class="premium-plan-top">
+        <div><span class="premium-plan-name">Weekly</span><span class="premium-plan-note">A flexible start</span></div>
+        <div class="premium-price">₦2,000<span class="premium-period">7 days</span></div>
+      </div>
+      <div class="premium-plan-cta"><span>Choose weekly</span><span>→</span></div>
+    </button>
+
+    <button class="premium-plan recommended" type="button" data-premium-plan="monthly">
+      <span class="premium-tag">POPULAR CHOICE</span>
+      <div class="premium-plan-top">
+        <div><span class="premium-plan-name">Monthly</span><span class="premium-plan-note">A month to connect</span></div>
+        <div class="premium-price">₦5,000<span class="premium-period">30 days</span></div>
+      </div>
+      <div class="premium-plan-cta"><span>Choose monthly</span><span>→</span></div>
+    </button>
+
+    <button class="premium-plan" type="button" data-premium-plan="yearly">
+      <div class="premium-plan-top">
+        <div><span class="premium-plan-name">Yearly</span><span class="premium-plan-note">Long-term value</span></div>
+        <div class="premium-price">₦45,000<span class="premium-period">12 months</span></div>
+      </div>
+      <div class="premium-plan-cta"><span>Choose yearly</span><span>→</span></div>
     </button>
   </div>
 
-  <div class="member-card">
-    <h3>Yearly Premium</h3>
-    <p>₦50,000 / year</p>
-    <button class="btn primary" type="button"
-      onclick="document.getElementById('premiumPlan').value='yearly'; document.getElementById('premiumAmount').textContent='₦50,000';">
-      Choose Yearly
-    </button>
-  </div>
-
-  <div class="member-card">
-    <h3>Manual Bank Transfer</h3>
-    <p>Network: MTN MoMo</p>
-    <p>Account name: JUSTICE TRUST UGOALA</p>
-    <p>Account number: 0896939533</p>
-    <p class="small">Transfer the amount for your selected plan, then submit your payment details. Premium will not activate until your payment is reviewed and approved.</p>
+  <div class="premium-account" id="premiumAccountDetails">
+    <h3>Payment account details</h3>
+    <div class="premium-account-row"><span class="premium-account-label">Network</span><span class="premium-account-value">MTN MoMo</span></div>
+    <div class="premium-account-row"><span class="premium-account-label">Account name</span><span class="premium-account-value">JUSTICE TRUST UGOALA</span></div>
+    <div class="premium-account-row"><span class="premium-account-label">Account number</span><span class="premium-account-value">0896939533</span></div>
+    <p class="premium-note">Transfer the exact amount for your selected plan. Then enter the transfer name and reference below. Premium remains pending until an admin reviews and approves your payment.</p>
   </div>
 
   <form id="premiumPaymentForm">
     <label for="premiumPlan">Selected plan</label>
     <select id="premiumPlan" required>
       <option value="">Choose a plan</option>
+      <option value="weekly">Weekly — ₦2,000</option>
       <option value="monthly">Monthly — ₦5,000</option>
-      <option value="yearly">Yearly — ₦50,000</option>
+      <option value="yearly">Yearly — ₦45,000</option>
     </select>
 
     <p>Amount to transfer: <strong id="premiumAmount">Choose a plan above</strong></p>
@@ -3199,28 +3429,18 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
     <label for="premiumReference">Transfer reference</label>
     <input id="premiumReference" minlength="4" maxlength="120" required>
 
-    <button class="btn primary" id="submitPremiumPayment" type="submit">
-      Submit Payment for Review
-    </button>
+    <button class="btn primary" id="submitPremiumPayment" type="submit">Submit Payment for Review</button>
     <p class="status" id="premiumStatus"></p>
   </form>
 
   <div class="member-card">
-    <h3>My Payment Requests 📋</h3>
-    <button class="btn secondary" id="refreshPremiumRequests" type="button">
-      Refresh Payment Status
-    </button>
-    <div id="premiumRequestList">
-      <p class="small">Tap refresh to check your payment requests.</p>
-    </div>
+    <h3>My Payment Requests</h3>
+    <button class="btn secondary" id="refreshPremiumRequests" type="button">Refresh Payment Status</button>
+    <div id="premiumRequestList"><p class="small">Tap refresh to check your payment requests.</p></div>
   </div>
 
-  <button class="btn secondary" id="backFromPremium" type="button">
-    ← Back to profile
-  </button>
+  <button class="btn secondary" id="backFromPremium" type="button">← Back to profile</button>
 </section>
-
-
 <section class="panel hidden" id="matches">
   <h2>❤️ Your Matches</h2>
   <p class="small">Your mutual matches will appear here.</p>

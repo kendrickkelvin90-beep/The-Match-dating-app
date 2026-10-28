@@ -6656,26 +6656,23 @@ try {
       }
     });
 
-  const profileUpdate = {
-    nearby_latitude: nearbyLocation.latitude,
-    nearby_longitude: nearbyLocation.longitude,
-    nearby_location_updated_at: new Date().toISOString()
-  };
-
-  if (!locationError && locationData?.city) {
-    profileUpdate.nearby_current_city = locationData.city;
-  }
-
-  if (!locationError && locationData?.state) {
-    profileUpdate.nearby_current_state = locationData.state;
-  }
-
-  const { error: saveLocationError } = await db
-    .from("profiles")
-    .update(profileUpdate)
-    .eq("id", currentUser.id);
+  
+  const { error: saveLocationError } = await db.rpc(
+    "save_my_nearby_location",
+    {
+      p_lat: nearbyLocation.latitude,
+      p_lon: nearbyLocation.longitude,
+      p_city: !locationError && locationData?.city
+        ? locationData.city
+        : null,
+      p_state: !locationError && locationData?.state
+        ? locationData.state
+        : null
+    }
+  );
 
   if (saveLocationError) throw saveLocationError;
+
 } catch (error) {
   const message = error.code === 1
     ? "Location permission was denied. Allow location for The Match in your browser or phone settings, then try again."

@@ -6566,7 +6566,7 @@ try {
     );
   });
 
-  approxLocation = {
+    const nearbyLocation = {
     latitude: position.coords.latitude,
     longitude: position.coords.longitude
   };
@@ -6574,11 +6574,10 @@ try {
   const { error: saveLocationError } = await db
     .from("profiles")
     .update({
-  latitude: approxLocation.latitude,
-  longitude: approxLocation.longitude,
-  location_sharing: true,
-  location_updated_at: new Date().toISOString()
-})
+      nearby_latitude: nearbyLocation.latitude,
+      nearby_longitude: nearbyLocation.longitude,
+      nearby_location_updated_at: new Date().toISOString()
+    })
     .eq("id", currentUser.id);
 
   if (saveLocationError) throw saveLocationError;

@@ -5206,13 +5206,13 @@ navigator.geolocation.getCurrentPosition(pos=>{
 approxLocation={
   latitude:pos.coords.latitude,
   longitude:pos.coords.longitude
-}; 
+};
+discoveryLocationEnabled=true;
 $("locationButton").textContent="📍 Nearby discovery is on";
-$("locationHelp").textContent="Your device location is used to calculate nearby distances.";
+$("locationHelp").textContent="Your location is enabled for nearby discovery.";
 status("profileStatus","Location enabled. Save your profile to continue.");
 },err=>{
 approxLocation=null;
-status("profileStatus",err.code===1?"Permission denied. You can still save your profile without location.":"Could not get location. Check your phone settings and try again.",true);
 },{enableHighAccuracy:true,timeout:20000,maximumAge:0});
 };
 

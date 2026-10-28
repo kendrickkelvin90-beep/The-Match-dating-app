@@ -6687,53 +6687,20 @@ try {
     const pageSize = 1000;
 
     for (let from = 0; ; from += pageSize) {
-      const { data: pageData, error } = await db
-        .from("profiles")
-        .select("id,display_name,age,gender_identity,city,bio,nearby_latitude,nearby_longitude,nearby_current_city,nearby_current_state,nearby_location_updated_at,is_verified,verification_level")
-        .neq("id", currentUser.id)
-        .not("nearby_latitude", "is", null)
-        .not("nearby_longitude", "is", null)
-        .range(from, from + pageSize - 1);
+      
+    const { data: peopleData, error: peopleError } =
+      await db.rpc("premium_nearby_profiles_secure", {
+        p_max_distance_km: 50
+      });
 
-      if (error) throw error;
+    if (peopleError) throw peopleError;
 
-      const page = pageData || [];
-      people.push(...page);
+    let people = (peopleData || []).map(p => ({
+      ...p,
+      _distance:
+        p.distance_km == null ? null : Number(p.distance_km)
+    }));
 
-      if (page.length < pageSize) break;
-    }
-
-
-    for(let i=people.length-1;i>=0;i--){
-      const {data:canInteract,error:checkError}=await db.rpc(
-        "can_interact_with_member",
-        {target_user_id:people[i].id}
-      );
-
-      if(checkError)throw checkError;
-      if(canInteract!==true)people.splice(i,1);
-    }
-
-        const nearbyRadiusKm = 50;
-
-        people = people.map(p => {
-      const latitude = Number(p.nearby_latitude);
-      const longitude = Number(p.nearby_longitude);
-
-      return {
-        ...p,
-        _distance: kmBetween(
-          nearbyLocation.latitude,
-          nearbyLocation.longitude,
-          latitude,
-          longitude
-        )
-      };
-    })
-        .filter(p =>
-      Number.isFinite(p._distance) &&
-      p._distance <= nearbyRadiusKm
-    );
 
     for (let i = people.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));

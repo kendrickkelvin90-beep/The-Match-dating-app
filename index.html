@@ -6746,8 +6746,8 @@ async function refreshNearbyCurrentLocation() {
         name: "geolocation"
       });
 
-      if (permission.state !== "granted") {
-        return { ok: false, reason: "permission" };
+      if (permission.state === "denied") {
+  return { ok: false, reason: "permission" };
       }
     }
 

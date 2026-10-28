@@ -6043,12 +6043,10 @@ people = people.filter(p =>
 if (!people.length && (preferredLocation || maxDistance < 500)) {
   status("discoverStatus", "Searching a wider area...");
 
-  const {
+    const {
     data: expandedData,
     error: expandedError
-  } = await db.rpc("discover_profiles_filtered", {
-    p_lat: approxLocation ? approxLocation.latitude : null,
-    p_lon: approxLocation ? approxLocation.longitude : null,
+  } = await db.rpc("discover_profiles_secure", {
     p_max_distance_km: 500,
     p_min_age: minAge,
     p_max_age: maxAge,
@@ -6056,22 +6054,11 @@ if (!people.length && (preferredLocation || maxDistance < 500)) {
   });
 
   if (expandedError) throw expandedError;
-  
 
   people = (expandedData || []).map(p => ({
     ...p,
     _distance:
-      approxLocation &&
-      p.location_sharing &&
-      p.latitude != null &&
-      p.longitude != null
-        ? kmBetween(
-            approxLocation.latitude,
-            approxLocation.longitude,
-            p.latitude,
-            p.longitude
-          )
-        : null
+      p.distance_km == null ? null : Number(p.distance_km)
   }));
 
   const expandedIds = people.map(p => p.id);

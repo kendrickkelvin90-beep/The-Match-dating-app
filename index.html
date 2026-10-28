@@ -6722,25 +6722,33 @@ if(matchError)throw matchError;
 
 
 
+
 async function refreshNearbyCurrentLocation() {
-  if (!currentUser || !navigator.geolocation) return;
+  if (!currentUser || !navigator.geolocation) {
+    return { ok: false, reason: "unsupported" };
+  }
 
   try {
-      const { data: profile, error: profileError } = await db
-    .from("profiles")
-    .select("location_sharing")
-    .eq("id", currentUser.id)
-    .maybeSingle();
+    const { data: profile, error: profileError } = await db
+      .from("profiles")
+      .select("location_sharing")
+      .eq("id", currentUser.id)
+      .maybeSingle();
 
-  if (profileError) throw profileError;
-  if (!profile?.location_sharing) return;
+    if (profileError) throw profileError;
+
+    if (!profile?.location_sharing) {
+      return { ok: false, reason: "sharing_disabled" };
+    }
 
     if (navigator.permissions?.query) {
       const permission = await navigator.permissions.query({
         name: "geolocation"
       });
 
-      if (permission.state !== "granted") return;
+      if (permission.state !== "granted") {
+        return { ok: false, reason: "permission" };
+      }
     }
 
     const position = await new Promise((resolve, reject) => {
@@ -6757,16 +6765,12 @@ async function refreshNearbyCurrentLocation() {
 
     const latitude = position.coords.latitude;
     const longitude = position.coords.longitude;
-
     let currentCity = null;
     let currentState = null;
 
     const { data: locationData, error: locationError } =
       await db.functions.invoke("nearby-reverse-geocode", {
-        body: {
-          latitude,
-          longitude
-        }
+        body: { latitude, longitude }
       });
 
     if (locationError) {
@@ -6776,7 +6780,7 @@ async function refreshNearbyCurrentLocation() {
       currentState = locationData.state || null;
     }
 
-        const { error: saveError } = await db.rpc(
+    const { error: saveError } = await db.rpc(
       "save_my_nearby_location",
       {
         p_lat: latitude,
@@ -6787,10 +6791,18 @@ async function refreshNearbyCurrentLocation() {
     );
 
     if (saveError) throw saveError;
+
+    return { ok: true };
   } catch (error) {
     console.warn("Nearby GPS refresh failed:", error);
+
+    return {
+      ok: false,
+      reason: error?.code === 1 ? "permission" : "gps_error"
+    };
   }
 }
+
 
 async function loadPremiumNearby(){
     await refreshNearbyCurrentLocation();

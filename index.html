@@ -6794,12 +6794,13 @@ if (p.is_verified || p.verification_level === "basic" ||
           }
         });
       const details=document.createElement("p");
-      details.className="small";
-      details.textContent=[
-        p.age?String(p.age):"",
-        p.gender_identity||"",
-        p.city||""
-      ].filter(Boolean).join(" · ");
+details.className="small";
+details.textContent=[
+  p.age?String(p.age):"",
+  p.gender_identity||"",
+  p.nearby_current_city||"",
+  p.nearby_current_state||""
+].filter(Boolean).join(" · ");
 
       const distance=document.createElement("p");
       distance.className="distance";

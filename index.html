@@ -6499,7 +6499,57 @@ if(matchError)throw matchError;
 }
 
 
+async function refreshNearbyCurrentLocation() {
+  if (!currentUser || !navigator.geolocation) return;
 
+  try {
+    const { data: membership, error } = await db
+      .from("premium_memberships")
+      .select("premium_until")
+      .eq("user_id", currentUser.id)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    const isPremium = !!membership &&
+      new Date(membership.premium_until).getTime() > Date.now();
+
+    if (!isPremium) return;
+
+    if (navigator.permissions?.query) {
+      const permission = await navigator.permissions.query({
+        name: "geolocation"
+      });
+
+      if (permission.state !== "granted") return;
+    }
+
+    const position = await new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        resolve,
+        reject,
+        {
+          enableHighAccuracy: true,
+          timeout: 20000,
+          maximumAge: 0
+        }
+      );
+    });
+
+    const { error: saveError } = await db
+      .from("profiles")
+      .update({
+        nearby_latitude: position.coords.latitude,
+        nearby_longitude: position.coords.longitude,
+        nearby_location_updated_at: new Date().toISOString()
+      })
+      .eq("id", currentUser.id);
+
+    if (saveError) throw saveError;
+  } catch (error) {
+    console.warn("Nearby GPS refresh failed:", error);
+  }
+}
 async function loadPremiumNearby(){
   if(!currentUser)return;
 

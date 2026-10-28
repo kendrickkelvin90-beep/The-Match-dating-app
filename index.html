@@ -11222,13 +11222,31 @@ $("backFromPremium").onclick=()=>show("profile");
 
 
 
+
+const premiumPlanPrices = {
+  weekly: 2000,
+  monthly: 5000,
+  yearly: 45000
+};
+
 $("premiumPlan").onchange = () => {
   const plan = $("premiumPlan").value;
-  $("premiumAmount").textContent =
-    plan === "monthly" ? "₦5,000" :
-    plan === "yearly" ? "₦50,000" :
-    "Choose a plan above";
+  $("premiumAmount").textContent = premiumPlanPrices[plan]
+    ? "₦" + premiumPlanPrices[plan].toLocaleString("en-NG")
+    : "Choose a plan above";
 };
+
+document.querySelectorAll("#premium .premium-plan").forEach((card) => {
+  card.addEventListener("click", () => {
+    const plan = card.dataset.premiumPlan;
+    $("premiumPlan").value = plan;
+    $("premiumPlan").dispatchEvent(new Event("change", { bubbles: true }));
+    $("premiumAccountDetails").scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  });
+});
 
 $("premiumPaymentForm").addEventListener("submit", async (e) => {
   e.preventDefault();

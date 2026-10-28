@@ -6870,51 +6870,33 @@ async function loadPremiumNearby(){
         return;
             }
 
+
 status("nearbyMembersStatus", "Getting your current GPS location...");
 
-let nearbyLocation;
+const locationRefresh = await refreshNearbyCurrentLocation();
 
-try {
-  const position = await new Promise((resolve, reject) => {
-    navigator.geolocation.getCurrentPosition(
-      resolve,
-      reject,
-      {
-        enableHighAccuracy: true,
-        timeout: 20000,
-        maximumAge: 0
-      }
-    );
-  });
-
-    
-  nearbyLocation = {
-    latitude: position.coords.latitude,
-    longitude: position.coords.longitude
+if (!locationRefresh.ok) {
+  const messages = {
+    unsupported:
+      "Location isn't supported here. Open The Match in Chrome and check location permissions.",
+    sharing_disabled:
+      "Enable location sharing in your profile to use Nearby.",
+    permission:
+      "Location permission was denied. Allow location for The Match in your browser or phone settings, then try again.",
+    gps_error:
+      "Couldn't get or save your current location. Check your GPS and browser permission, then try again."
   };
 
-  const { data: locationData, error: locationError } =
-    await db.functions.invoke("nearby-reverse-geocode", {
-      body: {
-        latitude: nearbyLocation.latitude,
-        longitude: nearbyLocation.longitude
-      }
-    });
-
-  
-  const { error: saveLocationError } = await db.rpc(
-    "save_my_nearby_location",
-    {
-      p_lat: nearbyLocation.latitude,
-      p_lon: nearbyLocation.longitude,
-      p_city: !locationError && locationData?.city
-        ? locationData.city
-        : null,
-      p_state: !locationError && locationData?.state
-        ? locationData.state
-        : null
-    }
+  status(
+    "nearbyMembersStatus",
+    messages[locationRefresh.reason] || messages.gps_error,
+    true
   );
+  return;
+}
+
+status("nearbyMembersStatus", "Finding nearby members...");
+
 
   if (saveLocationError) throw saveLocationError;
 

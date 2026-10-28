@@ -6500,6 +6500,7 @@ if(matchError)throw matchError;
 }
 
 
+
 async function refreshNearbyCurrentLocation() {
   if (!currentUser || !navigator.geolocation) return;
 
@@ -6537,13 +6538,44 @@ async function refreshNearbyCurrentLocation() {
       );
     });
 
+    const latitude = position.coords.latitude;
+    const longitude = position.coords.longitude;
+
+    let currentCity = null;
+    let currentState = null;
+
+    const { data: locationData, error: locationError } =
+      await db.functions.invoke("nearby-reverse-geocode", {
+        body: {
+          latitude,
+          longitude
+        }
+      });
+
+    if (locationError) {
+      console.warn("Nearby reverse geocoding failed:", locationError);
+    } else if (locationData) {
+      currentCity = locationData.city || null;
+      currentState = locationData.state || null;
+    }
+
+    const profileUpdate = {
+      nearby_latitude: latitude,
+      nearby_longitude: longitude,
+      nearby_location_updated_at: new Date().toISOString()
+    };
+
+    if (currentCity) {
+      profileUpdate.nearby_current_city = currentCity;
+    }
+
+    if (currentState) {
+      profileUpdate.nearby_current_state = currentState;
+    }
+
     const { error: saveError } = await db
       .from("profiles")
-      .update({
-        nearby_latitude: position.coords.latitude,
-        nearby_longitude: position.coords.longitude,
-        nearby_location_updated_at: new Date().toISOString()
-      })
+      .update(profileUpdate)
       .eq("id", currentUser.id);
 
     if (saveError) throw saveError;
@@ -6551,6 +6583,7 @@ async function refreshNearbyCurrentLocation() {
     console.warn("Nearby GPS refresh failed:", error);
   }
 }
+
 async function loadPremiumNearby(){
   if(!currentUser)return;
 

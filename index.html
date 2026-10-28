@@ -8282,59 +8282,115 @@ $("backFromBlockedMembers").onclick=()=>{
   show("discover");
   loadNearby();
 };
-// Install The Match — Settings button only
-let deferredInstallPrompt = null;
 
-window.addEventListener("beforeinstallprompt", (event) => {
-  event.preventDefault();
-  
-  deferredInstallPrompt = event;
-});
+
+
+/* THE MATCH — Install app popup */
+let deferredInstallPrompt = null;
 
 const installButton = document.getElementById("installAppButton");
 const installHelp = document.getElementById("installAppHelp");
+const installModal = document.getElementById("installAppModal");
+const confirmInstallButton = document.getElementById("confirmInstallApp");
+const laterInstallButton = document.getElementById("laterInstallApp");
+const closeInstallButton = document.getElementById("closeInstallAppModal");
 
-if (installButton && installHelp) {
-  installButton.addEventListener("click", async () => {
-    if (
-      window.matchMedia("(display-mode: standalone)").matches ||
-      navigator.standalone === true
-    ) {
+function isTheMatchInstalled() {
+  return window.matchMedia("(display-mode: standalone)").matches ||
+    navigator.standalone === true;
+}
+
+function closeTheMatchInstallModal() {
+  if (installModal) {
+    installModal.classList.add("hidden");
+    document.body.style.overflow = "";
+  }
+}
+
+function openTheMatchInstallModal() {
+  if (!installModal || isTheMatchInstalled()) return;
+  installModal.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+});
+
+async function requestTheMatchInstall() {
+  if (isTheMatchInstalled()) {
+    if (installHelp) {
       installHelp.textContent = "The Match is already installed on this device.";
-      return;
+    }
+    closeTheMatchInstallModal();
+    return;
+  }
+
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    const result = await deferredInstallPrompt.userChoice;
+
+    if (installHelp) {
+      installHelp.textContent = result.outcome === "accepted"
+        ? "The Match is being installed."
+        : "Installation was cancelled. You can try again.";
     }
 
-    if (deferredInstallPrompt) {
-      deferredInstallPrompt.prompt();
+    deferredInstallPrompt = null;
+    if (result.outcome === "accepted") closeTheMatchInstallModal();
+    return;
+  }
 
-      const result = await deferredInstallPrompt.userChoice;
+  if (installHelp) {
+    installHelp.textContent = /iphone|ipad|ipod/i.test(navigator.userAgent)
+      ? "To install on iPhone: open this website in Safari, tap Share, then choose Add to Home Screen."
+      : "Open your browser menu (⋮) and choose Install app or Add to Home screen.";
+  }
+}
 
-      installHelp.textContent =
-        result.outcome === "accepted"
-          ? "The Match is being installed."
-          : "Installation was cancelled. You can try again.";
+if (installButton) {
+  installButton.addEventListener("click", openTheMatchInstallModal);
+}
 
-      deferredInstallPrompt = null;
-      return;
-    }
+if (confirmInstallButton) {
+  confirmInstallButton.addEventListener("click", requestTheMatchInstall);
+}
 
-    if (/iphone|ipad|ipod/i.test(navigator.userAgent)) {
-      installHelp.textContent =
-        "To install on iPhone: open this website in Safari, tap Share, then choose Add to Home Screen.";
-    } else {
-      installHelp.textContent =
-        "Open your browser menu (⋮) and choose Install app or Add to Home screen.";
-    }
+if (laterInstallButton) {
+  laterInstallButton.addEventListener("click", closeTheMatchInstallModal);
+}
+
+if (closeInstallButton) {
+  closeInstallButton.addEventListener("click", closeTheMatchInstallModal);
+}
+
+if (installModal) {
+  installModal.addEventListener("click", (event) => {
+    if (event.target === installModal) closeTheMatchInstallModal();
   });
 }
 
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeTheMatchInstallModal();
+});
+
 window.addEventListener("appinstalled", () => {
   deferredInstallPrompt = null;
+  closeTheMatchInstallModal();
 
   if (installHelp) {
     installHelp.textContent = "The Match is installed on this device.";
   }
 });
+
+/* Show automatically after a short delay unless already installed. */
+window.addEventListener("load", () => {
+  if (!isTheMatchInstalled()) {
+    setTimeout(openTheMatchInstallModal, 9000);
+  }
+});
+
   // Settings page actions
 $("openNotifications").onclick = async () => {
   if (!currentUser) {

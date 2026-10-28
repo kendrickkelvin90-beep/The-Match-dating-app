@@ -6912,7 +6912,12 @@ async function loadStories(){
     
     const seen=new Set();
 
-    stories.forEach(story=>{
+        const orderedStories = [
+      ...stories.filter(story => story.user_id === currentUser.id),
+      ...stories.filter(story => story.user_id !== currentUser.id)
+    ];
+
+    orderedStories.forEach(story=>{
       
       if(seen.has(story.user_id))return;
       seen.add(story.user_id);

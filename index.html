@@ -6615,15 +6615,15 @@ try {
 
         const nearbyRadiusKm = 50;
 
-    people = people.map(p => {
-      const latitude = Number(p.latitude);
-      const longitude = Number(p.longitude);
+        people = people.map(p => {
+      const latitude = Number(p.nearby_latitude);
+      const longitude = Number(p.nearby_longitude);
 
       return {
         ...p,
         _distance: kmBetween(
-          approxLocation.latitude,
-          approxLocation.longitude,
+          nearbyLocation.latitude,
+          nearbyLocation.longitude,
           latitude,
           longitude
         )

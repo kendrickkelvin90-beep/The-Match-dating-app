@@ -6726,18 +6726,14 @@ async function refreshNearbyCurrentLocation() {
   if (!currentUser || !navigator.geolocation) return;
 
   try {
-    const { data: membership, error } = await db
-      .from("premium_memberships")
-      .select("premium_until")
-      .eq("user_id", currentUser.id)
-      .maybeSingle();
+      const { data: profile, error: profileError } = await db
+    .from("profiles")
+    .select("location_sharing")
+    .eq("id", currentUser.id)
+    .maybeSingle();
 
-    if (error) throw error;
-
-    const isPremium = !!membership &&
-      new Date(membership.premium_until).getTime() > Date.now();
-
-    if (!isPremium) return;
+  if (profileError) throw profileError;
+  if (!profile?.location_sharing) return;
 
     if (navigator.permissions?.query) {
       const permission = await navigator.permissions.query({

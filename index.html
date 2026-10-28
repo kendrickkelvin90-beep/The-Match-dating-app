@@ -6553,6 +6553,8 @@ async function loadPremiumNearby(){
 
 status("nearbyMembersStatus", "Getting your current GPS location...");
 
+let nearbyLocation;
+
 try {
   const position = await new Promise((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(

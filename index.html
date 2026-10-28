@@ -6585,6 +6585,7 @@ async function refreshNearbyCurrentLocation() {
 }
 
 async function loadPremiumNearby(){
+    await refreshNearbyCurrentLocation();
   if(!currentUser)return;
 
   const list=$("nearbyMembersList");

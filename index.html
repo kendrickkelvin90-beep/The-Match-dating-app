@@ -9579,6 +9579,7 @@ window.addEventListener("online", refreshMessagesAfterReconnect);
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
     refreshMessagesAfterReconnect();
+    refreshNearbyCurrentLocation();
   }
 });
 

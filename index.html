@@ -6590,13 +6590,12 @@ try {
   return;
   }
     status("nearbyMembersStatus","Finding nearby members...");
-    const {data:peopleData,error}=await db
+        const {data:peopleData,error}=await db
       .from("profiles")
-      .select("id,display_name,age,gender_identity,city,bio,latitude,longitude,location_sharing,location_updated_at,is_verified,verification_level")
+      .select("id,display_name,age,gender_identity,city,bio,nearby_latitude,nearby_longitude,nearby_current_city,nearby_current_state,nearby_location_updated_at,is_verified,verification_level")
       .neq("id",currentUser.id)
-      .eq("location_sharing",true)
-      .not("latitude","is",null)
-      .not("longitude","is",null)
+      .not("nearby_latitude","is",null)
+      .not("nearby_longitude","is",null)
       .limit(100);
 
     if(error)throw error;

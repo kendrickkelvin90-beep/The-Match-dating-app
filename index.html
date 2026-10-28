@@ -6557,24 +6557,15 @@ async function refreshNearbyCurrentLocation() {
       currentState = locationData.state || null;
     }
 
-    const profileUpdate = {
-      nearby_latitude: latitude,
-      nearby_longitude: longitude,
-      nearby_location_updated_at: new Date().toISOString()
-    };
-
-    if (currentCity) {
-      profileUpdate.nearby_current_city = currentCity;
-    }
-
-    if (currentState) {
-      profileUpdate.nearby_current_state = currentState;
-    }
-
-    const { error: saveError } = await db
-      .from("profiles")
-      .update(profileUpdate)
-      .eq("id", currentUser.id);
+        const { error: saveError } = await db.rpc(
+      "save_my_nearby_location",
+      {
+        p_lat: latitude,
+        p_lon: longitude,
+        p_city: currentCity,
+        p_state: currentState
+      }
+    );
 
     if (saveError) throw saveError;
   } catch (error) {

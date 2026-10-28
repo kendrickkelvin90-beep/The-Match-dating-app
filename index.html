@@ -5829,9 +5829,9 @@ document.querySelectorAll('input[name="sexualRole"]').forEach(el=>{
 
 $("city").value=p.city||"";
 $("bio").value=p.bio||"";
-approxLocation=p.location_sharing&&p.latitude!=null&&p.longitude!=null
-?{latitude:p.latitude,longitude:p.longitude}:null;
-$("locationButton").textContent=approxLocation?"📍 Nearby discovery is on":"📍 Turn on nearby discovery";
+approxLocation=null;
+discoveryLocationEnabled=!!p.location_sharing;
+$("locationButton").textContent=discoveryLocationEnabled?"📍 Nearby discovery is on":"📍 Turn on nearby discovery";
 status("profileStatus","Your profile is loaded. Check your details and save when ready.");
 }else{
   $("displayName").value=fallback;

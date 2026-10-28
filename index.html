@@ -11336,9 +11336,11 @@ $("refreshPremiumRequests").onclick=async()=>{
       const card=document.createElement("div");
       card.className="member-card";
 
-      const plan=document.createElement("h4");
-      plan.textContent=
-        request.plan==="monthly"?"Monthly Premium":"Yearly Premium";
+            const plan=document.createElement("h4");
+      plan.textContent =
+        request.plan === "weekly" ? "Weekly Premium" :
+        request.plan === "monthly" ? "Monthly Premium" :
+        "Yearly Premium";
 
       const amount=document.createElement("p");
       amount.textContent="Amount: ₦"+

@@ -2876,6 +2876,134 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
   display: block;
 }
 
+/* THE MATCH — Premium Install Popup */
+.install-app-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.install-app-overlay.hidden {
+  display: none !important;
+}
+
+.install-app-card {
+  position: relative;
+  width: 100%;
+  max-width: 390px;
+  padding: 32px 24px 24px;
+  border: 1px solid #C6A15B;
+  border-radius: 24px;
+  background: linear-gradient(160deg, #1D1B17, #090909 75%);
+  color: #F7F4EC;
+  text-align: center;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.65);
+}
+
+.install-app-close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  border: 0;
+  background: transparent;
+  color: #C6A15B;
+  font-size: 30px;
+  cursor: pointer;
+}
+
+.install-app-icon {
+  display: flex;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 14px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #C6A15B;
+  border-radius: 20px;
+  background: #292216;
+  color: #D8B56A;
+  font-size: 34px;
+}
+
+.install-app-brand {
+  margin: 0 0 12px;
+  color: #D8B56A;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 4px;
+}
+
+.install-app-card h2 {
+  margin: 0 0 12px;
+  color: #FFF9EA;
+  font-size: 25px;
+  line-height: 1.25;
+}
+
+.install-app-description {
+  margin: 0 0 22px;
+  color: #C3BFB5;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.install-app-benefit {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 12px 0;
+  color: #E9E4D8;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.install-app-benefit span:first-child {
+  color: #D8B56A;
+  font-weight: 900;
+}
+
+.install-app-primary {
+  width: 100%;
+  min-height: 50px;
+  margin-top: 18px;
+  border: 0;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #E4C477, #B88B38);
+  color: #17130B;
+  font-weight: 900;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+.install-app-secondary {
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid #484238;
+  border-radius: 12px;
+  background: transparent;
+  color: #C9C3B7;
+  cursor: pointer;
+}
+
+@media (max-width: 380px) {
+  .install-app-card {
+    padding: 30px 18px 20px;
+  }
+
+  .install-app-card h2 {
+    font-size: 22px;
+  }
+}
+
 </style>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>

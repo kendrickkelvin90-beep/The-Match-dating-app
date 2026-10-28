@@ -6652,18 +6652,37 @@ try {
     );
   });
 
-    nearbyLocation = {
+    
+  nearbyLocation = {
     latitude: position.coords.latitude,
     longitude: position.coords.longitude
   };
 
+  const { data: locationData, error: locationError } =
+    await db.functions.invoke("nearby-reverse-geocode", {
+      body: {
+        latitude: nearbyLocation.latitude,
+        longitude: nearbyLocation.longitude
+      }
+    });
+
+  const profileUpdate = {
+    nearby_latitude: nearbyLocation.latitude,
+    nearby_longitude: nearbyLocation.longitude,
+    nearby_location_updated_at: new Date().toISOString()
+  };
+
+  if (!locationError && locationData?.city) {
+    profileUpdate.nearby_current_city = locationData.city;
+  }
+
+  if (!locationError && locationData?.state) {
+    profileUpdate.nearby_current_state = locationData.state;
+  }
+
   const { error: saveLocationError } = await db
     .from("profiles")
-    .update({
-      nearby_latitude: nearbyLocation.latitude,
-      nearby_longitude: nearbyLocation.longitude,
-      nearby_location_updated_at: new Date().toISOString()
-    })
+    .update(profileUpdate)
     .eq("id", currentUser.id);
 
   if (saveLocationError) throw saveLocationError;

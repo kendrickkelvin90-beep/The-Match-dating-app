@@ -5963,34 +5963,22 @@ async function loadNearby(){
 
     
     const { data: peopleData, error } = await db.rpc(
-      "discover_profiles_filtered",
-      {
-        p_lat: approxLocation ? approxLocation.latitude : null,
-        p_lon: approxLocation ? approxLocation.longitude : null,
-        p_max_distance_km: maxDistance,
-        p_min_age: minAge,
-        p_max_age: maxAge,
-        p_city: preferredLocation || null
-      }
-    );
+  "discover_profiles_secure",
+  {
+    p_max_distance_km: maxDistance,
+    p_min_age: minAge,
+    p_max_age: maxAge,
+    p_city: preferredLocation || null
+  }
+);
 
-    if (error) throw error;
+if (error) throw error;
 
-    let people = (peopleData || []).map(p => ({
-      ...p,
-      _distance:
-        approxLocation &&
-        p.location_sharing &&
-        p.latitude != null &&
-        p.longitude != null
-          ? kmBetween(
-              approxLocation.latitude,
-              approxLocation.longitude,
-              p.latitude,
-              p.longitude
-            )
-          : null
-    }));
+let people = (peopleData || []).map(p => ({
+  ...p,
+  _distance:
+    p.distance_km == null ? null : Number(p.distance_km)
+}));
 
     
     const discoverIds = people.map(p => p.id);

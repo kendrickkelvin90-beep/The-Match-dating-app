@@ -6696,15 +6696,26 @@ try {
   return;
   }
     status("nearbyMembersStatus","Finding nearby members...");
-        const {data:peopleData,error}=await db
-      .from("profiles")
-      .select("id,display_name,age,gender_identity,city,bio,nearby_latitude,nearby_longitude,nearby_current_city,nearby_current_state,nearby_location_updated_at,is_verified,verification_level")
-      .neq("id",currentUser.id)
-      .not("nearby_latitude","is",null)
-      .not("nearby_longitude","is",null)
-      .limit(100);
+        
+    let people = [];
+    const pageSize = 1000;
 
-    if(error)throw error;
+    for (let from = 0; ; from += pageSize) {
+      const { data: pageData, error } = await db
+        .from("profiles")
+        .select("id,display_name,age,gender_identity,city,bio,nearby_latitude,nearby_longitude,nearby_current_city,nearby_current_state,nearby_location_updated_at,is_verified,verification_level")
+        .neq("id", currentUser.id)
+        .not("nearby_latitude", "is", null)
+        .not("nearby_longitude", "is", null)
+        .range(from, from + pageSize - 1);
+
+      if (error) throw error;
+
+      const page = pageData || [];
+      people.push(...page);
+
+      if (page.length < pageSize) break;
+    }
 
     let people=peopleData||[];
 

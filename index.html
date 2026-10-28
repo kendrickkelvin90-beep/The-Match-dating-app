@@ -6834,7 +6834,21 @@ async function loadPremiumNearby(){
       return;
     }
 
-      
+           const { data: profile, error: profileError } = await db
+        .from("profiles")
+        .select("location_sharing")
+        .eq("id", currentUser.id)
+        .maybeSingle();
+
+      if (profileError) throw profileError;
+
+      if (!profile?.location_sharing) {
+        status(
+          "nearbyMembersStatus",
+          "Enable location sharing in your profile to use Nearby."
+        );
+        return;
+  } 
       if (!navigator.geolocation) {
   status(
     "nearbyMembersStatus",

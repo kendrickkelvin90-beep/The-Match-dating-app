@@ -3476,6 +3476,217 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .btn {
   #nearbyPage #nearbyMembersList { grid-template-columns:repeat(3,minmax(0,1fr))!important; gap:16px!important; }
 }
 
+
+/* Messages — conversation list and chat polish (visual-only) */
+#messages {
+  background:radial-gradient(ellipse at 50% 0%,rgba(198,161,91,.07),transparent 46%),#070707!important;
+  color:#f4efe5!important;
+  padding:20px 14px 28px!important;
+}
+#messages > h2 {
+  color:#f0dfbb!important;
+  font-size:24px!important;
+  font-weight:760!important;
+  letter-spacing:-.4px!important;
+  margin:0 0 14px!important;
+}
+#messages > .small {
+  color:#aaa49a!important;
+  line-height:1.55!important;
+  margin:12px 0!important;
+}
+#messages #refreshConversationsButton {
+  width:100%!important;
+  min-height:45px!important;
+  margin:0 0 12px!important;
+  border:1px solid #c6a15b!important;
+  border-radius:13px!important;
+  background:linear-gradient(135deg,#e2c17e,#b58a43)!important;
+  color:#17120a!important;
+  font-size:13px!important;
+  font-weight:800!important;
+  box-shadow:0 6px 18px rgba(198,161,91,.1)!important;
+}
+#messages #conversationList {
+  display:flex!important;
+  flex-direction:column!important;
+  gap:9px!important;
+  margin:15px 0!important;
+}
+#messages #conversationList > button {
+  display:flex!important;
+  align-items:center!important;
+  gap:12px!important;
+  width:100%!important;
+  min-height:78px!important;
+  margin:0!important;
+  padding:12px!important;
+  border:1px solid rgba(198,161,91,.28)!important;
+  border-radius:16px!important;
+  background:linear-gradient(120deg,#171510,#0d0d0d)!important;
+  color:#f5efe2!important;
+  text-align:left!important;
+  box-shadow:0 7px 20px rgba(0,0,0,.24)!important;
+}
+#messages #conversationList > button img {
+  flex:0 0 52px!important;
+  width:52px!important;
+  height:52px!important;
+  border:1px solid rgba(198,161,91,.5)!important;
+  border-radius:50%!important;
+  object-fit:cover!important;
+  background:#24211a!important;
+}
+#messages #conversationList > button strong {
+  color:#f2e3c2!important;
+  font-size:14px!important;
+  font-weight:750!important;
+  line-height:1.3!important;
+}
+#messages #conversationList > button div {
+  min-width:0!important;
+}
+#messages #conversationList > button div span {
+  max-width:100%!important;
+  color:#aaa49a!important;
+  font-size:12px!important;
+  line-height:1.35!important;
+}
+#messages #conversationList > button div span:last-child {
+  color:#c5bcae!important;
+}
+#messages #conversationList > button > span {
+  min-width:22px!important;
+  height:22px!important;
+  padding:0 6px!important;
+  border-radius:999px!important;
+  background:#c6a15b!important;
+  color:#17120a!important;
+  font-size:11px!important;
+  font-weight:800!important;
+}
+#messages #messagesStatus {
+  color:#c8b88f!important;
+  font-size:12px!important;
+  line-height:1.5!important;
+}
+#messages #backFromMessages {
+  border:1px solid rgba(198,161,91,.4)!important;
+  border-radius:12px!important;
+}
+#chatPage {
+  background:#070707!important;
+  color:#f5f0e5!important;
+}
+#chatPage #chatHeader {
+  background:rgba(12,11,9,.98)!important;
+  border-bottom:1px solid rgba(198,161,91,.3)!important;
+  box-shadow:0 5px 20px rgba(0,0,0,.22)!important;
+}
+#chatPage #backFromChatHeader {
+  color:#e3c47f!important;
+}
+#chatPage #chatPartnerAvatar {
+  border:1px solid rgba(198,161,91,.55)!important;
+  background:#201b11!important;
+}
+#chatPage #chatPageTitle {
+  color:#f0dfbb!important;
+}
+#chatPage #chatOnlineStatus,
+#chatPage #chatPartnerLocation {
+  color:#aaa49a!important;
+}
+#chatPage #chatMessages {
+  border:1px solid rgba(198,161,91,.13)!important;
+  border-radius:16px!important;
+  background:#0b0b0b!important;
+}
+#chatPage #chatMessages .chat-bubble.sent {
+  border:1px solid rgba(198,161,91,.34)!important;
+  border-radius:16px 16px 5px 16px!important;
+  background:#282116!important;
+  color:#f7f0e1!important;
+}
+#chatPage #chatMessages .chat-bubble.received {
+  border:1px solid #303030!important;
+  border-radius:16px 16px 16px 5px!important;
+  background:#191919!important;
+  color:#f0ede7!important;
+}
+#chatPage #chatComposer {
+  border:1px solid rgba(198,161,91,.32)!important;
+  background:#12110e!important;
+}
+#chatPage #chatEmojiToggle {
+  color:#d7b66f!important;
+}
+#chatPage #chatMediaButton {
+  border-color:rgba(198,161,91,.48)!important;
+  background:#211b10!important;
+  color:#e5c783!important;
+}
+#chatPage #chatViewOnce {
+  accent-color:#c6a15b!important;
+}
+#chatPage #sendChatMessage {
+  background:linear-gradient(135deg,#e2c17e,#b58a43)!important;
+  color:#17120a!important;
+}
+#chatPage #chatPageStatus:not(:empty) {
+  border:1px solid rgba(198,161,91,.28)!important;
+  border-radius:10px!important;
+  background:#17130c!important;
+  color:#e4d2a8!important;
+}
+body.light-theme #messages {
+  background:#fff!important;
+  color:#202020!important;
+}
+body.light-theme #messages > h2 {
+  color:#805f27!important;
+}
+body.light-theme #messages #conversationList > button {
+  border-color:#e2d3b4!important;
+  background:#fff!important;
+  color:#202020!important;
+  box-shadow:0 5px 16px rgba(30,20,5,.06)!important;
+}
+body.light-theme #messages #conversationList > button strong {
+  color:#24201a!important;
+}
+body.light-theme #messages #conversationList > button div span {
+  color:#666!important;
+}
+body.light-theme #chatPage {
+  background:#fff!important;
+  color:#202020!important;
+}
+body.light-theme #chatPage #chatHeader {
+  background:#fff!important;
+  border-bottom-color:#e5dccb!important;
+}
+body.light-theme #chatPage #chatPageTitle {
+  color:#805f27!important;
+}
+body.light-theme #chatPage #chatMessages {
+  background:#fafafa!important;
+  border-color:#e8e3d9!important;
+}
+body.light-theme #chatPage #chatMessages .chat-bubble.received {
+  background:#f0f0f0!important;
+  color:#202020!important;
+}
+body.light-theme #chatPage #chatMessages .chat-bubble.sent {
+  background:#f7efdF!important;
+  color:#282116!important;
+}
+@media(max-width:380px) {
+  #messages { padding-left:10px!important; padding-right:10px!important; }
+  #messages #conversationList > button { gap:9px!important; padding:10px!important; }
+  #messages #conversationList > button img { width:46px!important; height:46px!important; flex-basis:46px!important; }
+}
+
 </style>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>

@@ -3583,7 +3583,63 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
         font-size: 21px;
       }
     }
-  </style>
+  
+/* The Match admin dashboard — styles are deliberately scoped to #adminPanel. */
+#adminPanel { width: 100%; }
+#adminPanel .admin-shell { width: 100%; max-width: 1180px; margin: 0 auto; padding: clamp(14px, 3vw, 30px); border: 1px solid rgba(205,166,82,.22); border-radius: 22px; background: #090a0d; color: #f7f4ed; box-sizing: border-box; }
+#adminPanel .admin-topbar, #adminPanel .admin-brand, #adminPanel .admin-top-actions, #adminPanel .admin-section-heading, #adminPanel .admin-queue-title, #adminPanel .admin-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+#adminPanel .admin-brand { justify-content: flex-start; }
+#adminPanel .admin-brand-mark { width: 48px; height: 48px; flex: 0 0 48px; display: grid; place-items: center; border-radius: 15px; color: #17120a; background: linear-gradient(145deg,#f2d58b,#b88a37); font-size: 25px; font-weight: 900; box-shadow: 0 8px 28px rgba(197,151,59,.2); }
+#adminPanel .admin-eyebrow { margin: 0 0 5px; color: #c6a45c; font-size: 10px; font-weight: 800; letter-spacing: .17em; }
+#adminPanel .admin-topbar h2 { margin: 0; color: #fff; font-size: clamp(23px,4vw,32px); letter-spacing: -.035em; }
+#adminPanel .admin-subtitle, #adminPanel .admin-welcome-strip p:last-child { margin: 5px 0 0; color: #aaa7a0; font-size: 13px; line-height: 1.55; }
+#adminPanel .admin-live-indicator { display: inline-flex; align-items: center; gap: 7px; color: #c8c5bd; font-size: 11px; white-space: nowrap; }
+#adminPanel .admin-live-indicator span { width: 7px; height: 7px; border-radius: 50%; background: #61c58a; box-shadow: 0 0 0 4px rgba(97,197,138,.12); }
+#adminPanel .admin-refresh-button, #adminPanel .admin-back-button { border: 1px solid rgba(209,174,99,.42); border-radius: 11px; padding: 10px 14px; background: rgba(202,161,78,.1); color: #e7c77f; font-weight: 700; font-size: 12px; }
+#adminPanel .admin-welcome-strip { display: flex; align-items: center; justify-content: space-between; margin: 25px 0 28px; padding: 22px 24px; border: 1px solid rgba(205,166,82,.24); border-radius: 17px; background: radial-gradient(ellipse at 85% 50%,rgba(187,139,49,.17),transparent 45%),linear-gradient(115deg,#171511,#101115); }
+#adminPanel .admin-welcome-strip h3 { margin: 0; color: #fff; font-size: clamp(18px,3vw,23px); }
+#adminPanel .admin-welcome-symbol { color: #d5b36a; font-size: 45px; opacity: .8; padding: 0 14px; }
+#adminPanel .admin-section-heading { margin: 0 0 13px; }
+#adminPanel .admin-section-heading h3 { margin: 0; color: #f5f1e8; font-size: 17px; }
+#adminPanel .admin-data-note { color: #85827c; font-size: 10px; text-align: right; }
+#adminPanel .admin-metrics-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+#adminPanel .admin-metric-card { position: relative; min-width: 0; padding: 17px; border: 1px solid #292720; border-radius: 15px; background: linear-gradient(145deg,#171817,#101113); }
+#adminPanel .admin-metric-icon { display: inline-grid; place-items: center; width: 31px; height: 31px; border-radius: 10px; background: rgba(207,170,94,.12); color: #d9b76d; font-size: 17px; }
+#adminPanel .admin-metric-label { margin: 12px 0 4px; color: #aaa69d; font-size: 11px; }
+#adminPanel .admin-metric-value { margin: 0; color: #fff; font-size: clamp(25px,4vw,34px); font-weight: 800; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+#adminPanel .admin-metric-foot { display: block; margin-top: 5px; color: #77766f; font-size: 10px; }
+#adminPanel .admin-metric-attention { border-color: rgba(197,153,70,.28); }
+#adminPanel .admin-queue-heading { margin-top: 30px; }
+#adminPanel .admin-queues-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 13px; align-items: start; }
+#adminPanel .admin-queue-card { min-width: 0; padding: 17px; border: 1px solid #2a2924; border-radius: 15px; background: #111214; }
+#adminPanel .admin-reports-card { grid-column: 1 / -1; }
+#adminPanel .admin-queue-title { justify-content: flex-start; margin-bottom: 15px; }
+#adminPanel .admin-queue-icon { display: grid; place-items: center; flex: 0 0 34px; width: 34px; height: 34px; border-radius: 11px; background: rgba(207,170,94,.12); color: #d9b76d; font-size: 17px; }
+#adminPanel .admin-queue-title h3 { margin: 0; color: #f2eee5; font-size: 14px; }
+#adminPanel .admin-queue-title p { margin: 4px 0 0; color: #85827c; font-size: 10px; }
+#adminPanel .admin-queue-list { color: #c9c6be; font-size: 12px; overflow-wrap: anywhere; }
+#adminPanel .admin-queue-list > p { color: #89867f; }
+#adminPanel .admin-queue-list button { margin: 5px 5px 5px 0; }
+#adminPanel .admin-footer { margin-top: 22px; padding-top: 16px; border-top: 1px solid #292720; flex-wrap: wrap; }
+#adminPanel #adminStatus { margin: 0; color: #aaa69d; font-size: 11px; }
+#adminPanel .admin-back-button { background: transparent; border-color: #39362e; color: #c9c3b6; }
+@media (max-width: 700px) {
+  #adminPanel .admin-shell { padding: 14px; border-radius: 16px; }
+  #adminPanel .admin-topbar { align-items: flex-start; flex-direction: column; }
+  #adminPanel .admin-top-actions { width: 100%; justify-content: space-between; }
+  #adminPanel .admin-metrics-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+  #adminPanel .admin-metric-card { padding: 13px; }
+  #adminPanel .admin-queues-grid { grid-template-columns: 1fr; }
+  #adminPanel .admin-reports-card { grid-column: auto; }
+  #adminPanel .admin-welcome-strip { margin: 19px 0 23px; padding: 17px; }
+  #adminPanel .admin-data-note { max-width: 120px; }
+}
+@media (max-width: 380px) {
+  #adminPanel .admin-metrics-grid { grid-template-columns: 1fr 1fr; }
+  #adminPanel .admin-metric-label { min-height: 28px; }
+}
+
+</style>
 
   <div class="premium-hero">
     <div class="premium-eyebrow">THE MATCH · MEMBERSHIP</div>
@@ -4033,65 +4089,87 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
       </section>
   
   <section class="panel hidden" id="adminPanel">
-    <div class="card">
-      
-      <h2>Admin Dashboard</h2>
-      <p>Manage members, verification requests, Premium payments, and reports.</p>
-
-      <div class="grid">
-        <div class="card">
-          <h3>Members</h3>
-          <p id="adminMembersCount">—</p>
+    <div class="admin-shell">
+      <header class="admin-topbar">
+        <div class="admin-brand">
+          <div class="admin-brand-mark" aria-hidden="true">M</div>
+          <div>
+            <p class="admin-eyebrow">THE MATCH · CONTROL CENTRE</p>
+            <h2>Admin dashboard</h2>
+            <p class="admin-subtitle">A clear view of your community and the actions that need attention.</p>
+          </div>
         </div>
-
-        <div class="card">
-          <h3>Likes</h3>
-          <p id="adminLikesCount">—</p>
+        <div class="admin-top-actions">
+          <span class="admin-live-indicator"><span></span> Live data</span>
+          <button type="button" id="adminRefreshBtn" class="admin-refresh-button">↻ Refresh</button>
         </div>
+      </header>
 
-        <div class="card">
-          <h3>Messages</h3>
-          <p id="adminMessagesCount">—</p>
+      <div class="admin-welcome-strip">
+        <div>
+          <p class="admin-eyebrow">OVERVIEW</p>
+          <h3>Your community at a glance</h3>
+          <p>Review activity, process requests and keep members safe.</p>
         </div>
-
-        <div class="card">
-          <h3>Pending Verification</h3>
-          <p id="adminVerificationCount">—</p>
-        </div>
-
-        <div class="card">
-          <h3>Pending Premium Payments</h3>
-          <p id="adminPaymentsCount">—</p>
-        </div>
-
-        <div class="card">
-          <h3>Member Reports</h3>
-          <p id="adminReportsCount">—</p>
-        </div>
+        <div class="admin-welcome-symbol" aria-hidden="true">✦</div>
       </div>
 
-      <hr>
-      <h3>Verification Requests</h3>
-      <div id="adminVerificationList">
-        <p>Verification requests will appear here.</p>
+      <div class="admin-section-heading">
+        <div><p class="admin-eyebrow">KEY METRICS</p><h3>Platform snapshot</h3></div>
+        <span class="admin-data-note">Counts update when you refresh</span>
       </div>
 
-      <hr>
-      <h3>Premium Payment Requests</h3>
-      <div id="adminPaymentsList">
-        <p>Premium payment requests will appear here.</p>
+      <div class="admin-metrics-grid">
+        <article class="admin-metric-card">
+          <span class="admin-metric-icon">♙</span><p class="admin-metric-label">Total members</p>
+          <p class="admin-metric-value" id="adminMembersCount">—</p><span class="admin-metric-foot">Registered profiles</span>
+        </article>
+        <article class="admin-metric-card">
+          <span class="admin-metric-icon">♡</span><p class="admin-metric-label">Likes</p>
+          <p class="admin-metric-value" id="adminLikesCount">—</p><span class="admin-metric-foot">Community activity</span>
+        </article>
+        <article class="admin-metric-card">
+          <span class="admin-metric-icon">▤</span><p class="admin-metric-label">Messages</p>
+          <p class="admin-metric-value" id="adminMessagesCount">—</p><span class="admin-metric-foot">Messages recorded</span>
+        </article>
+        <article class="admin-metric-card admin-metric-attention">
+          <span class="admin-metric-icon">✓</span><p class="admin-metric-label">Pending verification</p>
+          <p class="admin-metric-value" id="adminVerificationCount">—</p><span class="admin-metric-foot">Awaiting review</span>
+        </article>
+        <article class="admin-metric-card admin-metric-attention">
+          <span class="admin-metric-icon">₦</span><p class="admin-metric-label">Premium payments</p>
+          <p class="admin-metric-value" id="adminPaymentsCount">—</p><span class="admin-metric-foot">Awaiting confirmation</span>
+        </article>
+        <article class="admin-metric-card admin-metric-attention">
+          <span class="admin-metric-icon">⚑</span><p class="admin-metric-label">Member reports</p>
+          <p class="admin-metric-value" id="adminReportsCount">—</p><span class="admin-metric-foot">Require moderation</span>
+        </article>
       </div>
 
-      <hr>
-      <h3>Member Reports</h3>
-      <div id="adminReportsList">
-        <p>Member reports will appear here.</p>
+      <div class="admin-section-heading admin-queue-heading">
+        <div><p class="admin-eyebrow">ACTION CENTRE</p><h3>Requests &amp; moderation</h3></div>
+        <span class="admin-data-note">Review each item carefully</span>
       </div>
 
-      <hr>
-      <button type="button" id="adminRefreshBtn">Refresh Dashboard</button>
-      <button type="button" id="adminBackBtn">Back to Settings</button>
-      <p class="status" id="adminStatus" role="status"></p>
+      <div class="admin-queues-grid">
+        <section class="admin-queue-card">
+          <div class="admin-queue-title"><span class="admin-queue-icon">✓</span><div><h3>Verification requests</h3><p>Review member verification submissions</p></div></div>
+          <div id="adminVerificationList" class="admin-queue-list"><p>Verification requests will appear here.</p></div>
+        </section>
+        <section class="admin-queue-card">
+          <div class="admin-queue-title"><span class="admin-queue-icon">₦</span><div><h3>Premium payments</h3><p>Check transfer details before approval</p></div></div>
+          <div id="adminPaymentsList" class="admin-queue-list"><p>Premium payment requests will appear here.</p></div>
+        </section>
+        <section class="admin-queue-card admin-reports-card">
+          <div class="admin-queue-title"><span class="admin-queue-icon">⚑</span><div><h3>Member reports</h3><p>Help keep The Match respectful and safe</p></div></div>
+          <div id="adminReportsList" class="admin-queue-list"><p>Member reports will appear here.</p></div>
+        </section>
+      </div>
+
+      <footer class="admin-footer">
+        <p class="status" id="adminStatus" role="status" aria-live="polite">Dashboard is ready.</p>
+        <button type="button" id="adminBackBtn" class="admin-back-button">← Back to settings</button>
+      </footer>
     </div>
   </section>
 <section class="panel hidden" id="referralsPage">

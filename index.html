@@ -16,6 +16,15 @@
 
   <style>
   /* The Match — Premium Discover refresh */
+@keyframes discoverCardEnter {
+  from { opacity: 0; transform: translate3d(0, 18px, 0) scale(.985); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #discover .member-card { animation: none !important; }
+}
+
 #discover {
   background:
     radial-gradient(ellipse at 50% 0%, rgba(255, 35, 112, 0.12), transparent 48%),
@@ -6726,6 +6735,18 @@ finally{b.disabled=false;}
 };
 
 
+// Public bridge for buttons and callbacks outside loadNearby's local scope.
+// The Discover renderer itself remains scoped to the current loaded profile batch.
+window.__matchRenderDiscoverPerson = null;
+window.showPerson = async function () {
+  if (typeof window.__matchRenderDiscoverPerson === "function") {
+    return window.__matchRenderDiscoverPerson();
+  }
+  const statusBox = $("discoverStatus");
+  if (statusBox) statusBox.textContent = "Refreshing profiles...";
+  return loadNearby();
+};
+
 async function loadNearby(){
   if(!currentUser)return;
 
@@ -6913,7 +6934,7 @@ if (!people.length) {
 const card=document.createElement("div");
 card.className="member-card";
 
-card.style.cssText="position:relative;width:100%;max-width:560px;box-sizing:border-box;margin:0 auto;padding:0;border:1px solid rgba(255,65,125,.24);border-radius:26px;background:#080608;box-shadow:0 16px 44px rgba(0,0,0,.34);touch-action:pan-y;overflow:hidden;will-change:transform,opacity;";
+card.style.cssText="position:relative;width:100%;max-width:560px;box-sizing:border-box;margin:0 auto;padding:0;border:1px solid rgba(255,65,125,.24);border-radius:26px;background:#080608;box-shadow:0 16px 44px rgba(0,0,0,.34);touch-action:pan-y;overflow:hidden;will-change:transform,opacity;animation:discoverCardEnter 260ms cubic-bezier(.2,.75,.25,1) both;";
 
 
 
@@ -7284,6 +7305,9 @@ if(matchError)throw matchError;
         }
       },{passive:true});
     }
+
+    // Keep the current renderer reachable by global UI callbacks (e.g. match continuation).
+    window.__matchRenderDiscoverPerson = showPerson;
 
     status("discoverStatus","Swipe right to like ❤️ or left to pass ✖. Tap the photo arrows to view more pictures.");
     await showPerson();
@@ -9411,7 +9435,7 @@ if(countError)throw countError;
 
             $("matchContinueDiscover").onclick=async()=>{
               show("discover");
-              await showPerson();
+              await window.showPerson();
             };
 
             show("matchCelebrationPage");

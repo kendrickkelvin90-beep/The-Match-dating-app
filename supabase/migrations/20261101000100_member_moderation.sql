@@ -274,3 +274,37 @@ drop policy if exists "Moderation restricts profile photo deletes" on public.pro
 create policy "Moderation restricts profile photo deletes"
 on public.profile_photos as restrictive for delete to authenticated
 using (user_id = auth.uid() and public.is_member_account_active(auth.uid()));
+
+-- Stop suspended/banned members from uploading directly to Supabase Storage.
+-- Existing bucket ownership/path rules remain in place and are ANDed with these.
+drop policy if exists "Moderation restricts profile photo uploads" on storage.objects;
+create policy "Moderation restricts profile photo uploads"
+on storage.objects as restrictive for insert to authenticated
+with check (
+  bucket_id <> 'profile-photos'
+  or public.is_member_account_active(auth.uid())
+);
+
+drop policy if exists "Moderation restricts story media uploads" on storage.objects;
+create policy "Moderation restricts story media uploads"
+on storage.objects as restrictive for insert to authenticated
+with check (
+  bucket_id <> 'story-media'
+  or public.is_member_account_active(auth.uid())
+);
+
+drop policy if exists "Moderation restricts verification selfie uploads" on storage.objects;
+create policy "Moderation restricts verification selfie uploads"
+on storage.objects as restrictive for insert to authenticated
+with check (
+  bucket_id <> 'verification-selfies'
+  or public.is_member_account_active(auth.uid())
+);
+
+drop policy if exists "Moderation restricts chat media uploads" on storage.objects;
+create policy "Moderation restricts chat media uploads"
+on storage.objects as restrictive for insert to authenticated
+with check (
+  bucket_id <> 'chat-media'
+  or public.is_member_account_active(auth.uid())
+);

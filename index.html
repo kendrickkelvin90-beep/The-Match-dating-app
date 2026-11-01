@@ -51,7 +51,7 @@
 
 #discover #profileList {
   display: grid;
-  grid-template-columns: minmax(0, 440px);
+  grid-template-columns: minmax(0, 560px);
   justify-content: center;
   gap: 12px;
   margin-top: 18px;
@@ -6586,11 +6586,9 @@ let fallback=(email.split("@")[0]||"Member")
 .replace(/[._-]+/g," ")
 .replace(/\b\w/g,ch=>ch.toUpperCase());
 $("greeting").textContent="Welcome, "+fallback+"! ❤️";
-show("profile");
+show("profile", false);
   setTimeout(showReferralToast, 1200);
 $("bottomNavigation").querySelector('[data-page="discover"]').classList.add("active");
-  await loadNearby();
-await loadStories();
 status("profileStatus","Loading your profile...");
 try{
 let r=await db.from("profiles")
@@ -6642,16 +6640,20 @@ status("profileStatus","Your profile is loaded. Check your details and save when
 }catch(e){status("profileStatus","Could not load profile: "+friendly(e),true);}
   
   await loadMyPhotos();
-await loadVerificationStatus();
-  refreshNearbyCurrentLocation();
 
-if (
-  restoreToDiscover &&
-  hasRequiredProfilePhoto &&
-  profileDetailsAreComplete()
-) {
-  show("discover", false);
-}
+  const savedProfileIsReady =
+    hasRequiredProfilePhoto && profileDetailsAreComplete();
+
+  if (savedProfileIsReady) {
+    show("discover", false);
+    status("discoverStatus", "Welcome back! Finding people for you...");
+    await Promise.all([loadNearby(), loadStories()]);
+  } else {
+    show("profile", false);
+  }
+
+  await loadVerificationStatus();
+  refreshNearbyCurrentLocation();
   
 setTimeout(() => {
   maybeShowPremiumPromotion();
@@ -6911,15 +6913,25 @@ if (!people.length) {
 const card=document.createElement("div");
 card.className="member-card";
 
-card.style.cssText="position:relative;width:100%;max-width:440px;box-sizing:border-box;margin:0 auto;padding:0;border:1px solid rgba(255,65,125,.20);border-radius:28px;background:#080608;box-shadow:0 12px 36px rgba(255,35,112,.12);touch-action:pan-y;overflow:hidden;";
+card.style.cssText="position:relative;width:100%;max-width:560px;box-sizing:border-box;margin:0 auto;padding:0;border:1px solid rgba(255,65,125,.24);border-radius:26px;background:#080608;box-shadow:0 16px 44px rgba(0,0,0,.34);touch-action:pan-y;overflow:hidden;will-change:transform,opacity;";
 
 
+
+      const animateCardExit = direction => new Promise(resolve => {
+        card.style.transition = "transform 260ms cubic-bezier(.2,.75,.25,1), opacity 260ms ease";
+        void card.offsetWidth;
+        card.style.transform = direction === "left"
+          ? "translate3d(-115%, 0, 0) rotate(-12deg)"
+          : "translate3d(115%, 0, 0) rotate(12deg)";
+        card.style.opacity = "0";
+        window.setTimeout(resolve, 275);
+      });
 
       const photoBox=document.createElement("div");
       
       
 
-photoBox.style.cssText="position:relative;width:100%;height:clamp(420px,62vh,620px);min-height:420px;background:#050505;overflow:hidden;display:flex;align-items:center;justify-content:center;";
+photoBox.style.cssText="position:relative;width:100%;height:clamp(480px,76vh,760px);min-height:460px;background:#050505;overflow:hidden;display:flex;align-items:center;justify-content:center;";
 
 
 
@@ -6929,7 +6941,7 @@ photoBox.style.cssText="position:relative;width:100%;height:clamp(420px,62vh,620
 const photo=document.createElement("img");
 photo.alt="Profile photo";
 
-photo.style.cssText="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center center;background:#050505;display:none;z-index:1;";
+photo.style.cssText="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;background:#050505;display:none;z-index:1;";
 
 photoBox.appendChild(photo);
       
@@ -6959,7 +6971,7 @@ photoBox.appendChild(onlineBadge);
 
 
       const photoCount=document.createElement("div");
-      photoCount.style.cssText="position:absolute;top:10px;right:10px;background:#000a;color:white;padding:6px 10px;border-radius:20px;font-size:12px;";
+      photoCount.style.cssText="position:absolute;top:14px;right:14px;z-index:5;background:rgba(0,0,0,.78);color:#fff;padding:9px 13px;border:1px solid rgba(255,255,255,.34);border-radius:999px;font-size:13px;font-weight:800;letter-spacing:.2px;backdrop-filter:blur(8px);box-shadow:0 4px 16px rgba(0,0,0,.28);";
       photoCount.textContent="Loading photos...";
       photoBox.appendChild(photoCount);
 
@@ -6978,7 +6990,7 @@ photoBox.appendChild(onlineBadge);
       if(photoUrls.length){
         photo.src=photoUrls[0];
         photo.style.display="block";
-        photoCount.textContent="1 / "+photoUrls.length;
+        photoCount.textContent="1 of "+photoUrls.length+" "+(photoUrls.length === 1 ? "photo" : "photos");
       }else{
         photoCount.textContent="No photos";
       }
@@ -6991,7 +7003,7 @@ photoBox.appendChild(onlineBadge);
         if(photoUrls.length){
           photoIndex=(photoIndex-1+photoUrls.length)%photoUrls.length;
           photo.src=photoUrls[photoIndex];
-          photoCount.textContent=(photoIndex+1)+" / "+photoUrls.length;
+          photoCount.textContent=(photoIndex+1)+" of "+photoUrls.length+" photos";
         }
       };
 
@@ -7013,7 +7025,7 @@ photoBox.appendChild(onlineBadge);
           photoIndex = (photoIndex + 1) % photoUrls.length;
           photo.src = photoUrls[photoIndex];
           photoCount.textContent =
-            (photoIndex + 1) + " / " + photoUrls.length;
+            (photoIndex + 1) + " of " + photoUrls.length + " photos";
         }
       };
 
@@ -7132,6 +7144,7 @@ const { error } = await db
 
     if (error) throw error;
 
+    await animateCardExit("left");
     personIndex++;
     await showPerson();
   } catch (error) {
@@ -7188,6 +7201,7 @@ like.onclick=async()=>{
 if(matchError)throw matchError;
 
     if(reverseLike){
+      await animateCardExit("right");
       const {data:myProfile}=await db
         .from("profiles")
         .select("display_name")
@@ -7236,6 +7250,7 @@ if(matchError)throw matchError;
     }
 
     status("discoverStatus","Like sent successfully! ❤️");
+    await animateCardExit("right");
     personIndex++;
     await showPerson();
 
@@ -7263,8 +7278,7 @@ if(matchError)throw matchError;
         const dy=event.changedTouches[0].clientY-startY;
         if(Math.abs(dx)<90||Math.abs(dx)<Math.abs(dy))return;
         if(dx<0){
-          personIndex++;
-          await showPerson();
+          pass.click();
         }else{
           like.click();
         }
@@ -10423,13 +10437,31 @@ if (photoPath) {
     conversationListLoadInProgress = false;
   }
 }
-  document
-  .getElementById("refreshConversationsButton")
-  ?.addEventListener("click", () => {
-    loadMyConversations().catch(error => {
-      console.error("Conversation refresh failed:", error);
+  const refreshConversationsButton = $("refreshConversationsButton");
+  if (refreshConversationsButton) {
+    refreshConversationsButton.addEventListener("click", async () => {
+      if (!currentUser) {
+        status("messagesStatus", "Please sign in again to refresh your conversations.", true);
+        return;
+      }
+      if (conversationListLoadInProgress) {
+        status("messagesStatus", "Your conversations are already refreshing.");
+        return;
+      }
+
+      refreshConversationsButton.disabled = true;
+      refreshConversationsButton.textContent = "↻ Refreshing...";
+      try {
+        await loadMyConversations();
+      } catch (error) {
+        console.error("Conversation refresh failed:", error);
+        status("messagesStatus", "Refresh failed: " + friendly(error), true);
+      } finally {
+        refreshConversationsButton.disabled = false;
+        refreshConversationsButton.textContent = "↻ Refresh conversations";
+      }
     });
-  });
+  }
 function refreshMessagesAfterReconnect() {
   if (!currentUser || document.hidden) return;
 

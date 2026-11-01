@@ -85,8 +85,14 @@ Deno.serve(async (req: Request) => {
     const rollback = previousModeration
       ? await admin.from("member_moderation").upsert(previousModeration, { onConflict: "user_id" })
       : await admin.from("member_moderation").delete().eq("user_id", target);
-    if (rollback.error) {
-      return json({ error: "Auth update failed and the previous moderation state could not be restored. Admin review is required." }, 500);
+    const { error: auditError } = await admin.from("member_moderation_audit").insert({
+      user_id: target,
+      action: "failed",
+      reason: "Auth restriction failed; " + authError.message.slice(0, 900),
+      actioned_by: user.id,
+    });
+    if (rollback.error || auditError) {
+      return json({ error: "Auth update failed and rollback/audit needs administrator review." }, 500);
     }
     return json({ error: "Auth restriction failed; previous moderation state was restored: " + authError.message }, 502);
   }

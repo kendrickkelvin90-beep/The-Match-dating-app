@@ -15,7 +15,7 @@ create table if not exists public.member_moderation (
 create table if not exists public.member_moderation_audit (
   id bigint generated always as identity primary key,
   user_id uuid not null,
-  action text not null check (action in ('suspended','banned','restored')),
+  action text not null check (action in ('suspended','banned','restored','failed')),
   reason text not null,
   expires_at timestamptz,
   actioned_by uuid not null,

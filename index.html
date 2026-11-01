@@ -13769,6 +13769,7 @@ async function rejectVoiceCall() {
   incomingVoiceCall = null;
   try { await invokeVoiceCall("reject", { call_id:call.id }); } catch (e) { console.warn("Call rejection failed",e); }
   hideVoiceCallModal();
+  await loadVoiceCallHistory();
 }
 async function joinVoiceCallRoom() {
   try {
@@ -13854,6 +13855,7 @@ async function finishVoiceCall(updateServer = true) {
     try { await invokeVoiceCall("end", { call_id:callId }); } catch (e) { console.warn("Could not update call end state",e); }
   }
   hideVoiceCallModal();
+  if (callId && currentUser) await loadVoiceCallHistory();
 }
 function beginVoiceCallPolling() {
   if (voiceCallPollTimer) clearInterval(voiceCallPollTimer);

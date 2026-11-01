@@ -4737,6 +4737,78 @@ body.light-theme #bottomNavigation .nav-badge { border-color:#fff!important; }
 #adminPanel .admin-premium-row span { color:#c9ad70; font-size:11px; text-align:right; }
 @media(max-width:600px) { #adminPanel .admin-directory-list { grid-template-columns:1fr; } #adminPanel .admin-tool-row { align-items:stretch; flex-direction:column; } }
 
+
+/* Full-screen voice calling experience */
+#voiceCallModal.voice-call-screen {
+  position:fixed!important; inset:0!important; z-index:20000!important;
+  display:flex; align-items:center; justify-content:center;
+  box-sizing:border-box; width:100%; min-height:100vh; min-height:100dvh;
+  padding:calc(env(safe-area-inset-top) + 24px) 22px calc(env(safe-area-inset-bottom) + 24px);
+  overflow-y:auto; background:radial-gradient(ellipse at 50% 35%,rgba(201,164,94,.18),transparent 48%),#050505!important;
+  color:#f8f4eb;
+}
+#voiceCallModal.voice-call-screen.hidden { display:none!important; }
+#voiceCallModal .voice-call-card {
+  width:100%; max-width:430px; min-height:min(620px,calc(100dvh - 64px));
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  box-sizing:border-box; padding:34px 24px;
+  border:1px solid rgba(210,173,104,.55); border-radius:30px;
+  background:linear-gradient(160deg,rgba(25,23,19,.98),rgba(7,7,7,.99));
+  text-align:center; box-shadow:0 24px 90px rgba(0,0,0,.68);
+}
+#voiceCallModal .voice-call-avatar {
+  width:116px; height:116px; display:grid; place-items:center;
+  margin:8px auto 24px; border-radius:50%;
+  border:2px solid #c9a45c; background:radial-gradient(circle,#3a3020,#111);
+  color:#f0d28c; font-size:42px; font-weight:800;
+  box-shadow:0 0 0 10px rgba(201,164,94,.08),0 0 42px rgba(201,164,94,.18);
+  animation:voiceCallPulse 2.2s ease-in-out infinite;
+}
+#voiceCallModal #voiceCallTitle { margin:0 0 10px; color:#edcc86; font-size:clamp(25px,6vw,32px); }
+#voiceCallModal #voiceCallPeer { margin:0 0 12px; color:#fff; font-size:20px; font-weight:700; }
+#voiceCallModal #voiceCallStatus { max-width:300px; min-height:48px; margin:0; color:#c8c0b4; line-height:1.55; }
+#voiceCallModal #voiceCallActions { width:100%; display:flex; justify-content:center; gap:14px; flex-wrap:wrap; margin-top:36px; }
+#voiceCallModal #voiceCallActions button {
+  min-width:125px; min-height:54px; padding:13px 18px;
+  border:1px solid rgba(210,173,104,.55); border-radius:28px;
+  background:linear-gradient(135deg,#e7c985,#b78d48); color:#17120a;
+  font-size:15px; font-weight:800;
+}
+#voiceCallModal #voiceCallActions button.voice-call-danger {
+  border-color:#d94b61; background:#d94b61; color:#fff;
+}
+#voiceCallModal #voiceCallActions button:focus-visible { outline:3px solid #edcc86; outline-offset:4px; }
+@keyframes voiceCallPulse { 0%,100%{box-shadow:0 0 0 8px rgba(201,164,94,.07),0 0 28px rgba(201,164,94,.14)} 50%{box-shadow:0 0 0 15px rgba(201,164,94,.03),0 0 46px rgba(201,164,94,.25)} }
+.voice-call-history { margin:22px 0 12px; padding:16px; border:1px solid rgba(201,164,94,.28); border-radius:18px; background:rgba(15,15,15,.72); }
+.voice-call-history-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.voice-call-history-heading h3 { margin:0; color:#e5c477; }
+.voice-call-history-heading .small { margin:4px 0 0; }
+#voiceCallHistoryList { display:grid; gap:9px; margin-top:14px; }
+.voice-call-history-item { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px; border:1px solid rgba(201,164,94,.18); border-radius:13px; background:#101010; }
+.voice-call-history-person { min-width:0; }
+.voice-call-history-person strong { display:block; overflow-wrap:anywhere; color:#f3ead8; }
+.voice-call-history-person span { display:block; margin-top:4px; color:#aaa39a; font-size:12px; }
+.voice-call-history-result { flex:0 0 auto; color:#d7bb7b; font-size:12px; text-align:right; }
+body.light-theme .voice-call-history { background:#fff; }
+body.light-theme .voice-call-history-item { background:#faf8f3; }
+body.light-theme .voice-call-history-person strong { color:#30291d; }
+
+/* Final overrides for the full-screen call card (after legacy call-modal rules). */
+#voiceCallModal.voice-call-screen .voice-call-card {
+  width:100%!important; max-width:430px!important;
+  min-height:min(620px,calc(100dvh - 64px))!important;
+  display:flex!important; flex-direction:column!important;
+  align-items:center!important; justify-content:center!important;
+  box-sizing:border-box!important; padding:34px 24px!important;
+  border:1px solid rgba(210,173,104,.55)!important;
+  border-radius:30px!important;
+  background:linear-gradient(160deg,rgba(25,23,19,.98),rgba(7,7,7,.99))!important;
+  text-align:center!important;
+  box-shadow:0 24px 90px rgba(0,0,0,.68)!important;
+}
+#voiceCallModal.voice-call-screen #voiceCallTitle { font-size:clamp(25px,6vw,32px)!important; }
+#voiceCallModal.voice-call-screen #voiceCallStatus { color:#c8c0b4!important; }
+#voiceCallModal.voice-call-screen #voiceCallActions { width:100%!important; display:flex!important; justify-content:center!important; gap:14px!important; flex-wrap:wrap!important; margin-top:36px!important; }
 </style>
 
   <div class="premium-hero">
@@ -4949,6 +5021,15 @@ body.light-theme #bottomNavigation .nav-badge { border-color:#fff!important; }
   <button class="btn secondary" type="button" onclick="show('premium')">Want to know if your message has been seen? Tap here to explore Premium.</button>
 
   <div id="conversationList"></div>
+
+  <section id="voiceCallHistory" class="voice-call-history" aria-labelledby="voiceCallHistoryTitle">
+    <div class="voice-call-history-heading">
+      <div><h3 id="voiceCallHistoryTitle">Recent calls</h3><p class="small">Your recent voice-call activity</p></div>
+      <button type="button" id="refreshVoiceCallHistory" class="btn secondary">Refresh</button>
+    </div>
+    <div id="voiceCallHistoryList"><p class="small">Loading call history…</p></div>
+    <p id="voiceCallHistoryStatus" class="status" role="status" aria-live="polite"></p>
+  </section>
 
   <div id="activeConversation" class="hidden">
     <h3 id="chatPartnerName">Conversation</h3>
@@ -10267,7 +10348,10 @@ $("bottomNavigation").querySelectorAll("button[data-page]").forEach(button=>{
     if (page === "nearbyPage") await loadPremiumNearby();
     if (page === "discover") await loadStories();
     if (page === "matches") await loadMyMatches();
-    if (page === "messages") await loadMyConversations();
+    if (page === "messages") {
+      await loadMyConversations();
+      await loadVoiceCallHistory();
+    }
     if (page === "likes") await loadLikesPage();
 
     if (page === "messages" || page === "likes") {
@@ -13467,6 +13551,113 @@ let incomingVoiceCall = null;
 let voiceCallPollTimer = null;
 let voiceCallRingTimer = null;
 let voiceCallMicMuted = false;
+let voiceCallRingInterval = null;
+let voiceCallAudioContext = null;
+
+function stopVoiceCallRingtone() {
+  if (voiceCallRingInterval) {
+    clearInterval(voiceCallRingInterval);
+    voiceCallRingInterval = null;
+  }
+  if (voiceCallAudioContext) {
+    const context = voiceCallAudioContext;
+    voiceCallAudioContext = null;
+    context.close().catch(() => {});
+  }
+}
+function startVoiceCallRingtone() {
+  stopVoiceCallRingtone();
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return;
+  try {
+    voiceCallAudioContext = new AudioContextClass();
+    const context = voiceCallAudioContext;
+    const ring = () => {
+      if (context.state === "closed") return;
+      if (context.state === "suspended") context.resume().catch(() => {});
+      [0, 1].forEach((offset) => {
+        const startAt = context.currentTime + offset * 0.24;
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.type = "sine";
+        oscillator.frequency.value = offset ? 660 : 880;
+        gain.gain.setValueAtTime(0.0001, startAt);
+        gain.gain.exponentialRampToValueAtTime(0.11, startAt + 0.025);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.19);
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        oscillator.start(startAt);
+        oscillator.stop(startAt + 0.2);
+      });
+    };
+    ring();
+    voiceCallRingInterval = setInterval(ring, 1900);
+  } catch (error) {
+    console.warn("Call ringtone could not start:", error);
+  }
+}
+
+async function loadVoiceCallHistory() {
+  const list = $("voiceCallHistoryList");
+  const statusBox = $("voiceCallHistoryStatus");
+  if (!list || !statusBox || !currentUser) return;
+  list.replaceChildren();
+  statusBox.textContent = "Loading recent calls…";
+  try {
+    const { data: calls, error } = await db.from("call_sessions")
+      .select("id,caller_id,callee_id,call_type,status,created_at,ended_at")
+      .or("caller_id.eq." + currentUser.id + ",callee_id.eq." + currentUser.id)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (error) throw error;
+    if (!calls || calls.length === 0) {
+      list.textContent = "No voice calls yet. Calls with your mutual matches will appear here.";
+      statusBox.textContent = "";
+      return;
+    }
+    const memberIds = [...new Set(calls.flatMap(call => [call.caller_id, call.callee_id])
+      .filter(id => id && id !== currentUser.id))];
+    const names = new Map();
+    if (memberIds.length) {
+      const { data: profiles, error: profileError } = await db.from("profiles")
+        .select("id,display_name").in("id", memberIds);
+      if (profileError) console.warn("Call history names could not be loaded:", profileError);
+      (profiles || []).forEach(profile => names.set(profile.id, profile.display_name || "The Match member"));
+    }
+    calls.forEach(call => {
+      const outgoing = call.caller_id === currentUser.id;
+      const peerId = outgoing ? call.callee_id : call.caller_id;
+      const card = document.createElement("div");
+      card.className = "voice-call-history-item";
+      const person = document.createElement("div");
+      person.className = "voice-call-history-person";
+      const name = document.createElement("strong");
+      name.textContent = names.get(peerId) || "The Match member";
+      const details = document.createElement("span");
+      const date = call.created_at ? new Date(call.created_at).toLocaleString() : "Date unavailable";
+      details.textContent = (outgoing ? "Outgoing" : "Incoming") + " · " + date;
+      person.append(name, details);
+      const result = document.createElement("div");
+      result.className = "voice-call-history-result";
+      const statusLabel = {
+        accepted: "Connected",
+        ended: "Ended",
+        rejected: "Declined",
+        missed: "Missed",
+        ringing: "No final status"
+      }[call.status] || (call.status || "Call");
+      result.textContent = statusLabel;
+      card.append(person, result);
+      list.appendChild(card);
+    });
+    statusBox.textContent = "";
+  } catch (error) {
+    console.error("Call history failed to load:", error);
+    statusBox.textContent = "Could not load call history. Please try again.";
+  }
+}
+
+$("refreshVoiceCallHistory")?.addEventListener("click", loadVoiceCallHistory);
 
 function ensureVoiceCallUI() {
   const header = $("chatHeader");
@@ -13484,9 +13675,8 @@ function ensureVoiceCallUI() {
   if (!$("voiceCallModal")) {
     const modal = document.createElement("div");
     modal.id = "voiceCallModal";
-    modal.className = "hidden";
-    modal.style.cssText = "position:fixed;inset:0;z-index:20000;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:22px;";
-    modal.innerHTML = '<div class="voice-call-card" style="width:100%;max-width:380px;background:#151515;border:1px solid #b8944e;border-radius:20px;padding:24px;text-align:center;color:white;"><div style="width:58px;height:58px;margin:0 auto 14px;border:1px solid #c9a45c;border-radius:18px;display:flex;align-items:center;justify-content:center;color:#e5c477;"><svg viewBox="0 0 24 24" aria-hidden="true" width="27" height="27" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L8 9.73a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92z"/></svg></div><h2 id="voiceCallTitle" style="color:#e5c477;margin:0 0 8px;">Voice call</h2><p id="voiceCallStatus" style="color:#ddd;">Connecting…</p><div id="voiceCallAudio" aria-hidden="true" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);"></div><div id="voiceCallActions" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px;"></div></div>';
+    modal.className = "voice-call-screen hidden";
+    modal.innerHTML = '<div class="voice-call-card"><div class="voice-call-avatar" id="voiceCallAvatar" aria-hidden="true">☎</div><h2 id="voiceCallTitle">Voice call</h2><p id="voiceCallPeer">The Match member</p><p id="voiceCallStatus" role="status" aria-live="polite">Connecting…</p><div id="voiceCallAudio" aria-hidden="true" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);"></div><div id="voiceCallActions"></div></div>';
     document.body.appendChild(modal);
   }
 }
@@ -13503,9 +13693,11 @@ function showVoiceCallModal(title, message, actions) {
   area.replaceChildren();
   actions.forEach(({label, handler, danger}) => {
     const b = document.createElement("button");
-    b.type = "button"; b.textContent = label;
-    b.style.cssText = "padding:12px 18px;border:0;border-radius:12px;background:"+(danger?"#b8324b":"#c9a45c")+";color:"+(danger?"white":"#111")+";font-weight:700;";
-    b.onclick = handler; area.appendChild(b);
+    b.type = "button";
+    b.textContent = label;
+    if (danger) b.classList.add("voice-call-danger");
+    b.onclick = handler;
+    area.appendChild(b);
   });
   $("voiceCallModal").classList.remove("hidden");
   $("voiceCallModal").style.display = "flex";
@@ -13531,6 +13723,9 @@ async function startVoiceCall(peerId) {
     activeVoiceCallId = result.call.id;
     activeVoiceCallPeerId = peerId;
     activeVoiceCallRole = "caller";
+    $("voiceCallPeer").textContent = $("chatPageTitle")?.textContent || "Calling your match";
+    $("voiceCallAvatar").textContent = "☎";
+    startVoiceCallRingtone();
     showVoiceCallModal("Calling…", "Waiting for the member to answer.", [
       { label:"Cancel call", danger:true, handler:() => finishVoiceCall() }
     ]);
@@ -13552,6 +13747,7 @@ async function startVoiceCall(peerId) {
 }
 async function acceptVoiceCall() {
   if (!incomingVoiceCall) return;
+  stopVoiceCallRingtone();
   const call = incomingVoiceCall;
   try {
     await invokeVoiceCall("accept", { call_id: call.id });
@@ -13568,10 +13764,12 @@ async function acceptVoiceCall() {
 }
 async function rejectVoiceCall() {
   if (!incomingVoiceCall) return;
+  stopVoiceCallRingtone();
   const call = incomingVoiceCall;
   incomingVoiceCall = null;
   try { await invokeVoiceCall("reject", { call_id:call.id }); } catch (e) { console.warn("Call rejection failed",e); }
   hideVoiceCallModal();
+  await loadVoiceCallHistory();
 }
 async function joinVoiceCallRoom() {
   try {
@@ -13598,6 +13796,9 @@ async function joinVoiceCallRoom() {
     });
     await room.connect(credentials.server_url, credentials.participant_token);
     await room.localParticipant.setMicrophoneEnabled(true);
+    stopVoiceCallRingtone();
+    $("voiceCallPeer").textContent = "Connected securely";
+    $("voiceCallAvatar").textContent = "✓";
     showVoiceCallModal("Voice call connected", "You are connected. Your microphone is on.", [
       { label:"Mute microphone", handler:() => toggleVoiceCallMute() },
       { label:"Enable audio", handler:() => enableVoiceCallAudio() },
@@ -13635,6 +13836,7 @@ async function enableVoiceCallAudio() {
   }
 }
 async function finishVoiceCall(updateServer = true) {
+  stopVoiceCallRingtone();
   const callId = activeVoiceCallId;
   activeVoiceCallId = null;
   activeVoiceCallPeerId = null;
@@ -13653,6 +13855,7 @@ async function finishVoiceCall(updateServer = true) {
     try { await invokeVoiceCall("end", { call_id:callId }); } catch (e) { console.warn("Could not update call end state",e); }
   }
   hideVoiceCallModal();
+  if (callId && currentUser) await loadVoiceCallHistory();
 }
 function beginVoiceCallPolling() {
   if (voiceCallPollTimer) clearInterval(voiceCallPollTimer);
@@ -13679,7 +13882,16 @@ function subscribeToVoiceCalls(user) {
   const displayIncomingCall = call => {
     if (!call || call.status !== "ringing" || activeVoiceCallId || incomingVoiceCall) return;
     incomingVoiceCall = call;
-    showVoiceCallModal("Incoming voice call", "A matched member is calling you. Your microphone will stay off until you accept.", [
+    $("voiceCallPeer").textContent = "A member is calling";
+    $("voiceCallAvatar").textContent = "☎";
+    startVoiceCallRingtone();
+    db.from("profiles").select("display_name").eq("id", call.caller_id).maybeSingle()
+      .then(({ data }) => {
+        if (incomingVoiceCall?.id === call.id && data?.display_name) {
+          $("voiceCallPeer").textContent = data.display_name;
+        }
+      }).catch(error => console.warn("Incoming caller name could not be loaded:", error));
+    showVoiceCallModal("Incoming voice call", "Your microphone stays off until you accept.", [
       { label:"Accept", handler:() => acceptVoiceCall() },
       { label:"Decline", danger:true, handler:() => rejectVoiceCall() }
     ]);
@@ -13688,7 +13900,7 @@ function subscribeToVoiceCalls(user) {
     .on("postgres_changes", { event:"INSERT", schema:"public", table:"call_sessions", filter:"callee_id=eq."+user.id }, payload => displayIncomingCall(payload.new))
     .on("postgres_changes", { event:"UPDATE", schema:"public", table:"call_sessions", filter:"callee_id=eq."+user.id }, payload => {
       if (incomingVoiceCall?.id === payload.new.id && ["ended","rejected","missed"].includes(payload.new.status)) {
-        incomingVoiceCall = null; hideVoiceCallModal();
+        incomingVoiceCall = null; stopVoiceCallRingtone(); hideVoiceCallModal();
       }
     })
     .subscribe();

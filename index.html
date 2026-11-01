@@ -5186,7 +5186,7 @@ function renderAdminMemberDirectory(query = "") {
     });
     const ban = document.createElement("button");
     ban.type = "button";
-    ban.textContent = "Permanent ban";
+    ban.textContent = "Ban member";
     ban.disabled = moderation?.status === "banned";
     ban.addEventListener("click", async () => {
       try { await moderateAdminMember(member, "banned"); }

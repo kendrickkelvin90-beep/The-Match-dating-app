@@ -13535,7 +13535,7 @@ async function startVoiceCall(peerId) {
       { label:"Cancel call", danger:true, handler:() => finishVoiceCall() }
     ]);
     beginVoiceCallPolling();
-    voiceCallRingTimer = setTimeout(() => {
+    voiceCallRingTimer = setTimeout(async () => {
       if (activeVoiceCallId && activeVoiceCallRole === "caller") {
         await finishVoiceCall();
         showVoiceCallModal("No answer", "The member did not answer. The call has been ended.", [

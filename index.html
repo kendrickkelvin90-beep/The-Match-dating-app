@@ -4161,6 +4161,23 @@ body.light-theme #bottomNavigation .nav-badge { border-color:#fff!important; }
 body.light-theme .discovery-tabs { background:rgba(255,255,255,.97); }
 body.light-theme .discovery-tabs button { background:#fff; color:#5e5548; }
 body.light-theme .discovery-tabs button.active { background:linear-gradient(135deg,#e5c77f,#b68c46); color:#17120a; }
+
+.match-dialog-backdrop{position:fixed;inset:0;z-index:200000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.78);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+.match-dialog-card{width:min(100%,440px);max-height:min(82dvh,680px);overflow:auto;padding:25px 22px 20px;border:1px solid rgba(208,170,99,.62);border-radius:22px;background:linear-gradient(155deg,#1d1a16,#090909 72%);color:#f7f2e8;box-shadow:0 24px 80px rgba(0,0,0,.72),0 0 0 1px rgba(208,170,99,.08);animation:matchDialogIn .18s ease-out}
+@keyframes matchDialogIn{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+.match-dialog-brand{margin-bottom:10px;color:#d0aa63;font-size:10px;font-weight:800;letter-spacing:3px}
+.match-dialog-title{margin:0 0 10px;color:#f6e6c3;font-size:22px;line-height:1.25}
+.match-dialog-message{margin:0 0 20px;color:#d2ccc2;font-size:15px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+.match-dialog-input{display:block;width:100%;min-height:48px;box-sizing:border-box;margin:0 0 18px;padding:13px 14px;border:1px solid #65502d;border-radius:12px;background:#0c0b09;color:#fff;font:inherit;outline:none}
+.match-dialog-input:focus{border-color:#d0aa63;box-shadow:0 0 0 3px rgba(208,170,99,.14)}
+textarea.match-dialog-input{min-height:112px;resize:vertical}
+.match-dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:8px}
+.match-dialog-actions button{min-height:45px;padding:0 19px;border-radius:12px;font:inherit;font-weight:700;cursor:pointer}
+.match-dialog-cancel{border:1px solid #514632;background:#171512;color:#e7ddca}
+.match-dialog-accept{border:1px solid #d0aa63;background:linear-gradient(135deg,#e1c27e,#b58a43);color:#17120a}
+.match-dialog-actions button:focus-visible{outline:2px solid #fff;outline-offset:3px}
+@media(max-width:380px){.match-dialog-card{padding:22px 18px 18px}.match-dialog-title{font-size:20px}.match-dialog-actions button{flex:1;padding:0 12px}}
+
 </style>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
@@ -5631,6 +5648,58 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
 <script>
 (function(){
 "use strict";
+
+/* The Match — branded Black & Gold dialogs (replaces browser alert/confirm/prompt) */
+let matchDialogQueue = Promise.resolve();
+function matchDialog(options = {}) {
+  const settings = { type: options.type || "alert", title: options.title || "The Match",
+    message: String(options.message ?? ""), defaultValue: options.defaultValue ?? "",
+    placeholder: options.placeholder || "Type here...", multiline: Boolean(options.multiline),
+    maxLength: options.maxLength || 2000, confirmText: options.confirmText || "Continue",
+    cancelText: options.cancelText || "Cancel" };
+  const task = () => new Promise(resolve => {
+    const overlay = document.createElement("div"); overlay.className = "match-dialog-backdrop";
+    const card = document.createElement("section"); card.className = "match-dialog-card";
+    card.setAttribute("role", "alertdialog"); card.setAttribute("aria-modal", "true");
+    const brand = document.createElement("div"); brand.className = "match-dialog-brand"; brand.textContent = "THE MATCH";
+    const title = document.createElement("h2"); title.className = "match-dialog-title"; title.textContent = settings.title;
+    const message = document.createElement("p"); message.className = "match-dialog-message"; message.textContent = settings.message;
+    card.append(brand, title, message);
+    let field = null;
+    if (settings.type === "prompt") {
+      field = document.createElement(settings.multiline ? "textarea" : "input");
+      if (!settings.multiline) field.type = "text";
+      field.className = "match-dialog-input"; field.value = settings.defaultValue;
+      field.placeholder = settings.placeholder; field.maxLength = settings.maxLength;
+      field.setAttribute("aria-label", settings.title); card.appendChild(field);
+    }
+    const actions = document.createElement("div"); actions.className = "match-dialog-actions";
+    const cancel = document.createElement("button"); cancel.type = "button"; cancel.className = "match-dialog-cancel"; cancel.textContent = settings.cancelText;
+    const accept = document.createElement("button"); accept.type = "button"; accept.className = "match-dialog-accept";
+    accept.textContent = settings.type === "alert" ? "Okay" : settings.confirmText;
+    const finish = value => { document.removeEventListener("keydown", onKeydown); overlay.remove(); resolve(value); };
+    const onKeydown = event => {
+      if (event.key === "Escape" && settings.type !== "alert") finish(settings.type === "confirm" ? false : null);
+      if (event.key === "Enter" && settings.type !== "prompt") finish(settings.type === "confirm");
+      if (event.key === "Enter" && settings.type === "prompt" && !settings.multiline) { event.preventDefault(); finish(field.value); }
+    };
+    cancel.addEventListener("click", () => finish(settings.type === "confirm" ? false : null));
+    accept.addEventListener("click", () => finish(settings.type === "prompt" ? field.value : settings.type === "confirm"));
+    if (settings.type !== "alert") actions.appendChild(cancel);
+    actions.appendChild(accept); card.appendChild(actions); overlay.appendChild(card);
+    overlay.addEventListener("click", event => { if (event.target === overlay && settings.type !== "alert") finish(settings.type === "confirm" ? false : null); });
+    document.body.appendChild(overlay); document.addEventListener("keydown", onKeydown); (field || accept).focus();
+  });
+  const result = matchDialogQueue.then(task, task); matchDialogQueue = result.then(() => undefined, () => undefined); return result;
+}
+function matchConfirm(message, title = "Please confirm") { return matchDialog({ type: "confirm", title, message, confirmText: "Continue" }); }
+function matchPrompt(message, defaultValue = "", options = {}) {
+  return matchDialog({ type: "prompt", title: options.title || "A quick question", message, defaultValue,
+    placeholder: options.placeholder || "Type your response...", multiline: Boolean(options.multiline),
+    maxLength: options.maxLength || 2000, confirmText: options.confirmText || "Continue" });
+}
+window.alert = message => { void matchDialog({ type: "alert", title: "Notice", message }); };
+
   
 window.__matchAdminDebugEnabled = false;
 window.addEventListener("error", function(event) {
@@ -6394,15 +6463,15 @@ async function moderateAdminMember(member, action) {
   const existing = adminModerationByUser.get(member.id);
   if (action === "restored" && !existing) return;
   const reason = action === "restored"
-    ? (prompt("Reason for restoring this account (optional):") || "Account restored after review")
-    : prompt("Enter the reason for this " + (action === "banned" ? "ban" : "suspension") + ":");
+    ? (await matchPrompt("Reason for restoring this account (optional):") || "Account restored after review")
+    : await matchPrompt("Enter the reason for this " + (action === "banned" ? "ban" : "suspension") + ":");
   if (action !== "restored" && (!reason || reason.trim().length < 3)) {
     alert("Please enter a reason of at least 3 characters.");
     return;
   }
   let expiresAt = null;
   if (action === "suspended") {
-    const daysText = prompt("How many days should the suspension last? Enter 1 to 30.", "7");
+    const daysText = await matchPrompt("How many days should the suspension last? Enter 1 to 30.", "7");
     const days = Number(daysText);
     if (!Number.isInteger(days) || days < 1 || days > 30) {
       alert("Choose a whole number from 1 to 30 days.");
@@ -6414,7 +6483,7 @@ async function moderateAdminMember(member, action) {
     ? "Restore " + (member.display_name || "this member") + "'s account?"
     : (action === "banned" ? "Ban " : "Suspend ") +
       (member.display_name || "this member") + "?";
-  if (!confirm(confirmText + (action === "banned" ? " This is a serious action." : ""))) return;
+  if (!await matchConfirm(confirmText + (action === "banned" ? " This is a serious action." : ""))) return;
 
   status("adminStatus", "Applying account moderation...");
   const { data, error } = await db.functions.invoke("admin-moderate-member", {
@@ -6569,7 +6638,7 @@ async function reviewMatchAdminRequest(table, id, decision) {
     return;
   }
 
-  if (!confirm("Are you sure you want to " + decision + " this request?")) {
+  if (!await matchConfirm("Are you sure you want to " + decision + " this request?")) {
     return;
   }
 
@@ -9116,7 +9185,7 @@ if (story.user_id === currentUser.id) {
   discardStoryButton.onclick = async () => {
     const current = memberStories[index];
     if (!current || current.user_id !== currentUser.id) return;
-    if (!confirm("Discard this story? This cannot be undone.")) return;
+    if (!await matchConfirm("Discard this story? This cannot be undone.")) return;
 
     discardStoryButton.disabled = true;
     try {
@@ -9298,7 +9367,7 @@ if (story.user_id === currentUser.id) {
               return;
             }
 
-            const body = prompt("Write a message to " + name + ":");
+            const body = await matchPrompt("Write a message to " + name + ":");
             if (body === null) return;
             const trimmedBody = body.trim();
             if (!trimmedBody) return;
@@ -10010,7 +10079,7 @@ $("storyMediaFile").onchange = async () => {
   const storyAudience =
     audienceAnswer === "2" ? "matches" : "everyone";
 
-  const caption = prompt("Add a caption for this Story (optional, maximum 500 characters):");
+  const caption = await matchPrompt("Add a caption for this Story (optional, maximum 500 characters):");
   if (caption === null) {
     input.value = "";
     return;
@@ -10157,7 +10226,7 @@ async function loadBlockedMembers(){
       btn.textContent="Unblock";
 
       btn.onclick=async()=>{
-        if(!confirm("Unblock this member?"))return;
+        if(!await matchConfirm("Unblock this member?"))return;
         btn.disabled=true;
 
         try{
@@ -10915,7 +10984,7 @@ if(countError)throw countError;
         decline.textContent="✕ Decline";
 
         decline.onclick=async()=>{
-          if(!confirm("Remove this person from your Likes?"))return;
+          if(!await matchConfirm("Remove this person from your Likes?"))return;
 
           decline.disabled=true;
           likeBack.disabled=true;
@@ -11246,7 +11315,7 @@ function showSafetyDialog(mode) {
     return;
   }
 
-  const confirmed = window.confirm(
+  const confirmed = await matchConfirm(
     "Block this member? Their chat will become unavailable."
   );
 
@@ -12430,7 +12499,7 @@ const choices = mine
 ? "Choose an option:\n1. Copy message\n2. Delete for me\n3. Unsend for everyone"
 : "Choose an option:\n1. Copy message\n2. Delete for me";
 
-const choice = prompt(choices);
+const choice = await matchPrompt(choices);
 if (!choice) return;
 
 try {
@@ -12438,7 +12507,7 @@ try {
     await navigator.clipboard.writeText(message.body);
     status("chatPageStatus", "Message copied.");
   } else if (choice === "2") {
-    if (!confirm("Delete this message from your chat?")) return;
+    if (!await matchConfirm("Delete this message from your chat?")) return;
 
     const { error } = await db.rpc("hide_chat_message_for_me", {
       p_message_id: message.id
@@ -12448,7 +12517,7 @@ try {
     bubble.remove();
     status("chatPageStatus", "Message deleted from your chat.");
   } else if (choice === "3" && mine) {
-    if (!confirm("Unsend this message for everyone? This cannot be undone.")) return;
+    if (!await matchConfirm("Unsend this message for everyone? This cannot be undone.")) return;
 
     const { error } = await db.rpc("unsend_chat_message", {
       p_message_id: message.id
@@ -12989,7 +13058,7 @@ button.textContent = "➤";
 del.title = "Delete photo";
 del.setAttribute("aria-label", "Delete photo");
       del.onclick=async()=>{
-        if(!confirm("Delete this photo?"))return;
+        if(!await matchConfirm("Delete this photo?"))return;
         const {error}=await db.storage.from("profile-photos")
           .remove([p.storage_path]);
         if(error){
@@ -13537,11 +13606,11 @@ $("settingsDeleteAccount").onclick = async () => {
     return;
   }
 
-  if (!confirm(
+  if (!await matchConfirm(
     "Permanently delete your account and associated data? This cannot be undone."
   )) return;
 
-  if (prompt('Type DELETE to confirm permanent account deletion.') !== "DELETE") {
+  if (await matchPrompt('Type DELETE to confirm permanent account deletion.') !== "DELETE") {
     alert("Deletion cancelled.");
     return;
   }

@@ -10331,7 +10331,10 @@ $("bottomNavigation").querySelectorAll("button[data-page]").forEach(button=>{
     if (page === "nearbyPage") await loadPremiumNearby();
     if (page === "discover") await loadStories();
     if (page === "matches") await loadMyMatches();
-    if (page === "messages") await loadMyConversations();
+    if (page === "messages") {
+      await loadMyConversations();
+      await loadVoiceCallHistory();
+    }
     if (page === "likes") await loadLikesPage();
 
     if (page === "messages" || page === "likes") {
@@ -13577,6 +13580,68 @@ function startVoiceCallRingtone() {
   }
 }
 
+async function loadVoiceCallHistory() {
+  const list = $("voiceCallHistoryList");
+  const statusBox = $("voiceCallHistoryStatus");
+  if (!list || !statusBox || !currentUser) return;
+  list.replaceChildren();
+  statusBox.textContent = "Loading recent calls…";
+  try {
+    const { data: calls, error } = await db.from("call_sessions")
+      .select("id,caller_id,callee_id,call_type,status,created_at,ended_at")
+      .or("caller_id.eq." + currentUser.id + ",callee_id.eq." + currentUser.id)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (error) throw error;
+    if (!calls || calls.length === 0) {
+      list.textContent = "No voice calls yet. Calls with your mutual matches will appear here.";
+      statusBox.textContent = "";
+      return;
+    }
+    const memberIds = [...new Set(calls.flatMap(call => [call.caller_id, call.callee_id])
+      .filter(id => id && id !== currentUser.id))];
+    const names = new Map();
+    if (memberIds.length) {
+      const { data: profiles, error: profileError } = await db.from("profiles")
+        .select("id,display_name").in("id", memberIds);
+      if (profileError) console.warn("Call history names could not be loaded:", profileError);
+      (profiles || []).forEach(profile => names.set(profile.id, profile.display_name || "The Match member"));
+    }
+    calls.forEach(call => {
+      const outgoing = call.caller_id === currentUser.id;
+      const peerId = outgoing ? call.callee_id : call.caller_id;
+      const card = document.createElement("div");
+      card.className = "voice-call-history-item";
+      const person = document.createElement("div");
+      person.className = "voice-call-history-person";
+      const name = document.createElement("strong");
+      name.textContent = names.get(peerId) || "The Match member";
+      const details = document.createElement("span");
+      const date = call.created_at ? new Date(call.created_at).toLocaleString() : "Date unavailable";
+      details.textContent = (outgoing ? "Outgoing" : "Incoming") + " · " + date;
+      person.append(name, details);
+      const result = document.createElement("div");
+      result.className = "voice-call-history-result";
+      const statusLabel = {
+        accepted: "Connected",
+        ended: "Ended",
+        rejected: "Declined",
+        missed: "Missed",
+        ringing: "No final status"
+      }[call.status] || (call.status || "Call");
+      result.textContent = statusLabel;
+      card.append(person, result);
+      list.appendChild(card);
+    });
+    statusBox.textContent = "";
+  } catch (error) {
+    console.error("Call history failed to load:", error);
+    statusBox.textContent = "Could not load call history. Please try again.";
+  }
+}
+
+$("refreshVoiceCallHistory")?.addEventListener("click", loadVoiceCallHistory);
+
 function ensureVoiceCallUI() {
   const header = $("chatHeader");
   if (!header) return;
@@ -13641,7 +13706,7 @@ async function startVoiceCall(peerId) {
     activeVoiceCallId = result.call.id;
     activeVoiceCallPeerId = peerId;
     activeVoiceCallRole = "caller";
-    $("voiceCallPeer").textContent = "Calling your match";
+    $("voiceCallPeer").textContent = $("chatPageTitle")?.textContent || "Calling your match";
     $("voiceCallAvatar").textContent = "☎";
     startVoiceCallRingtone();
     showVoiceCallModal("Calling…", "Waiting for the member to answer.", [
@@ -13801,6 +13866,12 @@ function subscribeToVoiceCalls(user) {
     $("voiceCallPeer").textContent = "A member is calling";
     $("voiceCallAvatar").textContent = "☎";
     startVoiceCallRingtone();
+    db.from("profiles").select("display_name").eq("id", call.caller_id).maybeSingle()
+      .then(({ data }) => {
+        if (incomingVoiceCall?.id === call.id && data?.display_name) {
+          $("voiceCallPeer").textContent = data.display_name;
+        }
+      }).catch(error => console.warn("Incoming caller name could not be loaded:", error));
     showVoiceCallModal("Incoming voice call", "Your microphone stays off until you accept.", [
       { label:"Accept", handler:() => acceptVoiceCall() },
       { label:"Decline", danger:true, handler:() => rejectVoiceCall() }

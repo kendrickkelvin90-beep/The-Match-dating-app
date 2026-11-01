@@ -6881,6 +6881,21 @@ const onboardingQuestions = [
     safety: true
   },
   {
+    key: "privacy_acknowledged",
+    title: "Have you read The Match Privacy Policy and understood how your information may be used?",
+    options: ["Yes, I have read and understood it", "No, I have not"],
+    values: ["yes", "no"],
+    safety: true
+  },
+  {
+    key: "sensitive_data_consent",
+    title: "Do you explicitly consent to The Match processing sensitive information you choose to provide, including information that may reveal sexual orientation or sex life, as explained in the Privacy Policy, to provide dating, matching and safety features?",
+    help: "You can review the Privacy Policy before answering. This consent is recorded with your onboarding answers.",
+    options: ["Yes, I explicitly consent", "No, I do not consent"],
+    values: ["yes", "no"],
+    safety: true
+  },
+  {
     key: "gender_identity",
     title: "How do you describe your gender identity?",
     options: ["Man", "Woman", "Trans man", "Trans woman", "Non-binary", "Another identity", "Prefer not to say"]

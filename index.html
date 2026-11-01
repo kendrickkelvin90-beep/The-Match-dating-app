@@ -6576,7 +6576,8 @@ function profileBioHasPhoneNumber(value) {
 async function showProfile(user, restoreToDiscover = false){
 currentUser=user;
   if (!(await enforceVerificationGracePeriod(user))) return;
-  subscribeToVoiceCalls(user);\n  startOnlinePresence(user).catch(error => {
+  subscribeToVoiceCalls(user);
+  startOnlinePresence(user).catch(error => {
   console.warn("Online presence could not start:", error);
 });
     try {

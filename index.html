@@ -7016,6 +7016,25 @@ photoBox.appendChild(onlineBadge);
         photoCount.textContent="No photos";
       }
 
+      // Quietly preload the next profile's first photo while this card is visible.
+      const nextPerson = people[personIndex + 1];
+      if (nextPerson) {
+        db.from("profile_photos")
+          .select("storage_path")
+          .eq("user_id", nextPerson.id)
+          .order("position")
+          .limit(1)
+          .then(({ data: nextPhotos }) => {
+            const nextPath = nextPhotos?.[0]?.storage_path;
+            if (!nextPath) return;
+            const nextUrl = db.storage.from("profile-photos").getPublicUrl(nextPath).data.publicUrl;
+            const preloadImage = new Image();
+            preloadImage.decoding = "async";
+            preloadImage.src = nextUrl;
+          })
+          .catch(() => {});
+      }
+
       const previous=document.createElement("button");
       previous.type="button";
       previous.textContent="‹";

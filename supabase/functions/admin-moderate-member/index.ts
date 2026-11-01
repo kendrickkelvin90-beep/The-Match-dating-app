@@ -49,7 +49,15 @@ Deno.serve(async (req: Request) => {
     banDuration = Math.max(60, Math.ceil((until.getTime() - Date.now()) / 1000)) + "s";
   }
 
-  const { data: rpcData, error: rpcError } = await caller.rpc("admin_set_member_moderation", {
+  // Snapshot the previous state so a failed Auth update never erases an older restriction.
+  const { data: previousModeration, error: previousError } = await admin
+    .from("member_moderation")
+    .select("user_id,status,reason,expires_at,actioned_by,updated_at")
+    .eq("user_id", target)
+    .maybeSingle();
+  if (previousError) return json({ error: "Could not verify the existing moderation state" }, 500);
+
+  const { error: rpcError } = await caller.rpc("admin_set_member_moderation", {
     p_user_id: target,
     p_action: action,
     p_reason: reason || null,
@@ -59,13 +67,14 @@ Deno.serve(async (req: Request) => {
 
   const { error: authError } = await admin.auth.admin.updateUserById(target, { ban_duration: banDuration });
   if (authError) {
-    // Revert the moderation record if Auth could not apply the restriction.
-    await caller.rpc("admin_set_member_moderation", {
-      p_user_id: target, p_action: "restored",
-      p_reason: "Automatic rollback: Auth restriction could not be applied",
-      p_expires_at: null,
-    });
-    return json({ error: "Auth restriction failed; database action was rolled back: " + authError.message }, 502);
+    // Restore the exact previous moderation row, rather than deleting a prior suspension or ban.
+    const rollback = previousModeration
+      ? await admin.from("member_moderation").upsert(previousModeration, { onConflict: "user_id" })
+      : await admin.from("member_moderation").delete().eq("user_id", target);
+    if (rollback.error) {
+      return json({ error: "Auth update failed and the previous moderation state could not be restored. Admin review is required." }, 500);
+    }
+    return json({ error: "Auth restriction failed; previous moderation state was restored: " + authError.message }, 502);
   }
   return json({ success: true, action, user_id: target });
 });

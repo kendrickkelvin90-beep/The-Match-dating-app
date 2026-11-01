@@ -5085,6 +5085,58 @@ async function loadAdminMemberReports() {
 }
 
 let adminMemberDirectory = [];
+let adminModerationByUser = new Map();
+
+async function loadAdminModerationStatuses() {
+  const { data, error } = await db.from("member_moderation")
+    .select("user_id,status,reason,expires_at")
+    .order("updated_at", { ascending: false });
+  if (error) throw error;
+  adminModerationByUser = new Map((data || []).map(row => [row.user_id, row]));
+}
+
+async function moderateAdminMember(member, action) {
+  if (!(await checkMatchAdmin())) throw new Error("Admin access denied.");
+  if (!member?.id || member.id === currentUser?.id) {
+    alert("You cannot moderate your own account.");
+    return;
+  }
+  const existing = adminModerationByUser.get(member.id);
+  if (action === "restored" && !existing) return;
+  const reason = action === "restored"
+    ? (prompt("Reason for restoring this account (optional):") || "Account restored after review")
+    : prompt("Enter the reason for this " + (action === "banned" ? "permanent ban" : "suspension") + ":");
+  if (action !== "restored" && (!reason || reason.trim().length < 3)) {
+    alert("Please enter a reason of at least 3 characters.");
+    return;
+  }
+  let expiresAt = null;
+  if (action === "suspended") {
+    const daysText = prompt("How many days should the suspension last? Enter 1 to 30.", "7");
+    const days = Number(daysText);
+    if (!Number.isInteger(days) || days < 1 || days > 30) {
+      alert("Choose a whole number from 1 to 30 days.");
+      return;
+    }
+    expiresAt = new Date(Date.now() + days * 86400000).toISOString();
+  }
+  const confirmText = action === "restored"
+    ? "Restore " + (member.display_name || "this member") + "'s account?"
+    : (action === "banned" ? "Permanently ban " : "Suspend ") +
+      (member.display_name || "this member") + "?";
+  if (!confirm(confirmText + (action === "banned" ? " This is a serious action." : ""))) return;
+
+  status("adminStatus", "Applying account moderation...");
+  const { data, error } = await db.functions.invoke("admin-moderate-member", {
+    body: { user_id: member.id, action, reason: reason.trim(), expires_at: expiresAt }
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  await loadAdminModerationStatuses();
+  renderAdminMemberDirectory($("adminMemberSearch")?.value || "");
+  status("adminStatus", action === "restored" ? "Account restored." :
+    action === "banned" ? "Account permanently banned." : "Account suspended.");
+}
 
 function renderAdminMemberDirectory(query = "") {
   const list = $("adminMembersList");
@@ -5113,7 +5165,38 @@ function renderAdminMemberDirectory(query = "") {
     const badge = document.createElement("span");
     badge.className = "admin-member-badge";
     badge.textContent = member.is_verified ? "Verified" : "Not verified";
-    card.append(name, location, joined, age, badge);
+    const moderation = adminModerationByUser.get(member.id);
+    const state = document.createElement("p");
+    state.className = "small";
+    state.textContent = moderation
+      ? (moderation.status === "banned" ? "PERMANENTLY BANNED" :
+          "SUSPENDED until " + new Date(moderation.expires_at).toLocaleString())
+      : "Account status: Active";
+    const suspend = document.createElement("button");
+    suspend.type = "button";
+    suspend.textContent = "Suspend";
+    suspend.disabled = !!moderation;
+    suspend.addEventListener("click", async () => {
+      try { await moderateAdminMember(member, "suspended"); }
+      catch (error) { status("adminStatus", "Suspension failed: " + friendly(error), true); }
+    });
+    const ban = document.createElement("button");
+    ban.type = "button";
+    ban.textContent = "Permanent ban";
+    ban.disabled = moderation?.status === "banned";
+    ban.addEventListener("click", async () => {
+      try { await moderateAdminMember(member, "banned"); }
+      catch (error) { status("adminStatus", "Ban failed: " + friendly(error), true); }
+    });
+    const restore = document.createElement("button");
+    restore.type = "button";
+    restore.textContent = "Restore account";
+    restore.disabled = !moderation;
+    restore.addEventListener("click", async () => {
+      try { await moderateAdminMember(member, "restored"); }
+      catch (error) { status("adminStatus", "Restore failed: " + friendly(error), true); }
+    });
+    card.append(name, location, joined, age, badge, state, suspend, ban, restore);
     list.appendChild(card);
   });
 }
@@ -5122,12 +5205,15 @@ async function loadAdminMemberDirectory() {
   if (!(await checkMatchAdmin())) throw new Error("Admin access denied.");
   const list = $("adminMembersList");
   list.textContent = "Loading member profiles...";
-  const { data, error } = await db.from("profiles")
-    .select("id,display_name,city,age,is_verified,created_at")
-    .order("created_at", { ascending: false })
-    .limit(50);
-  if (error) throw error;
-  adminMemberDirectory = data || [];
+  const [profilesResult] = await Promise.all([
+    db.from("profiles")
+      .select("id,display_name,city,age,is_verified,created_at")
+      .order("created_at", { ascending: false })
+      .limit(50),
+    loadAdminModerationStatuses()
+  ]);
+  if (profilesResult.error) throw profilesResult.error;
+  adminMemberDirectory = profilesResult.data || [];
   renderAdminMemberDirectory($("adminMemberSearch")?.value || "");
 }
 

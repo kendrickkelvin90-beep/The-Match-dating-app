@@ -12546,22 +12546,30 @@ function beginVoiceCallPolling() {
 function subscribeToVoiceCalls(user) {
   if (!user?.id) return;
   if (callSessionChannel) db.removeChannel(callSessionChannel).catch(()=>{});
+  const displayIncomingCall = call => {
+    if (!call || call.status !== "ringing" || activeVoiceCallId || incomingVoiceCall) return;
+    incomingVoiceCall = call;
+    showVoiceCallModal("Incoming voice call", "A matched member is calling you. Your microphone will stay off until you accept.", [
+      { label:"Accept", handler:() => acceptVoiceCall() },
+      { label:"Decline", danger:true, handler:() => rejectVoiceCall() }
+    ]);
+  };
   callSessionChannel = db.channel("voice-calls-"+user.id)
-    .on("postgres_changes", { event:"INSERT", schema:"public", table:"call_sessions", filter:"callee_id=eq."+user.id }, payload => {
-      const call = payload.new;
-      if (call.status !== "ringing" || activeVoiceCallId || incomingVoiceCall) return;
-      incomingVoiceCall = call;
-      showVoiceCallModal("Incoming voice call", "A matched member is calling you. Your microphone will stay off until you accept.", [
-        { label:"Accept", handler:() => acceptVoiceCall() },
-        { label:"Decline", danger:true, handler:() => rejectVoiceCall() }
-      ]);
-    })
+    .on("postgres_changes", { event:"INSERT", schema:"public", table:"call_sessions", filter:"callee_id=eq."+user.id }, payload => displayIncomingCall(payload.new))
     .on("postgres_changes", { event:"UPDATE", schema:"public", table:"call_sessions", filter:"callee_id=eq."+user.id }, payload => {
       if (incomingVoiceCall?.id === payload.new.id && ["ended","rejected","missed"].includes(payload.new.status)) {
         incomingVoiceCall = null; hideVoiceCallModal();
       }
     })
     .subscribe();
+  // Poll as a fallback in case Realtime delivery is delayed or disabled for this table.
+  if (window.voiceIncomingPoll) clearInterval(window.voiceIncomingPoll);
+  window.voiceIncomingPoll = setInterval(async () => {
+    if (document.hidden || !currentUser || activeVoiceCallId || incomingVoiceCall) return;
+    const { data, error } = await db.from("call_sessions").select("id,caller_id,callee_id,call_type,status,created_at")
+      .eq("callee_id", user.id).eq("status", "ringing").order("created_at", { ascending:false }).limit(1).maybeSingle();
+    if (!error && data) displayIncomingCall(data);
+  }, 5000);
 }
 ensureVoiceCallUI();
 

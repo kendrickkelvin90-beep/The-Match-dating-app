@@ -8941,14 +8941,22 @@ async function loadStories(){
   try{
     const {data:stories,error}=await db
       .from("stories")
-      
-.select("id,user_id,story_group_id,media_url,media_type,caption,created_at,expires_at")
-
+      .select("id,user_id,story_group_id,media_url,media_type,caption,created_at,expires_at")
       .gt("expires_at",new Date().toISOString())
       .order("created_at",{ascending:false})
       .limit(100);
 
     if(error)throw error;
+    let seenStoryIds = new Set();
+    if (stories?.length) {
+      const { data: viewedRows, error: viewedError } = await db
+        .from("story_views")
+        .select("story_id")
+        .eq("viewer_id", currentUser.id)
+        .in("story_id", stories.map(item => item.id));
+      if (viewedError) console.warn("Could not load seen Story status:", viewedError.message);
+      else seenStoryIds = new Set((viewedRows || []).map(row => row.story_id));
+    }
     
     createButton.style.display = "";
 
@@ -9001,6 +9009,10 @@ async function loadStories(){
       const button=document.createElement("button");
       button.type="button";
       button.className="story-item";
+      const memberStoryIds = stories.filter(item => item.user_id === story.user_id).map(item => item.id);
+      if (memberStoryIds.length && memberStoryIds.every(id => seenStoryIds.has(id))) {
+        button.classList.add("seen");
+      }
       button.setAttribute("aria-label","View stories by "+name);
 
             const avatar = document.createElement("span");

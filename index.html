@@ -4087,6 +4087,80 @@ body.light-theme #bottomNavigation .nav-badge { border-color:#fff!important; }
   #bottomNavigation.bottom-nav button { transition:none!important; }
 }
 
+
+/* Discover / Nearby / Matches segmented navigation and four-item app bar */
+.discovery-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 80;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin: 0 -2px 16px;
+  padding: 10px 2px;
+  background: rgba(5,5,5,.96);
+  backdrop-filter: blur(12px);
+}
+.discovery-tabs.hidden { display:none!important; }
+.discovery-tabs button {
+  min-width:0;
+  min-height:42px;
+  padding:9px 6px;
+  border:1px solid rgba(201,164,94,.35);
+  border-radius:22px;
+  background:#111;
+  color:#d8d1c4;
+  font-size:13px;
+  font-weight:650;
+}
+.discovery-tabs button.active {
+  border-color:#d5b36c;
+  background:linear-gradient(135deg,#e5c77f,#b68c46);
+  color:#17120a;
+  box-shadow:0 4px 16px rgba(201,164,94,.18);
+}
+.profile-navigation-actions {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin:0 0 14px;
+}
+.profile-navigation-actions h2 { margin:0; color:#f3dfb5; }
+.profile-eyebrow { margin:0 0 3px; color:#c9a45e; font-size:10px; letter-spacing:2px; font-weight:800; }
+#openSettingsFromProfile {
+  width:44px; height:44px; flex:0 0 44px;
+  border:1px solid rgba(201,164,94,.55); border-radius:14px;
+  background:#15120d; color:#e5c477; font-size:22px;
+}
+#bottomNavigation.bottom-nav {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:4px;
+  padding:7px 8px calc(7px + env(safe-area-inset-bottom));
+  background:rgba(8,8,8,.97);
+  border-top:1px solid rgba(201,164,94,.42);
+}
+#bottomNavigation.bottom-nav button {
+  display:flex; min-width:0; min-height:54px;
+  flex-direction:column; align-items:center; justify-content:center;
+  gap:3px; padding:5px 2px;
+  border:1px solid transparent; border-radius:12px;
+  background:transparent; color:#aaa39a;
+  font-size:10px; line-height:1.2; font-weight:600;
+}
+#bottomNavigation .nav-icon { display:block; margin:0; font-size:22px; line-height:1; }
+#bottomNavigation.bottom-nav button.active {
+  color:#e5c477; background:rgba(201,164,94,.12);
+  border-color:rgba(201,164,94,.18);
+}
+@media(max-width:380px) {
+  #bottomNavigation.bottom-nav button { font-size:9px; }
+  .discovery-tabs button { font-size:12px; }
+}
+body.light-theme .discovery-tabs { background:rgba(255,255,255,.97); }
+body.light-theme .discovery-tabs button { background:#fff; color:#5e5548; }
+body.light-theme .discovery-tabs button.active { background:linear-gradient(135deg,#e5c77f,#b68c46); color:#17120a; }
 </style>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
@@ -4314,6 +4388,10 @@ body.light-theme #bottomNavigation .nav-badge { border-color:#fff!important; }
 <button class="btn secondary" id="resetBack" type="button">Back</button>
 </section>
 <section class="panel hidden" id="profile">
+  <div class="profile-navigation-actions">
+    <div><p class="profile-eyebrow">THE MATCH</p><h2>My Profile</h2></div>
+    <button type="button" id="openSettingsFromProfile" aria-label="Open settings" title="Settings">⚙</button>
+  </div>
   <div class="member-card" id="photoGallery">
   <h2>My photos 📸</h2>
   <p class="small">Upload at least 2 profile photos to use Discover, and up to 7 if you wish. Your first photo is your main photo. JPG, PNG or WebP, up to 5 MB each.</p>
@@ -4428,6 +4506,11 @@ body.light-theme #bottomNavigation .nav-badge { border-color:#fff!important; }
   <button class="btn secondary" id="backFromVerification" type="button">← Back to profile</button>
 </section>
 
+  <nav id="discoveryTabs" class="discovery-tabs hidden" aria-label="Discovery sections">
+    <button type="button" data-discovery-page="discover" class="active">Discover</button>
+    <button type="button" data-discovery-page="nearbyPage">Nearby</button>
+    <button type="button" data-discovery-page="matches">Matches</button>
+  </nav>
   <section class="panel hidden" id="discover">
 <h2>Discover ❤️</h2>
 <p class="small">Swipe right to like, or left to pass.</p>
@@ -5470,44 +5553,21 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
   </button>
 </section>
 
-  <nav class="bottom-nav hidden" id="bottomNavigation">
-  <button type="button" data-page="discover" aria-label="Discover">
-    <span class="nav-icon" aria-hidden="true">🧭</span>
-    <span>Discover</span>
-  </button>
-    
-  <button type="button" data-page="nearbyPage" aria-label="Nearby">
-    <span class="nav-icon" aria-hidden="true">📍</span>
-    <span>Nearby</span>
-  </button>
-
-
-  <button type="button" data-page="likes">
-    <span class="nav-icon">❤️</span>
-    <span id="likesCount" class="nav-badge" style="display:none;">0</span>
-    Likes
-  </button>
-
-  <button type="button" data-page="matches">
-    <span class="nav-icon">💞</span>
-    Matches
-  </button>
-
-  <button type="button" data-page="messages">
-    <span class="nav-icon">💬</span>
-    <span id="messagesCount" class="nav-badge" style="display:none;">0</span>
-    Messages
-  </button>
-
-  <button type="button" data-page="profile">
-    <span class="nav-icon">👤</span>
-    Profile
-  </button>
-
-  <button type="button" data-page="settings" aria-label="Settings">
-    <span class="nav-icon">⚙️</span>
-    Settings
-  </button>
+  <nav class="bottom-nav hidden" id="bottomNavigation" aria-label="Main navigation">
+    <button type="button" data-page="discover" aria-label="Home">
+      <span class="nav-icon" aria-hidden="true">⌂</span><span>Home</span>
+    </button>
+    <button type="button" data-page="messages" aria-label="Messages">
+      <span class="nav-icon" aria-hidden="true">▤</span>
+      <span id="messagesCount" class="nav-badge" style="display:none;">0</span><span>Messages</span>
+    </button>
+    <button type="button" data-page="likes" aria-label="Likes">
+      <span class="nav-icon" aria-hidden="true">♡</span>
+      <span id="likesCount" class="nav-badge" style="display:none;">0</span><span>Likes</span>
+    </button>
+    <button type="button" data-page="profile" aria-label="Profile">
+      <span class="nav-icon" aria-hidden="true">♙</span><span>Profile</span>
+    </button>
   </nav>
 </main>
 
@@ -5909,6 +5969,24 @@ function show(id, addToHistory = true) {
     "hidden",
     ["welcome", "onboarding", "auth", "reset"].includes(id)
   );
+
+  const discoveryTabs = $("discoveryTabs");
+  const discoveryAreaPages = ["discover", "nearbyPage", "matches"];
+  if (discoveryTabs) {
+    discoveryTabs.classList.toggle("hidden", !discoveryAreaPages.includes(id));
+    discoveryTabs.querySelectorAll("[data-discovery-page]").forEach(tab => {
+      tab.classList.toggle("active", tab.dataset.discoveryPage === id);
+      tab.setAttribute("aria-current", tab.dataset.discoveryPage === id ? "page" : "false");
+    });
+  }
+
+  const bottomPage = id === "messages" || id === "likes"
+    ? id
+    : (id === "profile" || id === "settings" ? "profile" : "discover");
+  $("bottomNavigation")?.querySelectorAll("button[data-page]").forEach(button => {
+    button.classList.toggle("active", button.dataset.page === bottomPage);
+    button.setAttribute("aria-current", button.dataset.page === bottomPage ? "page" : "false");
+  });
 
   window.scrollTo(0, 0);
   }
@@ -10134,6 +10212,7 @@ $("appThemeSelect").addEventListener("change", event => {
   );
 });
 
+  $("openSettingsFromProfile")?.addEventListener("click", () => show("settings"));
   $("settingsEditProfile").onclick=()=>{
 show("profile");
 };
@@ -10329,6 +10408,21 @@ $("matchLogoutConfirm").onclick = async () => {
 
 $("settingsLogout").onclick = openMatchLogoutModal;
 
+$("discoveryTabs")?.querySelectorAll("button[data-discovery-page]").forEach(tab => {
+  tab.addEventListener("click", async () => {
+    if (!currentUser) { show("welcome"); return; }
+    const page = tab.dataset.discoveryPage;
+    show(page);
+    if (page === "discover") {
+      await Promise.all([loadNearby(), loadStories()]);
+    } else if (page === "nearbyPage") {
+      await loadPremiumNearby();
+    } else if (page === "matches") {
+      await loadMyMatches();
+    }
+  });
+});
+
 $("bottomNavigation").querySelectorAll("button[data-page]").forEach(button=>{
   button.onclick=async()=>{
     const page=button.dataset.page;
@@ -10340,9 +10434,7 @@ $("bottomNavigation").querySelectorAll("button[data-page]").forEach(button=>{
 
     show(page);
 
-    $("bottomNavigation").querySelectorAll("button[data-page]").forEach(item=>{
-      item.classList.toggle("active",item.dataset.page===page);
-    });
+    // show() keeps the four-item navigation state in sync with the page.
 
         if (page === "discover") await loadNearby();
     if (page === "nearbyPage") await loadPremiumNearby();

@@ -5899,9 +5899,9 @@ function show(id, addToHistory = true) {
     });
   }
 
-  const bottomPage = id === "messages" || id === "likes" || id === "profile"
+  const bottomPage = id === "messages" || id === "likes"
     ? id
-    : "discover";
+    : (id === "profile" || id === "settings" ? "profile" : "discover");
   $("bottomNavigation")?.querySelectorAll("button[data-page]").forEach(button => {
     button.classList.toggle("active", button.dataset.page === bottomPage);
     button.setAttribute("aria-current", button.dataset.page === bottomPage ? "page" : "false");

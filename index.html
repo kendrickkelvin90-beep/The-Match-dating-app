@@ -4276,6 +4276,7 @@ body.light-theme .discovery-tabs button.active { background:linear-gradient(135d
 <button class="btn secondary" id="login">Log in</button>
 <p class="small">Google sign-in will be added later. Adults 18+ only.</p>
 <p class="status" id="welcomeStatus"></p>
+<p class="small" style="text-align:center;margin-top:14px"><a href="/legal.html#terms" target="_blank" rel="noopener">Terms</a> · <a href="/legal.html#privacy" target="_blank" rel="noopener">Privacy Policy</a> · <a href="/legal.html#safety" target="_blank" rel="noopener">Safety</a></p>
 </section>
 
 
@@ -4335,6 +4336,14 @@ body.light-theme .discovery-tabs button.active { background:linear-gradient(135d
     Your identity and dating preferences will be kept private
     unless you choose to share them on your profile.
   </p>
+  <div class="member-card" style="margin-top:14px">
+    <strong>Before continuing, review our legal documents:</strong>
+    <p><a href="/legal.html#terms" target="_blank" rel="noopener">Terms & Conditions</a></p>
+    <p><a href="/legal.html#privacy" target="_blank" rel="noopener">Privacy Policy</a></p>
+    <p><a href="/legal.html#community" target="_blank" rel="noopener">Community Guidelines</a></p>
+    <p><a href="/legal.html#safety" target="_blank" rel="noopener">Member Safety</a></p>
+    <p class="small">Support and privacy requests: <a href="mailto:thematchsuppprt@gmail.com">thematchsuppprt@gmail.com</a></p>
+  </div>
 </section>
 
   <section class="panel hidden" id="auth">
@@ -5261,6 +5270,13 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
 </div>
 
 <div class="member-card">
+  <h3>📄 Legal documents</h3>
+  <p class="small">Read The Match policies, member rules, safety guidance and payment terms.</p>
+  <a class="btn secondary" href="/legal.html" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none">Open Legal Centre</a>
+  <p class="small">Privacy and support: <a href="mailto:thematchsuppprt@gmail.com">thematchsuppprt@gmail.com</a></p>
+</div>
+
+<div class="member-card">
   <h3>ℹ️ About The Match</h3>
   <p>The Match is a dating and connection app for adults aged 18 and over. It helps members discover people, express interest, find mutual likes, and start conversations when both people are interested.</p>
   <p><strong>Discover:</strong> Explore member profiles and choose whether you are interested in someone.</p>
@@ -5326,7 +5342,8 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
   
   <div class="member-card">
     <h3>💬 Help &amp; Support</h3>
-    <p class="small">Need help with your account, Premium subscription, payments, or using The Match? Contact our support team on WhatsApp.</p>
+    <p class="small">Need help with your account, Premium subscription, payments, privacy or using The Match? Contact us by email or WhatsApp.</p>
+    <a class="btn secondary" href="mailto:thematchsuppprt@gmail.com" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">Email The Match Support</a>
     <a class="btn primary"
        href="https://wa.me/message/5LB77KW7QGYSJ1"
        target="_blank"
@@ -6858,8 +6875,23 @@ const onboardingQuestions = [
   },
   {
     key: "terms_accepted",
-    title: "Do you agree to The Match Community Guidelines and Terms of Service?",
+    title: "Do you agree to The Match Community Guidelines and Terms of Service after reviewing the linked documents?",
     options: ["Yes, I agree", "No, I don't agree"],
+    values: ["yes", "no"],
+    safety: true
+  },
+  {
+    key: "privacy_acknowledged",
+    title: "Have you read The Match Privacy Policy and understood how your information may be used?",
+    options: ["Yes, I have read and understood it", "No, I have not"],
+    values: ["yes", "no"],
+    safety: true
+  },
+  {
+    key: "sensitive_data_consent",
+    title: "Do you explicitly consent to The Match processing sensitive information you choose to provide, including information that may reveal sexual orientation or sex life, as explained in the Privacy Policy, to provide dating, matching and safety features?",
+    help: "You can review the Privacy Policy before answering. This consent is recorded with your onboarding answers.",
+    options: ["Yes, I explicitly consent", "No, I do not consent"],
     values: ["yes", "no"],
     safety: true
   },

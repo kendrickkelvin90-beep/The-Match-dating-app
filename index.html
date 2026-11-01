@@ -13823,13 +13823,25 @@ async function startVoiceCall(peerId) {
     ]);
     beginVoiceCallPolling();
     voiceCallRingTimer = setTimeout(async () => {
-      if (activeVoiceCallId && activeVoiceCallRole === "caller") {
-        await finishVoiceCall();
-        showVoiceCallModal("No answer", "The member did not answer. The call has been ended.", [
+      const missedCallId = activeVoiceCallId;
+      if (missedCallId && activeVoiceCallRole === "caller") {
+        // Persist an unanswered call so the recipient can see it after coming back online.
+        try {
+          const { error: missedError } = await db.from("call_sessions")
+            .update({ status: "missed", ended_at: new Date().toISOString() })
+            .eq("id", missedCallId)
+            .eq("caller_id", currentUser.id)
+            .eq("status", "ringing");
+          if (missedError) throw missedError;
+        } catch (error) {
+          console.warn("Could not mark unanswered call as missed:", error);
+        }
+        await finishVoiceCall(false);
+        showVoiceCallModal("Missed call", "No answer. The call has been saved as missed.", [
           { label:"Close", danger:true, handler:hideVoiceCallModal }
         ]);
       }
-    }, 45000);
+    }, 30000);
   } catch (error) {
     console.warn("Voice call could not start:", error);
     showVoiceCallModal("Unable to start voice call", error.message || "Please try again in a moment.", [
@@ -13968,8 +13980,43 @@ function beginVoiceCallPolling() {
     } catch (e) { console.warn("Call status check failed",e); }
   }, 2500);
 }
+async function showPendingMissedCallNotice(user) {
+  if (!user?.id || window.missedCallNoticeLoadedFor === user.id) return;
+  window.missedCallNoticeLoadedFor = user.id;
+  try {
+    const { data: calls, error } = await db.from("call_sessions")
+      .select("id,caller_id,created_at")
+      .eq("callee_id", user.id)
+      .eq("status", "missed")
+      .order("created_at", { ascending: false })
+      .limit(10);
+    if (error) throw error;
+    if (!calls?.length) return;
+    const ids = [...new Set(calls.map(call => call.caller_id).filter(Boolean))];
+    const { data: profiles, error: profileError } = await db.from("profiles")
+      .select("id,display_name").in("id", ids);
+    if (profileError) console.warn("Missed-call names could not be loaded:", profileError);
+    const names = new Map((profiles || []).map(profile => [profile.id, profile.display_name || "A member"]));
+    const latest = calls[0];
+    const caller = names.get(latest.caller_id) || "A member";
+    const when = latest.created_at ? new Date(latest.created_at).toLocaleString() : "recently";
+    showVoiceCallModal("Missed voice call", caller + " tried calling you " + when + ".", [
+      { label:"View call history", handler:async () => {
+        hideVoiceCallModal();
+        await loadVoiceCallHistory();
+        if (typeof show === "function") show("messages");
+      }},
+      { label:"Close", danger:true, handler:hideVoiceCallModal }
+    ]);
+  } catch (error) {
+    console.warn("Could not check missed calls:", error);
+    window.missedCallNoticeLoadedFor = null;
+  }
+}
+
 function subscribeToVoiceCalls(user) {
   if (!user?.id) return;
+  showPendingMissedCallNotice(user);
   if (callSessionChannel) db.removeChannel(callSessionChannel).catch(()=>{});
   const displayIncomingCall = call => {
     if (!call || call.status !== "ringing" || activeVoiceCallId || incomingVoiceCall) return;

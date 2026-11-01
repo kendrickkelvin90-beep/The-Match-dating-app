@@ -3950,6 +3950,129 @@ body.light-theme #profile #photoGallery { background:linear-gradient(155deg,#fff
   #profile #profileForm .member-card label { min-height:40px; }
 }
 
+
+/* THE MATCH — compact luxury bottom navigation (visual only) */
+#bottomNavigation.bottom-nav {
+  position:fixed!important;
+  left:0!important; right:0!important; bottom:0!important;
+  z-index:1000!important;
+  display:flex!important;
+  align-items:stretch!important;
+  justify-content:space-between!important;
+  gap:2px!important;
+  box-sizing:border-box!important;
+  min-height:70px!important;
+  padding:8px 5px calc(8px + env(safe-area-inset-bottom))!important;
+  background:rgba(7,7,7,.97)!important;
+  border-top:1px solid rgba(210,173,104,.42)!important;
+  box-shadow:0 -10px 30px rgba(0,0,0,.48)!important;
+  backdrop-filter:blur(18px)!important;
+  -webkit-backdrop-filter:blur(18px)!important;
+}
+#bottomNavigation.bottom-nav button {
+  position:relative!important;
+  display:flex!important;
+  flex:1 1 0!important;
+  min-width:0!important;
+  min-height:52px!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:4px!important;
+  margin:0!important;
+  padding:5px 1px!important;
+  border:1px solid transparent!important;
+  border-radius:13px!important;
+  background:transparent!important;
+  color:#938d83!important;
+  font-size:9px!important;
+  line-height:1.15!important;
+  font-weight:650!important;
+  letter-spacing:-.1px!important;
+  white-space:nowrap!important;
+  -webkit-tap-highlight-color:transparent;
+  transition:background .18s ease,color .18s ease,border-color .18s ease;
+}
+#bottomNavigation .nav-icon {
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:25px!important;
+  height:24px!important;
+  margin:0!important;
+  font-size:19px!important;
+  line-height:1!important;
+  filter:grayscale(.65)!important;
+  opacity:.82!important;
+}
+#bottomNavigation button.active {
+  color:#f0d18f!important;
+  background:linear-gradient(180deg,rgba(210,173,104,.16),rgba(210,173,104,.055))!important;
+  border-color:rgba(210,173,104,.24)!important;
+  box-shadow:inset 0 1px 0 rgba(255,230,177,.08)!important;
+}
+#bottomNavigation button.active .nav-icon {
+  filter:none!important;
+  opacity:1!important;
+  transform:translateY(-1px);
+}
+#bottomNavigation button.active::before {
+  content:"";
+  position:absolute;
+  top:-8px;
+  left:calc(50% - 11px);
+  width:22px;
+  height:2px;
+  border-radius:3px;
+  background:#d2ad68;
+  box-shadow:0 0 10px rgba(210,173,104,.5);
+}
+#bottomNavigation .nav-badge {
+  position:absolute!important;
+  top:1px!important;
+  left:calc(50% + 5px)!important;
+  right:auto!important;
+  min-width:16px!important;
+  height:16px!important;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 4px!important;
+  border:1px solid #080808!important;
+  border-radius:20px!important;
+  background:#c69d55!important;
+  color:#17120a!important;
+  font-size:9px!important;
+  font-weight:800!important;
+  line-height:1!important;
+  z-index:3!important;
+}
+#bottomNavigation button:focus-visible {
+  outline:2px solid #edcc86!important;
+  outline-offset:2px!important;
+}
+#bottomNavigation button:active { transform:scale(.97); }
+body.light-theme #bottomNavigation.bottom-nav {
+  background:rgba(255,255,255,.97)!important;
+  border-top-color:rgba(150,112,45,.35)!important;
+  box-shadow:0 -8px 24px rgba(50,38,18,.12)!important;
+}
+body.light-theme #bottomNavigation.bottom-nav button { color:#746b5c!important; }
+body.light-theme #bottomNavigation.bottom-nav button.active {
+  color:#76551e!important;
+  background:rgba(210,173,104,.17)!important;
+  border-color:rgba(150,112,45,.22)!important;
+}
+body.light-theme #bottomNavigation .nav-badge { border-color:#fff!important; }
+@media(max-width:380px) {
+  #bottomNavigation.bottom-nav { gap:0!important; padding-left:2px!important; padding-right:2px!important; }
+  #bottomNavigation.bottom-nav button { font-size:8px!important; gap:3px!important; padding-left:0!important; padding-right:0!important; }
+  #bottomNavigation .nav-icon { font-size:18px!important; }
+}
+@media(prefers-reduced-motion:reduce) {
+  #bottomNavigation.bottom-nav button { transition:none!important; }
+}
+
 </style>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>

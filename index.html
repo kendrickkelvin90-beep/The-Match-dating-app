@@ -3013,6 +3013,93 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
   }
 }
 
+
+/* ==========================================
+   MOBILE-FIRST COMPACT LAYOUT — approved refresh
+   Scoped to app panels; lists scroll internally.
+   ========================================== */
+:root { --match-gold:#d6b36a; --match-gold-soft:#a98545; --match-bg:#050505; }
+html { min-height:100%; }
+body { min-height:100dvh; }
+#bottomNavigation { padding-bottom:calc(8px + env(safe-area-inset-bottom)); }
+#bottomNavigation .bottom-nav { min-height:64px; padding-top:7px; padding-bottom:calc(7px + env(safe-area-inset-bottom)); background:#080808; border-top:1px solid rgba(214,179,106,.38); }
+#bottomNavigation .bottom-nav button { min-height:46px; }
+.panel:not(.hidden) { min-width:0; }
+#discover:not(.hidden), #nearbyPage:not(.hidden), #messages:not(.hidden),
+#matches:not(.hidden), #likes:not(.hidden), #profile:not(.hidden) {
+  height:calc(100dvh - 74px - env(safe-area-inset-bottom));
+  max-height:calc(100dvh - 74px - env(safe-area-inset-bottom));
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding:12px 12px 18px;
+  margin:0;
+  scrollbar-width:thin;
+}
+#discover:not(.hidden) > h2, #nearbyPage:not(.hidden) > h2,
+#messages:not(.hidden) > h2 { font-size:clamp(20px,5vw,25px); margin:2px 0 5px; }
+#discover:not(.hidden) > .small { font-size:12px; line-height:1.4; margin:4px 0 8px; }
+#discover #storiesSection { margin:8px 0 10px; padding:8px 0; }
+#discover #storiesSection h3 { font-size:15px; margin:0 0 4px; }
+#discover #storiesSection > .small, #discover #storiesStatus { display:none; }
+#discover .stories-list { gap:10px; padding:5px 2px 7px; }
+#discover .story-circle, #discover .story-item { flex-basis:58px; width:58px; font-size:10px; gap:4px; }
+#discover .story-plus, #discover .story-avatar { width:48px; height:48px; flex-basis:48px; font-size:21px; }
+#discover #refreshNearby { width:auto; min-height:36px; margin:4px 0 8px; padding:8px 13px; font-size:12px; }
+#discover #profileList { margin-top:6px; gap:8px; }
+#discover #discoverStatus { margin:4px 0; font-size:12px; }
+#nearbyPage #nearbyMembersList { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; align-items:start; }
+#nearbyPage #nearbyMembersList > * { min-width:0; margin:0; }
+#nearbyPage .member-card { padding:9px; border-radius:14px; }
+#messages #conversationList { min-height:0; }
+#messages #conversationList > * { margin:7px 0; }
+#messages #refreshConversationsButton { width:auto; min-height:36px; margin:5px 0 8px; padding:8px 12px; font-size:12px; }
+#messages > .small { margin:4px 0 8px; font-size:12px; }
+#messages > button[onclick*="premium"] { padding:8px 10px; margin:3px 0 8px; font-size:11px; }
+#messages #messagesStatus { font-size:12px; }
+#chatPage {
+  height:100dvh !important;
+  padding:76px 12px calc(10px + env(safe-area-inset-bottom)) !important;
+  gap:0;
+}
+#chatPage #chatHeader { min-height:68px !important; padding:8px 10px !important; }
+#chatPage #chatPageContent { min-height:0; overflow:hidden; }
+#chatPage #activeConversation { min-height:0; gap:0; }
+#chatPage #chatMessages { flex:1 1 auto; min-height:0; padding:12px 8px !important; gap:2px !important; border-radius:14px !important; }
+#chatPage #chatViewOnceRow { flex:0 0 auto; margin:8px 0 0; }
+#chatPage #chatViewOnceRow label {
+  display:flex; align-items:center; gap:9px; width:100%; min-height:42px;
+  box-sizing:border-box; margin:0; padding:8px 12px;
+  border:1px solid rgba(214,179,106,.55); border-radius:22px;
+  background:#101010; color:#f4e5c2; font-size:12px;
+}
+#chatPage #chatViewOnceRow input { width:18px; height:18px; margin:0; accent-color:#d6b36a; flex:0 0 auto; }
+#chatPage #chatViewOnceRow span { margin-left:auto; color:#9c9690; font-size:10px; text-align:right; }
+#chatPage #chatComposer {
+  flex:0 0 auto; gap:6px; padding:6px 8px; margin:8px 0 2px;
+  border:1px solid rgba(214,179,106,.75); border-radius:28px; background:#090909;
+}
+#chatPage #chatComposer #chatEmojiToggle { flex-basis:34px; width:34px; height:38px; font-size:22px; }
+#chatPage #chatComposer #chatMediaButton { flex-basis:38px; width:38px !important; height:38px !important; font-size:22px; }
+#chatPage #chatComposer #chatMessageInput { min-height:40px; max-height:88px; padding:9px 5px !important; font-size:14px; }
+#chatPage #chatComposer #sendChatMessage { flex-basis:42px; width:42px !important; min-width:42px; height:42px; min-height:42px; }
+#chatPage #chatPageStatus { max-height:34px; overflow:auto; font-size:11px; }
+@media (max-height:700px) {
+  #discover:not(.hidden), #nearbyPage:not(.hidden), #messages:not(.hidden) { padding-top:8px; }
+  #discover #storiesSection { margin:4px 0 6px; padding:5px 0; }
+  #discover .story-plus, #discover .story-avatar { width:42px; height:42px; flex-basis:42px; }
+  #chatPage { padding-top:70px !important; }
+  #chatPage #chatHeader { min-height:62px !important; }
+  #chatPage #chatMessages { padding-top:7px !important; padding-bottom:7px !important; }
+}
+@media (max-width:360px) {
+  #nearbyPage #nearbyMembersList { gap:7px; }
+  #chatPage #chatViewOnceRow span { max-width:125px; }
+  #chatPage #chatComposer { gap:4px; padding:5px 6px; }
+  #chatPage #chatComposer #chatEmojiToggle { flex-basis:30px; width:30px; }
+  #chatPage #chatComposer #chatMediaButton { flex-basis:34px; width:34px !important; height:34px !important; }
+  #chatPage #chatComposer #sendChatMessage { flex-basis:38px; width:38px !important; min-width:38px; height:38px; min-height:38px; }
+}
+
 </style>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
@@ -3893,16 +3980,19 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
   <input id="chatMediaInput" type="file" accept="image/*,video/*" hidden>
     
 
-<label for="chatViewOnce" style="display:flex;align-items:center;gap:5px;color:#f3d28a;font-size:12px;white-space:nowrap;">
-  <input id="chatViewOnce" type="checkbox">
-  View Once
-</label>
-
-  <textarea id="chatMessageInput" maxlength="2000"
+<textarea id="chatMessageInput" maxlength="2000"
     placeholder="Write a message..." rows="1"></textarea>
 
   <button class="btn primary" id="sendChatMessage"
     type="button" aria-label="Send message">➤</button>
+</div>
+
+<div id="chatViewOnceRow">
+  <label for="chatViewOnce">
+    <input id="chatViewOnce" type="checkbox">
+    <strong>View once</strong>
+    <span>Photo or video disappears after viewing</span>
+  </label>
 </div>
 
 </div>

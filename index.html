@@ -4792,6 +4792,23 @@ body.light-theme #bottomNavigation .nav-badge { border-color:#fff!important; }
 body.light-theme .voice-call-history { background:#fff; }
 body.light-theme .voice-call-history-item { background:#faf8f3; }
 body.light-theme .voice-call-history-person strong { color:#30291d; }
+
+/* Final overrides for the full-screen call card (after legacy call-modal rules). */
+#voiceCallModal.voice-call-screen .voice-call-card {
+  width:100%!important; max-width:430px!important;
+  min-height:min(620px,calc(100dvh - 64px))!important;
+  display:flex!important; flex-direction:column!important;
+  align-items:center!important; justify-content:center!important;
+  box-sizing:border-box!important; padding:34px 24px!important;
+  border:1px solid rgba(210,173,104,.55)!important;
+  border-radius:30px!important;
+  background:linear-gradient(160deg,rgba(25,23,19,.98),rgba(7,7,7,.99))!important;
+  text-align:center!important;
+  box-shadow:0 24px 90px rgba(0,0,0,.68)!important;
+}
+#voiceCallModal.voice-call-screen #voiceCallTitle { font-size:clamp(25px,6vw,32px)!important; }
+#voiceCallModal.voice-call-screen #voiceCallStatus { color:#c8c0b4!important; }
+#voiceCallModal.voice-call-screen #voiceCallActions { width:100%!important; display:flex!important; justify-content:center!important; gap:14px!important; flex-wrap:wrap!important; margin-top:36px!important; }
 </style>
 
   <div class="premium-hero">

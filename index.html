@@ -3687,6 +3687,66 @@ body.light-theme #chatPage #chatMessages .chat-bubble.sent {
   #messages #conversationList > button img { width:46px!important; height:46px!important; flex-basis:46px!important; }
 }
 
+
+/* Messages final interaction-state polish */
+#messages #refreshConversationsButton:disabled,
+#messages #conversationList > button:disabled,
+#chatPage #chatComposer button:disabled,
+#chatPage #sendChatMessage:disabled {
+  opacity:.58!important;
+  cursor:wait!important;
+}
+#messages #conversationList > button:focus-visible,
+#messages #refreshConversationsButton:focus-visible,
+#messages #backFromMessages:focus-visible,
+#chatPage #chatComposer button:focus-visible,
+#chatPage #backFromChatHeader:focus-visible {
+  outline:2px solid #e0c17b!important;
+  outline-offset:3px!important;
+}
+#messages #conversationList > button:active {
+  transform:scale(.992);
+  border-color:rgba(224,193,123,.65)!important;
+}
+#messages #messagesStatus:not(:empty) {
+  padding:10px 12px!important;
+  border:1px solid rgba(198,161,91,.2)!important;
+  border-radius:11px!important;
+  background:rgba(198,161,91,.055)!important;
+}
+#chatPage #chatComposer {
+  gap:7px!important;
+  padding:8px!important;
+}
+#chatPage #chatMessageInput {
+  min-width:0!important;
+  color:#f5f0e5!important;
+}
+#chatPage #chatMessageInput::placeholder {
+  color:#8e887d!important;
+}
+#chatPage #chatPageStatus:empty {
+  display:none!important;
+}
+#chatPage #chatPageStatus:not(:empty) {
+  padding:8px 11px!important;
+}
+@media(prefers-reduced-motion:reduce) {
+  #messages #conversationList > button { transition:none!important; }
+  #messages #conversationList > button:active { transform:none!important; }
+}
+body.light-theme #messages #messagesStatus:not(:empty) {
+  background:#fffaf0!important;
+  border-color:#e7d9bd!important;
+  color:#765a2b!important;
+}
+body.light-theme #chatPage #chatMessageInput {
+  color:#202020!important;
+}
+body.light-theme #chatPage #chatMessageInput::placeholder {
+  color:#777!important;
+}
+
 </style>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>

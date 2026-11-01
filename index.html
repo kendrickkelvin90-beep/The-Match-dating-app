@@ -3119,6 +3119,63 @@ body:not(.light-theme) .panel {
   #nearbyPage #nearbyMembersList { gap:9px!important; }
 }
 
+
+/* Reference-inspired card refinements */
+#discover .member-card {
+  border-color:rgba(210,173,104,.52)!important;
+  background:#090909!important;
+  box-shadow:0 18px 44px rgba(0,0,0,.48),0 0 0 1px rgba(210,173,104,.08)!important;
+}
+#discover .member-card [style*="255,65,125"],
+#discover .member-card [style*="#ff"],
+#discover .member-card [style*="#ffd4e3"] { color:#e5c477!important; }
+#discover .member-card img { background:#080808!important; }
+#discover .member-card button {
+  border-color:rgba(210,173,104,.5)!important;
+}
+#nearbyPage #nearbyMembersList .member-card {
+  padding:14px!important; border-color:rgba(210,173,104,.38)!important;
+  background:linear-gradient(160deg,#171717,#090909)!important;
+}
+#nearbyPage #nearbyMembersList .member-card img {
+  border-radius:13px!important;
+}
+#messages #conversationList button {
+  min-height:78px!important; margin:0!important; padding:12px!important;
+  border-color:rgba(210,173,104,.28)!important; background:#101010!important;
+}
+#messages #conversationList img {
+  width:52px!important; height:52px!important; border-radius:50%!important;
+  border:1px solid var(--tm-line)!important; object-fit:cover!important;
+}
+#messages #conversationList button span[style*="background:#e91e63"] {
+  background:var(--tm-gold)!important; color:#17120a!important;
+}
+#chatPage #chatHeader { padding-left:14px!important; padding-right:14px!important; }
+#chatPage #chatPageTitle { color:var(--tm-gold-bright)!important; }
+#chatPage #chatPartnerLocation { color:#aaa39a!important; }
+#chatPage #chatPageStatus:not(:empty) {
+  margin:8px 14px!important; border:1px solid rgba(210,173,104,.35)!important;
+  border-radius:12px!important; background:#17130c!important; color:#f0d79f!important;
+  font-size:13px!important; line-height:1.45!important;
+}
+#voiceCallStart { border-radius:14px!important; }
+#bottomNavigation {
+  display:flex!important; justify-content:space-around!important; gap:3px!important;
+  padding:7px 4px max(7px,env(safe-area-inset-bottom))!important;
+  overflow-x:auto!important;
+}
+#bottomNavigation button {
+  min-width:0!important; flex:1 0 auto!important; min-height:48px!important;
+  display:flex!important; flex-direction:column!important; align-items:center!important;
+  justify-content:center!important; gap:3px!important; padding:5px 7px!important;
+  font-size:10px!important; font-weight:650!important; white-space:nowrap!important;
+}
+#bottomNavigation .nav-icon { font-size:17px!important; line-height:1!important; }
+@media(max-width:420px) {
+  #bottomNavigation button { font-size:9px!important; padding-left:4px!important; padding-right:4px!important; }
+}
+
 </style>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>

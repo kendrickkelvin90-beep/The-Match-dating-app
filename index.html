@@ -9056,7 +9056,8 @@ async function loadStories(){
         });
 
         const heading = document.createElement("div");
-        heading.className = "tm-story-heading";\n        heading.textContent = story.user_id === currentUser.id
+        heading.className = "tm-story-heading";
+        heading.textContent = story.user_id === currentUser.id
   ? "Your Story"
   : name + "'s Story";
         Object.assign(heading.style, {
@@ -9324,7 +9325,7 @@ reactionsInfo.onclick = async event => {
                 const closeStoryButton = document.createElement("button");
         closeStoryButton.type = "button";
         closeStoryButton.textContent = "✕";
-        closeStoryButton.className = "tm-story-close tm-story-control";\n        closeStoryButton.className = "tm-story-close tm-story-control";
+        closeStoryButton.className = "tm-story-close tm-story-control";
         closeStoryButton.setAttribute("aria-label", "Close Story");
         closeStoryButton.style.cssText =
           "position:absolute;top:max(12px,env(safe-area-inset-top));" +
@@ -9407,7 +9408,7 @@ reactionsInfo.onclick = async event => {
           mediaArea.replaceChildren();
           caption.textContent="";
           time.textContent="";
-          counter.className = "tm-story-counter";\n          counter.className = "tm-story-counter";
+          counter.className = "tm-story-counter";
           counter.textContent=(index+1)+" of "+memberStories.length;
           
 
@@ -9593,7 +9594,7 @@ viewersInfo.onclick = async event => {
             }
           }
 
-          caption.className = "tm-story-caption";\n          caption.textContent=current.caption||"";
+          caption.textContent=current.caption||"";
           time.textContent=new Date(current.created_at).toLocaleString();
         }
 

@@ -4171,6 +4171,34 @@ body.light-theme .discovery-tabs button.active { background:linear-gradient(135d
     });
   });
 </script>
+
+<style id="professional-stories-overrides">
+/* The Match — professional Stories presentation */
+#discover #storiesSection{margin:18px 0 24px;padding:18px 16px 14px;border:1px solid rgba(201,164,94,.18);border-radius:22px;background:linear-gradient(145deg,rgba(27,24,19,.96),rgba(8,8,8,.98));box-shadow:0 14px 34px rgba(0,0,0,.18)}
+#discover #storiesSection h3{display:flex;align-items:center;gap:9px;margin:0;color:#f1d69b!important;font-size:17px!important;font-weight:800;letter-spacing:.02em}
+#discover #storiesSection>p.small{margin:5px 0 12px;color:#aaa39a!important;font-size:12px;line-height:1.45}
+#discover .stories-list{gap:15px!important;padding:10px 2px 12px!important;scrollbar-width:none;overscroll-behavior-x:contain}
+#discover .stories-list::-webkit-scrollbar{display:none}
+#discover .story-circle,#discover .story-item{flex:0 0 76px;width:76px;gap:8px;color:#eee6d8!important;font-size:11px;font-weight:600;letter-spacing:.01em}
+#discover .story-avatar{width:66px;height:66px;flex-basis:66px;padding:3px;border:0!important;outline:0!important;background:linear-gradient(135deg,#f4d78f,#a9792e 48%,#f7e6b8)!important;box-shadow:0 0 0 1px rgba(230,192,112,.22),0 5px 16px rgba(0,0,0,.32)}
+#discover .story-avatar img{width:100%;height:100%;border:2px solid #14110c;box-sizing:border-box}
+#discover .story-item.seen .story-avatar{background:linear-gradient(135deg,#68645d,#34312c)!important;box-shadow:none}
+#discover .story-item.seen .story-avatar img{border-color:#171614}
+#discover #createStoryButton .story-plus{width:66px;height:66px;flex-basis:66px;border:1px dashed #d5b36e!important;background:linear-gradient(145deg,#211b10,#100e0a)!important;color:#e8c77f!important;font-size:29px;box-shadow:inset 0 0 0 3px rgba(213,179,110,.07)}
+#discover #createStoryButton>span:last-child{color:#f0d9aa!important;font-weight:700}
+#discover .story-item:focus-visible,#discover .story-circle:focus-visible{outline:2px solid #e8c77f;outline-offset:4px;border-radius:14px}
+.tm-story-viewer{background:radial-gradient(ellipse at 50% 15%,#252017 0%,#080808 48%,#000 100%)!important}
+.tm-story-viewer .tm-story-heading{font-size:14px!important;font-weight:750!important;letter-spacing:.01em}
+.tm-story-viewer .tm-story-caption{font-size:15px;line-height:1.5;font-weight:550;text-align:center;padding:12px 16px;border-radius:14px;background:linear-gradient(180deg,transparent,rgba(0,0,0,.48));bottom:112px!important;}
+.tm-story-viewer .tm-story-counter{color:#f2d99f}
+.tm-story-viewer .tm-story-control{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:transform .16s ease,background .16s ease}
+.tm-story-viewer .tm-story-close{border:1px solid rgba(231,199,127,.45)!important;background:rgba(12,11,9,.72)!important;color:#f6e5c1!important}
+.tm-story-viewer .tm-story-reactions button{border:1px solid rgba(231,199,127,.2)!important;background:rgba(16,15,13,.78)!important;box-shadow:0 5px 16px rgba(0,0,0,.24)}
+.tm-story-viewer .tm-story-reactions button:active,.tm-story-viewer .tm-story-control:active{transform:scale(.94)}
+body.light-theme #discover #storiesSection{background:linear-gradient(145deg,#fffdf8,#f5f0e6);border-color:rgba(160,120,48,.2)}
+body.light-theme #discover .story-item{color:#342c20!important}
+body.light-theme #discover #storiesSection>p.small{color:#766e61!important}
+</style>
 </head>
 <body>
 <div id="stars" aria-hidden="true"></div>
@@ -4525,7 +4553,7 @@ body.light-theme .discovery-tabs button.active { background:linear-gradient(135d
 <p class="small">Swipe right to like, or left to pass.</p>
     
 <div id="storiesSection" class="stories-section">
-  <h3>Stories ✨</h3>
+  <h3>Stories</h3>
   <p class="small">Share a moment. Discover someone's world.</p>
   
 
@@ -8913,14 +8941,22 @@ async function loadStories(){
   try{
     const {data:stories,error}=await db
       .from("stories")
-      
-.select("id,user_id,story_group_id,media_url,media_type,caption,created_at,expires_at")
-
+      .select("id,user_id,story_group_id,media_url,media_type,caption,created_at,expires_at")
       .gt("expires_at",new Date().toISOString())
       .order("created_at",{ascending:false})
       .limit(100);
 
     if(error)throw error;
+    let seenStoryIds = new Set();
+    if (stories?.length) {
+      const { data: viewedRows, error: viewedError } = await db
+        .from("story_views")
+        .select("story_id")
+        .eq("viewer_id", currentUser.id)
+        .in("story_id", stories.map(item => item.id));
+      if (viewedError) console.warn("Could not load seen Story status:", viewedError.message);
+      else seenStoryIds = new Set((viewedRows || []).map(row => row.story_id));
+    }
     
     createButton.style.display = "";
 
@@ -8973,6 +9009,10 @@ async function loadStories(){
       const button=document.createElement("button");
       button.type="button";
       button.className="story-item";
+      const memberStoryIds = stories.filter(item => item.user_id === story.user_id).map(item => item.id);
+      if (memberStoryIds.length && memberStoryIds.every(id => seenStoryIds.has(id))) {
+        button.classList.add("seen");
+      }
       button.setAttribute("aria-label","View stories by "+name);
 
             const avatar = document.createElement("span");
@@ -9010,6 +9050,7 @@ async function loadStories(){
         let touchStartX = 0;
 
         const overlay = document.createElement("div");
+        overlay.className = "tm-story-viewer";
         Object.assign(overlay.style, {
           position: "fixed",
           inset: "0",
@@ -9027,6 +9068,7 @@ async function loadStories(){
         });
 
         const heading = document.createElement("div");
+        heading.className = "tm-story-heading";
         heading.textContent = story.user_id === currentUser.id
   ? "Your Story"
   : name + "'s Story";
@@ -9117,6 +9159,7 @@ if (story.user_id === currentUser.id) {
         });
 
         const caption = document.createElement("p");
+        caption.className = "tm-story-caption";
         Object.assign(caption.style, {
           position: "absolute",
           bottom: "30px",
@@ -9130,6 +9173,7 @@ if (story.user_id === currentUser.id) {
 
         
         const reactionBar = document.createElement("div");
+        reactionBar.className = "tm-story-reactions";
         reactionBar.style.cssText =
           "position:absolute;bottom:70px;left:12px;right:12px;z-index:6;display:flex;justify-content:center;gap:10px;";
 
@@ -9172,6 +9216,109 @@ if (story.user_id === currentUser.id) {
 
           reactionBar.appendChild(reactionButton);
         });
+
+        const storyReplyButton = document.createElement("button");
+        storyReplyButton.type = "button";
+        storyReplyButton.textContent = "Reply to Story";
+        storyReplyButton.setAttribute("aria-label", "Reply to this Story");
+        storyReplyButton.style.cssText =
+          "position:absolute;left:50%;bottom:max(16px,env(safe-area-inset-bottom));" +
+          "transform:translateX(-50%);z-index:8;padding:11px 20px;" +
+          "border:1px solid rgba(231,199,127,.65);border-radius:24px;" +
+          "background:linear-gradient(110deg,#a97a2e,#e6c77f);color:#17120a;" +
+          "font-size:13px;font-weight:800;box-shadow:0 8px 24px rgba(0,0,0,.3);";
+
+        storyReplyButton.onclick = async event => {
+          event.stopPropagation();
+          const current = memberStories[index];
+          if (!current || current.user_id === currentUser.id) return;
+          storyReplyButton.disabled = true;
+          try {
+            const { data: membership, error: membershipError } = await db
+              .from("premium_memberships")
+              .select("premium_until")
+              .eq("user_id", currentUser.id)
+              .maybeSingle();
+            if (membershipError) throw membershipError;
+            const isPremium = !!membership &&
+              new Date(membership.premium_until).getTime() > Date.now();
+
+            if (!isPremium) {
+              const premiumOverlay = document.createElement("div");
+              premiumOverlay.style.cssText =
+                "position:fixed;inset:0;z-index:100002;display:flex;" +
+                "align-items:center;justify-content:center;padding:22px;" +
+                "background:rgba(0,0,0,.8);";
+              const card = document.createElement("div");
+              card.style.cssText =
+                "position:relative;width:100%;max-width:360px;padding:26px 22px 22px;" +
+                "border:1px solid #806335;border-radius:22px;" +
+                "background:linear-gradient(155deg,#241e13,#0c0b09 72%);color:#fff;";
+              const close = document.createElement("button");
+              close.type = "button";
+              close.textContent = "✕";
+              close.setAttribute("aria-label", "Close Premium reminder");
+              close.style.cssText =
+                "position:absolute;right:13px;top:13px;width:34px;height:34px;" +
+                "border:1px solid #594a31;border-radius:50%;background:#211d16;color:#fff;";
+              close.onclick = () => premiumOverlay.remove();
+              const crown = document.createElement("div");
+              crown.textContent = "♛";
+              crown.style.cssText = "font-size:36px;color:#e3c477;margin-bottom:8px;";
+              const title = document.createElement("h2");
+              title.textContent = "Unlock Story replies";
+              title.style.cssText = "margin:0 30px 8px 0;color:#f0d49b;font-size:23px;";
+              const message = document.createElement("p");
+              message.textContent =
+                "Sending a message directly from a Story is a Premium feature. " +
+                "You can still message your existing matches from Chat.";
+              message.style.cssText = "color:#d0c8ba;line-height:1.55;font-size:14px;";
+              const upgrade = document.createElement("button");
+              upgrade.type = "button";
+              upgrade.textContent = "Explore Premium";
+              upgrade.style.cssText =
+                "width:100%;padding:13px;border:0;border-radius:12px;" +
+                "background:linear-gradient(110deg,#b98b35,#e3c477);" +
+                "color:#17120a;font-weight:800;";
+              upgrade.onclick = () => {
+                premiumOverlay.remove();
+                closeStory();
+                show("premium");
+              };
+              const later = document.createElement("button");
+              later.type = "button";
+              later.textContent = "Maybe later";
+              later.style.cssText =
+                "width:100%;padding:12px;margin-top:9px;border:1px solid #594a31;" +
+                "border-radius:12px;background:transparent;color:#eee;";
+              later.onclick = () => premiumOverlay.remove();
+              card.append(close,crown,title,message,upgrade,later);
+              premiumOverlay.appendChild(card);
+              document.body.appendChild(premiumOverlay);
+              return;
+            }
+
+            const body = prompt("Write a message to " + name + ":");
+            if (body === null) return;
+            const trimmedBody = body.trim();
+            if (!trimmedBody) return;
+            if (trimmedBody.length > 2000) {
+              alert("Messages can contain up to 2,000 characters.");
+              return;
+            }
+            const { error: sendError } = await db.from("messages").insert({
+              sender_id: currentUser.id,
+              receiver_id: current.user_id,
+              body: trimmedBody
+            });
+            if (sendError) throw sendError;
+            alert("Your message was sent.");
+          } catch (error) {
+            alert("Could not send your Story reply: " + friendly(error));
+          } finally {
+            storyReplyButton.disabled = false;
+          }
+        };
 
         const time = document.createElement("p");
         time.style.display = "none";
@@ -9293,6 +9440,7 @@ reactionsInfo.onclick = async event => {
                 const closeStoryButton = document.createElement("button");
         closeStoryButton.type = "button";
         closeStoryButton.textContent = "✕";
+        closeStoryButton.className = "tm-story-close tm-story-control";
         closeStoryButton.setAttribute("aria-label", "Close Story");
         closeStoryButton.style.cssText =
           "position:absolute;top:max(12px,env(safe-area-inset-top));" +
@@ -9375,10 +9523,13 @@ reactionsInfo.onclick = async event => {
           mediaArea.replaceChildren();
           caption.textContent="";
           time.textContent="";
+          counter.className = "tm-story-counter";
           counter.textContent=(index+1)+" of "+memberStories.length;
           
 
           const current=memberStories[index];
+          storyReplyButton.style.display =
+            current.user_id === currentUser.id ? "none" : "block";
           
 reactionBar.style.display =
   current.user_id === currentUser.id ? "none" : "flex";

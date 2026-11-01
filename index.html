@@ -13530,10 +13530,10 @@ async function startVoiceCall(peerId) {
     beginVoiceCallPolling();
     voiceCallRingTimer = setTimeout(() => {
       if (activeVoiceCallId && activeVoiceCallRole === "caller") {
+        await finishVoiceCall();
         showVoiceCallModal("No answer", "The member did not answer. The call has been ended.", [
-          { label:"Close", danger:true, handler:() => finishVoiceCall() }
+          { label:"Close", danger:true, handler:hideVoiceCallModal }
         ]);
-        finishVoiceCall();
       }
     }, 45000);
   } catch (error) {

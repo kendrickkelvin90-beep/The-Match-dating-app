@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#10050a">
+<meta name="theme-color" content="#050505">
 <title>The Match ❤️</title>
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="apple-touch-icon" href="/icons/file_00000000194481f48390cd96271ae5c9.png">
@@ -12516,7 +12516,7 @@ function ensureVoiceCallUI() {
     modal.id = "voiceCallModal";
     modal.className = "hidden";
     modal.style.cssText = "position:fixed;inset:0;z-index:20000;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:22px;";
-    modal.innerHTML = '<div style="width:100%;max-width:380px;background:#151515;border:1px solid #b8944e;border-radius:20px;padding:24px;text-align:center;color:white;"><div style="font-size:42px;margin-bottom:10px;">☎</div><h2 id="voiceCallTitle" style="color:#e5c477;margin:0 0 8px;">Voice call</h2><p id="voiceCallStatus" style="color:#ddd;">Connecting…</p><div id="voiceCallActions" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px;"></div></div>';
+    modal.innerHTML = '<div class="voice-call-card" style="width:100%;max-width:380px;background:#151515;border:1px solid #b8944e;border-radius:20px;padding:24px;text-align:center;color:white;"><div style="width:58px;height:58px;margin:0 auto 14px;border:1px solid #c9a45c;border-radius:18px;display:flex;align-items:center;justify-content:center;color:#e5c477;"><svg viewBox="0 0 24 24" aria-hidden="true" width="27" height="27" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L8 9.73a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92z"/></svg></div><h2 id="voiceCallTitle" style="color:#e5c477;margin:0 0 8px;">Voice call</h2><p id="voiceCallStatus" style="color:#ddd;">Connecting…</p><div id="voiceCallActions" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px;"></div></div>';
     document.body.appendChild(modal);
   }
 }

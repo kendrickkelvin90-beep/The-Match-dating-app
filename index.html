@@ -9528,6 +9528,8 @@ reactionsInfo.onclick = async event => {
           
 
           const current=memberStories[index];
+          storyReplyButton.style.display =
+            current.user_id === currentUser.id ? "none" : "block";
           
 reactionBar.style.display =
   current.user_id === currentUser.id ? "none" : "flex";

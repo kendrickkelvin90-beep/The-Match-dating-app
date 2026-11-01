@@ -1,13 +1,27 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+function corsFor(req: Request) {
+  const origin = req.headers.get("Origin");
+  const configured = (Deno.env.get("APP_ALLOWED_ORIGINS") || "https://match.beyondthebinarymedia.online")
+    .split(",").map(value => value.trim()).filter(Boolean);
+  const allowedOrigin = origin && configured.includes(origin) ? origin : "";
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
 
 Deno.serve(async (req: Request) => {
+  const cors = corsFor(req);
+  const origin = req.headers.get("Origin");
+  if (origin && !cors["Access-Control-Allow-Origin"]) {
+    return new Response(JSON.stringify({ error: "Origin not allowed" }), {
+      status: 403, headers: { "Content-Type": "application/json", "Vary": "Origin" },
+    });
+  }
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
     status, headers: { ...cors, "Content-Type": "application/json" },

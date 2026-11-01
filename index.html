@@ -16,6 +16,15 @@
 
   <style>
   /* The Match — Premium Discover refresh */
+@keyframes discoverCardEnter {
+  from { opacity: 0; transform: translate3d(0, 18px, 0) scale(.985); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #discover .member-card { animation: none !important; }
+}
+
 #discover {
   background:
     radial-gradient(ellipse at 50% 0%, rgba(255, 35, 112, 0.12), transparent 48%),
@@ -51,7 +60,7 @@
 
 #discover #profileList {
   display: grid;
-  grid-template-columns: minmax(0, 440px);
+  grid-template-columns: minmax(0, 560px);
   justify-content: center;
   gap: 12px;
   margin-top: 18px;
@@ -3583,7 +3592,78 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
         font-size: 21px;
       }
     }
-  </style>
+  
+/* The Match admin dashboard — styles are deliberately scoped to #adminPanel. */
+#adminPanel { width: 100%; }
+#adminPanel .admin-shell { width: 100%; max-width: 1180px; margin: 0 auto; padding: clamp(14px, 3vw, 30px); border: 1px solid rgba(205,166,82,.22); border-radius: 22px; background: #090a0d; color: #f7f4ed; box-sizing: border-box; }
+#adminPanel .admin-topbar, #adminPanel .admin-brand, #adminPanel .admin-top-actions, #adminPanel .admin-section-heading, #adminPanel .admin-queue-title, #adminPanel .admin-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+#adminPanel .admin-brand { justify-content: flex-start; }
+#adminPanel .admin-brand-mark { width: 48px; height: 48px; flex: 0 0 48px; display: grid; place-items: center; border-radius: 15px; color: #17120a; background: linear-gradient(145deg,#f2d58b,#b88a37); font-size: 25px; font-weight: 900; box-shadow: 0 8px 28px rgba(197,151,59,.2); }
+#adminPanel .admin-eyebrow { margin: 0 0 5px; color: #c6a45c; font-size: 10px; font-weight: 800; letter-spacing: .17em; }
+#adminPanel .admin-topbar h2 { margin: 0; color: #fff; font-size: clamp(23px,4vw,32px); letter-spacing: -.035em; }
+#adminPanel .admin-subtitle, #adminPanel .admin-welcome-strip p:last-child { margin: 5px 0 0; color: #aaa7a0; font-size: 13px; line-height: 1.55; }
+#adminPanel .admin-live-indicator { display: inline-flex; align-items: center; gap: 7px; color: #c8c5bd; font-size: 11px; white-space: nowrap; }
+#adminPanel .admin-live-indicator span { width: 7px; height: 7px; border-radius: 50%; background: #61c58a; box-shadow: 0 0 0 4px rgba(97,197,138,.12); }
+#adminPanel .admin-refresh-button, #adminPanel .admin-back-button { border: 1px solid rgba(209,174,99,.42); border-radius: 11px; padding: 10px 14px; background: rgba(202,161,78,.1); color: #e7c77f; font-weight: 700; font-size: 12px; }
+#adminPanel .admin-welcome-strip { display: flex; align-items: center; justify-content: space-between; margin: 25px 0 28px; padding: 22px 24px; border: 1px solid rgba(205,166,82,.24); border-radius: 17px; background: radial-gradient(ellipse at 85% 50%,rgba(187,139,49,.17),transparent 45%),linear-gradient(115deg,#171511,#101115); }
+#adminPanel .admin-welcome-strip h3 { margin: 0; color: #fff; font-size: clamp(18px,3vw,23px); }
+#adminPanel .admin-welcome-symbol { color: #d5b36a; font-size: 45px; opacity: .8; padding: 0 14px; }
+#adminPanel .admin-section-heading { margin: 0 0 13px; }
+#adminPanel .admin-section-heading h3 { margin: 0; color: #f5f1e8; font-size: 17px; }
+#adminPanel .admin-data-note { color: #85827c; font-size: 10px; text-align: right; }
+#adminPanel .admin-metrics-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+#adminPanel .admin-metric-card { position: relative; min-width: 0; padding: 17px; border: 1px solid #292720; border-radius: 15px; background: linear-gradient(145deg,#171817,#101113); }
+#adminPanel .admin-metric-icon { display: inline-grid; place-items: center; width: 31px; height: 31px; border-radius: 10px; background: rgba(207,170,94,.12); color: #d9b76d; font-size: 17px; }
+#adminPanel .admin-metric-label { margin: 12px 0 4px; color: #aaa69d; font-size: 11px; }
+#adminPanel .admin-metric-value { margin: 0; color: #fff; font-size: clamp(25px,4vw,34px); font-weight: 800; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+#adminPanel .admin-metric-foot { display: block; margin-top: 5px; color: #77766f; font-size: 10px; }
+#adminPanel .admin-metric-attention { border-color: rgba(197,153,70,.28); }
+#adminPanel .admin-queue-heading { margin-top: 30px; }
+#adminPanel .admin-queues-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 13px; align-items: start; }
+#adminPanel .admin-queue-card { min-width: 0; padding: 17px; border: 1px solid #2a2924; border-radius: 15px; background: #111214; }
+#adminPanel .admin-reports-card { grid-column: 1 / -1; }
+#adminPanel .admin-queue-title { justify-content: flex-start; margin-bottom: 15px; }
+#adminPanel .admin-queue-icon { display: grid; place-items: center; flex: 0 0 34px; width: 34px; height: 34px; border-radius: 11px; background: rgba(207,170,94,.12); color: #d9b76d; font-size: 17px; }
+#adminPanel .admin-queue-title h3 { margin: 0; color: #f2eee5; font-size: 14px; }
+#adminPanel .admin-queue-title p { margin: 4px 0 0; color: #85827c; font-size: 10px; }
+#adminPanel .admin-queue-list { color: #c9c6be; font-size: 12px; overflow-wrap: anywhere; }
+#adminPanel .admin-queue-list > p { color: #89867f; }
+#adminPanel .admin-queue-list button { margin: 5px 5px 5px 0; }
+#adminPanel .admin-footer { margin-top: 22px; padding-top: 16px; border-top: 1px solid #292720; flex-wrap: wrap; }
+#adminPanel #adminStatus { margin: 0; color: #aaa69d; font-size: 11px; }
+#adminPanel .admin-back-button { background: transparent; border-color: #39362e; color: #c9c3b6; }
+@media (max-width: 700px) {
+  #adminPanel .admin-shell { padding: 14px; border-radius: 16px; }
+  #adminPanel .admin-topbar { align-items: flex-start; flex-direction: column; }
+  #adminPanel .admin-top-actions { width: 100%; justify-content: space-between; }
+  #adminPanel .admin-metrics-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+  #adminPanel .admin-metric-card { padding: 13px; }
+  #adminPanel .admin-queues-grid { grid-template-columns: 1fr; }
+  #adminPanel .admin-reports-card { grid-column: auto; }
+  #adminPanel .admin-welcome-strip { margin: 19px 0 23px; padding: 17px; }
+  #adminPanel .admin-data-note { max-width: 120px; }
+}
+@media (max-width: 380px) {
+  #adminPanel .admin-metrics-grid { grid-template-columns: 1fr 1fr; }
+  #adminPanel .admin-metric-label { min-height: 28px; }
+}
+
+
+#adminPanel .admin-feature-section { margin-top: 28px; }
+#adminPanel .admin-tool-row { display:flex; gap:10px; margin:0 0 12px; }
+#adminPanel #adminMemberSearch { flex:1; min-width:0; border:1px solid #39362e; border-radius:11px; padding:11px 13px; background:#111214; color:#f7f4ed; font:inherit; font-size:13px; }
+#adminPanel .admin-directory-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+#adminPanel .admin-directory-card { padding:13px; border:1px solid #292720; border-radius:13px; background:#111214; min-width:0; }
+#adminPanel .admin-directory-card h4 { margin:0 0 5px; color:#f3eee3; font-size:13px; overflow-wrap:anywhere; }
+#adminPanel .admin-directory-card p { margin:3px 0; color:#9c988e; font-size:11px; overflow-wrap:anywhere; }
+#adminPanel .admin-member-badge { display:inline-block; margin-top:7px; padding:4px 8px; border-radius:20px; background:rgba(205,166,82,.12); color:#d9b76d; font-size:10px; }
+#adminPanel .admin-premium-row { display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid #292720; }
+#adminPanel .admin-premium-row:last-child { border-bottom:0; }
+#adminPanel .admin-premium-row strong { color:#eee7d8; font-size:12px; }
+#adminPanel .admin-premium-row span { color:#c9ad70; font-size:11px; text-align:right; }
+@media(max-width:600px) { #adminPanel .admin-directory-list { grid-template-columns:1fr; } #adminPanel .admin-tool-row { align-items:stretch; flex-direction:column; } }
+
+</style>
 
   <div class="premium-hero">
     <div class="premium-eyebrow">THE MATCH · MEMBERSHIP</div>
@@ -4033,65 +4113,119 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
       </section>
   
   <section class="panel hidden" id="adminPanel">
-    <div class="card">
-      
-      <h2>Admin Dashboard</h2>
-      <p>Manage members, verification requests, Premium payments, and reports.</p>
-
-      <div class="grid">
-        <div class="card">
-          <h3>Members</h3>
-          <p id="adminMembersCount">—</p>
+    <div class="admin-shell">
+      <header class="admin-topbar">
+        <div class="admin-brand">
+          <div class="admin-brand-mark" aria-hidden="true">M</div>
+          <div>
+            <p class="admin-eyebrow">THE MATCH · CONTROL CENTRE</p>
+            <h2>Admin dashboard</h2>
+            <p class="admin-subtitle">A clear view of your community and the actions that need attention.</p>
+          </div>
         </div>
-
-        <div class="card">
-          <h3>Likes</h3>
-          <p id="adminLikesCount">—</p>
+        <div class="admin-top-actions">
+          <span class="admin-live-indicator"><span></span> Live data</span>
+          <button type="button" id="adminRefreshBtn" class="admin-refresh-button">↻ Refresh</button>
         </div>
+      </header>
 
-        <div class="card">
-          <h3>Messages</h3>
-          <p id="adminMessagesCount">—</p>
+      <div class="admin-welcome-strip">
+        <div>
+          <p class="admin-eyebrow">OVERVIEW</p>
+          <h3>Your community at a glance</h3>
+          <p>Review activity, process requests and keep members safe.</p>
         </div>
-
-        <div class="card">
-          <h3>Pending Verification</h3>
-          <p id="adminVerificationCount">—</p>
-        </div>
-
-        <div class="card">
-          <h3>Pending Premium Payments</h3>
-          <p id="adminPaymentsCount">—</p>
-        </div>
-
-        <div class="card">
-          <h3>Member Reports</h3>
-          <p id="adminReportsCount">—</p>
-        </div>
+        <div class="admin-welcome-symbol" aria-hidden="true">✦</div>
       </div>
 
-      <hr>
-      <h3>Verification Requests</h3>
-      <div id="adminVerificationList">
-        <p>Verification requests will appear here.</p>
+      <div class="admin-section-heading">
+        <div><p class="admin-eyebrow">KEY METRICS</p><h3>Platform snapshot</h3></div>
+        <span class="admin-data-note">Counts update when you refresh</span>
       </div>
 
-      <hr>
-      <h3>Premium Payment Requests</h3>
-      <div id="adminPaymentsList">
-        <p>Premium payment requests will appear here.</p>
+      <div class="admin-metrics-grid">
+        <article class="admin-metric-card">
+          <span class="admin-metric-icon">♙</span><p class="admin-metric-label">Total members</p>
+          <p class="admin-metric-value" id="adminMembersCount">—</p><span class="admin-metric-foot">Registered profiles</span>
+        </article>
+        <article class="admin-metric-card">
+          <span class="admin-metric-icon">♡</span><p class="admin-metric-label">Likes</p>
+          <p class="admin-metric-value" id="adminLikesCount">—</p><span class="admin-metric-foot">Community activity</span>
+        </article>
+        <article class="admin-metric-card">
+          <span class="admin-metric-icon">▤</span><p class="admin-metric-label">Messages</p>
+          <p class="admin-metric-value" id="adminMessagesCount">—</p><span class="admin-metric-foot">Messages recorded</span>
+        </article>
+        <article class="admin-metric-card admin-metric-attention">
+          <span class="admin-metric-icon">✓</span><p class="admin-metric-label">Pending verification</p>
+          <p class="admin-metric-value" id="adminVerificationCount">—</p><span class="admin-metric-foot">Awaiting review</span>
+        </article>
+        <article class="admin-metric-card admin-metric-attention">
+          <span class="admin-metric-icon">₦</span><p class="admin-metric-label">Premium payments</p>
+          <p class="admin-metric-value" id="adminPaymentsCount">—</p><span class="admin-metric-foot">Awaiting confirmation</span>
+        </article>
+        <article class="admin-metric-card admin-metric-attention">
+          <span class="admin-metric-icon">⚑</span><p class="admin-metric-label">Member reports</p>
+          <p class="admin-metric-value" id="adminReportsCount">—</p><span class="admin-metric-foot">Require moderation</span>
+        </article>
       </div>
 
-      <hr>
-      <h3>Member Reports</h3>
-      <div id="adminReportsList">
-        <p>Member reports will appear here.</p>
+      <div class="admin-section-heading admin-queue-heading">
+        <div><p class="admin-eyebrow">ACTION CENTRE</p><h3>Requests &amp; moderation</h3></div>
+        <span class="admin-data-note">Review each item carefully</span>
       </div>
 
-      <hr>
-      <button type="button" id="adminRefreshBtn">Refresh Dashboard</button>
-      <button type="button" id="adminBackBtn">Back to Settings</button>
-      <p class="status" id="adminStatus" role="status"></p>
+      <div class="admin-queues-grid">
+        <section class="admin-queue-card">
+          <div class="admin-queue-title"><span class="admin-queue-icon">✓</span><div><h3>Verification requests</h3><p>Review member verification submissions</p></div></div>
+          <div id="adminVerificationList" class="admin-queue-list"><p>Verification requests will appear here.</p></div>
+        </section>
+        <section class="admin-queue-card">
+          <div class="admin-queue-title"><span class="admin-queue-icon">₦</span><div><h3>Premium payments</h3><p>Check transfer details before approval</p></div></div>
+          <div id="adminPaymentsList" class="admin-queue-list"><p>Premium payment requests will appear here.</p></div>
+        </section>
+        <section class="admin-queue-card admin-reports-card">
+          <div class="admin-queue-title"><span class="admin-queue-icon">⚑</span><div><h3>Member reports</h3><p>Help keep The Match respectful and safe</p></div></div>
+          <div id="adminReportsList" class="admin-queue-list"><p>Member reports will appear here.</p></div>
+        </section>
+      </div>
+
+      <section class="admin-feature-section" aria-labelledby="adminMembersHeading">
+        <div class="admin-section-heading admin-queue-heading">
+          <div><p class="admin-eyebrow">COMMUNITY</p><h3 id="adminMembersHeading">Member directory</h3></div>
+          <span class="admin-data-note">Latest 50 profiles · private GPS data excluded</span>
+        </div>
+        <div class="admin-tool-row">
+          <input id="adminMemberSearch" type="search" placeholder="Search by display name or city" aria-label="Search members" />
+          <button type="button" id="adminMembersRefreshBtn" class="admin-refresh-button">Load members</button>
+        </div>
+        <div id="adminMembersList" class="admin-queue-list admin-directory-list"><p>Choose Load members to view the latest profiles.</p></div>
+      </section>
+
+      <section class="admin-feature-section" aria-labelledby="adminPremiumHeading">
+        <div class="admin-section-heading admin-queue-heading">
+          <div><p class="admin-eyebrow">SUBSCRIPTIONS</p><h3 id="adminPremiumHeading">Premium memberships</h3></div>
+          <span class="admin-data-note">Current membership records</span>
+        </div>
+        <div id="adminPremiumList" class="admin-queue-card admin-queue-list"><p>Loading membership overview with dashboard refresh...</p></div>
+      </section>
+
+      <section class="admin-feature-section" aria-labelledby="adminAnalyticsHeading">
+        <div class="admin-section-heading admin-queue-heading">
+          <div><p class="admin-eyebrow">PLATFORM INSIGHTS</p><h3 id="adminAnalyticsHeading">Activity overview</h3></div>
+          <span class="admin-data-note">Live database totals · not historical trends</span>
+        </div>
+        <div class="admin-metrics-grid admin-analytics-grid">
+          <article class="admin-metric-card"><p class="admin-metric-label">Active Premium memberships</p><p class="admin-metric-value" id="adminActivePremiumCount">—</p></article>
+          <article class="admin-metric-card"><p class="admin-metric-label">Stories stored</p><p class="admin-metric-value" id="adminStoriesCount">—</p></article>
+          <article class="admin-metric-card"><p class="admin-metric-label">Chat media records</p><p class="admin-metric-value" id="adminChatMediaCount">—</p></article>
+        </div>
+      </section>
+
+      <footer class="admin-footer">
+        <p class="status" id="adminStatus" role="status" aria-live="polite">Dashboard is ready.</p>
+        <button type="button" id="adminBackBtn" class="admin-back-button">← Back to settings</button>
+      </footer>
     </div>
   </section>
 <section class="panel hidden" id="referralsPage">
@@ -4146,7 +4280,6 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
 <p class="small">
   Earn 3 Premium days when you reach 10 successful referrals
   and 7 Premium days when you reach 20 successful referrals.
-  Your invited friend still receives 1 Premium day.
 </p>
 
     <div id="referralRewardsList">
@@ -4959,6 +5092,184 @@ async function loadAdminMemberReports() {
   }
 }
 
+let adminMemberDirectory = [];
+let adminModerationByUser = new Map();
+
+async function loadAdminModerationStatuses() {
+  const { data, error } = await db.from("member_moderation")
+    .select("user_id,status,reason,expires_at")
+    .order("updated_at", { ascending: false });
+  if (error) throw error;
+  const activeRows = (data || []).filter(row =>
+    row.status === "banned" ||
+    (row.status === "suspended" && row.expires_at && new Date(row.expires_at).getTime() > Date.now())
+  );
+  adminModerationByUser = new Map(activeRows.map(row => [row.user_id, row]));
+}
+
+async function moderateAdminMember(member, action) {
+  if (!(await checkMatchAdmin())) throw new Error("Admin access denied.");
+  if (!member?.id || member.id === currentUser?.id) {
+    alert("You cannot moderate your own account.");
+    return;
+  }
+  const existing = adminModerationByUser.get(member.id);
+  if (action === "restored" && !existing) return;
+  const reason = action === "restored"
+    ? (prompt("Reason for restoring this account (optional):") || "Account restored after review")
+    : prompt("Enter the reason for this " + (action === "banned" ? "ban" : "suspension") + ":");
+  if (action !== "restored" && (!reason || reason.trim().length < 3)) {
+    alert("Please enter a reason of at least 3 characters.");
+    return;
+  }
+  let expiresAt = null;
+  if (action === "suspended") {
+    const daysText = prompt("How many days should the suspension last? Enter 1 to 30.", "7");
+    const days = Number(daysText);
+    if (!Number.isInteger(days) || days < 1 || days > 30) {
+      alert("Choose a whole number from 1 to 30 days.");
+      return;
+    }
+    expiresAt = new Date(Date.now() + days * 86400000).toISOString();
+  }
+  const confirmText = action === "restored"
+    ? "Restore " + (member.display_name || "this member") + "'s account?"
+    : (action === "banned" ? "Ban " : "Suspend ") +
+      (member.display_name || "this member") + "?";
+  if (!confirm(confirmText + (action === "banned" ? " This is a serious action." : ""))) return;
+
+  status("adminStatus", "Applying account moderation...");
+  const { data, error } = await db.functions.invoke("admin-moderate-member", {
+    body: { user_id: member.id, action, reason: reason.trim(), expires_at: expiresAt }
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  await loadAdminModerationStatuses();
+  renderAdminMemberDirectory($("adminMemberSearch")?.value || "");
+  status("adminStatus", action === "restored" ? "Account restored." :
+    action === "banned" ? "Account ban applied." : "Account suspended.");
+}
+
+function renderAdminMemberDirectory(query = "") {
+  const list = $("adminMembersList");
+  if (!list) return;
+  const term = query.trim().toLowerCase();
+  const filtered = adminMemberDirectory.filter(member =>
+    (member.display_name || "").toLowerCase().includes(term) ||
+    (member.city || "").toLowerCase().includes(term)
+  );
+  list.replaceChildren();
+  if (!filtered.length) {
+    list.textContent = term ? "No members match that search." : "No member profiles found.";
+    return;
+  }
+  filtered.forEach(member => {
+    const card = document.createElement("article");
+    card.className = "admin-directory-card";
+    const name = document.createElement("h4");
+    name.textContent = member.display_name || "Unnamed member";
+    const location = document.createElement("p");
+    location.textContent = member.city || "Location not provided";
+    const joined = document.createElement("p");
+    joined.textContent = "Joined " + (member.created_at ? new Date(member.created_at).toLocaleDateString() : "date unavailable");
+    const age = document.createElement("p");
+    age.textContent = member.age ? "Age: " + member.age : "Age not provided";
+    const badge = document.createElement("span");
+    badge.className = "admin-member-badge";
+    badge.textContent = member.is_verified ? "Verified" : "Not verified";
+    const moderation = adminModerationByUser.get(member.id);
+    const state = document.createElement("p");
+    state.className = "small";
+    state.textContent = moderation
+      ? (moderation.status === "banned" ? "BANNED" :
+          "SUSPENDED until " + new Date(moderation.expires_at).toLocaleString())
+      : "Account status: Active";
+    const suspend = document.createElement("button");
+    suspend.type = "button";
+    suspend.textContent = "Suspend";
+    suspend.disabled = !!moderation;
+    suspend.addEventListener("click", async () => {
+      try { await moderateAdminMember(member, "suspended"); }
+      catch (error) { status("adminStatus", "Suspension failed: " + friendly(error), true); }
+    });
+    const ban = document.createElement("button");
+    ban.type = "button";
+    ban.textContent = "Ban member";
+    ban.disabled = moderation?.status === "banned";
+    ban.addEventListener("click", async () => {
+      try { await moderateAdminMember(member, "banned"); }
+      catch (error) { status("adminStatus", "Ban failed: " + friendly(error), true); }
+    });
+    const restore = document.createElement("button");
+    restore.type = "button";
+    restore.textContent = "Restore account";
+    restore.disabled = !moderation;
+    restore.addEventListener("click", async () => {
+      try { await moderateAdminMember(member, "restored"); }
+      catch (error) { status("adminStatus", "Restore failed: " + friendly(error), true); }
+    });
+    card.append(name, location, joined, age, badge, state, suspend, ban, restore);
+    list.appendChild(card);
+  });
+}
+
+async function loadAdminMemberDirectory() {
+  if (!(await checkMatchAdmin())) throw new Error("Admin access denied.");
+  const list = $("adminMembersList");
+  list.textContent = "Loading member profiles...";
+  const [profilesResult] = await Promise.all([
+    db.from("profiles")
+      .select("id,display_name,city,age,is_verified,created_at")
+      .order("created_at", { ascending: false })
+      .limit(50),
+    loadAdminModerationStatuses()
+  ]);
+  if (profilesResult.error) throw profilesResult.error;
+  adminMemberDirectory = profilesResult.data || [];
+  renderAdminMemberDirectory($("adminMemberSearch")?.value || "");
+}
+
+async function loadAdminPremiumOverview() {
+  const list = $("adminPremiumList");
+  if (!list) return;
+  const { data, error } = await db.from("premium_memberships")
+    .select("user_id,premium_until,premium_started_at")
+    .order("premium_until", { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  const now = Date.now();
+  const active = (data || []).filter(row => row.premium_until && new Date(row.premium_until).getTime() > now);
+  $("adminActivePremiumCount").textContent = String(active.length);
+  list.replaceChildren();
+  if (!data?.length) {
+    list.textContent = "No Premium membership records found.";
+    return;
+  }
+  data.slice(0, 12).forEach(row => {
+    const item = document.createElement("div");
+    item.className = "admin-premium-row";
+    const member = document.createElement("strong");
+    member.textContent = "Member " + row.user_id.slice(0, 8) + "…";
+    const expiry = document.createElement("span");
+    const isActive = row.premium_until && new Date(row.premium_until).getTime() > now;
+    expiry.textContent = (isActive ? "Active · expires " : "Expired · ended ") +
+      (row.premium_until ? new Date(row.premium_until).toLocaleDateString() : "date unavailable");
+    item.append(member, expiry);
+    list.appendChild(item);
+  });
+}
+
+async function loadAdminSupplementaryAnalytics() {
+  const results = await Promise.all([
+    db.from("stories").select("id", { count: "exact", head: true }),
+    db.from("chat_media").select("id", { count: "exact", head: true })
+  ]);
+  if (results[0].error) throw results[0].error;
+  if (results[1].error) throw results[1].error;
+  $("adminStoriesCount").textContent = String(results[0].count ?? 0);
+  $("adminChatMediaCount").textContent = String(results[1].count ?? 0);
+}
+
 async function reviewMatchAdminRequest(table, id, decision) {
   if (!(await checkMatchAdmin())) {
     status("adminStatus", "Admin access denied.", true);
@@ -5046,9 +5357,13 @@ async function loadAdminDashboard() {
     }
 
     
-await loadAdminVerificationRequests();
-await loadAdminPaymentRequests();
-await loadAdminMemberReports();
+await Promise.all([
+  loadAdminVerificationRequests(),
+  loadAdminPaymentRequests(),
+  loadAdminMemberReports(),
+  loadAdminPremiumOverview(),
+  loadAdminSupplementaryAnalytics()
+]);
 status("adminStatus", "Dashboard loaded successfully.");
 
   } catch (error) {
@@ -5056,6 +5371,12 @@ status("adminStatus", "Dashboard loaded successfully.");
     status("adminStatus", "Could not load dashboard: " + friendly(error), true);
   }
 }
+
+$("adminMembersRefreshBtn")?.addEventListener("click", async () => {
+  try { await loadAdminMemberDirectory(); }
+  catch (error) { $("adminMembersList").textContent = "Could not load members: " + friendly(error); }
+});
+$("adminMemberSearch")?.addEventListener("input", event => renderAdminMemberDirectory(event.target.value));
 
 $("openAdminDashboardBtn").addEventListener("click", async () => {
   const allowed = await checkMatchAdmin();
@@ -6274,11 +6595,9 @@ let fallback=(email.split("@")[0]||"Member")
 .replace(/[._-]+/g," ")
 .replace(/\b\w/g,ch=>ch.toUpperCase());
 $("greeting").textContent="Welcome, "+fallback+"! ❤️";
-show("profile");
+show("profile", false);
   setTimeout(showReferralToast, 1200);
 $("bottomNavigation").querySelector('[data-page="discover"]').classList.add("active");
-  await loadNearby();
-await loadStories();
 status("profileStatus","Loading your profile...");
 try{
 let r=await db.from("profiles")
@@ -6330,16 +6649,20 @@ status("profileStatus","Your profile is loaded. Check your details and save when
 }catch(e){status("profileStatus","Could not load profile: "+friendly(e),true);}
   
   await loadMyPhotos();
-await loadVerificationStatus();
-  refreshNearbyCurrentLocation();
 
-if (
-  restoreToDiscover &&
-  hasRequiredProfilePhoto &&
-  profileDetailsAreComplete()
-) {
-  show("discover", false);
-}
+  const savedProfileIsReady =
+    hasRequiredProfilePhoto && profileDetailsAreComplete();
+
+  if (savedProfileIsReady) {
+    show("discover", false);
+    status("discoverStatus", "Welcome back! Finding people for you...");
+    await Promise.all([loadNearby(), loadStories()]);
+  } else {
+    show("profile", false);
+  }
+
+  await loadVerificationStatus();
+  refreshNearbyCurrentLocation();
   
 setTimeout(() => {
   maybeShowPremiumPromotion();
@@ -6411,6 +6734,18 @@ show("discover");
 finally{b.disabled=false;}
 };
 
+
+// Public bridge for buttons and callbacks outside loadNearby's local scope.
+// The Discover renderer itself remains scoped to the current loaded profile batch.
+window.__matchRenderDiscoverPerson = null;
+window.showPerson = async function () {
+  if (typeof window.__matchRenderDiscoverPerson === "function") {
+    return window.__matchRenderDiscoverPerson();
+  }
+  const statusBox = $("discoverStatus");
+  if (statusBox) statusBox.textContent = "Refreshing profiles...";
+  return loadNearby();
+};
 
 async function loadNearby(){
   if(!currentUser)return;
@@ -6599,15 +6934,25 @@ if (!people.length) {
 const card=document.createElement("div");
 card.className="member-card";
 
-card.style.cssText="position:relative;width:100%;max-width:440px;box-sizing:border-box;margin:0 auto;padding:0;border:1px solid rgba(255,65,125,.20);border-radius:28px;background:#080608;box-shadow:0 12px 36px rgba(255,35,112,.12);touch-action:pan-y;overflow:hidden;";
+card.style.cssText="position:relative;width:100%;max-width:560px;box-sizing:border-box;margin:0 auto;padding:0;border:1px solid rgba(255,65,125,.24);border-radius:26px;background:#080608;box-shadow:0 16px 44px rgba(0,0,0,.34);touch-action:pan-y;overflow:hidden;will-change:transform,opacity;animation:discoverCardEnter 260ms cubic-bezier(.2,.75,.25,1) both;";
 
 
+
+      const animateCardExit = direction => new Promise(resolve => {
+        card.style.transition = "transform 260ms cubic-bezier(.2,.75,.25,1), opacity 260ms ease";
+        void card.offsetWidth;
+        card.style.transform = direction === "left"
+          ? "translate3d(-115%, 0, 0) rotate(-12deg)"
+          : "translate3d(115%, 0, 0) rotate(12deg)";
+        card.style.opacity = "0";
+        window.setTimeout(resolve, 275);
+      });
 
       const photoBox=document.createElement("div");
       
       
 
-photoBox.style.cssText="position:relative;width:100%;height:clamp(420px,62vh,620px);min-height:420px;background:#050505;overflow:hidden;display:flex;align-items:center;justify-content:center;";
+photoBox.style.cssText="position:relative;width:100%;height:clamp(480px,76vh,760px);min-height:460px;background:#050505;overflow:hidden;display:flex;align-items:center;justify-content:center;";
 
 
 
@@ -6617,7 +6962,7 @@ photoBox.style.cssText="position:relative;width:100%;height:clamp(420px,62vh,620
 const photo=document.createElement("img");
 photo.alt="Profile photo";
 
-photo.style.cssText="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center center;background:#050505;display:none;z-index:1;";
+photo.style.cssText="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;background:#050505;display:none;z-index:1;";
 
 photoBox.appendChild(photo);
       
@@ -6647,7 +6992,7 @@ photoBox.appendChild(onlineBadge);
 
 
       const photoCount=document.createElement("div");
-      photoCount.style.cssText="position:absolute;top:10px;right:10px;background:#000a;color:white;padding:6px 10px;border-radius:20px;font-size:12px;";
+      photoCount.style.cssText="position:absolute;top:14px;right:14px;z-index:5;background:rgba(0,0,0,.78);color:#fff;padding:9px 13px;border:1px solid rgba(255,255,255,.34);border-radius:999px;font-size:13px;font-weight:800;letter-spacing:.2px;backdrop-filter:blur(8px);box-shadow:0 4px 16px rgba(0,0,0,.28);";
       photoCount.textContent="Loading photos...";
       photoBox.appendChild(photoCount);
 
@@ -6666,9 +7011,28 @@ photoBox.appendChild(onlineBadge);
       if(photoUrls.length){
         photo.src=photoUrls[0];
         photo.style.display="block";
-        photoCount.textContent="1 / "+photoUrls.length;
+        photoCount.textContent="1 of "+photoUrls.length+" "+(photoUrls.length === 1 ? "photo" : "photos");
       }else{
         photoCount.textContent="No photos";
+      }
+
+      // Quietly preload the next profile's first photo while this card is visible.
+      const nextPerson = people[personIndex + 1];
+      if (nextPerson) {
+        db.from("profile_photos")
+          .select("storage_path")
+          .eq("user_id", nextPerson.id)
+          .order("position")
+          .limit(1)
+          .then(({ data: nextPhotos }) => {
+            const nextPath = nextPhotos?.[0]?.storage_path;
+            if (!nextPath) return;
+            const nextUrl = db.storage.from("profile-photos").getPublicUrl(nextPath).data.publicUrl;
+            const preloadImage = new Image();
+            preloadImage.decoding = "async";
+            preloadImage.src = nextUrl;
+          })
+          .catch(() => {});
       }
 
       const previous=document.createElement("button");
@@ -6679,7 +7043,7 @@ photoBox.appendChild(onlineBadge);
         if(photoUrls.length){
           photoIndex=(photoIndex-1+photoUrls.length)%photoUrls.length;
           photo.src=photoUrls[photoIndex];
-          photoCount.textContent=(photoIndex+1)+" / "+photoUrls.length;
+          photoCount.textContent=(photoIndex+1)+" of "+photoUrls.length+" photos";
         }
       };
 
@@ -6701,7 +7065,7 @@ photoBox.appendChild(onlineBadge);
           photoIndex = (photoIndex + 1) % photoUrls.length;
           photo.src = photoUrls[photoIndex];
           photoCount.textContent =
-            (photoIndex + 1) + " / " + photoUrls.length;
+            (photoIndex + 1) + " of " + photoUrls.length + " photos";
         }
       };
 
@@ -6820,6 +7184,7 @@ const { error } = await db
 
     if (error) throw error;
 
+    await animateCardExit("left");
     personIndex++;
     await showPerson();
   } catch (error) {
@@ -6876,6 +7241,7 @@ like.onclick=async()=>{
 if(matchError)throw matchError;
 
     if(reverseLike){
+      await animateCardExit("right");
       const {data:myProfile}=await db
         .from("profiles")
         .select("display_name")
@@ -6924,6 +7290,7 @@ if(matchError)throw matchError;
     }
 
     status("discoverStatus","Like sent successfully! ❤️");
+    await animateCardExit("right");
     personIndex++;
     await showPerson();
 
@@ -6951,13 +7318,15 @@ if(matchError)throw matchError;
         const dy=event.changedTouches[0].clientY-startY;
         if(Math.abs(dx)<90||Math.abs(dx)<Math.abs(dy))return;
         if(dx<0){
-          personIndex++;
-          await showPerson();
+          pass.click();
         }else{
           like.click();
         }
       },{passive:true});
     }
+
+    // Keep the current renderer reachable by global UI callbacks (e.g. match continuation).
+    window.__matchRenderDiscoverPerson = showPerson;
 
     status("discoverStatus","Swipe right to like ❤️ or left to pass ✖. Tap the photo arrows to view more pictures.");
     await showPerson();
@@ -9085,7 +9454,7 @@ if(countError)throw countError;
 
             $("matchContinueDiscover").onclick=async()=>{
               show("discover");
-              await showPerson();
+              await window.showPerson();
             };
 
             show("matchCelebrationPage");
@@ -10111,13 +10480,31 @@ if (photoPath) {
     conversationListLoadInProgress = false;
   }
 }
-  document
-  .getElementById("refreshConversationsButton")
-  ?.addEventListener("click", () => {
-    loadMyConversations().catch(error => {
-      console.error("Conversation refresh failed:", error);
+  const refreshConversationsButton = $("refreshConversationsButton");
+  if (refreshConversationsButton) {
+    refreshConversationsButton.addEventListener("click", async () => {
+      if (!currentUser) {
+        status("messagesStatus", "Please sign in again to refresh your conversations.", true);
+        return;
+      }
+      if (conversationListLoadInProgress) {
+        status("messagesStatus", "Your conversations are already refreshing.");
+        return;
+      }
+
+      refreshConversationsButton.disabled = true;
+      refreshConversationsButton.textContent = "↻ Refreshing...";
+      try {
+        await loadMyConversations();
+      } catch (error) {
+        console.error("Conversation refresh failed:", error);
+        status("messagesStatus", "Refresh failed: " + friendly(error), true);
+      } finally {
+        refreshConversationsButton.disabled = false;
+        refreshConversationsButton.textContent = "↻ Refresh conversations";
+      }
     });
-  });
+  }
 function refreshMessagesAfterReconnect() {
   if (!currentUser || document.hidden) return;
 

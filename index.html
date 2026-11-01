@@ -3013,6 +3013,112 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
   }
 }
 
+
+/* THE MATCH — cohesive black & gold redesign pass */
+:root {
+  --tm-gold:#d2ad68;
+  --tm-gold-bright:#edcc86;
+  --tm-gold-soft:rgba(210,173,104,.16);
+  --tm-ink:#050505;
+  --tm-panel:#111111;
+  --tm-line:rgba(210,173,104,.42);
+  --tm-muted:#aaa39a;
+}
+body:not(.light-theme) { background:#050505!important; color:#f7f4ed!important; }
+body:not(.light-theme) .panel {
+  background:linear-gradient(180deg,#111 0%,#080808 100%)!important;
+  color:#f7f4ed!important;
+  border:1px solid rgba(210,173,104,.28)!important;
+  border-radius:20px!important;
+  box-shadow:0 14px 38px rgba(0,0,0,.32)!important;
+}
+#discover {
+  background:radial-gradient(ellipse at 50% -12%,rgba(210,173,104,.15),transparent 48%),#050505!important;
+  padding:18px 14px 28px!important;
+}
+#discover>h2,#nearbyPage>h2,#messages>h2,#profile>h2 {
+  color:var(--tm-gold-bright)!important;
+  font-size:25px!important; font-weight:800!important; letter-spacing:-.45px!important;
+}
+#discover>h2:before { content:"♡ "; color:var(--tm-gold); }
+#discover>.small,#nearbyPage>.small,#messages>.small { color:#aaa39a!important; line-height:1.55!important; }
+#discover #storiesSection {
+  margin:16px -2px 14px!important; padding:14px 0 16px!important;
+  border-top:1px solid rgba(210,173,104,.18)!important;
+  border-bottom:1px solid rgba(210,173,104,.22)!important;
+}
+#discover #storiesSection h3 { color:var(--tm-gold-bright)!important; font-size:16px!important; }
+#discover .stories-list { gap:13px!important; padding:10px 2px!important; }
+#discover .story-avatar { border:2px solid var(--tm-gold)!important; outline:2px solid rgba(210,173,104,.2)!important; background:#15120c!important; }
+#discover #createStoryButton .story-plus {
+  border:2px dashed var(--tm-gold)!important; color:var(--tm-gold)!important; background:#090909!important;
+}
+#discover #refreshNearby,#nearbyPage #refreshNearbyMembers,#messages #refreshConversationsButton {
+  min-height:44px!important; border:1px solid var(--tm-gold)!important; border-radius:13px!important;
+  background:linear-gradient(135deg,#e2c17e,#b58a43)!important; color:#17120a!important;
+  font-weight:800!important; box-shadow:0 5px 16px rgba(210,173,104,.12)!important;
+}
+#discover #profileList { display:grid!important; grid-template-columns:minmax(0,1fr)!important; gap:15px!important; margin-top:16px!important; }
+#discover #profileList>* {
+  width:100%!important; min-width:0!important; overflow:hidden!important;
+  border:1px solid var(--tm-line)!important; border-radius:20px!important;
+  background:#101010!important; color:#f7f4ed!important;
+  box-shadow:0 10px 28px rgba(0,0,0,.35)!important;
+}
+#nearbyPage { padding:18px 14px 26px!important; }
+#nearbyPage #nearbyMembersList {
+  display:grid!important; grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:12px!important; margin:16px 0!important;
+}
+#nearbyPage #nearbyMembersList>* {
+  min-width:0!important; overflow:hidden!important; border-radius:17px!important;
+  border:1px solid var(--tm-line)!important; background:#101010!important; color:#f7f4ed!important;
+  box-shadow:0 8px 22px rgba(0,0,0,.3)!important;
+}
+#messages { padding:18px 14px 26px!important; }
+#messages #conversationList { display:flex!important; flex-direction:column!important; gap:9px!important; margin-top:16px!important; }
+#messages #conversationList>* {
+  border:1px solid rgba(210,173,104,.22)!important; border-radius:15px!important;
+  background:#101010!important; color:#f7f4ed!important; box-shadow:none!important;
+}
+#profile { padding:18px 14px 28px!important; }
+#profile #photoGallery,#profile .member-card {
+  border:1px solid var(--tm-line)!important; border-radius:18px!important; background:#101010!important;
+}
+#profile #greeting { color:var(--tm-gold-bright)!important; }
+#profile label { color:#e9d6ad!important; }
+#profile input,#profile select,#profile textarea {
+  border:1px solid rgba(210,173,104,.35)!important; border-radius:12px!important;
+  background:#0b0b0b!important; color:#f7f4ed!important;
+}
+#bottomNavigation {
+  background:rgba(8,8,8,.97)!important; border-top:1px solid var(--tm-line)!important;
+  box-shadow:0 -8px 28px rgba(0,0,0,.4)!important; backdrop-filter:blur(14px)!important;
+}
+#bottomNavigation button { color:#aaa39a!important; }
+#bottomNavigation button.active { color:var(--tm-gold-bright)!important; background:rgba(210,173,104,.12)!important; border-radius:12px!important; }
+#bottomNavigation .nav-icon { filter:none!important; }
+#chatPage #chatHeader { background:#090909!important; border-bottom:1px solid var(--tm-line)!important; }
+#chatPage #chatPageStatus:empty { display:none!important; }
+#chatPage #chatPageStatus { color:#e7c77f!important; padding:8px 14px!important; }
+#voiceCallStart {
+  width:44px!important; height:44px!important; min-width:44px!important; flex:0 0 44px!important;
+  display:inline-flex!important; align-items:center!important; justify-content:center!important;
+  border:1px solid var(--tm-gold)!important; border-radius:14px!important;
+  background:linear-gradient(145deg,#e5c47f,#b68c46)!important; color:#17120a!important;
+  box-shadow:0 3px 12px rgba(210,173,104,.18)!important; padding:0!important;
+}
+#voiceCallStart svg { width:21px!important; height:21px!important; display:block!important; }
+#voiceCallModal .voice-call-card { border:1px solid var(--tm-gold)!important; background:#101010!important; }
+@media(min-width:700px) {
+  #discover,#nearbyPage,#messages,#profile { max-width:760px!important; margin-left:auto!important; margin-right:auto!important; }
+  #nearbyPage #nearbyMembersList { grid-template-columns:repeat(3,minmax(0,1fr))!important; }
+}
+@media(max-width:380px) {
+  #discover,#nearbyPage,#messages,#profile { padding-left:10px!important; padding-right:10px!important; }
+  #nearbyPage #nearbyMembersList { gap:9px!important; }
+}
+
 </style>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
@@ -12399,8 +12505,9 @@ function ensureVoiceCallUI() {
     const button = document.createElement("button");
     button.id = "voiceCallStart";
     button.type = "button";
-    button.textContent = "☎";
+    button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L8 9.73a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92z"/></svg>';
     button.setAttribute("aria-label", "Start voice call");
+    button.title = "Voice call";
     button.style.cssText = "background:#c9a45c;color:#111;border:0;border-radius:50%;width:42px;height:42px;font-size:20px;font-weight:700;flex:0 0 auto;";
     header.appendChild(button);
   }
@@ -12459,7 +12566,10 @@ async function startVoiceCall(peerId) {
     ]);
     beginVoiceCallPolling();
   } catch (error) {
-    status("chatPageStatus", error.message || "Could not start the call.", true);
+    console.warn("Voice call could not start:", error);
+    showVoiceCallModal("Unable to start voice call", error.message || "Please try again in a moment.", [
+      { label:"Close", danger:true, handler:hideVoiceCallModal }
+    ]);
   }
 }
 async function acceptVoiceCall() {

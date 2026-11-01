@@ -9367,7 +9367,7 @@ if (story.user_id === currentUser.id) {
               return;
             }
 
-            const body = await matchPrompt("Write a message to " + name + ":");
+            const body = await matchPrompt("Write a message to " + name + ":", "", { multiline: true, maxLength: 2000, title: "Reply to Story", placeholder: "Write your message..." });
             if (body === null) return;
             const trimmedBody = body.trim();
             if (!trimmedBody) return;
@@ -10079,7 +10079,7 @@ $("storyMediaFile").onchange = async () => {
   const storyAudience =
     audienceAnswer === "2" ? "matches" : "everyone";
 
-  const caption = await matchPrompt("Add a caption for this Story (optional, maximum 500 characters):");
+  const caption = await matchPrompt("Add a caption for this Story (optional, maximum 500 characters):", "", { multiline: true, maxLength: 500, title: "Story caption", placeholder: "Write a caption..." });
   if (caption === null) {
     input.value = "";
     return;

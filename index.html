@@ -6576,7 +6576,7 @@ function profileBioHasPhoneNumber(value) {
 async function showProfile(user, restoreToDiscover = false){
 currentUser=user;
   if (!(await enforceVerificationGracePeriod(user))) return;
-  startOnlinePresence(user).catch(error => {
+  subscribeToVoiceCalls(user);\n  startOnlinePresence(user).catch(error => {
   console.warn("Online presence could not start:", error);
 });
     try {
@@ -10560,7 +10560,11 @@ $("chatOnlineDot").style.background = "#777";
 updateChatOnlineStatus(userId);
 
 
+    // MATCH_LIVEKIT_CALL_UI_V1: voice-only controls, kept inside the chat header.
+    ensureVoiceCallUI();
     $("chatPageTitle").textContent = userName || "Conversation";
+    $("voiceCallStart").onclick = () => startVoiceCall(userId);
+
     $("chatPageTitle").style.cursor = "pointer";
     $("chatPageTitle").onclick = () => {
       if(activeChatUserId) openMemberProfile(activeChatUserId);
@@ -12376,6 +12380,189 @@ if (previewStatus) {
 };
 
 
+
+
+let liveKitRoom = null;
+let liveKitClientModule = null;
+let callSessionChannel = null;
+let activeVoiceCallId = null;
+let activeVoiceCallPeerId = null;
+let activeVoiceCallRole = null;
+let incomingVoiceCall = null;
+let voiceCallPollTimer = null;
+
+function ensureVoiceCallUI() {
+  const header = $("chatHeader");
+  if (!header) return;
+  if (!$("voiceCallStart")) {
+    const button = document.createElement("button");
+    button.id = "voiceCallStart";
+    button.type = "button";
+    button.textContent = "☎";
+    button.setAttribute("aria-label", "Start voice call");
+    button.style.cssText = "background:#c9a45c;color:#111;border:0;border-radius:50%;width:42px;height:42px;font-size:20px;font-weight:700;flex:0 0 auto;";
+    header.appendChild(button);
+  }
+  if (!$("voiceCallModal")) {
+    const modal = document.createElement("div");
+    modal.id = "voiceCallModal";
+    modal.className = "hidden";
+    modal.style.cssText = "position:fixed;inset:0;z-index:20000;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:22px;";
+    modal.innerHTML = '<div style="width:100%;max-width:380px;background:#151515;border:1px solid #b8944e;border-radius:20px;padding:24px;text-align:center;color:white;"><div style="font-size:42px;margin-bottom:10px;">☎</div><h2 id="voiceCallTitle" style="color:#e5c477;margin:0 0 8px;">Voice call</h2><p id="voiceCallStatus" style="color:#ddd;">Connecting…</p><div id="voiceCallActions" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px;"></div></div>';
+    document.body.appendChild(modal);
+  }
+}
+
+function setVoiceCallStatus(message) {
+  ensureVoiceCallUI();
+  $("voiceCallStatus").textContent = message;
+}
+function showVoiceCallModal(title, message, actions) {
+  ensureVoiceCallUI();
+  $("voiceCallTitle").textContent = title;
+  setVoiceCallStatus(message);
+  const area = $("voiceCallActions");
+  area.replaceChildren();
+  actions.forEach(({label, handler, danger}) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = label;
+    b.style.cssText = "padding:12px 18px;border:0;border-radius:12px;background:"+(danger?"#b8324b":"#c9a45c")+";color:"+(danger?"white":"#111")+";font-weight:700;";
+    b.onclick = handler; area.appendChild(b);
+  });
+  $("voiceCallModal").classList.remove("hidden");
+  $("voiceCallModal").style.display = "flex";
+}
+function hideVoiceCallModal() {
+  const modal = $("voiceCallModal");
+  if (modal) { modal.classList.add("hidden"); modal.style.display = "none"; }
+}
+async function getLiveKitClient() {
+  if (!liveKitClientModule) liveKitClientModule = await import("https://esm.sh/livekit-client@2.15.6");
+  return liveKitClientModule;
+}
+async function invokeVoiceCall(action, extra = {}) {
+  const { data, error } = await db.functions.invoke("voice-call", { body: { action, ...extra } });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+async function startVoiceCall(peerId) {
+  if (!currentUser || !peerId || peerId !== activeChatUserId) return;
+  try {
+    const result = await invokeVoiceCall("start", { callee_id: peerId });
+    activeVoiceCallId = result.call.id;
+    activeVoiceCallPeerId = peerId;
+    activeVoiceCallRole = "caller";
+    showVoiceCallModal("Calling…", "Waiting for the member to answer.", [
+      { label:"Cancel call", danger:true, handler:() => finishVoiceCall() }
+    ]);
+    beginVoiceCallPolling();
+  } catch (error) {
+    status("chatPageStatus", error.message || "Could not start the call.", true);
+  }
+}
+async function acceptVoiceCall() {
+  if (!incomingVoiceCall) return;
+  const call = incomingVoiceCall;
+  try {
+    await invokeVoiceCall("accept", { call_id: call.id });
+    incomingVoiceCall = null;
+    activeVoiceCallId = call.id;
+    activeVoiceCallPeerId = call.caller_id;
+    activeVoiceCallRole = "callee";
+    await joinVoiceCallRoom();
+  } catch (error) {
+    showVoiceCallModal("Call unavailable", error.message || "Could not accept this call.", [
+      { label:"Close", danger:true, handler:hideVoiceCallModal }
+    ]);
+  }
+}
+async function rejectVoiceCall() {
+  if (!incomingVoiceCall) return;
+  const call = incomingVoiceCall;
+  incomingVoiceCall = null;
+  try { await invokeVoiceCall("reject", { call_id:call.id }); } catch (e) { console.warn("Call rejection failed",e); }
+  hideVoiceCallModal();
+}
+async function joinVoiceCallRoom() {
+  try {
+    setVoiceCallStatus("Connecting securely…");
+    const [client, credentials] = await Promise.all([
+      getLiveKitClient(),
+      invokeVoiceCall("token", { call_id:activeVoiceCallId })
+    ]);
+    const room = new client.Room({ adaptiveStream:true, dynacast:true });
+    liveKitRoom = room;
+    room.on(client.RoomEvent.Disconnected, () => {
+      liveKitRoom = null;
+      if (activeVoiceCallId) finishVoiceCall(false);
+    });
+    await room.connect(credentials.server_url, credentials.participant_token);
+    await room.localParticipant.setMicrophoneEnabled(true);
+    showVoiceCallModal("Voice call connected", "Microphone is on. Use the button below to end the call.", [
+      { label:"End call", danger:true, handler:() => finishVoiceCall() }
+    ]);
+  } catch (error) {
+    console.error("LiveKit connection failed", error);
+    showVoiceCallModal("Could not connect", error.message || "Check your connection and try again.", [
+      { label:"End call", danger:true, handler:() => finishVoiceCall() }
+    ]);
+  }
+}
+async function finishVoiceCall(updateServer = true) {
+  const callId = activeVoiceCallId;
+  activeVoiceCallId = null;
+  activeVoiceCallPeerId = null;
+  activeVoiceCallRole = null;
+  if (voiceCallPollTimer) { clearInterval(voiceCallPollTimer); voiceCallPollTimer = null; }
+  if (liveKitRoom) {
+    try { await liveKitRoom.disconnect(); } catch (e) { console.warn("LiveKit disconnect failed",e); }
+    liveKitRoom = null;
+  }
+  if (updateServer && callId) {
+    try { await invokeVoiceCall("end", { call_id:callId }); } catch (e) { console.warn("Could not update call end state",e); }
+  }
+  hideVoiceCallModal();
+}
+function beginVoiceCallPolling() {
+  if (voiceCallPollTimer) clearInterval(voiceCallPollTimer);
+  voiceCallPollTimer = setInterval(async () => {
+    if (!activeVoiceCallId) return;
+    try {
+      const { data, error } = await db.from("call_sessions").select("status,callee_id,caller_id").eq("id",activeVoiceCallId).maybeSingle();
+      if (error) throw error;
+      if (!data || ["rejected","ended","missed"].includes(data.status)) {
+        await finishVoiceCall(false);
+        return;
+      }
+      if (data.status === "accepted" && activeVoiceCallRole === "caller") {
+        if (voiceCallPollTimer) { clearInterval(voiceCallPollTimer); voiceCallPollTimer = null; }
+        await joinVoiceCallRoom();
+      }
+    } catch (e) { console.warn("Call status check failed",e); }
+  }, 2500);
+}
+function subscribeToVoiceCalls(user) {
+  if (!user?.id) return;
+  if (callSessionChannel) db.removeChannel(callSessionChannel).catch(()=>{});
+  callSessionChannel = db.channel("voice-calls-"+user.id)
+    .on("postgres_changes", { event:"INSERT", schema:"public", table:"call_sessions", filter:"callee_id=eq."+user.id }, payload => {
+      const call = payload.new;
+      if (call.status !== "ringing" || activeVoiceCallId || incomingVoiceCall) return;
+      incomingVoiceCall = call;
+      showVoiceCallModal("Incoming voice call", "A matched member is calling you. Your microphone will stay off until you accept.", [
+        { label:"Accept", handler:() => acceptVoiceCall() },
+        { label:"Decline", danger:true, handler:() => rejectVoiceCall() }
+      ]);
+    })
+    .on("postgres_changes", { event:"UPDATE", schema:"public", table:"call_sessions", filter:"callee_id=eq."+user.id }, payload => {
+      if (incomingVoiceCall?.id === payload.new.id && ["ended","rejected","missed"].includes(payload.new.status)) {
+        incomingVoiceCall = null; hideVoiceCallModal();
+      }
+    })
+    .subscribe();
+}
+ensureVoiceCallUI();
 
 db.auth.onAuthStateChange((event,session)=>{
 if(event==="PASSWORD_RECOVERY"){

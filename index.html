@@ -13660,6 +13660,7 @@ function beginVoiceCallPolling() {
       }
       if (data.status === "accepted" && activeVoiceCallRole === "caller") {
         if (voiceCallPollTimer) { clearInterval(voiceCallPollTimer); voiceCallPollTimer = null; }
+        if (voiceCallRingTimer) { clearTimeout(voiceCallRingTimer); voiceCallRingTimer = null; }
         await joinVoiceCallRoom();
       }
     } catch (e) { console.warn("Call status check failed",e); }

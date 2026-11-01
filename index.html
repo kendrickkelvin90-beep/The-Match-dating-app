@@ -3639,6 +3639,21 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
   #adminPanel .admin-metric-label { min-height: 28px; }
 }
 
+
+#adminPanel .admin-feature-section { margin-top: 28px; }
+#adminPanel .admin-tool-row { display:flex; gap:10px; margin:0 0 12px; }
+#adminPanel #adminMemberSearch { flex:1; min-width:0; border:1px solid #39362e; border-radius:11px; padding:11px 13px; background:#111214; color:#f7f4ed; font:inherit; font-size:13px; }
+#adminPanel .admin-directory-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+#adminPanel .admin-directory-card { padding:13px; border:1px solid #292720; border-radius:13px; background:#111214; min-width:0; }
+#adminPanel .admin-directory-card h4 { margin:0 0 5px; color:#f3eee3; font-size:13px; overflow-wrap:anywhere; }
+#adminPanel .admin-directory-card p { margin:3px 0; color:#9c988e; font-size:11px; overflow-wrap:anywhere; }
+#adminPanel .admin-member-badge { display:inline-block; margin-top:7px; padding:4px 8px; border-radius:20px; background:rgba(205,166,82,.12); color:#d9b76d; font-size:10px; }
+#adminPanel .admin-premium-row { display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid #292720; }
+#adminPanel .admin-premium-row:last-child { border-bottom:0; }
+#adminPanel .admin-premium-row strong { color:#eee7d8; font-size:12px; }
+#adminPanel .admin-premium-row span { color:#c9ad70; font-size:11px; text-align:right; }
+@media(max-width:600px) { #adminPanel .admin-directory-list { grid-template-columns:1fr; } #adminPanel .admin-tool-row { align-items:stretch; flex-direction:column; } }
+
 </style>
 
   <div class="premium-hero">
@@ -4165,6 +4180,38 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
           <div id="adminReportsList" class="admin-queue-list"><p>Member reports will appear here.</p></div>
         </section>
       </div>
+
+      <section class="admin-feature-section" aria-labelledby="adminMembersHeading">
+        <div class="admin-section-heading admin-queue-heading">
+          <div><p class="admin-eyebrow">COMMUNITY</p><h3 id="adminMembersHeading">Member directory</h3></div>
+          <span class="admin-data-note">Latest 50 profiles · private GPS data excluded</span>
+        </div>
+        <div class="admin-tool-row">
+          <input id="adminMemberSearch" type="search" placeholder="Search by display name or city" aria-label="Search members" />
+          <button type="button" id="adminMembersRefreshBtn" class="admin-refresh-button">Load members</button>
+        </div>
+        <div id="adminMembersList" class="admin-queue-list admin-directory-list"><p>Choose Load members to view the latest profiles.</p></div>
+      </section>
+
+      <section class="admin-feature-section" aria-labelledby="adminPremiumHeading">
+        <div class="admin-section-heading admin-queue-heading">
+          <div><p class="admin-eyebrow">SUBSCRIPTIONS</p><h3 id="adminPremiumHeading">Premium memberships</h3></div>
+          <span class="admin-data-note">Current membership records</span>
+        </div>
+        <div id="adminPremiumList" class="admin-queue-card admin-queue-list"><p>Loading membership overview with dashboard refresh...</p></div>
+      </section>
+
+      <section class="admin-feature-section" aria-labelledby="adminAnalyticsHeading">
+        <div class="admin-section-heading admin-queue-heading">
+          <div><p class="admin-eyebrow">PLATFORM INSIGHTS</p><h3 id="adminAnalyticsHeading">Activity overview</h3></div>
+          <span class="admin-data-note">Live database totals · not historical trends</span>
+        </div>
+        <div class="admin-metrics-grid admin-analytics-grid">
+          <article class="admin-metric-card"><p class="admin-metric-label">Active Premium memberships</p><p class="admin-metric-value" id="adminActivePremiumCount">—</p></article>
+          <article class="admin-metric-card"><p class="admin-metric-label">Stories stored</p><p class="admin-metric-value" id="adminStoriesCount">—</p></article>
+          <article class="admin-metric-card"><p class="admin-metric-label">Chat media records</p><p class="admin-metric-value" id="adminChatMediaCount">—</p></article>
+        </div>
+      </section>
 
       <footer class="admin-footer">
         <p class="status" id="adminStatus" role="status" aria-live="polite">Dashboard is ready.</p>
@@ -5037,6 +5084,94 @@ async function loadAdminMemberReports() {
   }
 }
 
+let adminMemberDirectory = [];
+
+function renderAdminMemberDirectory(query = "") {
+  const list = $("adminMembersList");
+  if (!list) return;
+  const term = query.trim().toLowerCase();
+  const filtered = adminMemberDirectory.filter(member =>
+    (member.display_name || "").toLowerCase().includes(term) ||
+    (member.city || "").toLowerCase().includes(term)
+  );
+  list.replaceChildren();
+  if (!filtered.length) {
+    list.textContent = term ? "No members match that search." : "No member profiles found.";
+    return;
+  }
+  filtered.forEach(member => {
+    const card = document.createElement("article");
+    card.className = "admin-directory-card";
+    const name = document.createElement("h4");
+    name.textContent = member.display_name || "Unnamed member";
+    const location = document.createElement("p");
+    location.textContent = member.city || "Location not provided";
+    const joined = document.createElement("p");
+    joined.textContent = "Joined " + (member.created_at ? new Date(member.created_at).toLocaleDateString() : "date unavailable");
+    const age = document.createElement("p");
+    age.textContent = member.age ? "Age: " + member.age : "Age not provided";
+    const badge = document.createElement("span");
+    badge.className = "admin-member-badge";
+    badge.textContent = member.is_verified ? "Verified" : "Not verified";
+    card.append(name, location, joined, age, badge);
+    list.appendChild(card);
+  });
+}
+
+async function loadAdminMemberDirectory() {
+  if (!(await checkMatchAdmin())) throw new Error("Admin access denied.");
+  const list = $("adminMembersList");
+  list.textContent = "Loading member profiles...";
+  const { data, error } = await db.from("profiles")
+    .select("id,display_name,city,age,is_verified,created_at")
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  adminMemberDirectory = data || [];
+  renderAdminMemberDirectory($("adminMemberSearch")?.value || "");
+}
+
+async function loadAdminPremiumOverview() {
+  const list = $("adminPremiumList");
+  if (!list) return;
+  const { data, error } = await db.from("premium_memberships")
+    .select("user_id,premium_until,premium_started_at")
+    .order("premium_until", { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  const now = Date.now();
+  const active = (data || []).filter(row => row.premium_until && new Date(row.premium_until).getTime() > now);
+  $("adminActivePremiumCount").textContent = String(active.length);
+  list.replaceChildren();
+  if (!data?.length) {
+    list.textContent = "No Premium membership records found.";
+    return;
+  }
+  data.slice(0, 12).forEach(row => {
+    const item = document.createElement("div");
+    item.className = "admin-premium-row";
+    const member = document.createElement("strong");
+    member.textContent = "Member " + row.user_id.slice(0, 8) + "…";
+    const expiry = document.createElement("span");
+    const isActive = row.premium_until && new Date(row.premium_until).getTime() > now;
+    expiry.textContent = (isActive ? "Active · expires " : "Expired · ended ") +
+      (row.premium_until ? new Date(row.premium_until).toLocaleDateString() : "date unavailable");
+    item.append(member, expiry);
+    list.appendChild(item);
+  });
+}
+
+async function loadAdminSupplementaryAnalytics() {
+  const results = await Promise.all([
+    db.from("stories").select("id", { count: "exact", head: true }),
+    db.from("chat_media").select("id", { count: "exact", head: true })
+  ]);
+  if (results[0].error) throw results[0].error;
+  if (results[1].error) throw results[1].error;
+  $("adminStoriesCount").textContent = String(results[0].count ?? 0);
+  $("adminChatMediaCount").textContent = String(results[1].count ?? 0);
+}
+
 async function reviewMatchAdminRequest(table, id, decision) {
   if (!(await checkMatchAdmin())) {
     status("adminStatus", "Admin access denied.", true);
@@ -5124,9 +5259,13 @@ async function loadAdminDashboard() {
     }
 
     
-await loadAdminVerificationRequests();
-await loadAdminPaymentRequests();
-await loadAdminMemberReports();
+await Promise.all([
+  loadAdminVerificationRequests(),
+  loadAdminPaymentRequests(),
+  loadAdminMemberReports(),
+  loadAdminPremiumOverview(),
+  loadAdminSupplementaryAnalytics()
+]);
 status("adminStatus", "Dashboard loaded successfully.");
 
   } catch (error) {
@@ -5134,6 +5273,12 @@ status("adminStatus", "Dashboard loaded successfully.");
     status("adminStatus", "Could not load dashboard: " + friendly(error), true);
   }
 }
+
+$("adminMembersRefreshBtn")?.addEventListener("click", async () => {
+  try { await loadAdminMemberDirectory(); }
+  catch (error) { $("adminMembersList").textContent = "Could not load members: " + friendly(error); }
+});
+$("adminMemberSearch")?.addEventListener("input", event => renderAdminMemberDirectory(event.target.value));
 
 $("openAdminDashboardBtn").addEventListener("click", async () => {
   const allowed = await checkMatchAdmin();

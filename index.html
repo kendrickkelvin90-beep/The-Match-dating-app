@@ -3958,6 +3958,13 @@ body.light-theme #profile #photoGallery { background:linear-gradient(155deg,#fff
 #voiceCallModal #voiceCallActions button{min-height:44px!important;padding:11px 15px!important;border:1px solid rgba(210,173,104,.5)!important;border-radius:13px!important;background:linear-gradient(135deg,#e7c985,#b78d48)!important;color:#17120a!important;font-weight:800!important}
 #voiceCallModal #voiceCallActions button:focus-visible{outline:2px solid #edcc86!important;outline-offset:3px!important}
 
+/* Keep public welcome, signup and login screens free of the fixed app navigation.
+   The visual nav rule above uses display:flex!important, so .hidden alone
+   cannot hide it. This explicit state selector preserves the JS page flow. */
+#bottomNavigation.bottom-nav.hidden {
+  display: none !important;
+}
+
 /* THE MATCH — compact luxury bottom navigation (visual only) */
 #bottomNavigation.bottom-nav {
   position:fixed!important;

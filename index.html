@@ -5092,7 +5092,11 @@ async function loadAdminModerationStatuses() {
     .select("user_id,status,reason,expires_at")
     .order("updated_at", { ascending: false });
   if (error) throw error;
-  adminModerationByUser = new Map((data || []).map(row => [row.user_id, row]));
+  const activeRows = (data || []).filter(row =>
+    row.status === "banned" ||
+    (row.status === "suspended" && row.expires_at && new Date(row.expires_at).getTime() > Date.now())
+  );
+  adminModerationByUser = new Map(activeRows.map(row => [row.user_id, row]));
 }
 
 async function moderateAdminMember(member, action) {

@@ -11,18 +11,15 @@ insert into public.match_event_private_details (event_id, venue)
 select id, venue from public.match_events
 on conflict (event_id) do nothing;
 update public.match_events
-set venue = 'Venue details shared privately with members who choose Going'
+set venue = 'Exact venue shared directly by the organiser'
 where venue <> 'Venue details shared privately with members who choose Going';
 drop policy if exists "Going members and organisers can read private event venue" on public.match_event_private_details;
-create policy "Going members and organisers can read private event venue"
+drop policy if exists "Organisers and admins can read private event venue" on public.match_event_private_details;
+create policy "Organisers and admins can read private event venue"
 on public.match_event_private_details for select to authenticated
 using (
   exists (select 1 from public.match_events e where e.id = event_id and e.organiser_id = (select auth.uid()))
   or (select public.is_match_admin())
-  or exists (
-    select 1 from public.match_event_responses r
-    where r.event_id = event_id and r.member_id = (select auth.uid()) and r.response = 'going'
-  )
 );
 drop policy if exists "Organisers can add private venue to own pending event" on public.match_event_private_details;
 create policy "Organisers can add private venue to own pending event"

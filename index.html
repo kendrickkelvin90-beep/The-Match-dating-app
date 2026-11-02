@@ -14857,7 +14857,6 @@ const E=id=>document.getElementById(id), esc=v=>String(v??"").replace(/[&<>"']/g
 const date=v=>new Date(v).toLocaleString("en-NG",{dateStyle:"medium",timeStyle:"short"}), naira=v=>"₦"+Number(v||0).toLocaleString("en-NG");
 let eventsCache=[], selectedEvent=null, myResponses={}, verifiedMember=false, eventOrganisers={};
 function tab(name){
-if(name==="create"&&!verifiedMember){E("eventsPageStatus").textContent="Only verified members can organise events.";return;}
 ["browse","create","mine","admin"].forEach(n=>E("events"+n[0].toUpperCase()+n.slice(1)+"Panel")?.classList.toggle("hidden",n!==name));
 document.querySelectorAll("[data-events-tab]").forEach(b=>b.classList.toggle("active",b.dataset.eventsTab===name));
 }
@@ -14872,7 +14871,6 @@ list.innerHTML=rows.length?rows.map(x=>'<article class="event-card"><div class="
 async function load(){
 const {data:p,error:pe}=await db.from("profiles").select("is_verified").eq("id",currentUser.id).maybeSingle();if(pe)throw pe;
 verifiedMember=p?.is_verified===true;
-const create=document.querySelector('[data-events-tab="create"]');if(create)create.disabled=!verifiedMember;
 const info=E("eventsCreatePanel")?.querySelector(".events-info-card"),form=E("eventSubmissionForm");
 if(info){info.querySelector("strong").textContent=verifiedMember?"Verified organisers only":"Verification required";info.querySelector("p").textContent=verifiedMember?"Submit your event and transfer the ₦7,000 promotion fee. It stays unpublished until approved by an admin.":"Only verified members can organise events. Complete verification before submitting.";}
 if(form)form.hidden=!verifiedMember;

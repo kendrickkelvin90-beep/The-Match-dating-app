@@ -5724,10 +5724,10 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
   <div class="notifications-toolbar">
     <button type="button" id="markAllNotificationsRead">✓ <span>Mark all as read</span></button>
     <span class="notifications-toolbar-divider" aria-hidden="true"></span>
-    <button type="button" id="clearNotifications">▤ <span>Clear notifications</span></button>
+    <button type="button" id="refreshNotificationsToolbar">↻ <span>Refresh</span></button>
   </div>
 
-  <button class="notifications-refresh" id="refreshNotifications" type="button">Refresh Notifications ↻</button>
+  <button class="notifications-refresh hidden" id="refreshNotifications" type="button">Refresh Notifications ↻</button>
   <div id="notificationsList" class="notifications-list" aria-live="polite">
     <p class="small">Loading your notifications...</p>
   </div>
@@ -6200,25 +6200,18 @@ $("markAllNotificationsRead")?.addEventListener("click", async () => {
   }
 });
 
-$("clearNotifications")?.addEventListener("click", async () => {
-  if (!currentUser) return;
-  const confirmed = await matchConfirm("This will permanently clear your notifications from this account. This cannot be undone.", "Clear notifications?");
-  if (!confirmed) return;
-  const button = $("clearNotifications");
+$("refreshNotificationsToolbar")?.addEventListener("click", async () => {
+  const button = $("refreshNotificationsToolbar");
   button.disabled = true;
   try {
-    const { error } = await db.from("notifications").delete().eq("user_id", currentUser.id);
-    if (error) throw error;
-    memberNotificationsCache = [];
-    renderMemberNotifications();
-    await loadNotificationBadge();
-    $("notificationsStatus").textContent = "Your notifications have been cleared.";
+    const { error } = await db.rpc("notify_expired_premium");
+    if (error) console.warn("Premium expiry notification check failed:", error.message);
   } catch (error) {
-    console.error("Clear notifications failed:", error);
-    $("notificationsStatus").textContent = "Could not clear notifications. Please try again.";
-  } finally {
-    button.disabled = false;
+    console.warn("Premium expiry notification check failed:", error);
   }
+  await loadMemberNotifications();
+  await loadNotificationBadge();
+  button.disabled = false;
 });
 
 async function loadNotificationBadge() {

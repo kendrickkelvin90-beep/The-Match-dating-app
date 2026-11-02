@@ -4283,6 +4283,16 @@ textarea.match-dialog-input{min-height:112px;resize:vertical}
 #notificationsPage #backFromNotifications{width:100%;margin-top:12px}
 @media(max-width:380px){#notificationsPage{padding:16px 11px 24px!important}#notificationsPage .notifications-hero{gap:11px;padding:14px 10px}#notificationsPage .notifications-hero-icon{flex-basis:54px;width:54px;height:54px;font-size:29px}#notificationsPage .notifications-hero h2{font-size:23px}#notificationsPage .notification-filter{min-height:69px;border-radius:12px}#notificationsPage .notification-filter span{font-size:10px}#notificationsPage .notifications-toolbar button{font-size:11px}#notificationsPage .notification-card{gap:9px;padding:11px 9px}#notificationsPage .notification-icon{flex-basis:49px;width:49px;height:49px;font-size:25px}#notificationsPage .notification-copy strong{font-size:14px}#notificationsPage .notification-copy p{font-size:12px}#notificationsPage .notification-copy time{font-size:10px}}
 
+ 
+/* Conversation starters — compact, accessible black-and-gold chat prompts */
+#conversationStarters{margin:10px 0 14px;padding:13px;border:1px solid rgba(198,166,107,.35);border-radius:16px;background:rgba(198,166,107,.07)}
+#conversationStarters.hidden{display:none!important}
+.conversation-starters-title{margin:0 0 10px;color:var(--match-gold,#C6A66B);font-size:13px;font-weight:800}
+.conversation-starter-options{display:grid;grid-template-columns:1fr;gap:8px}
+.conversation-starter-option{width:100%;padding:11px 13px;text-align:left;border:1px solid rgba(198,166,107,.3);border-radius:12px;background:rgba(255,255,255,.04);color:inherit;font:inherit;font-size:13px;line-height:1.4}
+.conversation-starter-option:focus-visible{outline:2px solid var(--match-gold,#C6A66B);outline-offset:2px}
+body.light-theme #conversationStarters{background:#fffaf0;border-color:#d9c49b}
+body.light-theme .conversation-starter-option{background:#fff;color:#29251e;border-color:#e2d2ad}
 </style>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
@@ -5415,6 +5425,10 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
 
   <div id="activeConversation" class="hidden">
     <h3 id="chatPartnerName">Conversation</h3>
+    <section id="conversationStarters" class="conversation-starters hidden" aria-label="Conversation starters">
+      <p class="conversation-starters-title">Not sure what to say? Try an opener</p>
+      <div id="conversationStarterOptions" class="conversation-starter-options"></div>
+    </section>
     <div id="chatMessages"></div>
 
     
@@ -12492,6 +12506,43 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
+ 
+function renderConversationStarters(showStarters) {
+  const panel = $("conversationStarters");
+  const options = $("conversationStarterOptions");
+  if (!panel || !options) return;
+  options.replaceChildren();
+  if (!showStarters) {
+    panel.classList.add("hidden");
+    return;
+  }
+
+  const prompts = [
+    "Hey! What was the best part of your day?",
+    "What kind of connection are you hoping to find here?",
+    "What's something you're really passionate about?",
+    "If we planned a relaxed first date, what would it look like?",
+    "What's one song you never get tired of?",
+    "What's something fun you'd love us to talk about?"
+  ];
+
+  prompts.forEach(prompt => {
+    const choice = document.createElement("button");
+    choice.type = "button";
+    choice.className = "conversation-starter-option";
+    choice.textContent = prompt;
+    choice.addEventListener("click", () => {
+      const input = $("chatMessageInput");
+      if (!input) return;
+      input.value = prompt;
+      input.focus();
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    options.appendChild(choice);
+  });
+  panel.classList.remove("hidden");
+}
+
 async function openChat(userId, userName){
   if(!currentUser || !userId || userId === currentUser.id){
     status("messagesStatus","Unable to open this conversation.",true);
@@ -12817,6 +12868,7 @@ data.reverse();
     await updateAccountCounts();
 
         if (!data || !data.length) {
+      renderConversationStarters(true);
       if (!chat.querySelector("[data-empty-message]")) {
         const empty = document.createElement("p");
         empty.dataset.emptyMessage = "true";
@@ -12824,6 +12876,7 @@ data.reverse();
         chat.appendChild(empty);
       }
     } else {
+      renderConversationStarters(false);
       chat.querySelectorAll("[data-empty-message]").forEach(node => node.remove());
 
       data.forEach(message => {

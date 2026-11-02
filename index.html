@@ -4566,6 +4566,18 @@ body.light-theme #discoveryPreferencesPage label{color:#494238}
 body.light-theme #discoveryPreferencesPage input:not([type=checkbox]):not([type=range]),body.light-theme #discoveryPreferencesPage select{background:#fff;color:#25211b;border-color:#d8d0c3}
 body.light-theme #discoveryPreferencesPage .discovery-save-card{background:rgba(255,255,255,.96);border-color:#e1d4bb}
 </style>
+<style id="discoveryRoleAndPresentationStyles">
+#profile .presentation-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#profile .presentation-options label{display:flex;align-items:center;gap:8px;padding:11px;border:1px solid rgba(210,177,112,.22);border-radius:12px;background:rgba(210,177,112,.045);font-size:13px}
+#profile .presentation-options input{accent-color:#d0aa62;width:18px;height:18px}
+#discoveryPreferencesPage .discovery-role-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#discoveryPreferencesPage .discovery-role-option{display:flex;align-items:center;gap:9px;min-height:44px;margin:0;padding:10px 11px;border:1px solid rgba(210,177,112,.22);border-radius:12px;background:rgba(210,177,112,.045);cursor:pointer}
+#discoveryPreferencesPage .discovery-role-option input{width:17px;height:17px;flex:0 0 17px;accent-color:#d0aa62}
+#discoveryPreferencesPage .discovery-role-option span{font-size:12px;color:#e8e1d4}
+@media(max-width:360px){#profile .presentation-options,#discoveryPreferencesPage .discovery-role-grid{grid-template-columns:1fr}}
+body.light-theme #profile .presentation-options label,body.light-theme #discoveryPreferencesPage .discovery-role-option{background:#fff;border-color:#e4d8c2}
+body.light-theme #discoveryPreferencesPage .discovery-role-option span{color:#383229}
+</style>
 </head>
 <body>
 <div id="stars" aria-hidden="true"></div>
@@ -4842,6 +4854,22 @@ body.light-theme #discoveryPreferencesPage .discovery-save-card{background:rgba(
   <label><input type="checkbox" name="sexualRole" value="Switch"> Switch</label>
   <label><input type="checkbox" name="sexualRole" value="Exploring"> Exploring / Not sure</label>
   <label><input type="checkbox" name="sexualRole" value="Prefer not to say"> Prefer not to say</label>
+</div>
+
+<div class="member-card" id="genderPresentationSection">
+  <h2>My presentation ✨</h2>
+  <p class="small">Optional. Select the words that best describe your presentation. These labels are self-described and are not inferred from appearance or orientation.</p>
+  <div class="presentation-options">
+    <label><input type="checkbox" name="genderPresentation" value="Stud"> Stud</label>
+    <label><input type="checkbox" name="genderPresentation" value="Femme"> Femme</label>
+    <label><input type="checkbox" name="genderPresentation" value="Stem"> Stem</label>
+    <label><input type="checkbox" name="genderPresentation" value="Masc"> Masc</label>
+    <label><input type="checkbox" name="genderPresentation" value="Androgynous"> Androgynous</label>
+    <label><input type="checkbox" name="genderPresentation" value="Chapstick"> Chapstick</label>
+    <label><input type="checkbox" name="genderPresentation" value="Butch"> Butch</label>
+    <label><input type="checkbox" name="genderPresentation" value="Other"> Other</label>
+    <label><input type="checkbox" name="genderPresentation" value="Prefer not to say"> Prefer not to say</label>
+  </div>
 </div>
 
     <label for="city">City *</label>
@@ -5631,6 +5659,25 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
       <option value="women">Women</option>
       <option value="nonbinary">Non-binary people</option>
     </select>
+  </div>
+
+  <div class="discovery-preference-card">
+    <div class="discovery-card-heading"><span class="discovery-card-icon">♡</span><div><h3>Who would you like to meet?</h3><p>Select one or more roles. Leave all unselected for no role filter.</p></div></div>
+    <div class="discovery-role-grid">
+      <label class="discovery-role-option"><input type="checkbox" name="discoveryRolePreference" value="Top"><span>Top</span></label>
+      <label class="discovery-role-option"><input type="checkbox" name="discoveryRolePreference" value="Bottom"><span>Bottom</span></label>
+      <label class="discovery-role-option"><input type="checkbox" name="discoveryRolePreference" value="Versatile"><span>Versatile</span></label>
+      <label class="discovery-role-option"><input type="checkbox" name="discoveryRolePreference" value="Vers Top"><span>Vers Top</span></label>
+      <label class="discovery-role-option"><input type="checkbox" name="discoveryRolePreference" value="Vers Bottom"><span>Vers Bottom</span></label>
+      <label class="discovery-role-option"><input type="checkbox" name="discoveryRolePreference" value="Side"><span>Side</span></label>
+      <label class="discovery-role-option"><input type="checkbox" name="discoveryRolePreference" value="Dominant Top"><span>Dominant Top</span></label>
+      <label class="discovery-role-option"><input type="checkbox" name="discoveryRolePreference" value="Dominant Bottom"><span>Dominant Bottom</span></label>
+      <label class="discovery-role-option"><input type="checkbox" name="discoveryRolePreference" value="Submissive Top"><span>Submissive Top</span></label>
+      <label class="discovery-role-option"><input type="checkbox" name="discoveryRolePreference" value="Submissive Bottom"><span>Submissive Bottom</span></label>
+      <label class="discovery-role-option"><input type="checkbox" name="discoveryRolePreference" value="Switch"><span>Switch</span></label>
+      <label class="discovery-role-option"><input type="checkbox" name="discoveryRolePreference" value="Exploring"><span>Exploring</span></label>
+    </div>
+    <p class="discovery-helper">Role and dynamic are separate from gender identity and presentation. Selecting several options shows profiles matching any selected role.</p>
   </div>
 
   <div class="discovery-preference-card">
@@ -8589,7 +8636,7 @@ $("bottomNavigation").querySelector('[data-page="discover"]').classList.add("act
 status("profileStatus","Loading your profile...");
 try{
 let r=await db.from("profiles")
-  .select("id,display_name,gender_identity,interested_in,bio,city,avatar_url,created_at,updated_at,age,location_sharing,is_verified,sexual_roles,verification_level,verification_grace_started_at,nearby_current_city,nearby_current_state")
+  .select("id,display_name,gender_identity,interested_in,bio,city,avatar_url,created_at,updated_at,age,location_sharing,is_verified,sexual_roles,gender_presentation,discovery_role_preferences,verification_level,verification_grace_started_at,nearby_current_city,nearby_current_state")
   .eq("id",user.id)
   .maybeSingle();
 if(r.error)throw r.error;
@@ -8603,6 +8650,17 @@ $("interest").value=p.interested_in||"";
 document.querySelectorAll('input[name="sexualRole"]').forEach(el=>{
   el.checked=Array.isArray(p.sexual_roles)&&p.sexual_roles.includes(el.value);
 });
+document.querySelectorAll('input[name="genderPresentation"]').forEach(el=>{
+  el.checked=Array.isArray(p.gender_presentation)&&p.gender_presentation.includes(el.value);
+});
+document.querySelectorAll('input[name="discoveryRolePreference"]').forEach(el=>{
+  el.checked=Array.isArray(p.discovery_role_preferences)&&p.discovery_role_preferences.includes(el.value);
+});
+try {
+  const savedPrefs=JSON.parse(localStorage.getItem("theMatchDiscoveryPreferences")||"{}");
+  savedPrefs.rolePreferences=Array.isArray(p.discovery_role_preferences)?p.discovery_role_preferences:[];
+  localStorage.setItem("theMatchDiscoveryPreferences",JSON.stringify(savedPrefs));
+} catch(storageError) { console.warn("Could not sync saved role preferences:",storageError); }
 
 $("city").value=p.city||"";
 $("bio").value=p.bio||"";
@@ -8685,6 +8743,7 @@ gender_identity:$("gender").value,
 interested_in:$("interest").value,
   
 sexual_roles:Array.from(document.querySelectorAll('input[name="sexualRole"]:checked')).map(el=>el.value),
+gender_presentation:Array.from(document.querySelectorAll('input[name="genderPresentation"]:checked')).map(el=>el.value),
 
 city:$("city").value.trim(),
 bio:$("bio").value.trim(),
@@ -8753,6 +8812,7 @@ async function loadNearby(){
     const maxDistance = Number(savedPreferences.distance) || 50;
     const minAge = Number(savedPreferences.minAge) || 18;
     const maxAge = Number(savedPreferences.maxAge) || 79;
+    const rolePreferences = Array.isArray(savedPreferences.rolePreferences) ? savedPreferences.rolePreferences : [];
 
     
     const { data: peopleData, error } = await db.rpc(
@@ -8772,6 +8832,9 @@ let people = (peopleData || []).map(p => ({
   _distance:
     p.distance_km == null ? null : Number(p.distance_km)
 }));
+if(rolePreferences.length){
+  people=people.filter(person=>Array.isArray(person.sexual_roles)&&person.sexual_roles.some(role=>rolePreferences.includes(role)));
+}
 
     
     const discoverIds = people.map(p => p.id);
@@ -9116,6 +9179,14 @@ if (Array.isArray(p.sexual_roles) && p.sexual_roles.length) {
   roles.textContent = "🏳️‍🌈 Role: " + p.sexual_roles.join(", ");
   roles.style.cssText = "font-size:14px;margin:8px 0;";
   detailsPanel.appendChild(roles);
+}
+
+if (Array.isArray(p.gender_presentation) && p.gender_presentation.length) {
+  const presentation = document.createElement("p");
+  presentation.className = "small";
+  presentation.textContent = "✨ Presentation: " + p.gender_presentation.join(", ");
+  presentation.style.cssText = "font-size:13px;margin:8px 0;";
+  detailsPanel.appendChild(presentation);
 }
 
 if (p.bio) {
@@ -11143,7 +11214,7 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
   $("discoveryDistance").addEventListener("input", event => {
   $("discoveryDistanceValue").textContent = event.target.value + " km";
 });
-  $("saveDiscoveryPreferences").addEventListener("click", () => {
+  $("saveDiscoveryPreferences").addEventListener("click", async () => {
   const minAge = Number($("discoveryAgeMin").value);
   const maxAge = Number($("discoveryAgeMax").value);
 
@@ -11163,7 +11234,8 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
     interests: $("discoveryInterests").value.trim(),
     verifiedOnly: $("discoveryVerifiedOnly").checked,
     recentlyActive: $("discoveryRecentlyActive").checked,
-    expandRange: $("discoveryExpandRange").checked
+    expandRange: $("discoveryExpandRange").checked,
+    rolePreferences: Array.from(document.querySelectorAll('input[name="discoveryRolePreference"]:checked')).map(el=>el.value)
   };
 
   try {
@@ -11171,8 +11243,12 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
       "theMatchDiscoveryPreferences",
       JSON.stringify(preferences)
     );
+    if(currentUser){
+      const {error:roleSaveError}=await db.from("profiles").update({discovery_role_preferences:preferences.rolePreferences}).eq("id",currentUser.id);
+      if(roleSaveError) throw roleSaveError;
+    }
     $("discoveryPreferencesStatus").textContent =
-      "Preferences saved on this device.";
+      "Preferences saved to your account.";
   } catch (error) {
     $("discoveryPreferencesStatus").textContent =
       "Could not save preferences. Please try again.";
@@ -11194,6 +11270,9 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
     if (saved.verifiedOnly !== undefined) $("discoveryVerifiedOnly").checked = saved.verifiedOnly;
     if (saved.recentlyActive !== undefined) $("discoveryRecentlyActive").checked = saved.recentlyActive;
     if (saved.expandRange !== undefined) $("discoveryExpandRange").checked = saved.expandRange;
+    document.querySelectorAll('input[name="discoveryRolePreference"]').forEach(el=>{
+      el.checked=Array.isArray(saved.rolePreferences)&&saved.rolePreferences.includes(el.value);
+    });
 
     $("discoveryDistanceValue").textContent =
       $("discoveryDistance").value + " km";
@@ -11212,11 +11291,16 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
   $("discoveryVerifiedOnly").checked = false;
   $("discoveryRecentlyActive").checked = false;
   $("discoveryExpandRange").checked = true;
+  document.querySelectorAll('input[name="discoveryRolePreference"]').forEach(el=>el.checked=false);
 
   $("discoveryDistanceValue").textContent = "50 km";
 
   try {
     localStorage.removeItem("theMatchDiscoveryPreferences");
+    if(currentUser){
+      db.from("profiles").update({discovery_role_preferences:[]}).eq("id",currentUser.id)
+        .then(({error})=>{if(error)console.error("Could not reset account role preferences:",error);});
+    }
     status("discoveryPreferencesStatus", "Preferences reset to defaults.");
   } catch (error) {
     status("discoveryPreferencesStatus", "Could not reset saved preferences.", true);

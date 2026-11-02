@@ -14869,7 +14869,7 @@ const create=document.querySelector('[data-events-tab="create"]');if(create)crea
 const info=E("eventsCreatePanel")?.querySelector(".events-info-card"),form=E("eventSubmissionForm");
 if(info){info.querySelector("strong").textContent=verifiedMember?"Verified organisers only":"Verification required";info.querySelector("p").textContent=verifiedMember?"Submit your event and transfer the ₦7,000 promotion fee. It stays unpublished until approved by an admin.":"Only verified members can organise events. Complete verification before submitting.";}
 if(form)form.hidden=!verifiedMember;
-const {data:pub,error}=await db.from("match_events").select("id,title,description,category,venue,city,starts_at,ends_at,ticket_price_ngn").eq("status","published").gte("ends_at",new Date().toISOString()).order("starts_at");if(error)throw error;
+const {data:pub,error}=await db.from("match_events").select("id,title,description,category,city,starts_at,ends_at,ticket_price_ngn").eq("status","published").gte("ends_at",new Date().toISOString()).order("starts_at");if(error)throw error;
 eventsCache=pub||[];
 const {data:responses,error:re}=await db.from("match_event_responses").select("event_id,response").eq("member_id",currentUser.id);
 if(re)throw re;myResponses=Object.fromEntries((responses||[]).map(x=>[x.event_id,x.response]));
@@ -14891,12 +14891,13 @@ E("eventGoingBtn").textContent=own==="going"?"✓ Going":"Going";
 E("eventResponseStatus").textContent=own?"Your response is private. You can change or remove it at any time.":"Your response is private and is not shown to other members or the organiser.";
 E("eventReportStatus").textContent="";E("eventReportDetails").value="";
 E("eventDetailsModal").classList.remove("hidden");
+if(own==="going"||x.organiser_id===currentUser.id){db.from("match_event_private_details").select("venue").eq("event_id",id).maybeSingle().then(({data,error})=>{if(error){E("eventDetailsContent").insertAdjacentHTML("beforeend",'<p class="small">Private venue details are temporarily unavailable.</p>');return;}if(data?.venue)E("eventDetailsContent").insertAdjacentHTML("beforeend",'<p><strong>Private venue:</strong> '+esc(data.venue)+'</p>');});}
 }
 async function saveResponse(response){
 if(!selectedEvent)return;const status=E("eventResponseStatus");status.textContent="Saving privately…";
 const {error}=await db.from("match_event_responses").upsert({event_id:selectedEvent.id,member_id:currentUser.id,response},{onConflict:"event_id,member_id"});
 if(error){status.textContent="Could not save your private response: "+error.message;return;}
-myResponses[selectedEvent.id]=response;status.textContent="Saved. Only you can see or change this response.";
+myResponses[selectedEvent.id]=response;status.textContent="Saved. Only you can see or change this response.";if(response==="going"){const {data:v}=await db.from("match_event_private_details").select("venue").eq("event_id",selectedEvent.id).maybeSingle();if(v?.venue)E("eventDetailsContent").insertAdjacentHTML("beforeend",'<p><strong>Private venue:</strong> '+esc(v.venue)+'</p>');}
 E("eventInterestedBtn").textContent=response==="interested"?"✓ Interested":"Interested";E("eventGoingBtn").textContent=response==="going"?"✓ Going":"Going";
 }
 document.querySelectorAll("[data-events-tab]").forEach(b=>b.addEventListener("click",()=>tab(b.dataset.eventsTab)));
@@ -14911,7 +14912,7 @@ E("eventSubmissionForm")?.addEventListener("submit",async ev=>{ev.preventDefault
 const {data:p,error:pe}=await db.from("profiles").select("is_verified").eq("id",currentUser.id).maybeSingle();if(pe)throw pe;if(p?.is_verified!==true)throw Error("Verified membership is required.");
 const start=new Date(E("eventStart").value),end=new Date(E("eventEnd").value);if(isNaN(start)||isNaN(end)||start<=new Date()||end<=start)throw Error("Enter a valid future start and end time.");
 const payload={organiser_id:currentUser.id,title:E("eventTitle").value.trim(),description:E("eventDescription").value.trim(),category:E("eventCategory").value,venue:E("eventVenue").value.trim(),city:E("eventCity").value.trim(),starts_at:start.toISOString(),ends_at:end.toISOString(),ticket_price_ngn:Number(E("eventTicketPrice").value||0),promotion_fee_ngn:7000,payment_sender_name:E("eventPaymentSender").value.trim(),payment_reference:E("eventPaymentReference").value.trim(),payment_status:"pending",status:"pending_review"};
-const {error}=await db.from("match_events").insert(payload);if(error)throw error;E("eventFormStatus").textContent="Submitted. Your event stays unpublished until an admin confirms the ₦7,000 transfer and approves it.";E("eventSubmissionForm").reset();E("eventTicketPrice").value="0";await load();tab("mine");
+const {data:created,error}=await db.from("match_events").insert({...payload,venue:"Venue details shared privately with members who choose Going"}).select("id").single();if(error)throw error;const {error:venueError}=await db.from("match_event_private_details").insert({event_id:created.id,venue:E("eventVenue").value.trim()});if(venueError)throw venueError;E("eventFormStatus").textContent="Submitted. Your event stays unpublished until an admin confirms the ₦7,000 transfer and approves it.";E("eventSubmissionForm").reset();E("eventTicketPrice").value="0";await load();tab("mine");
 }catch(err){E("eventFormStatus").textContent=err.message||"Submission failed.";}finally{btn.disabled=false;}});
 E("eventsAdminList")?.addEventListener("click",async ev=>{const a=ev.target.closest("[data-event-approve]"),rj=ev.target.closest("[data-event-reject]");if(!a&&!rj)return;const id=(a||rj).dataset.eventApprove||(rj&&rj.dataset.eventReject);if(a&&!confirm("Have you confirmed the ₦7,000 transfer in your account and want to publish this event?"))return;if(rj&&!confirm("Reject this event submission?"))return;try{const patch=a?{payment_status:"approved",status:"published",reviewed_by:currentUser.id,reviewed_at:new Date().toISOString(),admin_note:"Payment confirmed by admin"}:{payment_status:"rejected",status:"rejected",reviewed_by:currentUser.id,reviewed_at:new Date().toISOString(),admin_note:"Rejected by admin"};const {error}=await db.from("match_events").update(patch).eq("id",id);if(error)throw error;await load();}catch(err){alert("Review failed: "+err.message);}});
 E("openEventsFromDiscover")?.addEventListener("click",async()=>{show("eventsPage");try{await load();}catch(err){E("eventsPageStatus").textContent="Events unavailable: "+err.message;}});

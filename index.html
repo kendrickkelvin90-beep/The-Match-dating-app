@@ -8838,6 +8838,7 @@ async function loadPremiumNearby(){
 
     const isPremium=!!membership &&
       new Date(membership.premium_until).getTime()>Date.now();
+    if (premiumBanner) premiumBanner.classList.toggle("hidden", isPremium);
 
     if(!isPremium){
       const card=document.createElement("div");
@@ -10758,6 +10759,8 @@ async function loadLikesPage(){
 
   const receivedList=$("receivedLikesList");
   const sentList=$("sentLikesList");
+  const premiumBanner=$("likesPremiumButton")?.closest(".likes-premium-banner");
+  if ($("likesPremiumButton")) $("likesPremiumButton").onclick=()=>show("premium");
   receivedList.replaceChildren();
   sentList.replaceChildren();
   status("likesStatus","Loading your likes...");
@@ -10782,34 +10785,19 @@ async function loadLikesPage(){
 if(countError)throw countError;
 
       const lockedCard=document.createElement("div");
-      lockedCard.className="member-card";
-      lockedCard.style.cssText=
-        "padding:24px;margin:12px 0;text-align:center;" +
-        "border:1px solid #493040;border-radius:20px;" +
-        "background:linear-gradient(145deg,#160b12,#080808);";
-
+      lockedCard.className="likes-locked-card";
       const lockIcon=document.createElement("div");
-      lockIcon.textContent="💖 🔒";
-      lockIcon.style.cssText="font-size:42px;margin-bottom:12px;";
-
+      lockIcon.className="likes-locked-icon";
+      lockIcon.textContent="♛  🔒";
       const lockTitle=document.createElement("h3");
-      lockTitle.textContent="Someone likes you!";
-      lockTitle.style.cssText="color:#ffe5ef;margin:8px 0;";
-
+      lockTitle.textContent=(count||0)===1 ? "Someone likes you" : (count||0)+" people like you";
       const lockMessage=document.createElement("p");
-      lockMessage.textContent=
-        "Upgrade to Premium to reveal who likes you and see their photos.";
-      lockMessage.style.cssText="color:#d8bdca;line-height:1.6;";
-
+      lockMessage.textContent="Unlock your incoming likes and see full profile photos with The Match Premium.";
       const upgradeButton=document.createElement("button");
       upgradeButton.type="button";
-      upgradeButton.className="btn primary";
-      upgradeButton.textContent="⭐ Upgrade to Premium";
+      upgradeButton.textContent="Unlock my likes  →";
       upgradeButton.onclick=()=>show("premium");
-
-      lockedCard.append(
-        lockIcon,lockTitle,lockMessage,upgradeButton
-      );
+      lockedCard.append(lockIcon,lockTitle,lockMessage,upgradeButton);
       receivedList.appendChild(lockedCard);
 
       status(
@@ -10848,13 +10836,14 @@ if(countError)throw countError;
 
       const alreadyLiked=sentIds.includes(id);
 
-      const card=document.createElement("div");
-      card.className="member-card";
-
+      const card=document.createElement("article");
+      card.className="likes-profile-card";
+      const avatarWrap=document.createElement("div");
+      avatarWrap.className="likes-avatar-wrap";
       const avatar=document.createElement("img");
+      avatar.className="likes-avatar";
       avatar.alt="Member photo";
-      avatar.style.cssText=
-        "width:76px;height:76px;border-radius:50%;object-fit:cover;display:block;margin:10px 0;background:#292036;";
+      avatar.loading="lazy";
 
       const {data:photos,error:photoError}=await db
         .from("profile_photos")
@@ -10873,17 +10862,29 @@ if(countError)throw countError;
         avatar.alt="No photo available";
       }
 
+      avatarWrap.appendChild(avatar);
+      const info=document.createElement("div");
+      info.className="likes-profile-info";
       const name=document.createElement("h3");
+      name.className="likes-profile-name";
       name.textContent=p.display_name||"Member";
-
+      const note=document.createElement("p");
+      note.className="likes-profile-note";
+      note.textContent="Interested in you";
+      info.append(name,note);
       const actions=document.createElement("div");
-      actions.style.cssText=
-        "display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;";
+      actions.className="likes-profile-actions";
+      const view=document.createElement("button");
+      view.type="button";
+      view.className="likes-view-button";
+      view.textContent="View profile";
+      view.onclick=()=>openMemberProfile(id);
+      actions.appendChild(view);
 
       if(alreadyLiked){
         const chat=document.createElement("button");
         chat.type="button";
-        chat.className="btn primary";
+        chat.className="likes-chat-button";
         chat.textContent="💬 Chat";
 
         
@@ -10929,7 +10930,7 @@ if(countError)throw countError;
       }else{
         const likeBack=document.createElement("button");
         likeBack.type="button";
-        likeBack.className="btn primary";
+        likeBack.className="likes-back-button";
         likeBack.textContent="❤️ Like Back";
 
         
@@ -11017,7 +11018,7 @@ if(countError)throw countError;
 
         const decline=document.createElement("button");
         decline.type="button";
-        decline.className="btn secondary";
+        decline.className="likes-decline-button";
         decline.textContent="✕ Decline";
 
         decline.onclick=async()=>{
@@ -11047,14 +11048,14 @@ if(countError)throw countError;
         actions.append(likeBack,decline);
       }
 
-      card.append(avatar,name,actions);
+      card.append(avatarWrap,info,actions);
       receivedList.appendChild(card);
     }
 
 
     status(
       "likesStatus",
-      "People who like you: " + receivedIds.length
+      "You have " + receivedIds.length + " incoming like(s)."
     );
 
     

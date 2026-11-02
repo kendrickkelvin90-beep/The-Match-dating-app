@@ -14931,6 +14931,7 @@ E("eventGoingBtn").textContent=own==="going"?"✓ Going":"Going";
 E("eventResponseStatus").textContent=own?"Your response is private. You can change it at any time.":"Your response is private and is not shown to other members or the organiser.";
 E("eventReportStatus").textContent="";E("eventReportDetails").value="";
 E("eventDetailsModal").classList.remove("hidden");
+if(!isOrganiser)E("eventInquiryMessage").value="Hello, I’m interested in your event, "+x.title+". I’d like to know more about ticket availability and attendance arrangements.";
 E("viewEventOrganiserProfile")?.addEventListener("click",()=>{E("eventDetailsModal").classList.add("hidden");openMemberProfile(x.organiser_id);});
 try{
  const {data:tiers,error:tierError}=await db.from("match_event_ticket_types").select("id,name,description,price_ngn,quantity_total,quantity_sold").eq("event_id",x.id).eq("is_active",true).order("price_ngn");
@@ -14985,8 +14986,8 @@ try{
  const {error:paymentError}=await db.from("match_event_promotion_payments").insert({event_id:created.id,organiser_id:currentUser.id,amount_ngn:10000,sender_name:E("eventPaymentSender").value.trim(),transfer_reference:E("eventPaymentReference").value.trim()});if(paymentError)throw paymentError;
  const tiers=[{event_id:created.id,name:"Regular",description:"Standard event admission",price_ngn:ticketPrice}];
  const vip=Number(E("eventVipPrice").value),vvip=Number(E("eventVvipPrice").value);
- if(E("eventVipPrice").value.trim()){if(!Number.isFinite(vip)||vip<100)throw Error("Enter a valid VIP ticket price.");tiers.push({event_id:created.id,name:"VIP",description:"VIP event admission",price_ngn:vip,quantity_total:E("eventVipQty").value?Number(E("eventVipQty").value):null});}
- if(E("eventVvipPrice").value.trim()){if(!Number.isFinite(vvip)||vvip<100)throw Error("Enter a valid VVIP ticket price.");tiers.push({event_id:created.id,name:"VVIP",description:"VVIP event admission",price_ngn:vvip,quantity_total:E("eventVvipQty").value?Number(E("eventVvipQty").value):null});}
+ if(E("eventVipPrice").value.trim()){const qty=E("eventVipQty").value?Number(E("eventVipQty").value):null;if(!Number.isFinite(vip)||vip<100)throw Error("Enter a valid VIP ticket price.");if(qty!==null&&(!Number.isInteger(qty)||qty<1))throw Error("VIP quantity must be a whole number above zero.");tiers.push({event_id:created.id,name:"VIP",description:"VIP event admission",price_ngn:vip,quantity_total:qty});}
+ if(E("eventVvipPrice").value.trim()){const qty=E("eventVvipQty").value?Number(E("eventVvipQty").value):null;if(!Number.isFinite(vvip)||vvip<100)throw Error("Enter a valid VVIP ticket price.");if(qty!==null&&(!Number.isInteger(qty)||qty<1))throw Error("VVIP quantity must be a whole number above zero.");tiers.push({event_id:created.id,name:"VVIP",description:"VVIP event admission",price_ngn:vvip,quantity_total:qty});}
  const {error:tierError}=await db.from("match_event_ticket_types").insert(tiers);if(tierError)throw tierError;
 }catch(saveError){await db.from("match_events").delete().eq("id",created.id);throw saveError;}
 E("eventFormStatus").textContent="Submitted. Your event remains private until The Match confirms the promotion fee and approves it.";E("eventSubmissionForm").reset();E("eventTicketPrice").value="";await load();tab("mine");

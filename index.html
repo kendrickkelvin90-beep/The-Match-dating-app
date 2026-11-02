@@ -14919,7 +14919,22 @@ E("eventsMineList").innerHTML=mine?.length?mine.map(x=>'<article class="event-ad
 await adminReports();
 if(isMatchAdmin){E("eventsAdminTab")?.classList.remove("hidden");await adminQueue();}else{E("eventsAdminTab")?.classList.add("hidden");E("eventsAdminPanel")?.classList.add("hidden");}
 }
-async function adminReports(){const list=E("eventsAdminReports");if(!list||!isMatchAdmin)return;const {data,error}=await db.from("match_event_reports").select("id,event_id,reason,details,status,created_at,match_events(title,city,status)").order("created_at",{ascending:false}).limit(50);if(error){list.textContent="Could not load reports: "+error.message;return;}list.innerHTML=data?.length?data.map(r=>'<article class="event-admin-card"><strong>'+esc(r.match_events?.title||"Removed event")+'</strong><p>'+esc(r.reason.replaceAll("_"," "))+" · "+esc(r.match_events?.city||"")+"</p><p>"+esc(r.details||"No additional details")+"</p><div class=\"event-status-row\"><span>Report: "+esc(r.status)+"</span><span>Listing: "+esc(r.match_events?.status||"unknown")+"</span></div><div class=\"event-admin-actions\"><button data-report-reviewed=\""+r.id+"\">Mark reviewed</button><button data-report-actioned=\""+r.id+"\">Mark actioned</button><button data-event-remove=\""+r.event_id+"\">Remove event</button></div></article>').join(""):'<p class="small">No member reports. The queue is clear.</p>';}
+async function adminReports(){
+ const list=E("eventsAdminReports");
+ if(!list||!isMatchAdmin)return;
+ const {data,error}=await db.from("match_event_reports").select("id,event_id,reason,details,status,created_at,match_events(title,city,status)").order("created_at",{ascending:false}).limit(50);
+ if(error){list.textContent="Could not load reports: "+error.message;return;}
+ const reports=data||[];
+ list.innerHTML=reports.length?reports.map(r=>{
+  const title=esc(r.match_events?.title||"Removed event");
+  const reason=esc(String(r.reason||"").replace(/_/g," "));
+  const city=esc(r.match_events?.city||"");
+  const details=esc(r.details||"No additional details");
+  const reportStatus=esc(r.status||"pending");
+  const eventStatus=esc(r.match_events?.status||"unknown");
+  return '<article class="event-admin-card"><strong>'+title+'</strong><p>'+reason+' · '+city+'</p><p>'+details+'</p><div class="event-status-row"><span>Report: '+reportStatus+'</span><span>Listing: '+eventStatus+'</span></div><div class="event-admin-actions"><button data-report-reviewed="'+r.id+'">Mark reviewed</button><button data-report-actioned="'+r.id+'">Mark actioned</button><button data-event-remove="'+r.event_id+'">Remove event</button></div></article>';
+ }).join(""):'<p class="small">No member reports. The queue is clear.</p>';
+}
 async function adminQueue(){
 const list=E("eventsAdminList"),{data,error}=await db.from("match_events").select("id,title,description,city,starts_at,promotion_fee_ngn,payment_status,payment_sender_name,payment_reference,status").eq("status","pending_review").order("created_at",{ascending:false});
 if(error){list.textContent=error.message;return;}

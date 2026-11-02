@@ -6508,19 +6508,32 @@ function show(id, addToHistory = true) {
   window.scrollTo(0, 0);
   }
 
+async function leaveChatPage() {
+  if (chatRefreshTimer) {
+    clearInterval(chatRefreshTimer);
+    chatRefreshTimer = null;
+  }
+
+  const conversationListNode = $("conversationList");
+  const activeConversationNode = $("activeConversation");
+  if (conversationListNode && activeConversationNode) {
+    conversationListNode.appendChild(activeConversationNode);
+    activeConversationNode.classList.add("hidden");
+  }
+  activeChatUserId = null;
+}
+
 async function goBackInApp() {
   if (currentPage === "chatPage") {
-    if (chatRefreshTimer) {
-      clearInterval(chatRefreshTimer);
-      chatRefreshTimer = null;
+    await leaveChatPage();
+    const chatHistoryIndex = pageHistory.lastIndexOf("messages");
+    if (chatHistoryIndex >= 0) {
+      pageHistory.splice(chatHistoryIndex + 1);
+      pageHistory.pop();
+      show("messages", false);
+      await loadMyConversations();
+      return;
     }
-    const conversationListNode = $("conversationList");
-    const activeConversationNode = $("activeConversation");
-    if (conversationListNode && activeConversationNode) {
-      conversationListNode.appendChild(activeConversationNode);
-      activeConversationNode.classList.add("hidden");
-    }
-    activeChatUserId = null;
   }
 
   if (pageHistory.length === 0) {
@@ -6530,9 +6543,7 @@ async function goBackInApp() {
 
   const previousPage = pageHistory.pop();
   show(previousPage, false);
-  if (previousPage === "messages") {
-    await loadMyConversations();
-  }
+  if (previousPage === "messages") await loadMyConversations();
 }
 
 history.pushState(
@@ -12553,6 +12564,9 @@ if (conversationListNode && activeConversationNode instanceof HTMLElement) {
 
       const returnPage = window.chatReturnPage || "messages";
       window.chatReturnPage = null;
+      const chatHistoryIndex = pageHistory.lastIndexOf(returnPage);
+      if (chatHistoryIndex >= 0) pageHistory.splice(chatHistoryIndex + 1);
+      await leaveChatPage();
 
       show(returnPage, false);
 
@@ -12648,6 +12662,9 @@ if (conversationListNode && activeConversationNode instanceof HTMLElement) {
 
   const returnPage = window.chatReturnPage || "messages";
   window.chatReturnPage = null;
+  const chatHistoryIndex = pageHistory.lastIndexOf(returnPage);
+  if (chatHistoryIndex >= 0) pageHistory.splice(chatHistoryIndex + 1);
+  await leaveChatPage();
 
   show(returnPage, false);
 

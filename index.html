@@ -4455,8 +4455,12 @@ body.light-theme #notificationsPage #backFromNotifications {
 </style>
 
 <style>
-.events-discover-entry{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 15px;margin:16px 0;border:1px solid #554426;border-radius:15px;background:linear-gradient(110deg,#1b1710,#101010)}
-.events-discover-entry strong{color:#e1bd73;font-size:14px}.events-discover-entry p{margin:5px 0 0;line-height:1.5}.events-discover-entry .btn{white-space:nowrap;flex-shrink:0}
+.events-discover-entry{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:16px;padding:18px;margin:16px 0;border:1px solid rgba(198,161,91,.38);border-radius:18px;background:radial-gradient(circle at 0 0,rgba(198,161,91,.12),transparent 55%),linear-gradient(135deg,#191711,#101010);box-sizing:border-box;width:100%;min-width:0;overflow:hidden}
+.events-discover-entry>div{min-width:0}
+.events-discover-entry strong{display:block;color:#e1bd73;font-size:15px;line-height:1.35;letter-spacing:.01em}
+.events-discover-entry p{margin:6px 0 0;line-height:1.55;color:#bdb7aa;font-size:13px;overflow-wrap:anywhere}
+.events-discover-entry .btn{white-space:nowrap;flex-shrink:0;min-width:148px;min-height:46px;margin:0}
+@media(max-width:520px){.events-discover-entry{grid-template-columns:minmax(0,1fr);gap:14px;padding:16px}.events-discover-entry .btn{width:100%;min-width:0;white-space:normal}.events-discover-entry p{max-width:38ch}}
 #eventsPage .events-shell{max-width:920px;margin:auto;padding:12px 0 24px;color:#f7f5ef}
 #eventsPage .events-heading{padding:22px 18px;border:1px solid #30291d;border-radius:20px;background:radial-gradient(circle at 90% 0%,#332818,transparent 42%),linear-gradient(135deg,#151515,#090909)}
 #eventsPage .events-eyebrow{color:#c6a15b;font-size:10px;letter-spacing:.2em;font-weight:800}
@@ -14916,7 +14920,7 @@ E("closeEventDetails")?.addEventListener("click",()=>E("eventDetailsModal").clas
 E("eventDetailsModal")?.addEventListener("click",ev=>{if(ev.target===E("eventDetailsModal"))E("eventDetailsModal").classList.add("hidden");});
 E("eventInterestedBtn")?.addEventListener("click",()=>saveResponse("interested"));E("eventGoingBtn")?.addEventListener("click",()=>saveResponse("going"));
 E("submitEventReport")?.addEventListener("click",async()=>{if(!selectedEvent)return;const btn=E("submitEventReport"),status=E("eventReportStatus");btn.disabled=true;status.textContent="Sending private report…";try{const {error}=await db.from("match_event_reports").insert({event_id:selectedEvent.id,reporter_id:currentUser.id,reason:E("eventReportReason").value,details:E("eventReportDetails").value.trim()||null});if(error)throw error;status.textContent="Your report was sent privately to the safety team. The organiser will not be told who submitted it.";}catch(err){status.textContent=err.code==="23505"?"You have already reported this event. The safety team can review your existing report.":(err.message||"Report could not be sent.");}finally{btn.disabled=false;}});
-E("backFromEvents")?.addEventListener("click",()=>show("discover"));
+E("backFromEvents")?.addEventListener("click",()=>window.show("discover"));
 E("eventSubmissionForm")?.addEventListener("submit",async ev=>{ev.preventDefault();const btn=E("submitEventBtn");btn.disabled=true;E("eventFormStatus").textContent="Submitting…";try{
 const {data:p,error:pe}=await db.from("profiles").select("is_verified").eq("id",currentUser.id).maybeSingle();if(pe)throw pe;if(p?.is_verified!==true)throw Error("Verified membership is required.");
 const start=new Date(E("eventStart").value),end=new Date(E("eventEnd").value);if(isNaN(start)||isNaN(end)||start<=new Date()||end<=start)throw Error("Enter a valid future start and end time.");
@@ -14924,7 +14928,7 @@ const payload={organiser_id:currentUser.id,title:E("eventTitle").value.trim(),de
 const {data:created,error}=await db.from("match_events").insert({...payload,venue:"Venue details shared privately with members who choose Going"}).select("id").single();if(error)throw error;const {error:venueError}=await db.from("match_event_private_details").insert({event_id:created.id,venue:E("eventVenue").value.trim()});if(venueError)throw venueError;E("eventFormStatus").textContent="Submitted. Your event stays unpublished until an admin confirms the ₦7,000 transfer and approves it.";E("eventSubmissionForm").reset();E("eventTicketPrice").value="0";await load();tab("mine");
 }catch(err){E("eventFormStatus").textContent=err.message||"Submission failed.";}finally{btn.disabled=false;}});
 E("eventsAdminList")?.addEventListener("click",async ev=>{const a=ev.target.closest("[data-event-approve]"),rj=ev.target.closest("[data-event-reject]");if(!a&&!rj)return;const id=(a||rj).dataset.eventApprove||(rj&&rj.dataset.eventReject);if(a&&!confirm("Have you confirmed the ₦7,000 transfer in your account and want to publish this event?"))return;if(rj&&!confirm("Reject this event submission?"))return;try{const patch=a?{payment_status:"approved",status:"published",reviewed_by:currentUser.id,reviewed_at:new Date().toISOString(),admin_note:"Payment confirmed by admin"}:{payment_status:"rejected",status:"rejected",reviewed_by:currentUser.id,reviewed_at:new Date().toISOString(),admin_note:"Rejected by admin"};const {error}=await db.from("match_events").update(patch).eq("id",id);if(error)throw error;await load();}catch(err){alert("Review failed: "+err.message);}});
-E("openEventsFromDiscover")?.addEventListener("click",async()=>{show("eventsPage");try{await load();}catch(err){E("eventsPageStatus").textContent="Events unavailable: "+err.message;}});
+E("openEventsFromDiscover")?.addEventListener("click",async()=>{window.show("eventsPage");try{await load();}catch(err){E("eventsPageStatus").textContent="Events unavailable: "+err.message;}});
 })();
 </script>
 <script>

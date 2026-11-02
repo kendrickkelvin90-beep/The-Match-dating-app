@@ -4472,6 +4472,20 @@ body.light-theme #notificationsPage #backFromNotifications {
 #eventsPage .events-info-card,#eventsPage .events-fee-card{padding:15px;border:1px solid #554426;border-radius:14px;background:#1b1710;margin:12px 0;color:#f4e5c3}
 #eventsPage .events-info-card p,#eventsPage .events-fee-card small{display:block;color:#b9b0a0;font-size:12px;line-height:1.55;margin:7px 0 0}
 #eventsPage .events-fee-card{display:grid;gap:5px}#eventsPage .events-fee-card strong{font-size:24px;color:#e1bd73}#eventsPage .event-transfer-details{display:grid;gap:4px;padding:12px;margin-top:8px;border:1px solid #4b402b;border-radius:11px;background:#100e0a;color:#e8d7b4;font-size:12px}#eventsPage .event-transfer-details strong{font-size:18px!important;color:#e1bd73}#eventsPage .event-transfer-details small{font-size:11px;color:#aaa}
+#eventsPage .events-filters{padding:14px;border:1px solid #30291d;border-radius:15px;background:#101010;margin:12px 0}
+#eventsPage .events-filters input,#eventsPage .events-filters select{background:#080808;border-color:#39342a;color:#f7f5ef}
+#eventsPage .event-open-details{width:100%;margin-top:12px;padding:10px;border-radius:10px;border:1px solid #9b793d;background:#c6a15b;color:#17130b;font-weight:800}
+#eventsPage .event-details-modal{position:fixed;inset:0;z-index:10020;background:#000d;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}
+#eventsPage .event-details-modal.hidden{display:none}
+#eventsPage .event-details-card{position:relative;width:min(100%,620px);max-height:90vh;overflow:auto;padding:20px;border:1px solid #8b6d39;border-radius:18px;background:#111;color:#f7f5ef}
+#eventsPage .event-modal-close{position:sticky;float:right;top:0;border:1px solid #65502e;border-radius:50%;width:36px;height:36px;background:#1b1710;color:#f3d89f;font-size:22px}
+#eventsPage .event-response-actions{display:flex;gap:10px;margin:16px 0}
+#eventsPage .event-response-actions button{flex:1}
+#eventsPage .event-report-section{border-top:1px solid #3a3326;padding-top:14px;margin-top:18px}
+#eventsPage .event-report-section label{color:#d5c9af}
+#eventsPage .event-report-section textarea{background:#080808;border-color:#39342a;color:#f7f5ef}
+body.light-theme #eventsPage .events-filters,body.light-theme #eventsPage .event-details-card{background:#fff;color:#24202a;border-color:#d8c69e}
+body.light-theme #eventsPage .events-filters input,body.light-theme #eventsPage .events-filters select,body.light-theme #eventsPage .event-report-section textarea{background:#fff;color:#24202a;border-color:#d8c69e}
 #eventsPage .events-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
 #eventsPage .event-card,#eventsPage .event-admin-card{padding:16px;border:1px solid #302d27;border-radius:17px;background:linear-gradient(145deg,#171717,#0c0c0c);margin-bottom:12px;min-width:0;overflow-wrap:anywhere}
 #eventsPage .event-card h3{font-size:18px;margin:12px 0 7px;color:#f5e9d1}
@@ -5906,7 +5920,23 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
   <section class="panel hidden" id="eventsPage" aria-label="Events"><div class="events-shell">
 <div class="events-heading"><p class="events-eyebrow">THE MATCH COMMUNITY</p><h2>Events & experiences</h2><p>Discover LGBTQ+ gatherings, meet new people and find your next experience.</p></div>
 <div class="events-toolbar"><button type="button" class="events-tab active" data-events-tab="browse">Explore events</button><button type="button" class="events-tab" data-events-tab="create">Host an event</button><button type="button" class="events-tab" data-events-tab="mine">My submissions</button><button type="button" class="events-tab hidden" id="eventsAdminTab" data-events-tab="admin">Review queue</button></div>
-<div id="eventsBrowsePanel"><div id="eventsPublicList" class="events-grid"><p class="small">Loading events…</p></div></div>
+<div id="eventsBrowsePanel">
+<div class="events-filters">
+<label for="eventsSearch">Search events</label><input id="eventsSearch" type="search" maxlength="100" placeholder="Search by event name or description">
+<div class="events-date-grid"><div><label for="eventsCityFilter">City</label><input id="eventsCityFilter" type="search" maxlength="100" placeholder="Filter by city"></div><div><label for="eventsCategoryFilter">Category</label><select id="eventsCategoryFilter"><option value="">All categories</option><option value="social">Social</option><option value="dating">Singles & dating</option><option value="nightlife">Nightlife</option><option value="community">Community</option><option value="online">Online</option><option value="other">Other</option></select></div></div>
+</div>
+<p class="small" id="eventsPrivacyHint">For your safety, attendee lists and member responses are private.</p>
+<div id="eventsPublicList" class="events-grid"><p class="small">Loading events…</p></div></div>
+<div id="eventDetailsModal" class="event-details-modal hidden" role="dialog" aria-modal="true" aria-labelledby="eventDetailsTitle">
+<div class="event-details-card"><button type="button" id="closeEventDetails" class="event-modal-close" aria-label="Close event details">×</button>
+<div id="eventDetailsContent"></div>
+<div class="event-response-actions"><button type="button" id="eventInterestedBtn" class="btn secondary">Interested</button><button type="button" id="eventGoingBtn" class="btn primary">Going</button></div>
+<p id="eventResponseStatus" class="status" role="status"></p>
+<div class="event-report-section"><strong>Something concerning?</strong><p class="small">Report this event privately to The Match safety team. The organiser will not see who reported it.</p>
+<label for="eventReportReason">Reason</label><select id="eventReportReason"><option value="fake_event">Fake event</option><option value="scam_or_payment">Scam or suspicious payment request</option><option value="harassment">Harassment</option><option value="unsafe_location">Unsafe location</option><option value="misleading_information">Misleading information</option><option value="other">Other</option></select>
+<label for="eventReportDetails">Additional details (optional)</label><textarea id="eventReportDetails" maxlength="1000" placeholder="Tell us what concerns you. Avoid sharing unnecessary personal information."></textarea>
+<button type="button" id="submitEventReport" class="btn secondary">Submit private report</button><p id="eventReportStatus" class="status" role="status"></p></div>
+</div></div>
 <div id="eventsCreatePanel" class="hidden"><div class="events-info-card"><strong>Verified organisers only</strong><p>Submit your event and transfer the ₦7,000 promotion fee. It stays unpublished until you are approved by an admin.</p></div>
 <form id="eventSubmissionForm" class="events-form">
 <label for="eventTitle">Event name</label><input id="eventTitle" maxlength="100" required>

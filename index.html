@@ -8656,11 +8656,8 @@ document.querySelectorAll('input[name="genderPresentation"]').forEach(el=>{
 document.querySelectorAll('input[name="discoveryRolePreference"]').forEach(el=>{
   el.checked=Array.isArray(p.discovery_role_preferences)&&p.discovery_role_preferences.includes(el.value);
 });
-try {
-  const savedPrefs=JSON.parse(localStorage.getItem("theMatchDiscoveryPreferences")||"{}");
-  savedPrefs.rolePreferences=Array.isArray(p.discovery_role_preferences)?p.discovery_role_preferences:[];
-  localStorage.setItem("theMatchDiscoveryPreferences",JSON.stringify(savedPrefs));
-} catch(storageError) { console.warn("Could not sync saved role preferences:",storageError); }
+// Discover preferences are device-local; preserve the member's saved choices
+// instead of overwriting them with the profile's older role-preference copy.
 
 $("city").value=p.city||"";
 $("bio").value=p.bio||"";
@@ -11246,15 +11243,14 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
       "theMatchDiscoveryPreferences",
       JSON.stringify(preferences)
     );
-    if(currentUser){
-      const {error:roleSaveError}=await db.from("profiles").update({discovery_role_preferences:preferences.rolePreferences}).eq("id",currentUser.id);
-      if(roleSaveError) throw roleSaveError;
-    }
+    // These Discover controls are explicitly device-local. Do not make a
+    // profile-table request here that can fail and falsely report the save.
     $("discoveryPreferencesStatus").textContent =
-      "Preferences saved to your account.";
+      "Preferences saved on this device.";
   } catch (error) {
+    console.error("Discover preferences local save failed:", error);
     $("discoveryPreferencesStatus").textContent =
-      "Could not save preferences. Please try again.";
+      "Could not save preferences on this device. Check your browser storage and try again.";
   }
 });
   function loadDiscoveryPreferences() {

@@ -6126,6 +6126,7 @@ const db=window.supabase.createClient(
 "https://rxbdmgzmwhjnkcclyrcq.supabase.co",
 "sb_publishable_5OirCcmy8L5n3isPvi-P0w_Dgeb13U_"
 );
+Object.defineProperty(window,"db",{configurable:true,get:()=>db});
 let authCaptchaToken = "";
 let resetCaptchaToken = "";
 
@@ -6186,6 +6187,7 @@ function renderResetCaptcha() {
 
 const $=id=>document.getElementById(id);
 let loginMode=false,currentUser=null,approxLocation=null;
+Object.defineProperty(window,"currentUser",{configurable:true,get:()=>currentUser});
 let discoveryLocationEnabled=false;
 let activeChatUserId = null;
   let chatLoadRequestId = 0;
@@ -6728,6 +6730,7 @@ $("stars").appendChild(s);
 }
 
 let isMatchAdmin = false;
+Object.defineProperty(window,"isMatchAdmin",{configurable:true,get:()=>isMatchAdmin});
 
 async function checkMatchAdmin() {
   isMatchAdmin = false;

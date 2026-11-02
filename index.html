@@ -6068,6 +6068,47 @@ let conversationListRefreshInProgress = false;
 let onlinePresenceChannel = null;
 let onlinePresenceUserId = null;
 let onlinePresenceState = {};
+let incomingMessagesChannel = null;
+let conversationPreviewRefreshTimer = null;
+
+function subscribeToIncomingMessages(user) {
+  if (!user?.id) return;
+  if (incomingMessagesChannel) {
+    db.removeChannel(incomingMessagesChannel).catch(() => {});
+    incomingMessagesChannel = null;
+  }
+
+  incomingMessagesChannel = db.channel("match-incoming-messages-" + user.id)
+    .on("postgres_changes", {
+      event: "INSERT",
+      schema: "public",
+      table: "messages",
+      filter: "receiver_id=eq." + user.id
+    }, payload => {
+      if (!payload?.new || currentUser?.id !== user.id) return;
+      if (currentPage !== "messages") return;
+
+      if (conversationPreviewRefreshTimer) {
+        clearTimeout(conversationPreviewRefreshTimer);
+      }
+
+      conversationPreviewRefreshTimer = setTimeout(() => {
+        conversationPreviewRefreshTimer = null;
+        if (currentUser?.id !== user.id || currentPage !== "messages") return;
+        if (conversationListLoadInProgress) {
+          conversationPreviewRefreshTimer = setTimeout(() => {
+            conversationPreviewRefreshTimer = null;
+            if (currentUser?.id === user.id && currentPage === "messages") {
+              loadMyConversations();
+            }
+          }, 900);
+          return;
+        }
+        loadMyConversations();
+      }, 350);
+    })
+    .subscribe();
+}
 
 function isUserOnline(userId) {
   return Object.values(onlinePresenceState).some(
@@ -6467,16 +6508,31 @@ function show(id, addToHistory = true) {
   window.scrollTo(0, 0);
   }
 
-function goBackInApp() {
-  if (pageHistory.length === 0) {
-    if (currentPage !== "discover") {
-      show("discover", false);
+async function goBackInApp() {
+  if (currentPage === "chatPage") {
+    if (chatRefreshTimer) {
+      clearInterval(chatRefreshTimer);
+      chatRefreshTimer = null;
     }
+    const conversationListNode = $("conversationList");
+    const activeConversationNode = $("activeConversation");
+    if (conversationListNode && activeConversationNode) {
+      conversationListNode.appendChild(activeConversationNode);
+      activeConversationNode.classList.add("hidden");
+    }
+    activeChatUserId = null;
+  }
+
+  if (pageHistory.length === 0) {
+    if (currentPage !== "discover") show("discover", false);
     return;
   }
 
   const previousPage = pageHistory.pop();
   show(previousPage, false);
+  if (previousPage === "messages") {
+    await loadMyConversations();
+  }
 }
 
 history.pushState(
@@ -8311,6 +8367,7 @@ currentUser=user;
   });
   if (!(await enforceVerificationGracePeriod(user))) return;
   subscribeToVoiceCalls(user);
+  subscribeToIncomingMessages(user);
   startOnlinePresence(user).catch(error => {
   console.warn("Online presence could not start:", error);
 });
@@ -12497,7 +12554,7 @@ if (conversationListNode && activeConversationNode instanceof HTMLElement) {
       const returnPage = window.chatReturnPage || "messages";
       window.chatReturnPage = null;
 
-      show(returnPage);
+      show(returnPage, false);
 
       if (returnPage === "messages") {
         await loadMyConversations();
@@ -12592,7 +12649,7 @@ if (conversationListNode && activeConversationNode instanceof HTMLElement) {
   const returnPage = window.chatReturnPage || "messages";
   window.chatReturnPage = null;
 
-  show(returnPage);
+  show(returnPage, false);
 
   if (returnPage === "messages") {
     await loadMyConversations();

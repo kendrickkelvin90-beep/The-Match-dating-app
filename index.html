@@ -4469,7 +4469,7 @@ body.light-theme #notificationsPage #backFromNotifications {
 #eventsPage .events-date-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 #eventsPage .events-info-card,#eventsPage .events-fee-card{padding:15px;border:1px solid #554426;border-radius:14px;background:#1b1710;margin:12px 0;color:#f4e5c3}
 #eventsPage .events-info-card p,#eventsPage .events-fee-card small{display:block;color:#b9b0a0;font-size:12px;line-height:1.55;margin:7px 0 0}
-#eventsPage .events-fee-card{display:grid;gap:5px}#eventsPage .events-fee-card strong{font-size:24px;color:#e1bd73}
+#eventsPage .events-fee-card{display:grid;gap:5px}#eventsPage .events-fee-card strong{font-size:24px;color:#e1bd73}#eventsPage .event-transfer-details{display:grid;gap:4px;padding:12px;margin-top:8px;border:1px solid #4b402b;border-radius:11px;background:#100e0a;color:#e8d7b4;font-size:12px}#eventsPage .event-transfer-details strong{font-size:18px!important;color:#e1bd73}#eventsPage .event-transfer-details small{font-size:11px;color:#aaa}
 #eventsPage .events-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
 #eventsPage .event-card,#eventsPage .event-admin-card{padding:16px;border:1px solid #302d27;border-radius:17px;background:linear-gradient(145deg,#171717,#0c0c0c);margin-bottom:12px;min-width:0;overflow-wrap:anywhere}
 #eventsPage .event-card h3{font-size:18px;margin:12px 0 7px;color:#f5e9d1}
@@ -5912,7 +5912,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
 <label for="eventCity">City / location</label><input id="eventCity" maxlength="100" required>
 <div class="events-date-grid"><div><label for="eventStart">Starts</label><input id="eventStart" type="datetime-local" required></div><div><label for="eventEnd">Ends</label><input id="eventEnd" type="datetime-local" required></div></div>
 <label for="eventTicketPrice">Ticket price in ₦ (0 if free)</label><input id="eventTicketPrice" type="number" min="0" step="100" value="0" required>
-<div class="events-fee-card"><span>Promotion & review fee</span><strong>₦7,000</strong><small>Separate from ticket price. Ticket checkout is not enabled yet.</small></div>
+<div class="events-fee-card"><span>Promotion & review fee</span><strong>₦7,000</strong><small>Separate from ticket price. Ticket checkout is not enabled yet.</small><div class="event-transfer-details"><b>Transfer account</b><span>MTN MoMo</span><span>JUSTICE TRUST UGOALA</span><strong>0896939533</strong><small>Use this account for the event promotion fee, then enter your transfer name and reference below.</small></div></div>
 <label for="eventPaymentSender">Name used for transfer</label><input id="eventPaymentSender" maxlength="120" required>
 <label for="eventPaymentReference">Transfer reference</label><input id="eventPaymentReference" minlength="4" maxlength="120" required>
 <button class="btn primary" id="submitEventBtn" type="submit">Submit event for review</button><p class="status" id="eventFormStatus" role="status"></p></form></div>

@@ -6595,7 +6595,10 @@ function show(id, addToHistory = true) {
   });
 
   window.scrollTo(0, 0);
-  }
+}
+
+// Expose the existing navigation function for handlers in later script blocks.
+window.show = show;
 
 async function leaveChatPage() {
   if (chatRefreshTimer) {

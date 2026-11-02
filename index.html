@@ -8832,10 +8832,6 @@ let people = (peopleData || []).map(p => ({
   _distance:
     p.distance_km == null ? null : Number(p.distance_km)
 }));
-if(rolePreferences.length){
-  people=people.filter(person=>Array.isArray(person.sexual_roles)&&person.sexual_roles.some(role=>rolePreferences.includes(role)));
-}
-
     
     const discoverIds = people.map(p => p.id);
 
@@ -8843,7 +8839,7 @@ if(rolePreferences.length){
       const { data: verificationProfiles, error: verificationError } =
         await db
           .from("profiles")
-          .select("id,is_verified,verification_level")
+          .select("id,is_verified,verification_level,gender_presentation")
           .in("id", discoverIds);
 
       if (verificationError) throw verificationError;
@@ -8862,6 +8858,9 @@ if(rolePreferences.length){
         ...person,
         ...(verificationById.get(person.id) || {})
       }));
+      if(rolePreferences.length){
+        people=people.filter(person=>Array.isArray(person.sexual_roles)&&person.sexual_roles.some(role=>rolePreferences.includes(role)));
+      }
     }
 
     // Randomize Discover profile order.
@@ -8925,7 +8924,7 @@ if (!people.length && (preferredLocation || maxDistance < 500)) {
       error: expandedVerificationError
     } = await db
       .from("profiles")
-      .select("id,is_verified,verification_level")
+      .select("id,is_verified,verification_level,gender_presentation")
       .in("id", expandedIds);
 
     if (expandedVerificationError) {
@@ -8946,6 +8945,9 @@ if (!people.length && (preferredLocation || maxDistance < 500)) {
       ...person,
       ...(verificationById.get(person.id) || {})
     }));
+    if(rolePreferences.length){
+      people=people.filter(person=>Array.isArray(person.sexual_roles)&&person.sexual_roles.some(role=>rolePreferences.includes(role)));
+    }
   }
 
   people = people.filter(p =>

@@ -4216,6 +4216,38 @@ textarea.match-dialog-input{min-height:112px;resize:vertical}
 #likes #likesStatus{margin:13px 2px;color:#cbbd9e;font-size:12px}
 @media(max-width:390px){#likes{padding:18px 12px 24px!important}#likes .likes-hero h2{font-size:27px}#likes .likes-hero-heart{font-size:48px}#likes .likes-premium-banner{gap:8px;padding:13px 10px}#likes .likes-crown{flex-basis:30px;width:30px;font-size:27px}#likes .likes-premium-copy strong{font-size:14px}#likes .likes-premium-copy span{font-size:11px}#likes #likesPremiumButton{padding:0 9px;font-size:11px}#likes .likes-profile-card{gap:9px;padding:10px}#likes .likes-avatar-wrap,#likes .likes-avatar{width:62px;height:62px;flex-basis:62px}#likes .likes-profile-name{font-size:14px}#likes .likes-profile-note{font-size:11px}#likes .likes-profile-actions{min-width:68px}#likes .likes-profile-actions button{min-height:33px;padding:0 8px;font-size:11px}}
 
+
+/* The Match — cinematic Match Moment celebration */
+#matchCelebrationPage{position:fixed!important;inset:0!important;z-index:9998!important;box-sizing:border-box!important;width:100%!important;height:100dvh!important;min-height:100vh!important;margin:0!important;padding:calc(env(safe-area-inset-top) + 14px) 18px calc(env(safe-area-inset-bottom) + 14px)!important;overflow-y:auto!important;display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important;background:radial-gradient(ellipse at 50% 38%,rgba(177,124,39,.17),transparent 48%),radial-gradient(ellipse at 50% 100%,rgba(117,72,20,.12),transparent 42%),#070605!important;color:#fff!important;border:1px solid rgba(202,158,77,.25)!important;border-radius:24px!important}
+#matchCelebrationPage .match-moment-shell{position:relative;display:flex;flex-direction:column;justify-content:center;width:min(100%,520px);min-height:100%;margin:auto;padding:10px 0;isolation:isolate}
+#matchCelebrationPage .match-moment-brand{display:flex;align-items:center;justify-content:center;gap:9px;margin:0 0 24px;color:#e0bd79;font-size:12px;font-weight:800;letter-spacing:5px}
+#matchCelebrationPage .match-moment-brand-mark{font-size:31px;line-height:1;letter-spacing:0;text-shadow:0 0 18px rgba(224,189,121,.45)}
+#matchCelebrationPage .match-moment-heading{margin-bottom:26px}
+#matchCelebrationPage .match-moment-eyebrow{margin:0 0 8px;color:#b99a62;font-size:10px;font-weight:800;letter-spacing:3px}
+#matchCelebrationPage .match-moment-heading h1{margin:0;color:#f7f1e5;font-size:clamp(38px,10vw,58px);line-height:1.02;font-weight:900;letter-spacing:-1.8px}
+#matchCelebrationPage .match-moment-heading h1 span{background:linear-gradient(100deg,#f8e2a6,#c18c35 55%,#f3d58e);-webkit-background-clip:text;background-clip:text;color:transparent}
+#matchCelebrationPage .match-moment-heading>p:last-child{margin:12px 0 0;color:#d0c8bb;font-size:clamp(15px,4vw,19px)}
+#matchCelebrationPage .match-moment-pair{position:relative;display:flex;align-items:center;justify-content:center;width:100%;min-height:clamp(230px,67vw,330px);margin:0 auto 32px;padding:0 5px}
+#matchCelebrationPage .match-moment-card{position:relative;z-index:1;flex:0 1 48%;min-width:0;overflow:hidden;border:2px solid #d2ad67;border-radius:20px;background:#15120d;box-shadow:0 14px 36px rgba(0,0,0,.55),0 0 22px rgba(197,151,67,.13)}
+#matchCelebrationPage .match-moment-card-left{transform:rotate(-5deg) translateY(7px);margin-right:-7px}
+#matchCelebrationPage .match-moment-card-right{transform:rotate(5deg) translateY(7px);margin-left:-7px}
+#matchCelebrationPage .match-moment-card img{display:block;width:100%;height:clamp(165px,48vw,250px);object-fit:cover;background:linear-gradient(145deg,#292116,#100e0b)}
+#matchCelebrationPage .match-moment-name{min-height:42px;display:flex;align-items:center;justify-content:center;padding:8px 5px;color:#f8f1e4;font-size:clamp(12px,3.5vw,16px);font-weight:800;overflow-wrap:anywhere;background:linear-gradient(180deg,#17130d,#0b0a08)}
+#matchCelebrationPage .match-moment-heart{position:absolute;z-index:3;left:50%;top:50%;display:flex;align-items:center;justify-content:center;width:58px;height:58px;transform:translate(-50%,-50%);border:2px solid #f0d28e;border-radius:50%;background:radial-gradient(circle,#d8ad5d,#8d5b1e 78%);color:#fff2cf;font-size:29px;text-shadow:0 2px 9px rgba(0,0,0,.45);box-shadow:0 0 0 7px rgba(9,7,4,.72),0 0 30px rgba(221,173,83,.55)}
+#matchCelebrationPage .match-moment-spark{position:absolute;color:#e7c77f;text-shadow:0 0 14px rgba(231,199,127,.7)}
+#matchCelebrationPage .match-moment-spark-one{top:3%;left:12%;font-size:22px}
+#matchCelebrationPage .match-moment-spark-two{right:10%;bottom:4%;font-size:25px}
+#matchCelebrationPage .match-moment-actions{display:grid;gap:12px;width:100%;margin-top:auto}
+#matchCelebrationPage #matchSendMessage,#matchCelebrationPage #matchContinueDiscover{width:100%;min-height:58px;border-radius:999px;font-size:16px;font-weight:850}
+#matchCelebrationPage #matchSendMessage{display:flex;align-items:center;justify-content:center;gap:10px;border:1px solid #f2d48f;background:linear-gradient(110deg,#f0d18c,#bd8b3e 58%,#e8c77f);color:#171109;box-shadow:0 8px 25px rgba(188,139,57,.2)}
+#matchCelebrationPage #matchSendMessage span{font-size:23px}
+#matchCelebrationPage #matchContinueDiscover{border:1px solid rgba(210,173,103,.65);background:linear-gradient(120deg,#17130d,#0a0907);color:#e7c984}
+#matchCelebrationPage .match-moment-actions .status{margin:0;color:#d8c8a6;font-size:12px}
+#matchCelebrationPage .match-moment-footer{display:flex;align-items:center;justify-content:center;gap:10px;margin:20px 0 2px;color:#c9b48c;font-size:12px;letter-spacing:.2px}
+#matchCelebrationPage .match-moment-footer span{color:#d9b86f}
+@media(max-height:700px){#matchCelebrationPage{padding-top:calc(env(safe-area-inset-top) + 8px)!important;padding-bottom:calc(env(safe-area-inset-bottom) + 8px)!important}#matchCelebrationPage .match-moment-brand{margin-bottom:12px}#matchCelebrationPage .match-moment-heading{margin-bottom:14px}#matchCelebrationPage .match-moment-pair{min-height:200px;margin-bottom:20px}#matchCelebrationPage .match-moment-card img{height:clamp(135px,39vw,190px)}#matchCelebrationPage .match-moment-footer{margin-top:12px}}
+@media(max-width:360px){#matchCelebrationPage{padding-left:12px!important;padding-right:12px!important}#matchCelebrationPage .match-moment-card{border-radius:16px}#matchCelebrationPage .match-moment-heart{width:48px;height:48px;font-size:24px}#matchCelebrationPage #matchSendMessage,#matchCelebrationPage #matchContinueDiscover{min-height:52px;font-size:14px}}
+
 </style>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
@@ -5096,26 +5128,33 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
   <p class="status" id="matchesStatus"></p>
   <button class="btn secondary" id="backFromMatches" type="button">Back to Discover</button>
 </section>
- <section class="panel hidden" id="matchCelebrationPage" style="position:fixed;inset:0;z-index:9998;box-sizing:border-box;width:100%;height:100dvh;min-height:100vh;margin:0;padding:calc(env(safe-area-inset-top) + 28px) 20px calc(env(safe-area-inset-bottom) + 22px);overflow-y:auto;display:flex;flex-direction:column;justify-content:center;text-align:center;background:radial-gradient(ellipse at 50% 42%,rgba(201,164,94,.13),transparent 55%),#050505;color:#fff;">
-  <div style="font-size:13px;letter-spacing:4px;color:#d2ad68;font-weight:700;margin-bottom:18px;">THE MATCH</div>
-  <h1 style="font-size:clamp(34px,8vw,54px);line-height:1.08;font-weight:850;letter-spacing:-1.5px;margin:0 0 12px;color:#f5f0e6;">It's a <span style="color:#d8b46b;">Match!</span></h1>
-  <p style="font-size:clamp(16px,4vw,21px);color:#d9d4cc;margin:0 0 28px;">You both liked each other!</p>
-
-  <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin:0 0 28px;width:100%;">
-    <div style="min-width:0;border:2px solid #d8b46b;border-radius:18px;overflow:hidden;background:#121212;">
-      <img id="matchMyPhoto" alt="Your photo" style="display:block;width:100%;aspect-ratio:1/1;object-fit:cover;background:#111;">
-      <p id="matchMyName" style="margin:0;padding:12px 4px;font-weight:700;font-size:15px;overflow-wrap:anywhere;">You</p>
+ <section class="panel hidden" id="matchCelebrationPage" aria-label="Match celebration">
+  <div class="match-moment-shell">
+    <div class="match-moment-brand"><span class="match-moment-brand-mark">♡</span><span>THE MATCH</span></div>
+    <div class="match-moment-heading">
+      <p class="match-moment-eyebrow">A NEW CONNECTION</p>
+      <h1>It's a <span>Match!</span></h1>
+      <p>You both liked each other.</p>
     </div>
-    <div style="min-width:0;border:2px solid #d8b46b;border-radius:18px;overflow:hidden;background:#121212;">
-      <img id="matchOtherPhoto" alt="Match photo" style="display:block;width:100%;aspect-ratio:1/1;object-fit:cover;background:#111;">
-      <p id="matchOtherName" style="margin:0;padding:12px 4px;font-weight:700;font-size:15px;overflow-wrap:anywhere;">Your match</p>
+    <div class="match-moment-pair" aria-label="Your profiles">
+      <div class="match-moment-card match-moment-card-left">
+        <img id="matchMyPhoto" alt="Your profile photo">
+        <div class="match-moment-name" id="matchMyName">You</div>
+      </div>
+      <div class="match-moment-card match-moment-card-right">
+        <img id="matchOtherPhoto" alt="Your match's profile photo">
+        <div class="match-moment-name" id="matchOtherName">Your match</div>
+      </div>
+      <div class="match-moment-heart" aria-hidden="true">♥</div>
+      <span class="match-moment-spark match-moment-spark-one" aria-hidden="true">✦</span>
+      <span class="match-moment-spark match-moment-spark-two" aria-hidden="true">✧</span>
     </div>
-  </div>
-
-  <div style="margin-top:auto;display:grid;gap:12px;">
-    <button class="btn primary" id="matchSendMessage" type="button" style="width:100%;min-height:58px;border-radius:999px;background:linear-gradient(110deg,#b98b35,#e3c477);color:#100d07;font-weight:800;">Send a Message</button>
-    <button class="btn secondary" id="matchContinueDiscover" type="button" style="width:100%;min-height:58px;border-radius:999px;border:1px solid #c9a45e;color:#e0bd79;background:#080808;font-weight:800;">Continue Discovering</button>
-    <p class="status" id="matchCelebrationStatus" style="margin:4px 0 0;"></p>
+    <div class="match-moment-actions">
+      <button class="btn primary" id="matchSendMessage" type="button"> <span aria-hidden="true">♡</span> Send a Message</button>
+      <button class="btn secondary" id="matchContinueDiscover" type="button">Continue Discovering <span aria-hidden="true">→</span></button>
+      <p class="status" id="matchCelebrationStatus" role="status" aria-live="polite"></p>
+    </div>
+    <div class="match-moment-footer"><span>✦</span> Here's to a beautiful connection <span>✦</span></div>
   </div>
  </section>
   <section class="panel hidden" id="memberProfilePage">

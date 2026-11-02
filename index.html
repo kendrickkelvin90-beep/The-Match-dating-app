@@ -5965,7 +5965,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
 <label for="eventTitle">Event name</label><input id="eventTitle" maxlength="100" required>
 <label for="eventDescription">About this event</label><textarea id="eventDescription" maxlength="2000" minlength="20" required></textarea>
 <label for="eventCategory">Category</label><select id="eventCategory"><option value="social">Social</option><option value="dating">Singles & dating</option><option value="nightlife">Nightlife</option><option value="community">Community</option><option value="online">Online</option><option value="other">Other</option></select>
-<label for="eventVenue">Exact venue / online platform <span class="events-private-label">PRIVATE</span></label><input id="eventVenue" maxlength="160" required placeholder="Exact venue (shared privately with ticket holders)"><small class="events-field-help">Only your city/area is shown publicly. Do not put the exact address in the public event description.</small>
+<p class="events-field-help">Keep the exact venue private. Share it directly with attendees after you have confirmed their arrangements.</p>
 <label for="eventCity">City / area shown publicly</label><input id="eventCity" maxlength="100" required placeholder="e.g. Lagos, Nigeria">\n<label for="eventWhatsapp">Organiser WhatsApp link</label><input id="eventWhatsapp" type="url" maxlength="300" required placeholder="https://wa.me/2348012345678"><small class="events-field-help">Members use this link to contact you directly about tickets and arrangements. Do not share bank details on The Match.</small>
 <div class="events-date-grid"><div><label for="eventStart">Starts</label><input id="eventStart" type="datetime-local" required></div><div><label for="eventEnd">Ends</label><input id="eventEnd" type="datetime-local" required></div></div>
 <label for="eventTicketPrice">Ticket price per attendee (₦)</label><input id="eventTicketPrice" type="number" min="100" step="100" placeholder="e.g. 5000" required><small class="events-field-help">Paid events only. Set the amount each attendee must pay. You can explain ticket benefits in the event description.</small>
@@ -14924,7 +14924,7 @@ list.innerHTML=data?.length?data.map(x=>{const pay=payments.find(p=>p.event_id==
 }
 async function openDetails(id){
 selectedEvent=eventsCache.find(x=>x.id===id);if(!selectedEvent)return;
-const x=selectedEvent, own=myResponses[id], organiser=eventOrganisers[x.organiser_id], isOrganiser=x.organiser_id===currentUser.id;
+const x=selectedEvent, own=myResponses[id], organiser=eventOrganisers[x.organiser_id];
 E("eventDetailsContent").innerHTML='<span class="event-category">'+esc(x.category)+'</span><h2 id="eventDetailsTitle">'+esc(x.title)+'</h2><p>'+esc(x.description)+'</p><p><strong>Date:</strong> '+esc(date(x.starts_at))+'</p><p><strong>City:</strong> '+esc(x.city)+'</p><p><strong>Venue:</strong> Contact the organiser directly for venue and attendance arrangements.</p><section id="eventTicketOptions" class="event-ticket-options"><h3>Ticket prices</h3><p class="small">Loading ticket categories…</p></section><section class="event-organiser-preview" style="display:flex;align-items:center;gap:12px;margin:18px 0;padding:14px;border:1px solid rgba(210,173,104,.35);border-radius:14px;background:rgba(210,173,104,.06)">'+(organiser?.photoUrl?'<img src="'+esc(organiser.photoUrl)+'" alt="Organiser profile photo" style="width:64px;height:64px;object-fit:cover;border-radius:50%">':'<div aria-hidden="true" style="width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:#28231a;color:#d2ad68;font-size:24px">👤</div>')+'<div style="min-width:0"><strong>'+esc(organiser?.display_name||"The Match organiser")+(organiser?.is_verified?' <span style="color:#d2ad68" title="Verified member">✓ Verified</span>':'')+'</strong><p class="small" style="margin:4px 0">📍 '+esc(organiser?.city||"Location not listed")+'</p><button type="button" class="btn secondary" id="viewEventOrganiserProfile">View organiser profile</button></div></section><section class="event-inquiry-box"><h3>Contact the organiser</h3><p class="small">Ask about ticket availability, payment arrangements and the exact venue directly.</p><a class="btn primary" id="eventWhatsappContact" href="#" target="_blank" rel="noopener noreferrer">Message organiser on WhatsApp</a><p class="events-payment-note">You are leaving The Match to contact an independent organiser. The Match does not process, hold or guarantee external ticket payments. Verify the organiser and payment details before sending money.</p></section><p class="small">Interested/Going responses remain private. Report suspicious event listings or organisers to The Match safety team.</p>';
 E("eventInterestedBtn").textContent=own==="interested"?"✓ Interested":"Interested";
 E("eventGoingBtn").textContent=own==="going"?"✓ Going":"Going";
@@ -14938,28 +14938,7 @@ try{
  if(tierError)throw tierError;
  E("eventTicketOptions").innerHTML='<h3>Ticket options</h3>'+(tiers?.length?tiers.map(t=>'<div class="event-ticket-option"><div><strong>'+esc(t.name)+'</strong><p>'+esc(t.description||"Event admission")+'</p><small>'+(t.quantity_total===null?"Limited availability":Math.max(0,t.quantity_total-t.quantity_sold)+" remaining")+'</small></div><strong>'+naira(t.price_ngn)+'</strong></div>').join(""):'<p class="small">Ticket categories have not been published yet.</p>')+'<p class="events-payment-note">Prices are provided by the organiser for information. Contact the organiser directly to arrange tickets and payment outside The Match.</p>';
 }catch(err){E("eventTicketOptions").innerHTML='<h3>Ticket options</h3><p class="small">Ticket options could not be loaded right now.</p>';}
-try{
- let inquiryQuery=db.from("match_event_inquiries").select("id,event_id,member_id,organiser_id,sender_id,body,created_at").eq("event_id",x.id).order("created_at");
- if(!isOrganiser)inquiryQuery=inquiryQuery.eq("member_id",currentUser.id);
- const {data:messages,error:msgError}=await inquiryQuery;if(msgError)throw msgError;
- const conversations=messages||[];
- if(isOrganiser){
-  const memberIds=[...new Set(conversations.map(m=>m.member_id))];
-  E("eventInquiryMember").innerHTML='<option value="">Select a member thread</option>'+memberIds.map(mid=>'<option value="'+esc(mid)+'">'+esc(mid.slice(0,8))+'</option>').join("");
- }
- E("eventInquiryMessages").innerHTML=conversations.length?conversations.map(m=>'<div class="event-inquiry-message '+(m.sender_id===currentUser.id?"mine":"")+'"><small>'+(m.sender_id===currentUser.id?"You":"Member")+' · '+esc(date(m.created_at))+'</small><p>'+esc(m.body)+'</p></div>').join(""):'<p class="small">No messages yet. Start a private event enquiry.</p>';
- E("sendEventInquiry")?.addEventListener("click",async()=>{
-  const body=E("eventInquiryMessage").value.trim(),status=E("eventInquiryStatus"),btn=E("sendEventInquiry");
-  const memberId=isOrganiser?E("eventInquiryMember").value:currentUser.id;
-  if(!memberId){status.textContent="Select the member conversation first.";return;}
-  if(!body){status.textContent="Write a message first.";return;}
-  btn.disabled=true;status.textContent="Sending privately…";
-  try{const {error}=await db.from("match_event_inquiries").insert({event_id:x.id,member_id:memberId,organiser_id:x.organiser_id,sender_id:currentUser.id,body});if(error)throw error;E("eventInquiryMessage").value="";status.textContent="Message sent privately.";await openDetails(x.id);}
-  catch(err){status.textContent=err.message||"Message could not be sent.";}
-  finally{btn.disabled=false;}
- });
-}catch(err){E("eventInquiryMessages").textContent="Private enquiries are temporarily unavailable.";}
-}
+
 async function saveResponse(response){
 if(!selectedEvent)return;const status=E("eventResponseStatus");status.textContent="Saving privately…";
 const {error}=await db.from("match_event_responses").upsert({event_id:selectedEvent.id,member_id:currentUser.id,response},{onConflict:"event_id,member_id"});
@@ -14979,10 +14958,11 @@ E("eventSubmissionForm")?.addEventListener("submit",async ev=>{ev.preventDefault
 const {data:p,error:pe}=await db.from("profiles").select("is_verified").eq("id",currentUser.id).maybeSingle();if(pe)throw pe;if(p?.is_verified!==true)throw Error("Verified membership is required.");
 const start=new Date(E("eventStart").value),end=new Date(E("eventEnd").value);if(isNaN(start)||isNaN(end)||start<=new Date()||end<=start)throw Error("Enter a valid future start and end time.");
 const ticketPrice=Number(E("eventTicketPrice").value);if(!Number.isFinite(ticketPrice)||ticketPrice<100)throw Error("The Match accepts paid events only. Enter a ticket price of at least ₦100.");
-const whatsapp=E("eventWhatsapp").value.trim();if(!/^https:\/\/(?:wa\.me\/\d{8,15}|api\.whatsapp\.com\/send\?phone=\d{8,15})(?:[?&].*)?$/i.test(whatsapp))throw Error("Enter a valid WhatsApp click-to-chat link (https://wa.me/...).");\nconst payload={organiser_id:currentUser.id,title:E("eventTitle").value.trim(),description:E("eventDescription").value.trim(),category:E("eventCategory").value,venue:"Organiser shares venue details directly with attendees",city:E("eventCity").value.trim(),organiser_whatsapp_url:whatsapp,starts_at:start.toISOString(),ends_at:end.toISOString(),ticket_price_ngn:ticketPrice,promotion_fee_ngn:10000,payment_status:"pending",status:"pending_review"};
+const whatsapp=E("eventWhatsapp").value.trim();if(!/^https:\/\/(?:wa\.me\/\d{8,15}|api\.whatsapp\.com\/send\?phone=\d{8,15})(?:[?&].*)?$/i.test(whatsapp))throw Error("Enter a valid WhatsApp click-to-chat link (https://wa.me/...).");
+const payload={organiser_id:currentUser.id,title:E("eventTitle").value.trim(),description:E("eventDescription").value.trim(),category:E("eventCategory").value,venue:"Organiser shares venue details directly with attendees",city:E("eventCity").value.trim(),organiser_whatsapp_url:whatsapp,starts_at:start.toISOString(),ends_at:end.toISOString(),ticket_price_ngn:ticketPrice,promotion_fee_ngn:10000,payment_status:"pending",status:"pending_review"};
 const {data:created,error}=await db.from("match_events").insert(payload).select("id").single();if(error)throw error;
 try{
- const {error:venueError}=await db.from("match_event_private_details").insert({event_id:created.id,venue:E("eventVenue").value.trim()});if(venueError)throw venueError;
+ 
  const {error:paymentError}=await db.from("match_event_promotion_payments").insert({event_id:created.id,organiser_id:currentUser.id,amount_ngn:10000,sender_name:E("eventPaymentSender").value.trim(),transfer_reference:E("eventPaymentReference").value.trim()});if(paymentError)throw paymentError;
  const tiers=[{event_id:created.id,name:"Regular",description:"Standard event admission",price_ngn:ticketPrice}];
  const vip=Number(E("eventVipPrice").value),vvip=Number(E("eventVvipPrice").value);

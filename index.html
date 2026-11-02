@@ -10845,29 +10845,36 @@ $("enablePushNotifications").addEventListener("click", () => {
   const statusEl = $("pushNotificationStatus");
 
   if (!("Notification" in window)) {
-    statusEl.textContent =
-      "Your browser does not support notifications. Please try Chrome.";
+    statusEl.textContent = "Your browser does not support notifications. Please try Chrome.";
     return;
   }
 
   if (Notification.permission === "denied") {
-    statusEl.textContent =
-      "Notifications are blocked. Open Chrome site settings for The Match and allow notifications.";
+    statusEl.textContent = "Notifications are blocked. Open Chrome site settings for The Match and allow notifications.";
     return;
   }
 
-  statusEl.textContent = "Opening notification prompt...";
+  statusEl.textContent = "Connecting your device to push notifications...";
 
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push(async function (OneSignal) {
     try {
+      if (Notification.permission === "granted") {
+        await OneSignal.User.PushSubscription.optIn();
+        const optedIn = OneSignal.User.PushSubscription.optedIn;
+        statusEl.textContent = optedIn
+          ? "Push notifications are enabled on this device."
+          : "Permission is allowed, but your device is not subscribed yet. Please try again shortly.";
+        return;
+      }
+
       await OneSignal.Slidedown.promptPush();
-      statusEl.textContent =
-        "If no prompt appeared, check your Chrome notification settings.";
+      statusEl.textContent = Notification.permission === "granted"
+        ? "Permission granted. Connecting your device..."
+        : "No permission prompt appeared. Check Chrome notification settings and try again.";
     } catch (error) {
-      console.error("OneSignal prompt error:", error);
-      statusEl.textContent =
-        "Could not open the prompt. Please try again.";
+      console.error("OneSignal push subscription error:", error);
+      statusEl.textContent = "Could not enable push notifications. Please try again.";
     }
   });
 });

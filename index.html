@@ -4248,6 +4248,9 @@ textarea.match-dialog-input{min-height:112px;resize:vertical}
 @media(max-height:700px){#matchCelebrationPage{padding-top:calc(env(safe-area-inset-top) + 8px)!important;padding-bottom:calc(env(safe-area-inset-bottom) + 8px)!important}#matchCelebrationPage .match-moment-brand{margin-bottom:12px}#matchCelebrationPage .match-moment-heading{margin-bottom:14px}#matchCelebrationPage .match-moment-pair{min-height:200px;margin-bottom:20px}#matchCelebrationPage .match-moment-card img{height:clamp(135px,39vw,190px)}#matchCelebrationPage .match-moment-footer{margin-top:12px}}
 @media(max-width:360px){#matchCelebrationPage{padding-left:12px!important;padding-right:12px!important}#matchCelebrationPage .match-moment-card{border-radius:16px}#matchCelebrationPage .match-moment-heart{width:48px;height:48px;font-size:24px}#matchCelebrationPage #matchSendMessage,#matchCelebrationPage #matchContinueDiscover{min-height:52px;font-size:14px}}
 
+
+/* Keep the Match Moment hidden unless explicitly opened by a mutual match. */
+#matchCelebrationPage.hidden{display:none!important;}
 </style>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>

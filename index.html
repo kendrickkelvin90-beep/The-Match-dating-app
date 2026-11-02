@@ -14848,7 +14848,7 @@ show("reset");
 (function(){
 const E=id=>document.getElementById(id), esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const date=v=>new Date(v).toLocaleString("en-NG",{dateStyle:"medium",timeStyle:"short"}), naira=v=>"₦"+Number(v||0).toLocaleString("en-NG");
-let eventsCache=[], selectedEvent=null, myResponses={}, verifiedMember=false;
+let eventsCache=[], selectedEvent=null, myResponses={}, verifiedMember=false, eventOrganisers={};
 function tab(name){
 if(name==="create"&&!verifiedMember){E("eventsPageStatus").textContent="Only verified members can organise events.";return;}
 ["browse","create","mine","admin"].forEach(n=>E("events"+n[0].toUpperCase()+n.slice(1)+"Panel")?.classList.toggle("hidden",n!==name));
@@ -14869,8 +14869,17 @@ const create=document.querySelector('[data-events-tab="create"]');if(create)crea
 const info=E("eventsCreatePanel")?.querySelector(".events-info-card"),form=E("eventSubmissionForm");
 if(info){info.querySelector("strong").textContent=verifiedMember?"Verified organisers only":"Verification required";info.querySelector("p").textContent=verifiedMember?"Submit your event and transfer the ₦7,000 promotion fee. It stays unpublished until approved by an admin.":"Only verified members can organise events. Complete verification before submitting.";}
 if(form)form.hidden=!verifiedMember;
-const {data:pub,error}=await db.from("match_events").select("id,title,description,category,city,starts_at,ends_at,ticket_price_ngn").eq("status","published").gte("ends_at",new Date().toISOString()).order("starts_at");if(error)throw error;
+const {data:pub,error}=await db.from("match_events").select("id,organiser_id,title,description,category,city,starts_at,ends_at,ticket_price_ngn").eq("status","published").gte("ends_at",new Date().toISOString()).order("starts_at");if(error)throw error;
 eventsCache=pub||[];
+eventOrganisers={};
+const organiserIds=[...new Set(eventsCache.map(x=>x.organiser_id).filter(Boolean))];
+if(organiserIds.length){
+ const {data:profiles,error:profileError}=await db.from("profiles").select("id,display_name,city,is_verified").in("id",organiserIds);
+ if(profileError)throw profileError;
+ const {data:photos,error:photoError}=await db.from("profile_photos").select("user_id,storage_path,position").in("user_id",organiserIds).order("position");
+ if(photoError)throw photoError;
+ (profiles||[]).forEach(p=>{const photo=(photos||[]).find(x=>x.user_id===p.id);eventOrganisers[p.id]={...p,photoUrl:photo?db.storage.from("profile-photos").getPublicUrl(photo.storage_path).data.publicUrl:null};});
+}
 const {data:responses,error:re}=await db.from("match_event_responses").select("event_id,response").eq("member_id",currentUser.id);
 if(re)throw re;myResponses=Object.fromEntries((responses||[]).map(x=>[x.event_id,x.response]));
 renderEvents();
@@ -14884,20 +14893,20 @@ if(error){list.textContent=error.message;return;}list.innerHTML=data?.length?dat
 }
 function openDetails(id){
 selectedEvent=eventsCache.find(x=>x.id===id);if(!selectedEvent)return;
-const x=selectedEvent, own=myResponses[id];
-E("eventDetailsContent").innerHTML='<span class="event-category">'+esc(x.category)+'</span><h2 id="eventDetailsTitle">'+esc(x.title)+'</h2><p>'+esc(x.description)+'</p><p><strong>Date:</strong> '+esc(date(x.starts_at))+'</p><p><strong>City:</strong> '+esc(x.city)+'</p><p><strong>Venue:</strong> '+(own==="going"?"Loading private venue details…":"Choose Going to request venue details privately.")+'</p><p><strong>Entry:</strong> '+(x.ticket_price_ngn?naira(x.ticket_price_ngn):"Free")+'</p><p class="small">Location details are provided by the organiser. Consider your personal safety before attending; arrange your own trusted transport and do not share private information with strangers.</p>';
+const x=selectedEvent, own=myResponses[id], organiser=eventOrganisers[x.organiser_id];
+E("eventDetailsContent").innerHTML='<span class="event-category">'+esc(x.category)+'</span><h2 id="eventDetailsTitle">'+esc(x.title)+'</h2><p>'+esc(x.description)+'</p><p><strong>Date:</strong> '+esc(date(x.starts_at))+'</p><p><strong>City:</strong> '+esc(x.city)+'</p><p><strong>Exact venue:</strong> The organiser shares the exact venue directly with confirmed attendees. Contact the organiser after booking.</p><p><strong>Entry:</strong> '+(x.ticket_price_ngn?naira(x.ticket_price_ngn):"Free")+'</p><section class="event-organiser-preview" style="display:flex;align-items:center;gap:12px;margin:18px 0;padding:14px;border:1px solid rgba(210,173,104,.35);border-radius:14px;background:rgba(210,173,104,.06)">'+(organiser?.photoUrl?'<img src="'+esc(organiser.photoUrl)+'" alt="Organiser profile photo" style="width:64px;height:64px;object-fit:cover;border-radius:50%">':'<div aria-hidden="true" style="width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:#28231a;color:#d2ad68;font-size:24px">👤</div>')+'<div style="min-width:0"><strong>'+esc(organiser?.display_name||"The Match organiser")+(organiser?.is_verified?' <span style="color:#d2ad68" title="Verified member">✓ Verified</span>':'')+'</strong><p class="small" style="margin:4px 0">📍 '+esc(organiser?.city||"Location not listed")+'</p><button type="button" class="btn secondary" id="viewEventOrganiserProfile">View organiser profile</button></div></section><p class="small">For your safety, attendee lists and member responses are private. The organiser controls when exact venue details are shared. Arrange your own trusted transport and report anything concerning.</p>';
 E("eventInterestedBtn").textContent=own==="interested"?"✓ Interested":"Interested";
 E("eventGoingBtn").textContent=own==="going"?"✓ Going":"Going";
 E("eventResponseStatus").textContent=own?"Your response is private. You can change it at any time.":"Your response is private and is not shown to other members or the organiser.";
 E("eventReportStatus").textContent="";E("eventReportDetails").value="";
 E("eventDetailsModal").classList.remove("hidden");
-if(own==="going"||x.organiser_id===currentUser.id){db.from("match_event_private_details").select("venue").eq("event_id",id).maybeSingle().then(({data,error})=>{if(error){E("eventDetailsContent").insertAdjacentHTML("beforeend",'<p class="small">Private venue details are temporarily unavailable.</p>');return;}if(data?.venue)E("eventDetailsContent").insertAdjacentHTML("beforeend",'<p><strong>Private venue:</strong> '+esc(data.venue)+'</p>');});}
+E("viewEventOrganiserProfile")?.addEventListener("click",()=>{E("eventDetailsModal").classList.add("hidden");openMemberProfile(x.organiser_id);});
 }
 async function saveResponse(response){
 if(!selectedEvent)return;const status=E("eventResponseStatus");status.textContent="Saving privately…";
 const {error}=await db.from("match_event_responses").upsert({event_id:selectedEvent.id,member_id:currentUser.id,response},{onConflict:"event_id,member_id"});
 if(error){status.textContent="Could not save your private response: "+error.message;return;}
-myResponses[selectedEvent.id]=response;status.textContent="Saved. Only you can see or change this response.";if(response==="going"){const {data:v}=await db.from("match_event_private_details").select("venue").eq("event_id",selectedEvent.id).maybeSingle();if(v?.venue)E("eventDetailsContent").insertAdjacentHTML("beforeend",'<p><strong>Private venue:</strong> '+esc(v.venue)+'</p>');}
+myResponses[selectedEvent.id]=response;status.textContent="Saved. Only you can see or change this response. Contact the organiser after booking for exact venue details.";
 E("eventInterestedBtn").textContent=response==="interested"?"✓ Interested":"Interested";E("eventGoingBtn").textContent=response==="going"?"✓ Going":"Going";
 }
 document.querySelectorAll("[data-events-tab]").forEach(b=>b.addEventListener("click",()=>tab(b.dataset.eventsTab)));

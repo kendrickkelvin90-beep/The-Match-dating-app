@@ -9030,7 +9030,6 @@ async function loadPremiumNearby(){
 
     const isPremium=!!membership &&
       new Date(membership.premium_until).getTime()>Date.now();
-    if (premiumBanner) premiumBanner.classList.toggle("hidden", isPremium);
 
     if(!isPremium){
       const card=document.createElement("div");

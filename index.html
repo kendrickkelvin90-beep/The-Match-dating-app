@@ -6678,7 +6678,7 @@ function show(id, addToHistory = true) {
 
   if (
     currentUser &&
-    (!hasRequiredProfilePhoto || !profileDetailsAreComplete()) &&
+    !hasRequiredProfilePhoto &&
     id !== "profile" &&
     !publicPages.includes(id)
   ) {
@@ -8696,8 +8696,9 @@ status("profileStatus","Your profile is loaded. Check your details and save when
   
   await loadMyPhotos();
 
-  const savedProfileIsReady =
-    hasRequiredProfilePhoto && profileDetailsAreComplete();
+  // Profile details can be completed or edited without locking members
+  // out of the rest of the app. Only the main-photo safety requirement gates access.
+  const savedProfileIsReady = hasRequiredProfilePhoto;
 
   if (savedProfileIsReady) {
     show("discover", false);

@@ -14959,6 +14959,7 @@ try{
  if(tierError)throw tierError;
  E("eventTicketOptions").innerHTML='<h3>Ticket options</h3>'+(tiers?.length?tiers.map(t=>'<div class="event-ticket-option"><div><strong>'+esc(t.name)+'</strong><p>'+esc(t.description||"Event admission")+'</p><small>'+(t.quantity_total===null?"Limited availability":Math.max(0,t.quantity_total-t.quantity_sold)+" remaining")+'</small></div><strong>'+naira(t.price_ngn)+'</strong></div>').join(""):'<p class="small">Ticket categories have not been published yet.</p>')+'<p class="events-payment-note">Prices are provided by the organiser for information. Contact the organiser directly to arrange tickets and payment outside The Match.</p>';
 }catch(err){E("eventTicketOptions").innerHTML='<h3>Ticket options</h3><p class="small">Ticket options could not be loaded right now.</p>';}
+}
 
 async function saveResponse(response){
 if(!selectedEvent)return;const status=E("eventResponseStatus");status.textContent="Saving privately…";

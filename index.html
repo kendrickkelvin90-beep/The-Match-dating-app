@@ -4454,6 +4454,53 @@ body.light-theme #notificationsPage #backFromNotifications {
 }
 </style>
 
+<style>
+.events-discover-entry{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 15px;margin:16px 0;border:1px solid #554426;border-radius:15px;background:linear-gradient(110deg,#1b1710,#101010)}
+.events-discover-entry strong{color:#e1bd73;font-size:14px}.events-discover-entry p{margin:5px 0 0;line-height:1.5}.events-discover-entry .btn{white-space:nowrap;flex-shrink:0}
+#eventsPage .events-shell{max-width:920px;margin:auto;padding:12px 0 24px;color:#f7f5ef}
+#eventsPage .events-heading{padding:22px 18px;border:1px solid #30291d;border-radius:20px;background:radial-gradient(circle at 90% 0%,#332818,transparent 42%),linear-gradient(135deg,#151515,#090909)}
+#eventsPage .events-eyebrow{color:#c6a15b;font-size:10px;letter-spacing:.2em;font-weight:800}
+#eventsPage .events-heading h2{font-size:28px;margin:8px 0}
+#eventsPage .events-heading p:last-child{color:#aaa;line-height:1.6;font-size:13px}
+#eventsPage .events-toolbar{display:flex;gap:7px;overflow:auto;margin:16px 0}
+#eventsPage .events-tab{flex:1;white-space:nowrap;border:1px solid #3a3326;background:#141414;color:#cfc8b8;border-radius:12px;padding:11px 8px;font-size:11px}
+#eventsPage .events-tab.active{background:#c6a15b;color:#17130b;font-weight:800}
+#eventsPage .events-form{padding:16px;border:1px solid #30291d;border-radius:18px;background:#101010}
+#eventsPage .events-form input,#eventsPage .events-form select,#eventsPage .events-form textarea{background:#080808;border-color:#39342a;color:#f7f5ef}
+#eventsPage .events-form label{color:#d5c9af}
+#eventsPage .events-date-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#eventsPage .events-info-card,#eventsPage .events-fee-card{padding:15px;border:1px solid #554426;border-radius:14px;background:#1b1710;margin:12px 0;color:#f4e5c3}
+#eventsPage .events-info-card p,#eventsPage .events-fee-card small{display:block;color:#b9b0a0;font-size:12px;line-height:1.55;margin:7px 0 0}
+#eventsPage .events-fee-card{display:grid;gap:5px}#eventsPage .events-fee-card strong{font-size:24px;color:#e1bd73}#eventsPage .event-transfer-details{display:grid;gap:4px;padding:12px;margin-top:8px;border:1px solid #4b402b;border-radius:11px;background:#100e0a;color:#e8d7b4;font-size:12px}#eventsPage .event-transfer-details strong{font-size:18px!important;color:#e1bd73}#eventsPage .event-transfer-details small{font-size:11px;color:#aaa}
+#eventsPage .events-filters{padding:14px;border:1px solid #30291d;border-radius:15px;background:#101010;margin:12px 0}
+#eventsPage .events-filters input,#eventsPage .events-filters select{background:#080808;border-color:#39342a;color:#f7f5ef}
+#eventsPage .event-open-details{width:100%;margin-top:12px;padding:10px;border-radius:10px;border:1px solid #9b793d;background:#c6a15b;color:#17130b;font-weight:800}
+#eventsPage .event-details-modal{position:fixed;inset:0;z-index:10020;background:#000d;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}
+#eventsPage .event-details-modal.hidden{display:none}
+#eventsPage .event-details-card{position:relative;width:min(100%,620px);max-height:90vh;overflow:auto;padding:20px;border:1px solid #8b6d39;border-radius:18px;background:#111;color:#f7f5ef}
+#eventsPage .event-modal-close{position:sticky;float:right;top:0;border:1px solid #65502e;border-radius:50%;width:36px;height:36px;background:#1b1710;color:#f3d89f;font-size:22px}
+#eventsPage .event-response-actions{display:flex;gap:10px;margin:16px 0}
+#eventsPage .event-response-actions button{flex:1}
+#eventsPage .event-report-section{border-top:1px solid #3a3326;padding-top:14px;margin-top:18px}
+#eventsPage .event-report-section label{color:#d5c9af}
+#eventsPage .event-report-section textarea{background:#080808;border-color:#39342a;color:#f7f5ef}
+body.light-theme #eventsPage .events-filters,body.light-theme #eventsPage .event-details-card{background:#fff;color:#24202a;border-color:#d8c69e}
+body.light-theme #eventsPage .events-filters input,body.light-theme #eventsPage .events-filters select,body.light-theme #eventsPage .event-report-section textarea{background:#fff;color:#24202a;border-color:#d8c69e}
+#eventsPage .events-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+#eventsPage .event-card,#eventsPage .event-admin-card{padding:16px;border:1px solid #302d27;border-radius:17px;background:linear-gradient(145deg,#171717,#0c0c0c);margin-bottom:12px;min-width:0;overflow-wrap:anywhere}
+#eventsPage .event-card h3{font-size:18px;margin:12px 0 7px;color:#f5e9d1}
+#eventsPage .event-card p,#eventsPage .event-admin-card p{font-size:12px;line-height:1.6;color:#aaa}
+#eventsPage .event-card-top,.event-status-row,.event-card-bottom,.event-admin-actions{display:flex;justify-content:space-between;align-items:center;gap:8px}
+#eventsPage .event-category{font-size:10px;text-transform:uppercase;color:#e1bd73}
+#eventsPage .event-meta{display:grid;gap:7px;color:#bdb5a7;font-size:11px;margin:14px 0}
+#eventsPage .event-card-bottom{border-top:1px solid #302d27;padding-top:12px;color:#e1bd73;font-size:12px}
+#eventsPage .events-empty{grid-column:1/-1;padding:36px 20px;text-align:center;border:1px dashed #4a402e;border-radius:16px;color:#d9c18c}
+#eventsPage .events-empty p{font-size:12px;color:#aaa;line-height:1.6}
+#eventsPage .event-status-row{font-size:11px;color:#d6bd82;flex-wrap:wrap}
+#eventsPage .event-admin-actions button{flex:1;padding:10px;border-radius:10px;border:1px solid #9b793d;background:#c6a15b;color:#17130b;font-weight:700;font-size:11px}
+#eventsPage .event-admin-actions button:last-child{background:transparent;color:#e5b1a8;border-color:#744b44}
+@media(max-width:420px){#eventsPage .events-date-grid{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
 <div id="stars" aria-hidden="true"></div>
@@ -4825,6 +4872,8 @@ body.light-theme #notificationsPage #backFromNotifications {
   <p id="storiesStatus" class="status"></p>
 </div>
 
+
+<div class="events-discover-entry"><div><strong>Meet beyond the swipe</strong><p class="small">Discover LGBTQ+ gatherings and shared experiences with members of The Match.</p></div><button class="btn secondary" id="openEventsFromDiscover" type="button">Explore events</button></div>
 
 <p class="small">Discover people, one swipe at a time.</p>
 <button class="btn secondary" id="refreshNearby" type="button">Refresh profiles</button>
@@ -5868,6 +5917,42 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
   <button class="btn secondary" id="backFromNotifications" type="button">← Back</button>
 </section>
 
+  <section class="panel hidden" id="eventsPage" aria-label="Events"><div class="events-shell">
+<div class="events-heading"><p class="events-eyebrow">THE MATCH COMMUNITY</p><h2>Events & experiences</h2><p>Discover LGBTQ+ gatherings, meet new people and find your next experience.</p></div>
+<div class="events-toolbar"><button type="button" class="events-tab active" data-events-tab="browse">Explore events</button><button type="button" class="events-tab" data-events-tab="create">Host an event</button><button type="button" class="events-tab" data-events-tab="mine">My submissions</button><button type="button" class="events-tab hidden" id="eventsAdminTab" data-events-tab="admin">Review queue</button></div>
+<div id="eventsBrowsePanel">
+<div class="events-filters">
+<label for="eventsSearch">Search events</label><input id="eventsSearch" type="search" maxlength="100" placeholder="Search by event name or description">
+<div class="events-date-grid"><div><label for="eventsCityFilter">City</label><input id="eventsCityFilter" type="search" maxlength="100" placeholder="Filter by city"></div><div><label for="eventsCategoryFilter">Category</label><select id="eventsCategoryFilter"><option value="">All categories</option><option value="social">Social</option><option value="dating">Singles & dating</option><option value="nightlife">Nightlife</option><option value="community">Community</option><option value="online">Online</option><option value="other">Other</option></select></div></div>
+</div>
+<p class="small" id="eventsPrivacyHint">For your safety, attendee lists and member responses are private.</p>
+<div id="eventsPublicList" class="events-grid"><p class="small">Loading events…</p></div></div>
+<div id="eventDetailsModal" class="event-details-modal hidden" role="dialog" aria-modal="true" aria-labelledby="eventDetailsTitle">
+<div class="event-details-card"><button type="button" id="closeEventDetails" class="event-modal-close" aria-label="Close event details">×</button>
+<div id="eventDetailsContent"></div>
+<div class="event-response-actions"><button type="button" id="eventInterestedBtn" class="btn secondary">Interested</button><button type="button" id="eventGoingBtn" class="btn primary">Going</button></div>
+<p id="eventResponseStatus" class="status" role="status"></p>
+<div class="event-report-section"><strong>Something concerning?</strong><p class="small">Report this event privately to The Match safety team. The organiser will not see who reported it.</p>
+<label for="eventReportReason">Reason</label><select id="eventReportReason"><option value="fake_event">Fake event</option><option value="scam_or_payment">Scam or suspicious payment request</option><option value="harassment">Harassment</option><option value="unsafe_location">Unsafe location</option><option value="misleading_information">Misleading information</option><option value="other">Other</option></select>
+<label for="eventReportDetails">Additional details (optional)</label><textarea id="eventReportDetails" maxlength="1000" placeholder="Tell us what concerns you. Avoid sharing unnecessary personal information."></textarea>
+<button type="button" id="submitEventReport" class="btn secondary">Submit private report</button><p id="eventReportStatus" class="status" role="status"></p></div>
+</div></div>
+<div id="eventsCreatePanel" class="hidden"><div class="events-info-card"><strong>Verified organisers only</strong><p>Submit your event and transfer the ₦7,000 promotion fee. It stays unpublished until you are approved by an admin.</p></div>
+<form id="eventSubmissionForm" class="events-form">
+<label for="eventTitle">Event name</label><input id="eventTitle" maxlength="100" required>
+<label for="eventDescription">About this event</label><textarea id="eventDescription" maxlength="2000" minlength="20" required></textarea>
+<label for="eventCategory">Category</label><select id="eventCategory"><option value="social">Social</option><option value="dating">Singles & dating</option><option value="nightlife">Nightlife</option><option value="community">Community</option><option value="online">Online</option><option value="other">Other</option></select>
+<label for="eventVenue">Venue / online platform</label><input id="eventVenue" maxlength="160" required>
+<label for="eventCity">City / location</label><input id="eventCity" maxlength="100" required>
+<div class="events-date-grid"><div><label for="eventStart">Starts</label><input id="eventStart" type="datetime-local" required></div><div><label for="eventEnd">Ends</label><input id="eventEnd" type="datetime-local" required></div></div>
+<label for="eventTicketPrice">Ticket price in ₦ (0 if free)</label><input id="eventTicketPrice" type="number" min="0" step="100" value="0" required>
+<div class="events-fee-card"><span>Promotion & review fee</span><strong>₦7,000</strong><small>Separate from ticket price. Ticket checkout is not enabled yet.</small><div class="event-transfer-details"><b>Transfer account</b><span>MTN MoMo</span><span>JUSTICE TRUST UGOALA</span><strong>0896939533</strong><small>Use this account for the event promotion fee, then enter your transfer name and reference below.</small></div></div>
+<label for="eventPaymentSender">Name used for transfer</label><input id="eventPaymentSender" maxlength="120" required>
+<label for="eventPaymentReference">Transfer reference</label><input id="eventPaymentReference" minlength="4" maxlength="120" required>
+<button class="btn primary" id="submitEventBtn" type="submit">Submit event for review</button><p class="status" id="eventFormStatus" role="status"></p></form></div>
+<div id="eventsMinePanel" class="hidden"><div id="eventsMineList"></div></div>
+<div id="eventsAdminPanel" class="hidden"><div class="events-info-card"><strong>Admin approval queue</strong><p>Confirm the transfer in your account before publishing.</p></div><div id="eventsAdminList"></div></div>
+<p class="status" id="eventsPageStatus" role="status"></p><button class="btn secondary" id="backFromEvents" type="button">← Back</button></div></section>
   <nav class="bottom-nav hidden" id="bottomNavigation" aria-label="Main navigation">
     <button type="button" data-page="discover" aria-label="Home">
       <span class="nav-icon" aria-hidden="true">⌂</span><span>Home</span>
@@ -6196,7 +6281,7 @@ async function startOnlinePresence(user) {
 
   
 
-const panels=["welcome","onboarding","auth","reset","profile","verificationPage","discover","nearbyPage","premium","matches","matchCelebrationPage","memberProfilePage","chatPage","messages","likes","blockedMembers","settings","discoveryPreferencesPage","adminPanel","referralsPage","notificationsPage"];
+const panels=["welcome","onboarding","auth","reset","profile","verificationPage","discover","nearbyPage","eventsPage","premium","matches","matchCelebrationPage","memberProfilePage","chatPage","messages","likes","blockedMembers","settings","discoveryPreferencesPage","adminPanel","referralsPage","notificationsPage"];
 
 
 
@@ -14758,6 +14843,89 @@ show("reset");
 
 })();
 
+</script>
+<script>
+(function(){
+const E=id=>document.getElementById(id), esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const date=v=>new Date(v).toLocaleString("en-NG",{dateStyle:"medium",timeStyle:"short"}), naira=v=>"₦"+Number(v||0).toLocaleString("en-NG");
+let eventsCache=[], selectedEvent=null, myResponses={}, verifiedMember=false, eventOrganisers={};
+function tab(name){
+if(name==="create"&&!verifiedMember){E("eventsPageStatus").textContent="Only verified members can organise events.";return;}
+["browse","create","mine","admin"].forEach(n=>E("events"+n[0].toUpperCase()+n.slice(1)+"Panel")?.classList.toggle("hidden",n!==name));
+document.querySelectorAll("[data-events-tab]").forEach(b=>b.classList.toggle("active",b.dataset.eventsTab===name));
+}
+function filteredEvents(){
+const q=(E("eventsSearch")?.value||"").trim().toLowerCase(), city=(E("eventsCityFilter")?.value||"").trim().toLowerCase(), cat=E("eventsCategoryFilter")?.value||"";
+return eventsCache.filter(x=>(!q||(x.title+" "+x.description).toLowerCase().includes(q))&&(!city||x.city.toLowerCase().includes(city))&&(!cat||x.category===cat));
+}
+function renderEvents(){
+const list=E("eventsPublicList"), rows=filteredEvents();
+list.innerHTML=rows.length?rows.map(x=>'<article class="event-card"><div class="event-card-top"><span class="event-category">'+esc(x.category)+'</span><span>THE MATCH</span></div><h3>'+esc(x.title)+'</h3><p>'+esc(x.description.slice(0,180))+(x.description.length>180?'…':'')+'</p><div class="event-meta"><span>⌖ '+esc(x.city)+'</span><span>◷ '+esc(date(x.starts_at))+'</span></div><div class="event-card-bottom"><strong>'+(x.ticket_price_ngn?naira(x.ticket_price_ngn):"Free entry")+'</strong><span>Details available on request</span></div><button type="button" class="event-open-details" data-event-details="'+x.id+'">View event details</button></article>').join(""):'<div class="events-empty"><strong>No events match your search</strong><p>Try another name, city or category.</p></div>';
+}
+async function load(){
+const {data:p,error:pe}=await db.from("profiles").select("is_verified").eq("id",currentUser.id).maybeSingle();if(pe)throw pe;
+verifiedMember=p?.is_verified===true;
+const create=document.querySelector('[data-events-tab="create"]');if(create)create.disabled=!verifiedMember;
+const info=E("eventsCreatePanel")?.querySelector(".events-info-card"),form=E("eventSubmissionForm");
+if(info){info.querySelector("strong").textContent=verifiedMember?"Verified organisers only":"Verification required";info.querySelector("p").textContent=verifiedMember?"Submit your event and transfer the ₦7,000 promotion fee. It stays unpublished until approved by an admin.":"Only verified members can organise events. Complete verification before submitting.";}
+if(form)form.hidden=!verifiedMember;
+const {data:pub,error}=await db.from("match_events").select("id,organiser_id,title,description,category,city,starts_at,ends_at,ticket_price_ngn").eq("status","published").gte("ends_at",new Date().toISOString()).order("starts_at");if(error)throw error;
+eventsCache=pub||[];
+eventOrganisers={};
+const organiserIds=[...new Set(eventsCache.map(x=>x.organiser_id).filter(Boolean))];
+if(organiserIds.length){
+ const {data:profiles,error:profileError}=await db.from("profiles").select("id,display_name,city,is_verified").in("id",organiserIds);
+ if(profileError)throw profileError;
+ const {data:photos,error:photoError}=await db.from("profile_photos").select("user_id,storage_path,position").in("user_id",organiserIds).order("position");
+ if(photoError)throw photoError;
+ (profiles||[]).forEach(p=>{const photo=(photos||[]).find(x=>x.user_id===p.id);eventOrganisers[p.id]={...p,photoUrl:photo?db.storage.from("profile-photos").getPublicUrl(photo.storage_path).data.publicUrl:null};});
+}
+const {data:responses,error:re}=await db.from("match_event_responses").select("event_id,response").eq("member_id",currentUser.id);
+if(re)throw re;myResponses=Object.fromEntries((responses||[]).map(x=>[x.event_id,x.response]));
+renderEvents();
+const {data:mine,error:me}=await db.from("match_events").select("id,title,city,starts_at,payment_status,status,created_at").eq("organiser_id",currentUser.id).order("created_at",{ascending:false});if(me)throw me;
+E("eventsMineList").innerHTML=mine?.length?mine.map(x=>'<article class="event-admin-card"><strong>'+esc(x.title)+'</strong><p>'+esc(x.city)+' · '+esc(date(x.starts_at))+'</p><div class="event-status-row"><span>Payment: '+esc(x.payment_status)+'</span><span>Listing: '+esc(x.status.replace("_"," "))+'</span></div></article>').join(""):'<p class="small">No event submissions yet.</p>';
+if(isMatchAdmin){E("eventsAdminTab")?.classList.remove("hidden");await adminQueue();}else{E("eventsAdminTab")?.classList.add("hidden");E("eventsAdminPanel")?.classList.add("hidden");}
+}
+async function adminQueue(){
+const list=E("eventsAdminList"),{data,error}=await db.from("match_events").select("id,title,description,venue,city,starts_at,promotion_fee_ngn,payment_sender_name,payment_reference,payment_status,status").eq("status","pending_review").order("created_at",{ascending:false});
+if(error){list.textContent=error.message;return;}list.innerHTML=data?.length?data.map(x=>'<article class="event-admin-card"><strong>'+esc(x.title)+'</strong><p>'+esc(x.description)+'</p><p>'+esc(x.venue)+', '+esc(x.city)+' · '+esc(date(x.starts_at))+'</p><p>Fee: '+naira(x.promotion_fee_ngn)+' · Transfer name: '+esc(x.payment_sender_name)+' · Ref: '+esc(x.payment_reference)+'</p><p>Payment: '+esc(x.payment_status)+' / '+esc(x.status)+'</p><div class="event-admin-actions"><button data-event-approve="'+x.id+'">Confirm payment & publish</button><button data-event-reject="'+x.id+'">Reject</button></div></article>').join(""):'<p class="small">No submissions waiting for review.</p>';
+}
+function openDetails(id){
+selectedEvent=eventsCache.find(x=>x.id===id);if(!selectedEvent)return;
+const x=selectedEvent, own=myResponses[id], organiser=eventOrganisers[x.organiser_id];
+E("eventDetailsContent").innerHTML='<span class="event-category">'+esc(x.category)+'</span><h2 id="eventDetailsTitle">'+esc(x.title)+'</h2><p>'+esc(x.description)+'</p><p><strong>Date:</strong> '+esc(date(x.starts_at))+'</p><p><strong>City:</strong> '+esc(x.city)+'</p><p><strong>Exact venue:</strong> The organiser shares the exact venue directly with attendees. Contact the organiser to arrange attendance and obtain the location.</p><p><strong>Entry:</strong> '+(x.ticket_price_ngn?naira(x.ticket_price_ngn):"Free")+'</p><section class="event-organiser-preview" style="display:flex;align-items:center;gap:12px;margin:18px 0;padding:14px;border:1px solid rgba(210,173,104,.35);border-radius:14px;background:rgba(210,173,104,.06)">'+(organiser?.photoUrl?'<img src="'+esc(organiser.photoUrl)+'" alt="Organiser profile photo" style="width:64px;height:64px;object-fit:cover;border-radius:50%">':'<div aria-hidden="true" style="width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:#28231a;color:#d2ad68;font-size:24px">👤</div>')+'<div style="min-width:0"><strong>'+esc(organiser?.display_name||"The Match organiser")+(organiser?.is_verified?' <span style="color:#d2ad68" title="Verified member">✓ Verified</span>':'')+'</strong><p class="small" style="margin:4px 0">📍 '+esc(organiser?.city||"Location not listed")+'</p><button type="button" class="btn secondary" id="viewEventOrganiserProfile">View organiser profile</button></div></section><p class="small">For your safety, attendee lists and member responses are private. The organiser controls when exact venue details are shared. Arrange your own trusted transport and report anything concerning.</p>';
+E("eventInterestedBtn").textContent=own==="interested"?"✓ Interested":"Interested";
+E("eventGoingBtn").textContent=own==="going"?"✓ Going":"Going";
+E("eventResponseStatus").textContent=own?"Your response is private. You can change it at any time.":"Your response is private and is not shown to other members or the organiser.";
+E("eventReportStatus").textContent="";E("eventReportDetails").value="";
+E("eventDetailsModal").classList.remove("hidden");
+E("viewEventOrganiserProfile")?.addEventListener("click",()=>{E("eventDetailsModal").classList.add("hidden");openMemberProfile(x.organiser_id);});
+}
+async function saveResponse(response){
+if(!selectedEvent)return;const status=E("eventResponseStatus");status.textContent="Saving privately…";
+const {error}=await db.from("match_event_responses").upsert({event_id:selectedEvent.id,member_id:currentUser.id,response},{onConflict:"event_id,member_id"});
+if(error){status.textContent="Could not save your private response: "+error.message;return;}
+myResponses[selectedEvent.id]=response;status.textContent="Saved. Only you can see or change this response. Contact the organiser directly to arrange attendance and obtain exact venue details.";
+E("eventInterestedBtn").textContent=response==="interested"?"✓ Interested":"Interested";E("eventGoingBtn").textContent=response==="going"?"✓ Going":"Going";
+}
+document.querySelectorAll("[data-events-tab]").forEach(b=>b.addEventListener("click",()=>tab(b.dataset.eventsTab)));
+E("eventsSearch")?.addEventListener("input",renderEvents);E("eventsCityFilter")?.addEventListener("input",renderEvents);E("eventsCategoryFilter")?.addEventListener("change",renderEvents);
+E("eventsPublicList")?.addEventListener("click",ev=>{const b=ev.target.closest("[data-event-details]");if(b)openDetails(b.dataset.eventDetails);});
+E("closeEventDetails")?.addEventListener("click",()=>E("eventDetailsModal").classList.add("hidden"));
+E("eventDetailsModal")?.addEventListener("click",ev=>{if(ev.target===E("eventDetailsModal"))E("eventDetailsModal").classList.add("hidden");});
+E("eventInterestedBtn")?.addEventListener("click",()=>saveResponse("interested"));E("eventGoingBtn")?.addEventListener("click",()=>saveResponse("going"));
+E("submitEventReport")?.addEventListener("click",async()=>{if(!selectedEvent)return;const btn=E("submitEventReport"),status=E("eventReportStatus");btn.disabled=true;status.textContent="Sending private report…";try{const {error}=await db.from("match_event_reports").insert({event_id:selectedEvent.id,reporter_id:currentUser.id,reason:E("eventReportReason").value,details:E("eventReportDetails").value.trim()||null});if(error)throw error;status.textContent="Your report was sent privately to the safety team. The organiser will not be told who submitted it.";}catch(err){status.textContent=err.code==="23505"?"You have already reported this event. The safety team can review your existing report.":(err.message||"Report could not be sent.");}finally{btn.disabled=false;}});
+E("backFromEvents")?.addEventListener("click",()=>show("discover"));
+E("eventSubmissionForm")?.addEventListener("submit",async ev=>{ev.preventDefault();const btn=E("submitEventBtn");btn.disabled=true;E("eventFormStatus").textContent="Submitting…";try{
+const {data:p,error:pe}=await db.from("profiles").select("is_verified").eq("id",currentUser.id).maybeSingle();if(pe)throw pe;if(p?.is_verified!==true)throw Error("Verified membership is required.");
+const start=new Date(E("eventStart").value),end=new Date(E("eventEnd").value);if(isNaN(start)||isNaN(end)||start<=new Date()||end<=start)throw Error("Enter a valid future start and end time.");
+const payload={organiser_id:currentUser.id,title:E("eventTitle").value.trim(),description:E("eventDescription").value.trim(),category:E("eventCategory").value,venue:E("eventVenue").value.trim(),city:E("eventCity").value.trim(),starts_at:start.toISOString(),ends_at:end.toISOString(),ticket_price_ngn:Number(E("eventTicketPrice").value||0),promotion_fee_ngn:7000,payment_sender_name:E("eventPaymentSender").value.trim(),payment_reference:E("eventPaymentReference").value.trim(),payment_status:"pending",status:"pending_review"};
+const {data:created,error}=await db.from("match_events").insert({...payload,venue:"Venue details shared privately with members who choose Going"}).select("id").single();if(error)throw error;const {error:venueError}=await db.from("match_event_private_details").insert({event_id:created.id,venue:E("eventVenue").value.trim()});if(venueError)throw venueError;E("eventFormStatus").textContent="Submitted. Your event stays unpublished until an admin confirms the ₦7,000 transfer and approves it.";E("eventSubmissionForm").reset();E("eventTicketPrice").value="0";await load();tab("mine");
+}catch(err){E("eventFormStatus").textContent=err.message||"Submission failed.";}finally{btn.disabled=false;}});
+E("eventsAdminList")?.addEventListener("click",async ev=>{const a=ev.target.closest("[data-event-approve]"),rj=ev.target.closest("[data-event-reject]");if(!a&&!rj)return;const id=(a||rj).dataset.eventApprove||(rj&&rj.dataset.eventReject);if(a&&!confirm("Have you confirmed the ₦7,000 transfer in your account and want to publish this event?"))return;if(rj&&!confirm("Reject this event submission?"))return;try{const patch=a?{payment_status:"approved",status:"published",reviewed_by:currentUser.id,reviewed_at:new Date().toISOString(),admin_note:"Payment confirmed by admin"}:{payment_status:"rejected",status:"rejected",reviewed_by:currentUser.id,reviewed_at:new Date().toISOString(),admin_note:"Rejected by admin"};const {error}=await db.from("match_events").update(patch).eq("id",id);if(error)throw error;await load();}catch(err){alert("Review failed: "+err.message);}});
+E("openEventsFromDiscover")?.addEventListener("click",async()=>{show("eventsPage");try{await load();}catch(err){E("eventsPageStatus").textContent="Events unavailable: "+err.message;}});
+})();
 </script>
 <script>
 if ("serviceWorker" in navigator) {

@@ -8299,6 +8299,16 @@ function profileBioHasPhoneNumber(value) {
 
 async function showProfile(user, restoreToDiscover = false){
 currentUser=user;
+  // Associate this device's OneSignal push subscription with the signed-in Match member.
+  // This lets server-side notification events target only the intended member.
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  window.OneSignalDeferred.push(async function (OneSignal) {
+    try {
+      await OneSignal.login(String(user.id));
+    } catch (pushIdentityError) {
+      console.warn("Push identity could not be linked:", pushIdentityError);
+    }
+  });
   if (!(await enforceVerificationGracePeriod(user))) return;
   subscribeToVoiceCalls(user);
   startOnlinePresence(user).catch(error => {
@@ -14622,6 +14632,13 @@ function subscribeToVoiceCalls(user) {
 ensureVoiceCallUI();
 
 db.auth.onAuthStateChange((event,session)=>{
+if (event === "SIGNED_OUT") {
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  window.OneSignalDeferred.push(async function (OneSignal) {
+    try { await OneSignal.logout(); }
+    catch (pushLogoutError) { console.warn("Push identity could not be cleared:", pushLogoutError); }
+  });
+}
 if(event==="PASSWORD_RECOVERY"){
 $("resetForm").classList.add("hidden");
 $("newPasswordForm").classList.remove("hidden");

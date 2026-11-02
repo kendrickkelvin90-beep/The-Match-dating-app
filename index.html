@@ -14834,7 +14834,7 @@ const list=E("eventsAdminList"),{data,error}=await db.from("match_events").selec
 if(error){list.textContent=error.message;return;}list.innerHTML=data?.length?data.map(x=>'<article class="event-admin-card"><strong>'+esc(x.title)+'</strong><p>'+esc(x.description)+'</p><p>'+esc(x.venue)+', '+esc(x.city)+' · '+esc(date(x.starts_at))+'</p><p>Fee: '+naira(x.promotion_fee_ngn)+' · Transfer name: '+esc(x.payment_sender_name)+' · Ref: '+esc(x.payment_reference)+'</p><p>Payment: '+esc(x.payment_status)+' / '+esc(x.status)+'</p><div class="event-admin-actions"><button data-event-approve="'+x.id+'">Confirm payment & publish</button><button data-event-reject="'+x.id+'">Reject</button></div></article>').join(""):'<p class="small">No submissions waiting for review.</p>';
 }
 document.querySelectorAll("[data-events-tab]").forEach(b=>b.addEventListener("click",()=>tab(b.dataset.eventsTab)));
-E("backFromEvents")?.addEventListener("click",()=>show("profile"));
+E("backFromEvents")?.addEventListener("click",()=>show("discover"));
 E("eventSubmissionForm")?.addEventListener("submit",async ev=>{ev.preventDefault();const btn=E("submitEventBtn");btn.disabled=true;E("eventFormStatus").textContent="Submitting…";try{
 const {data:p,error:pe}=await db.from("profiles").select("is_verified").eq("id",currentUser.id).maybeSingle();if(pe)throw pe;if(p?.is_verified!==true)throw Error("Verified membership is required.");
 const start=new Date(E("eventStart").value),end=new Date(E("eventEnd").value);if(isNaN(start)||isNaN(end)||start<=new Date()||end<=start)throw Error("Enter a valid future start and end time.");

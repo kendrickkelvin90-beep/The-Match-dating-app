@@ -1,5 +1,5 @@
 
-const CACHE_NAME = "the-match-shell-v1";
+const CACHE_NAME = "the-match-shell-v2";
 const APP_SHELL = ["/", "/index.html", "/manifest.webmanifest", "/icons/icon.svg"];
 
 self.addEventListener("install", (event) => {
@@ -35,7 +35,7 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request).catch(() => caches.match("/index.html"))
+      fetch(request, { cache: "no-store" }).catch(() => caches.match("/index.html"))
     );
   }
 });

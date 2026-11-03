@@ -5020,6 +5020,46 @@ body.light-theme #matchFeaturePromoCard .match-promo-action{background:#f8f0df;c
 body.light-theme #matchFeaturePromoClose{background:#f7f2e8;color:#6b5228;border-color:#d8c49e}
 @media(prefers-reduced-motion:reduce){#matchFeaturePromoCard{transition:none;transform:none}#matchFeaturePromoCard.is-visible{transform:none}}
 </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<style id="nearby-map-premium-design">
+#nearbyPage .nearby-intro{margin:6px 0 16px;color:var(--tm-muted,#aaa);line-height:1.55}
+#nearbyPage .nearby-view-toggle{display:flex;gap:5px;padding:4px;margin:16px 0 13px;border:1px solid var(--tm-border,#38342d);border-radius:14px;background:var(--tm-surface-raised,#111)}
+#nearbyPage .nearby-view-toggle button{flex:1;min-height:40px;border:0;border-radius:10px;background:transparent;color:var(--tm-muted,#aaa);font-size:13px;font-weight:500}
+#nearbyPage .nearby-view-toggle button.active{color:#21190d;background:linear-gradient(135deg,#e5cb91,#bd9653);box-shadow:0 3px 12px rgba(190,150,83,.18)}
+#nearbyPage .nearby-map-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 2px 10px}
+#nearbyPage .nearby-map-heading strong{color:var(--tm-text,#f5f1e8);font-size:14px;font-weight:600}
+#nearbyPage .nearby-map-heading span{color:var(--tm-muted,#aaa);font-size:11px}
+#nearbyPage #nearbyMembersMap{width:100%;height:clamp(370px,62vh,590px);min-height:350px;overflow:hidden;border:1px solid var(--tm-border,#38342d);border-radius:20px;background:var(--tm-surface,#111);box-shadow:0 12px 30px rgba(0,0,0,.14);z-index:1}
+#nearbyPage .leaflet-container{font-family:Arial,sans-serif;background:var(--tm-surface,#111)}
+#nearbyPage .leaflet-control-attribution{font-size:9px}
+#nearbyPage .nearby-map-marker-shell{background:transparent;border:0}
+#nearbyPage .nearby-map-avatar{display:block;width:50px;height:50px;overflow:hidden;border:2px solid #d6b46e;border-radius:50%;background:#24211b;box-shadow:0 4px 14px rgba(0,0,0,.45),0 0 0 3px rgba(214,180,110,.15)}
+#nearbyPage .nearby-map-avatar img{display:block;width:100%;height:100%;border:0;border-radius:50%;object-fit:cover}
+#nearbyPage .nearby-map-avatar-fallback{display:grid;width:100%;height:100%;place-items:center;color:#e4c987;font-size:21px}
+#nearbyPage .nearby-map-cluster{display:grid;width:42px;height:42px;place-items:center;border:2px solid #e2c17e;border-radius:50%;background:rgba(24,20,14,.94);color:#f6e5bd;font-size:13px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+#nearbyPage .leaflet-tooltip.nearby-area-tooltip{padding:5px 8px;border:1px solid rgba(214,180,110,.45);border-radius:8px;background:rgba(15,15,15,.94);color:#f5e8ca;font-size:11px;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+#nearbyPage .leaflet-tooltip.nearby-area-tooltip:before{border-top-color:rgba(15,15,15,.94)}
+#nearbyPage #nearbyPremiumPrompt{position:absolute;z-index:700;top:12px;left:50%;width:max-content;max-width:calc(100% - 28px);transform:translateX(-50%);padding:9px 13px;border:1px solid rgba(214,180,110,.48);border-radius:999px;background:rgba(18,17,15,.96);color:#f0dfbd;box-shadow:0 6px 22px rgba(0,0,0,.28);text-align:center;font-size:11px;font-weight:400;line-height:1.4}
+#nearbyPage #nearbyPremiumPrompt button{display:inline;padding:0;margin:0;border:0;background:none;color:#e5c477;font:inherit;font-weight:400;text-decoration:underline;text-underline-offset:2px}
+#nearbyPage #nearbyMapEmptyState{position:absolute;z-index:500;left:50%;bottom:18px;width:max-content;max-width:calc(100% - 30px);transform:translateX(-50%);padding:9px 13px;border:1px solid var(--tm-border,#38342d);border-radius:12px;background:rgba(15,15,15,.91);color:#f1e5cd;font-size:12px;text-align:center;pointer-events:none}
+#nearbyPage #nearbyMapPanel.hidden,#nearbyPage #nearbyMembersList.hidden{display:none!important}
+#nearbyPage #nearbyMembersList{margin-top:16px!important}
+#nearbyPage #nearbyMembersStatus{margin:10px 2px}
+body.light-theme #nearbyPage .nearby-view-toggle{background:#f3f0e8;border-color:#e2d8c6}
+body.light-theme #nearbyPage .nearby-view-toggle button{color:#746b5b}
+body.light-theme #nearbyPage .nearby-view-toggle button.active{color:#21190d}
+body.light-theme #nearbyPage .nearby-map-heading strong{color:#302b22}
+body.light-theme #nearbyPage #nearbyMembersMap{border-color:#ded4c1;box-shadow:0 10px 28px rgba(50,40,20,.08)}
+body.light-theme #nearbyPage .leaflet-tooltip.nearby-area-tooltip{background:rgba(255,254,250,.97);color:#30291d;border-color:#d8c69e}
+body.light-theme #nearbyPage .leaflet-tooltip.nearby-area-tooltip:before{border-top-color:rgba(255,254,250,.97)}
+body.light-theme #nearbyPage #nearbyMapEmptyState{background:rgba(255,254,250,.95);color:#30291d;border-color:#ded4c1}
+body.light-theme #nearbyPage #nearbyPremiumPrompt{background:rgba(255,254,250,.97);color:#30291d;border-color:#d8c69e;box-shadow:0 6px 22px rgba(50,40,20,.12)}
+@media(max-width:390px){#nearbyPage #nearbyMembersMap{height:58vh;min-height:340px;border-radius:17px}#nearbyPage .nearby-map-avatar{width:45px;height:45px}}
+</style>
 </head>
 <body>
 <div id="stars" aria-hidden="true"></div>
@@ -5425,13 +5465,24 @@ body.light-theme #matchFeaturePromoClose{background:#f7f2e8;color:#6b5228;border
 
   </section>
 <section class="panel hidden" id="nearbyPage">
-  <h2>⭐ Nearby Members</h2>
-  <p class="small">Discover members near your location. Distances are estimates.</p>
-  <div id="nearbyMembersList"></div>
-  <p class="status" id="nearbyMembersStatus"></p>
-  <button class="btn secondary" id="refreshNearbyMembers" type="button">
-    Refresh Nearby Members
-  </button>
+  <h2>Nearby</h2>
+  <p class="small nearby-intro">Explore members around you. Map positions show approximate neighbourhoods, never exact locations.</p>
+  <div class="nearby-view-toggle" role="group" aria-label="Nearby display options">
+    <button type="button" id="nearbyMapViewBtn" class="active" aria-pressed="true">Map</button>
+    <button type="button" id="nearbyCardsViewBtn" aria-pressed="false" class="hidden">Cards</button>
+  </div>
+  <div id="nearbyMapPanel">
+    <div class="nearby-map-heading"><strong>Members around you</strong><span>Within 50 km · Approximate areas</span></div>
+    <div style="position:relative">
+      <div id="nearbyMembersMap" role="application" aria-label="Map showing approximate neighbourhoods of nearby members"></div>
+      <div id="nearbyPremiumPrompt" class="hidden" role="status" aria-live="polite">Subscribe to <button type="button" id="nearbyPremiumPromptAction">Premium</button> to view this profile</div>
+      <div id="nearbyMapEmptyState" class="hidden">No nearby members are showing on the map yet.</div>
+    </div>
+    <p class="small" style="margin:10px 3px 0">Profile photos mark approximate areas. Tap a photo to see what you can unlock.</p>
+  </div>
+  <div id="nearbyMembersList" class="hidden"></div>
+  <p class="status" id="nearbyMembersStatus" aria-live="polite"></p>
+  <button class="btn secondary" id="refreshNearbyMembers" type="button">Refresh Nearby</button>
 </section>
 
 <section class="panel hidden" id="blockedMembers">
@@ -10114,7 +10165,7 @@ async function refreshNearbyCurrentLocation() {
 
     if (saveError) throw saveError;
 
-    return { ok: true };
+    return { ok: true, latitude, longitude };
   } catch (error) {
     console.warn("Nearby GPS refresh failed:", error);
 
@@ -10127,227 +10178,222 @@ async function refreshNearbyCurrentLocation() {
 
 
 let premiumNearbyLoadInProgress = false;
+let nearbyViewerIsPremium = false;
+let nearbyLeafletMap = null;
+let nearbyMapMarkersLayer = null;
+let nearbyMapTileLayer = null;
+let nearbyPremiumPromptTimer = null;
 
-async function loadPremiumNearby(){
-  if(!currentUser || premiumNearbyLoadInProgress)return;
-  premiumNearbyLoadInProgress = true;
+function showNearbyPremiumPrompt() {
+  const prompt = $("nearbyPremiumPrompt");
+  if (!prompt) return;
+  prompt.classList.remove("hidden");
+  clearTimeout(nearbyPremiumPromptTimer);
+  nearbyPremiumPromptTimer = setTimeout(() => prompt.classList.add("hidden"), 5500);
+}
+$("nearbyPremiumPromptAction")?.addEventListener("click", () => {
+  $("nearbyPremiumPrompt")?.classList.add("hidden");
+  show("premium");
+});
 
-  const list=$("nearbyMembersList");
-  list.replaceChildren();
-  status("nearbyMembersStatus","Checking Premium access...");
+function setNearbyView(view) {
+  const showCards = view === "cards" && nearbyViewerIsPremium;
+  $("nearbyMapPanel")?.classList.toggle("hidden", showCards);
+  $("nearbyMembersList")?.classList.toggle("hidden", !showCards);
+  $("nearbyMapViewBtn")?.classList.toggle("active", !showCards);
+  $("nearbyMapViewBtn")?.setAttribute("aria-pressed", String(!showCards));
+  $("nearbyCardsViewBtn")?.classList.toggle("active", showCards);
+  $("nearbyCardsViewBtn")?.setAttribute("aria-pressed", String(showCards));
+  if (!showCards && nearbyLeafletMap) setTimeout(() => nearbyLeafletMap.invalidateSize(), 120);
+}
+$("nearbyMapViewBtn")?.addEventListener("click", () => setNearbyView("map"));
+$("nearbyCardsViewBtn")?.addEventListener("click", () => {
+  if (nearbyViewerIsPremium) setNearbyView("cards");
+});
 
-  try{
-    const {data:membership,error:premiumError}=await db
-      .from("premium_memberships")
-      .select("premium_until")
-      .eq("user_id",currentUser.id)
-      .maybeSingle();
-
-    if(premiumError)throw premiumError;
-
-    const isPremium=!!membership &&
-      new Date(membership.premium_until).getTime()>Date.now();
-
-    if(!isPremium){
-      const card=document.createElement("div");
-      card.className="member-card";
-
-      const title=document.createElement("h3");
-      title.textContent="⭐ Premium Nearby";
-
-      const note=document.createElement("p");
-      note.className="small";
-      note.textContent="Upgrade to Premium to discover members nearest to your location.";
-
-      const upgrade=document.createElement("button");
-      upgrade.className="btn primary";
-      upgrade.textContent="Go Premium";
-      upgrade.onclick=()=>show("premium");
-
-      card.append(title,note,upgrade);
-      list.appendChild(card);
-      status("nearbyMembersStatus","Premium membership is required.");
-      return;
+function nearbyMapTileUrl() {
+  return document.body.classList.contains("light-theme")
+    ? "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+    : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+}
+function updateNearbyMapTiles() {
+  if (!nearbyLeafletMap || !window.L) return;
+  if (nearbyMapTileLayer) nearbyLeafletMap.removeLayer(nearbyMapTileLayer);
+  nearbyMapTileLayer = L.tileLayer(nearbyMapTileUrl(), {
+    maxZoom: 19, subdomains: "abcd",
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+  }).addTo(nearbyLeafletMap);
+}
+function initializeNearbyMap(center) {
+  const mapElement = $("nearbyMembersMap");
+  if (!mapElement) return false;
+  if (!window.L) {
+    mapElement.innerHTML = '<div style="padding:24px;color:var(--tm-muted,#aaa);text-align:center">The map could not load. Check your internet connection and refresh.</div>';
+    return false;
+  }
+  if (!nearbyLeafletMap) {
+    nearbyLeafletMap = L.map(mapElement, {zoomControl:true,scrollWheelZoom:false,preferCanvas:true})
+      .setView(center || [9.08,8.67], 6);
+    updateNearbyMapTiles();
+    if (typeof L.markerClusterGroup === "function") {
+      nearbyMapMarkersLayer = L.markerClusterGroup({
+        showCoverageOnHover:false, spiderfyOnMaxZoom:true, maxClusterRadius:48,
+        iconCreateFunction: function(cluster) {
+          return L.divIcon({className:"",html:'<span class="nearby-map-cluster">'+cluster.getChildCount()+'</span>',iconSize:[42,42],iconAnchor:[21,21]});
+        }
+      });
+    } else {
+      nearbyMapMarkersLayer = L.layerGroup();
     }
+    nearbyMapMarkersLayer.addTo(nearbyLeafletMap);
+  } else {
+    nearbyLeafletMap.setView(center || nearbyLeafletMap.getCenter(), center ? 11 : nearbyLeafletMap.getZoom());
+    nearbyLeafletMap.invalidateSize();
+  }
+  if (!window.nearbyMapThemeObserver) {
+    window.nearbyMapThemeObserver = new MutationObserver(updateNearbyMapTiles);
+    window.nearbyMapThemeObserver.observe(document.body,{attributes:true,attributeFilter:["class"]});
+  }
+  return true;
+}
+function nearbyMapAvatarIcon(photoUrl) {
+  const safeUrl=String(photoUrl||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const html=safeUrl
+    ? '<span class="nearby-map-avatar"><img src="'+safeUrl+'" alt="" loading="lazy"></span>'
+    : '<span class="nearby-map-avatar"><span class="nearby-map-avatar-fallback">✦</span></span>';
+  return L.divIcon({className:"nearby-map-marker-shell",html:html,iconSize:[54,54],iconAnchor:[27,27]});
+}
+async function renderNearbyMapMarkers(center) {
+  if (!initializeNearbyMap(center)) return 0;
+  if (nearbyMapMarkersLayer) nearbyMapMarkersLayer.clearLayers();
+  $("nearbyMapEmptyState")?.classList.add("hidden");
 
-           const { data: profile, error: profileError } = await db
-        .from("profiles")
-        .select("location_sharing")
-        .eq("id", currentUser.id)
-        .maybeSingle();
+  const {data:rows,error}=await db.rpc("nearby_map_markers_secure",{p_max_distance_km:50});
+  if(error)throw error;
+  const unique=new Map();
+  (rows||[]).forEach(row=>{if(row?.id&&!unique.has(row.id))unique.set(row.id,row);});
+  const markers=[...unique.values()];
+  if(!markers.length){$("nearbyMapEmptyState")?.classList.remove("hidden");return 0;}
 
-      if (profileError) throw profileError;
+  const ids=markers.map(person=>person.id);
+  const {data:photos,error:photoError}=await db.from("profile_photos")
+    .select("user_id,storage_path").in("user_id",ids).eq("position",0);
+  if(photoError)console.warn("Nearby map photos could not be loaded:",photoError.message);
+  const entries=await Promise.all((photos||[]).map(async photo=>{
+    try{return [photo.user_id,await resolveProfilePhotoUrl(photo.storage_path)];}
+    catch(error){console.warn("Nearby map photo URL failed:",error);return [photo.user_id,null];}
+  }));
+  const photoUrls=new Map(entries);
 
-            if (!profile?.location_sharing) {
-        status(
-          "nearbyMembersStatus",
-          "Enable location sharing in your profile to use Nearby."
-        );
-        return;
-      }
-
-            if (!navigator.geolocation) {
-        status(
-          "nearbyMembersStatus",
-          "Location isn't supported here. Open The Match in Chrome and check location permissions.",
-          true
-        );
-        return;
-            }
-
-
-status("nearbyMembersStatus", "Getting your current GPS location...");
-
-const locationRefresh = await refreshNearbyCurrentLocation();
-
-if (!locationRefresh.ok) {
-  const messages = {
-    unsupported:
-      "Location isn't supported here. Open The Match in Chrome and check location permissions.",
-    sharing_disabled:
-      "Enable location sharing in your profile to use Nearby.",
-    permission:
-      "Location permission was denied. Allow location for The Match in your browser or phone settings, then try again.",
-    gps_error:
-      "Couldn't get or save your current location. Check your GPS and browser permission, then try again."
-  };
-
-  status(
-    "nearbyMembersStatus",
-    messages[locationRefresh.reason] || messages.gps_error,
-    true
-  );
-  return;
+  markers.forEach(person=>{
+    const lat=Number(person.map_latitude),lon=Number(person.map_longitude);
+    if(!Number.isFinite(lat)||!Number.isFinite(lon))return;
+    const parts=[person.nearby_current_city,person.nearby_current_state].map(v=>(v||"").trim()).filter(Boolean);
+    const area=[...new Map(parts.map(v=>[v.toLocaleLowerCase(),v])).values()].join(", ");
+    const marker=L.marker([lat,lon],{icon:nearbyMapAvatarIcon(photoUrls.get(person.id))});
+    if(area)marker.bindTooltip(area,{direction:"top",offset:[0,-25],opacity:.96,className:"nearby-area-tooltip"});
+    marker.on("click",()=>{
+      if(!nearbyViewerIsPremium){showNearbyPremiumPrompt();return;}
+      openMemberProfile(person.id);
+    });
+    nearbyMapMarkersLayer.addLayer(marker);
+  });
+  const bounds=nearbyMapMarkersLayer.getBounds?.();
+  if(bounds&&bounds.isValid())nearbyLeafletMap.fitBounds(bounds,{padding:[34,34],maxZoom:12});
+  return markers.length;
 }
 
-status("nearbyMembersStatus", "Finding nearby members...");
+async function loadPremiumNearby(){
+  if(!currentUser||premiumNearbyLoadInProgress)return;
+  premiumNearbyLoadInProgress=true;
+  const list=$("nearbyMembersList");
+  list.replaceChildren();
+  list.classList.add("hidden");
+  $("nearbyMapPanel")?.classList.remove("hidden");
+  status("nearbyMembersStatus","Checking your location settings...");
+  try{
+    const {data:membership,error:premiumError}=await db.from("premium_memberships")
+      .select("premium_until").eq("user_id",currentUser.id).maybeSingle();
+    if(premiumError)throw premiumError;
+    nearbyViewerIsPremium=!!membership&&!!membership.premium_until&&new Date(membership.premium_until).getTime()>Date.now();
+    $("nearbyCardsViewBtn")?.classList.toggle("hidden",!nearbyViewerIsPremium);
+    setNearbyView("map");
 
-        
-        
-    const { data: peopleData, error: peopleError } =
-      await db.rpc("premium_nearby_profiles_secure", {
-        p_max_distance_km:50
-      });
-
-    if (peopleError) throw peopleError;
-
-    // A profile should appear only once, even if an RPC response ever repeats an id.
-    const uniqueNearbyPeople = new Map();
-    (peopleData || []).forEach(person => {
-      if (person?.id && !uniqueNearbyPeople.has(person.id)) {
-        uniqueNearbyPeople.set(person.id, person);
-      }
-    });
-
-    let people = [...uniqueNearbyPeople.values()].map(p => ({
-      ...p,
-      _distance:
-        p.distance_km == null ? null : Number(p.distance_km)
-    }));
-
-
-
-    for (let i = people.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [people[i], people[j]] = [people[j], people[i]];
+    const {data:profile,error:profileError}=await db.from("profiles")
+      .select("location_sharing").eq("id",currentUser.id).maybeSingle();
+    if(profileError)throw profileError;
+    if(!profile?.location_sharing){
+      status("nearbyMembersStatus","Enable location sharing in your profile to explore the Nearby map.");
+      $("nearbyMembersMap").innerHTML='<div style="padding:24px;color:var(--tm-muted,#aaa);text-align:center">Turn on location sharing in your profile to see the Nearby map.</div>';
+      return;
     }
+    if(!navigator.geolocation){
+      status("nearbyMembersStatus","Location is not supported here. Open The Match in Chrome and check location permissions.",true);
+      return;
+    }
+    status("nearbyMembersStatus","Updating your approximate area...");
+    const locationRefresh=await refreshNearbyCurrentLocation();
+    if(!locationRefresh.ok){
+      const messages={
+        unsupported:"Location is not supported here. Open The Match in Chrome and check location permissions.",
+        sharing_disabled:"Enable location sharing in your profile to use Nearby.",
+        permission:"Location permission was denied. Allow location for The Match in your browser or phone settings, then try again.",
+        gps_error:"Could not update your location. Check your GPS and browser permission, then try again."
+      };
+      status("nearbyMembersStatus",messages[locationRefresh.reason]||messages.gps_error,true);
+      return;
+    }
+    const ownCenter=locationRefresh.latitude!=null&&locationRefresh.longitude!=null
+      ? [locationRefresh.latitude,locationRefresh.longitude] : null;
+    status("nearbyMembersStatus","Loading nearby members...");
+    const mapCount=await renderNearbyMapMarkers(ownCenter);
 
-    if(!people.length){
-      status("nearbyMembersStatus","No nearby members are available yet.");
+    if(!nearbyViewerIsPremium){
+      status("nearbyMembersStatus",mapCount
+        ? "The Nearby map is ready. Tap a profile photo to learn about Premium."
+        : "The map is ready. No eligible nearby members are showing yet.");
       return;
     }
 
+    const {data:peopleData,error:peopleError}=await db.rpc("premium_nearby_profiles_secure",{p_max_distance_km:50});
+    if(peopleError)throw peopleError;
+    const uniquePeople=new Map();
+    (peopleData||[]).forEach(person=>{if(person?.id&&!uniquePeople.has(person.id))uniquePeople.set(person.id,person);});
+    let people=[...uniquePeople.values()].map(p=>({...p,_distance:p.distance_km==null?null:Number(p.distance_km)}));
+    for(let i=people.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[people[i],people[j]]=[people[j],people[i]];}
+    if(!people.length){
+      status("nearbyMembersStatus",mapCount?"The map is ready. No member cards are available yet.":"No nearby members are available yet.");
+      return;
+    }
     people.forEach(p=>{
-      const card=document.createElement("div");
-      card.className="member-card";
-
-      const name=document.createElement("h3");
-name.appendChild(
-  document.createTextNode(p.display_name || "The Match member")
-);
-
-if (p.is_verified || p.verification_level === "basic" ||
-    p.verification_level === "enhanced") {
-  const tick=document.createElement("span");
-  tick.textContent=" ✓";
-  tick.style.color="#D4AF37";
-  tick.title="Verified profile";
-  name.appendChild(tick);
-  }
-      
-      const avatar=document.createElement("img");
-      avatar.alt=(p.display_name||"Member")+"'s profile photo";
-      avatar.loading="lazy";
-      avatar.style.cssText=
-        "display:block;width:100%;height:280px;"+
-        "object-fit:cover;object-position:center;"+
-        "border-radius:14px;margin-bottom:14px;"+
-        "background:#111;border:1px solid #c6a15b;";
-
-      db.from("profile_photos")
-        .select("storage_path,position")
-        .eq("user_id",p.id)
-        .order("position",{ascending:true})
-        .limit(1)
-        .then(async ({data:photos,error:photoError})=>{
-          if(photoError){
-            console.warn("Nearby profile photo failed:",photoError);
-            avatar.style.display="none";
-            return;
-          }
-
-          if(photos&&photos.length&&photos[0].storage_path){
-            avatar.src=await resolveProfilePhotoUrl(photos[0].storage_path);
-            avatar.onerror=()=>{avatar.style.display="none";};
-          }else{
-            avatar.style.display="none";
-          }
-        });
-      const details=document.createElement("p");
-details.className="small";
-const locationParts = [p.nearby_current_city, p.nearby_current_state]
-  .map(value => (value || "").trim())
-  .filter(Boolean);
-const uniqueLocationParts = [...new Map(
-  locationParts.map(value => [value.toLocaleLowerCase(), value])
-).values()];
-details.textContent=[
-  p.age?String(p.age):"",
-  p.gender_identity||"",
-  ...uniqueLocationParts
-].filter(Boolean).join(" · ");
-
-      const distance=document.createElement("p");
-      distance.className="distance";
-      distance.textContent=distanceLabel(p._distance)+" away";
-
-      card.append(avatar,name,details,distance);
-
-      if(p.bio){
-        const bio=document.createElement("p");
-        bio.className="small";
-        bio.textContent=sanitizeProfileBio(p.bio);
-        card.appendChild(bio);
+      const card=document.createElement("div");card.className="member-card";
+      const name=document.createElement("h3");name.appendChild(document.createTextNode(p.display_name||"The Match member"));
+      if(p.is_verified||p.verification_level==="basic"||p.verification_level==="enhanced"){
+        const tick=document.createElement("span");tick.textContent=" ✓";tick.style.color="#D4AF37";tick.title="Verified profile";name.appendChild(tick);
       }
-
-      const view=document.createElement("button");
-      view.className="btn secondary";
-      view.textContent="View Profile";
-      view.onclick=()=>openMemberProfile(p.id);
-
-      card.appendChild(view);
-      list.appendChild(card);
+      const avatar=document.createElement("img");avatar.alt=(p.display_name||"Member")+"'s profile photo";avatar.loading="lazy";
+      avatar.style.cssText="display:block;width:100%;height:280px;object-fit:cover;object-position:center;border-radius:14px;margin-bottom:14px;background:#111;border:1px solid #c6a15b;";
+      db.from("profile_photos").select("storage_path,position").eq("user_id",p.id).order("position",{ascending:true}).limit(1)
+        .then(async({data:photos,error:photoError})=>{
+          if(photoError){console.warn("Nearby profile photo failed:",photoError);avatar.style.display="none";return;}
+          if(photos&&photos.length&&photos[0].storage_path){avatar.src=await resolveProfilePhotoUrl(photos[0].storage_path);avatar.onerror=()=>{avatar.style.display="none";};}
+          else avatar.style.display="none";
+        });
+      const details=document.createElement("p");details.className="small";
+      const locationParts=[p.nearby_current_city,p.nearby_current_state].map(v=>(v||"").trim()).filter(Boolean);
+      const uniqueParts=[...new Map(locationParts.map(v=>[v.toLocaleLowerCase(),v])).values()];
+      details.textContent=[p.age?String(p.age):"",p.gender_identity||"",...uniqueParts].filter(Boolean).join(" · ");
+      const distance=document.createElement("p");distance.className="distance";distance.textContent=distanceLabel(p._distance)+" away";
+      card.append(avatar,name,details,distance);
+      if(p.bio){const bio=document.createElement("p");bio.className="small";bio.textContent=sanitizeProfileBio(p.bio);card.appendChild(bio);}
+      const view=document.createElement("button");view.className="btn secondary";view.textContent="View Profile";view.onclick=()=>openMemberProfile(p.id);
+      card.appendChild(view);list.appendChild(card);
     });
-
-    status("nearbyMembersStatus",people.length+" nearby members found.");
+    status("nearbyMembersStatus",people.length+" nearby members found. Switch between Map and Cards.");
   }catch(e){
-    status(
-      "nearbyMembersStatus",
-      "Could not load nearby members: "+friendly(e),
-      true
-    );
-  } finally {
-    premiumNearbyLoadInProgress = false;
+    status("nearbyMembersStatus","Could not load Nearby: "+friendly(e),true);
+  }finally{
+    premiumNearbyLoadInProgress=false;
   }
 }
 

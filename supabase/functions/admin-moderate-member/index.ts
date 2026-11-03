@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 function corsFor(req: Request) {
   const origin = req.headers.get("Origin");
@@ -14,87 +14,120 @@ function corsFor(req: Request) {
   };
 }
 
+function json(body: unknown, status = 200, cors: Record<string, string> = {}) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...cors, "Content-Type": "application/json" },
+  });
+}
+
+function previousBanDuration(previous: { status?: string; expires_at?: string | null } | null) {
+  if (previous?.status === "banned") return "876000h";
+  if (previous?.status === "suspended" && previous.expires_at) {
+    const remaining = new Date(previous.expires_at).getTime() - Date.now();
+    if (remaining > 0) return Math.max(1, Math.ceil(remaining / 1000)) + "s";
+  }
+  return "0s";
+}
+
 Deno.serve(async (req: Request) => {
   const cors = corsFor(req);
   const origin = req.headers.get("Origin");
   if (origin && !cors["Access-Control-Allow-Origin"]) {
-    return new Response(JSON.stringify({ error: "Origin not allowed" }), {
-      status: 403, headers: { "Content-Type": "application/json", "Vary": "Origin" },
-    });
+    return json({ error: "Origin not allowed" }, 403, { "Vary": "Origin" });
   }
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
-  const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
-    status, headers: { ...cors, "Content-Type": "application/json" },
-  });
-  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
+  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405, cors);
 
-  const url = Deno.env.get("SUPABASE_URL");
-  const anon = Deno.env.get("SUPABASE_ANON_KEY");
-  const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const authHeader = req.headers.get("Authorization");
-  if (!url || !anon || !service || !authHeader) return json({ error: "Server configuration or authentication missing" }, 500);
-
-  const caller = createClient(url, anon, { global: { headers: { Authorization: authHeader } } });
-  const { data: { user }, error: userError } = await caller.auth.getUser();
-  if (userError || !user) return json({ error: "Authentication required" }, 401);
-  const { data: isAdmin, error: adminError } = await caller.rpc("is_match_admin");
-  if (adminError || isAdmin !== true) return json({ error: "Admin access denied" }, 403);
-
-  let body: { user_id?: string; action?: string; reason?: string; expires_at?: string | null };
-  try { body = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
-  const target = body.user_id;
-  const action = body.action;
-  const reason = (body.reason || "").trim();
-  if (!target || target === user.id) return json({ error: "Invalid target account" }, 400);
-  if (!["suspended", "banned", "restored"].includes(action || "")) return json({ error: "Invalid action" }, 400);
-  if (action !== "restored" && (reason.length < 3 || reason.length > 1000)) return json({ error: "A reason is required (3–1000 characters)" }, 400);
-
-  const admin = createClient(url, service, { auth: { autoRefreshToken: false, persistSession: false } });
-  const { data: targetAdmin } = await admin.from("app_admins").select("user_id").eq("user_id", target).maybeSingle();
-  if (targetAdmin) return json({ error: "Administrator accounts cannot be moderated here" }, 403);
-
-  let banDuration = "none";
-  if (action === "banned") banDuration = "876000h";
-  if (action === "suspended") {
-    const until = body.expires_at ? new Date(body.expires_at) : null;
-    if (!until || Number.isNaN(until.getTime()) || until <= new Date() || until.getTime() > Date.now() + 30 * 86400000) {
-      return json({ error: "Choose a suspension expiry within the next 30 days" }, 400);
+  try {
+    const url = Deno.env.get("SUPABASE_URL");
+    const anon = Deno.env.get("SUPABASE_ANON_KEY");
+    const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const authHeader = req.headers.get("Authorization") || "";
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    if (!url || !anon || !service || !token || token === authHeader) {
+      return json({ error: "Authentication or server configuration is missing." }, 401, cors);
     }
-    banDuration = Math.max(60, Math.ceil((until.getTime() - Date.now()) / 1000)) + "s";
-  }
 
-  // Snapshot the previous state so a failed Auth update never erases an older restriction.
-  const { data: previousModeration, error: previousError } = await admin
-    .from("member_moderation")
-    .select("user_id,status,reason,expires_at,actioned_by,updated_at")
-    .eq("user_id", target)
-    .maybeSingle();
-  if (previousError) return json({ error: "Could not verify the existing moderation state" }, 500);
-
-  const { error: rpcError } = await caller.rpc("admin_set_member_moderation", {
-    p_user_id: target,
-    p_action: action,
-    p_reason: reason || null,
-    p_expires_at: action === "suspended" ? body.expires_at : null,
-  });
-  if (rpcError) return json({ error: rpcError.message }, 400);
-
-  const { error: authError } = await admin.auth.admin.updateUserById(target, { ban_duration: banDuration });
-  if (authError) {
-    // Restore the exact previous moderation row, rather than deleting a prior suspension or ban.
-    const rollback = previousModeration
-      ? await admin.from("member_moderation").upsert(previousModeration, { onConflict: "user_id" })
-      : await admin.from("member_moderation").delete().eq("user_id", target);
-    const { error: auditError } = await admin.from("member_moderation_audit").insert({
-      user_id: target,
-      action: "failed",
-      reason: "Auth restriction failed; " + authError.message.slice(0, 900),
-      actioned_by: user.id,
+    const caller = createClient(url, anon, {
+      auth: { autoRefreshToken: false, persistSession: false },
+      global: { headers: { Authorization: `Bearer ${token}` } },
     });
-    if (rollback.error || auditError) {
-      return json({ error: "Auth update failed and rollback/audit needs administrator review." }, 500);
+    const { data: userData, error: userError } = await caller.auth.getUser(token);
+    if (userError || !userData.user) return json({ error: "Your session is invalid. Please sign in again." }, 401, cors);
+
+    const { data: isAdmin, error: adminCheckError } = await caller.rpc("is_match_admin");
+    if (adminCheckError || isAdmin !== true) return json({ error: "Admin access denied." }, 403, cors);
+
+    const body = await req.json().catch(() => null) as {
+      user_id?: string; action?: string; reason?: string; expires_at?: string | null;
+    } | null;
+    if (!body) return json({ error: "Invalid request body." }, 400, cors);
+
+    const targetId = typeof body.user_id === "string" ? body.user_id : "";
+    const action = body.action || "";
+    const reason = typeof body.reason === "string" ? body.reason.trim() : "";
+    if (!targetId || targetId === userData.user.id) return json({ error: "You cannot moderate your own account." }, 400, cors);
+    if (!["suspended", "banned", "restored"].includes(action)) return json({ error: "Invalid moderation action." }, 400, cors);
+    if (reason.length < 3 || reason.length > 500) return json({ error: "Enter a reason between 3 and 500 characters." }, 400, cors);
+
+    let expiresAt: string | null = null;
+    let banDuration = "0s";
+    if (action === "banned") {
+      banDuration = "876000h"; // Supabase Auth's documented 100-year ban duration.
+    } else if (action === "suspended") {
+      const parsed = body.expires_at ? new Date(body.expires_at) : null;
+      if (!parsed || Number.isNaN(parsed.getTime()) || parsed.getTime() <= Date.now() ||
+          parsed.getTime() > Date.now() + 30 * 86400000) {
+        return json({ error: "Choose a suspension expiry within the next 30 days." }, 400, cors);
+      }
+      expiresAt = parsed.toISOString();
+      banDuration = Math.max(1, Math.ceil((parsed.getTime() - Date.now()) / 1000)) + "s";
     }
-    return json({ error: "Auth restriction failed; previous moderation state was restored: " + authError.message }, 502);
+
+    const admin = createClient(url, service, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    const { data: adminTarget, error: adminTargetError } = await admin
+      .from("app_admins").select("user_id").eq("user_id", targetId).maybeSingle();
+    if (adminTargetError) return json({ error: "Could not verify the target account's admin status." }, 500, cors);
+    if (adminTarget) return json({ error: "Administrator accounts cannot be moderated here." }, 403, cors);
+
+    const { data: targetUser, error: targetUserError } = await admin.auth.admin.getUserById(targetId);
+    if (targetUserError || !targetUser.user) return json({ error: "The selected member account could not be found." }, 404, cors);
+
+    const { data: previous, error: previousError } = await admin
+      .from("member_moderation").select("status,expires_at").eq("user_id", targetId).maybeSingle();
+    if (previousError) return json({ error: "Could not read the current moderation status." }, 500, cors);
+
+    // Apply the Auth restriction first so a successful action blocks future logins/refreshes.
+    // If the database audit write fails, restore the previous Auth restriction.
+    const { error: authError } = await admin.auth.admin.updateUserById(targetId, { ban_duration: banDuration });
+    if (authError) return json({ error: "Supabase Auth could not apply this restriction: " + authError.message }, 502, cors);
+
+    const { data: recorded, error: recordError } = await caller.rpc("record_member_moderation", {
+      p_user_id: targetId,
+      p_action: action,
+      p_reason: reason,
+      p_expires_at: expiresAt,
+    });
+
+    if (recordError || recorded?.success !== true) {
+      const rollbackDuration = previousBanDuration(previous);
+      const { error: rollbackError } = await admin.auth.admin.updateUserById(targetId, {
+        ban_duration: rollbackDuration,
+      });
+      if (rollbackError) {
+        console.error("Moderation rollback failed:", rollbackError.message);
+        return json({ error: "The moderation record could not be saved and Auth rollback needs administrator review." }, 500, cors);
+      }
+      return json({ error: recordError?.message || "The moderation record could not be saved. The previous account restriction was restored." }, 400, cors);
+    }
+
+    return json({ success: true, user_id: targetId, action, expires_at: expiresAt });
+  } catch (error) {
+    console.error("Member moderation failed:", error instanceof Error ? error.message : "Unknown error");
+    return json({ error: "Member moderation could not be completed. Please try again." }, 500, cors);
   }
-  return json({ success: true, action, user_id: target });
 });

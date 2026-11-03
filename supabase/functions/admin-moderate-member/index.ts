@@ -106,11 +106,12 @@ Deno.serve(async (req: Request) => {
     const { error: authError } = await admin.auth.admin.updateUserById(targetId, { ban_duration: banDuration });
     if (authError) return json({ error: "Supabase Auth could not apply this restriction: " + authError.message }, 502, cors);
 
-    const { data: recorded, error: recordError } = await caller.rpc("record_member_moderation", {
+    const { data: recorded, error: recordError } = await admin.rpc("record_member_moderation", {
       p_user_id: targetId,
       p_action: action,
       p_reason: reason,
       p_expires_at: expiresAt,
+      p_actor_id: userData.user.id,
     });
 
     if (recordError || recorded?.success !== true) {

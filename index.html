@@ -9562,16 +9562,15 @@ async function loadNearby(){
   status("discoverStatus","Finding members...");
 
   try{
-
-    
-    const savedPreferences = JSON.parse(
-      localStorage.getItem("theMatchDiscoveryPreferences") || "{}"
-    );
-
+    const viewerPremium = await matchIsPremium();
+    await refreshDailyLikeCounter();
+    const savedPreferences = JSON.parse(localStorage.getItem("theMatchDiscoveryPreferences") || "{}");
     const preferredLocation = (savedPreferences.location || "").trim();
-    const maxDistance = Number(savedPreferences.distance) || 50;
+    const maxDistance = Math.min(Number(savedPreferences.distance) || 50, viewerPremium ? 200 : 50);
     const minAge = Number(savedPreferences.minAge) || 18;
-    const maxAge = Number(savedPreferences.maxAge) || 79;
+    const maxAge = Math.min(Number(savedPreferences.maxAge) || 79, viewerPremium ? 99 : 79);
+    const showMe = savedPreferences.showMe || "everyone";
+    const lookingFor = savedPreferences.lookingFor || "";
     const rolePreferences = Array.isArray(savedPreferences.rolePreferences) ? savedPreferences.rolePreferences : [];
 
     
@@ -9622,6 +9621,13 @@ let people = (peopleData || []).map(p => ({
         people=people.filter(person=>Array.isArray(person.sexual_roles)&&person.sexual_roles.some(role=>rolePreferences.includes(role)));
       }
     }
+    if (showMe !== "everyone") {
+      const expected = showMe === "nonbinary" ? "non-binary" : showMe;
+      people = people.filter(person => String(person.gender_identity || "").toLowerCase().includes(expected));
+    }
+    if (lookingFor) people = people.filter(person => String(person.interested_in || "").toLowerCase() === lookingFor.toLowerCase());
+    if (viewerPremium && savedPreferences.verifiedOnly) people = people.filter(person => person.is_verified || ["basic","enhanced"].includes(person.verification_level));
+    if (viewerPremium && savedPreferences.recentlyActive) people = people.filter(person => isUserOnline(person.id));
 
     // Randomize Discover profile order.
     for (let i = people.length - 1; i > 0; i--) {
@@ -9655,14 +9661,14 @@ people = people.filter(p =>
 
 
   
-if (!people.length && (preferredLocation || maxDistance < 500)) {
+if (!people.length && viewerPremium && savedPreferences.expandRange && (preferredLocation || maxDistance < 200)) {
   status("discoverStatus", "Searching a wider area...");
 
     const {
     data: expandedData,
     error: expandedError
   } = await db.rpc("discover_profiles_secure", {
-    p_max_distance_km: 500,
+    p_max_distance_km: 200,
     p_min_age: minAge,
     p_max_age: maxAge,
     p_city: null
@@ -9719,6 +9725,18 @@ if (!people.length && (preferredLocation || maxDistance < 500)) {
     const j = Math.floor(Math.random() * (i + 1));
     [people[i], people[j]] = [people[j], people[i]];
   }
+}
+
+const discoverMemberIds = people.map(person => person.id);
+if (discoverMemberIds.length) {
+  const { data: premiumRows, error: premiumRowsError } = await db.rpc("get_active_premium_member_ids", { p_user_ids: discoverMemberIds });
+  if (premiumRowsError) throw premiumRowsError;
+  const premiumSet = new Set((premiumRows || []).map(row => row.user_id));
+  people = people.map(person => ({ ...person, is_premium: premiumSet.has(person.id) }));
+  const { data: boostedRows, error: boostedError } = await db.rpc("get_active_discover_boost_ids");
+  if (boostedError) throw boostedError;
+  const boostedSet = new Set(boostedRows || []);
+  people.sort((a,b) => Number(boostedSet.has(b.id)) - Number(boostedSet.has(a.id)));
 }
 
 if (!people.length) {
@@ -9899,6 +9917,13 @@ if (p.is_verified || p.verification_level === "basic" ||
   name.appendChild(tick);
 }
 
+if (p.is_premium) {
+  const premiumBadge = document.createElement("span");
+  premiumBadge.textContent = " ✦ PREMIUM";
+  premiumBadge.style.cssText = "display:inline-block;margin-left:7px;padding:4px 8px;border-radius:999px;background:linear-gradient(135deg,#e2c17d,#a77b32);color:#17130b;font-size:10px;font-weight:900;letter-spacing:.7px;vertical-align:middle;";
+  premiumBadge.title = "Active Premium member";
+  name.appendChild(premiumBadge);
+}
 name.style.cssText="font-size:28px;font-weight:800;letter-spacing:-0.6px;line-height:1.15;margin:14px 4px 6px;color:#fff;overflow-wrap:anywhere;";
 card.appendChild(name);
 
@@ -10054,6 +10079,7 @@ like.onclick=async()=>{
       return;
     }
 
+  await refreshDailyLikeCounter();
   const {data:reverseLike,error:matchError}=await db
   .rpc("check_mutual_like",{p_other_user_id:p.id});
 
@@ -12628,6 +12654,10 @@ async function openMemberProfile(memberId){
     if(error) throw error;
     if(!p) throw Error("This member's profile could not be found.");
 
+    const { data: premiumMemberRows, error: premiumMemberError } = await db.rpc("get_active_premium_member_ids", { p_user_ids: [memberId] });
+    if (premiumMemberError) throw premiumMemberError;
+    const memberIsPremium = (premiumMemberRows || []).some(row => row.user_id === memberId);
+
     const badge = document.createElement("span");
 badge.style.fontSize = "0.8em";
 badge.style.fontWeight = "bold";
@@ -12654,7 +12684,13 @@ if (p.verification_level === "enhanced" ||
     p.is_verified) {
   name.appendChild(badge);
 }
-
+if (memberIsPremium) {
+  const premiumBadge = document.createElement("span");
+  premiumBadge.textContent = " ✦ PREMIUM";
+  premiumBadge.style.cssText = "display:inline-block;margin-left:7px;padding:4px 8px;border-radius:999px;background:linear-gradient(135deg,#e2c17d,#a77b32);color:#17130b;font-size:10px;font-weight:900;letter-spacing:.7px;vertical-align:middle;";
+  premiumBadge.title = "Active Premium member";
+  name.appendChild(premiumBadge);
+}
 name.appendChild(document.createTextNode(" ❤️"));
 
     const details = $("memberProfileDetails");

@@ -17368,6 +17368,162 @@ body:has(#discover:not(.hidden)) footer p {
   #discover #profileList > .member-card {height:calc(100vh - 205px)!important}
 }
 
+
+
+/* Compact Discover utilities: preserve every feature, reduce vertical overhead */
+#discover .discover-page-heading {
+  margin:0 0 5px!important;
+  min-height:0!important;
+}
+#discover .discover-page-heading h2 {
+  margin:0!important;
+  font-size:22px!important;
+}
+#discover .discover-page-heading .small {
+  margin:1px 0 0!important;
+  font-size:11px!important;
+  line-height:1.2!important;
+}
+#discover #storiesSection {
+  margin:5px 0 7px!important;
+  padding:8px 10px!important;
+  border:1px solid rgba(210,173,104,.24)!important;
+  border-radius:16px!important;
+  background:linear-gradient(145deg,rgba(28,24,17,.88),rgba(9,9,9,.92))!important;
+}
+#discover #storiesSection h3 {
+  margin:0 0 3px!important;
+  font-size:15px!important;
+}
+#discover #storiesSection > p.small {
+  display:none!important;
+}
+#discover #storiesList {
+  min-height:0!important;
+  margin:0!important;
+  padding:3px 0!important;
+  gap:9px!important;
+}
+#discover .story-circle,#discover .story-item {
+  flex-basis:58px!important;
+  width:58px!important;
+  gap:4px!important;
+  font-size:10px!important;
+}
+#discover .story-plus,#discover .story-avatar {
+  width:48px!important;
+  height:48px!important;
+  flex-basis:48px!important;
+  font-size:23px!important;
+}
+#discover #storiesSection #storiesStatus {
+  margin:2px 0 0!important;
+  font-size:11px!important;
+  line-height:1.25!important;
+}
+#discover .events-discover-entry {
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:8px!important;
+  margin:5px 0!important;
+  padding:6px 10px!important;
+  min-height:0!important;
+  border-radius:12px!important;
+  background:rgba(210,173,104,.055)!important;
+}
+#discover .events-discover-entry strong {
+  font-size:12px!important;
+  line-height:1.2!important;
+}
+#discover .events-discover-entry p {
+  display:none!important;
+}
+#discover #openEventsFromDiscover {
+  width:auto!important;
+  min-width:0!important;
+  min-height:32px!important;
+  padding:5px 10px!important;
+  margin:0!important;
+  font-size:11px!important;
+  white-space:nowrap!important;
+}
+#discover > p.small:not(.discover-page-heading .small) {
+  margin:3px 0!important;
+  font-size:10px!important;
+  line-height:1.2!important;
+}
+#discover .discover-premium-tools {
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:7px!important;
+  margin:5px 0!important;
+}
+#discover .discover-premium-tools .btn {
+  min-height:34px!important;
+  width:100%!important;
+  margin:0!important;
+  padding:5px 8px!important;
+  border-radius:11px!important;
+  font-size:12px!important;
+}
+#discover #dailyLikesStatus {
+  grid-column:1/-1!important;
+  margin:0!important;
+  font-size:10px!important;
+  line-height:1.2!important;
+  text-align:right!important;
+}
+#discover #refreshNearby {
+  min-height:32px!important;
+  margin:2px 0 5px!important;
+  padding:5px 11px!important;
+  border-radius:10px!important;
+  font-size:11px!important;
+}
+#discover #profileList {
+  margin-top:3px!important;
+  margin-bottom:0!important;
+  gap:5px!important;
+}
+#discover #profileList > .member-card {
+  height:clamp(370px,calc(100svh - 430px),570px)!important;
+  min-height:370px!important;
+  max-height:570px!important;
+}
+#discover #profileList > .member-card .discover-profile-overlay {
+  padding:65px 13px 12px!important;
+}
+#discover #profileList > .member-card .discover-profile-overlay .btn {
+  min-height:43px!important;
+}
+#discover #discoverStatus {
+  margin:3px 0 0!important;
+  font-size:11px!important;
+}
+@media(max-height:740px) {
+  #discover #profileList > .member-card {
+    height:370px!important;
+    min-height:370px!important;
+  }
+  #discover #storiesSection {padding:6px 9px!important}
+  #discover .story-plus,#discover .story-avatar {
+    width:43px!important;height:43px!important;flex-basis:43px!important;
+  }
+}
+@media(max-width:380px) {
+  #discover .events-discover-entry strong {font-size:11px!important}
+  #discover #openEventsFromDiscover {padding:5px 8px!important;font-size:10px!important}
+  #discover .discover-premium-tools .btn {font-size:11px!important}
+}
+body.light-theme #discover #storiesSection {
+  background:linear-gradient(145deg,#fffdf8,#f5f0e6)!important;
+  border-color:rgba(160,120,48,.24)!important;
+}
+body.light-theme #discover .events-discover-entry {
+  background:rgba(160,120,48,.06)!important;
+}
+
 </style>
 </body>
 </html>

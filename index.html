@@ -4757,6 +4757,62 @@ body.light-theme #messages #openCallHistoryButton{color:#17120a}
   }
 }
 </style>
+
+<style id="event-explore-premium-layout">
+#eventsPage .events-shell{width:100%;max-width:1180px;margin:0 auto;padding:0 2px;box-sizing:border-box}
+#eventsPage .events-heading{padding:clamp(22px,4vw,42px);border:1px solid rgba(214,180,110,.25);border-radius:24px;background:radial-gradient(ellipse at 88% 5%,rgba(214,180,110,.16),transparent 42%),linear-gradient(135deg,#19170f,#0b0b0a 68%);overflow:hidden}
+#eventsPage .events-heading h2{max-width:760px;font-size:clamp(30px,5vw,54px);line-height:1.04;letter-spacing:-1.7px;margin:9px 0 12px}
+#eventsPage .events-heading>p:not(.events-eyebrow){max-width:650px}
+#eventsPage .events-filters{padding:18px;border:1px solid rgba(214,180,110,.22);border-radius:20px;background:linear-gradient(145deg,#15140f,#0b0b0a);box-sizing:border-box}
+#eventsPage .events-search-wrap{display:flex;align-items:center;gap:10px;padding:0 13px;border:1px solid #48402e;border-radius:14px;background:#090909}
+#eventsPage .events-search-wrap>span{font-size:23px;color:#d8b66e}
+#eventsPage .events-search-wrap input{border:0!important;box-shadow:none!important;background:transparent!important}
+#eventsPage .events-quick-filters{display:flex;gap:8px;overflow-x:auto;padding:14px 0 3px;scrollbar-width:none}
+#eventsPage .events-quick-filters::-webkit-scrollbar{display:none}
+#eventsPage .event-filter-chip{flex:0 0 auto;padding:9px 15px;border:1px solid #3b362a;border-radius:30px;background:#11100d;color:#c9c0ae;font-size:12px;font-weight:700}
+#eventsPage .event-filter-chip.active{background:linear-gradient(135deg,#e1c17d,#b38a45);border-color:#e1c17d;color:#17130b}
+#eventsPage .events-featured-preview{position:relative;min-height:300px;margin:20px 0;border:1px solid rgba(214,180,110,.35);border-radius:22px;overflow:hidden;background:#15130e}
+#eventsPage .events-featured-preview>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#eventsPage .events-featured-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.92),rgba(0,0,0,.56) 58%,rgba(0,0,0,.08)),linear-gradient(0deg,rgba(0,0,0,.55),transparent 60%)}
+#eventsPage .events-featured-copy{position:relative;z-index:1;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;min-height:300px;max-width:620px;padding:clamp(22px,4vw,38px);box-sizing:border-box}
+#eventsPage .events-featured-kicker{color:#e5c77f;font-size:10px;font-weight:850;letter-spacing:.14em}
+#eventsPage .events-featured-copy h3{font-size:clamp(25px,4vw,36px);line-height:1.1;margin:10px 0;color:#fff}
+#eventsPage .events-featured-copy p{color:#e2dccf;line-height:1.55;margin:0 0 14px}
+#eventsPage .events-featured-meta{display:flex;flex-wrap:wrap;gap:10px 20px;color:#eee3cb;font-size:12px}
+#eventsPage .events-featured-meta strong{color:#f0ce82}
+#eventsPage .events-featured-link{display:inline-flex;gap:10px;align-items:center;margin-top:18px;padding:10px 15px;border:1px solid #e0bf78;border-radius:30px;color:#f5d58e;text-decoration:none;font-weight:750;font-size:12px}
+#eventsPage .events-section-title{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px;margin:22px 0 12px;color:#f2e8d4;font-size:19px}
+#eventsPage .events-section-title span{font-size:11px;font-weight:500;color:#a9a193}
+#eventsPage #eventsPublicList{grid-template-columns:repeat(auto-fit,minmax(min(100%,310px),1fr));gap:16px}
+#eventsPage #eventsPublicList .event-card{padding:16px;border-radius:20px}
+#eventsPage .events-demo-section{padding-top:6px}
+#eventsPage .event-demo-card{padding:0!important}
+#eventsPage .event-demo-card .event-demo-cover{position:relative;height:175px;overflow:hidden}
+#eventsPage .event-demo-card .event-demo-cover img{width:100%;height:100%;object-fit:cover}
+#eventsPage .event-demo-card>.event-card-top,#eventsPage .event-demo-card>h3,#eventsPage .event-demo-card>p,#eventsPage .event-demo-card>.event-meta,#eventsPage .event-demo-card>.event-card-bottom,#eventsPage .event-demo-card>details{margin-left:16px;margin-right:16px}
+#eventsPage .event-demo-card>.event-card-top{margin-top:14px}
+#eventsPage .event-demo-card>details{margin-bottom:16px}
+@media(max-width:699px){
+ #eventsPage{padding-left:10px!important;padding-right:10px!important}
+ #eventsPage .events-shell{padding:0!important}
+ #eventsPage .events-heading{padding:22px 18px;border-radius:19px}
+ #eventsPage .events-trust-row{gap:6px}
+ #eventsPage .events-trust-row span{font-size:10px}
+ #eventsPage .events-filters{padding:14px;border-radius:17px}
+ #eventsPage .events-date-grid{grid-template-columns:1fr!important}
+ #eventsPage .events-featured-preview,#eventsPage .events-featured-copy{min-height:290px}
+ #eventsPage #eventsPublicList{grid-template-columns:minmax(0,1fr)!important}
+}
+body.light-theme #eventsPage .events-heading{background:radial-gradient(ellipse at 88% 5%,rgba(178,137,61,.13),transparent 42%),linear-gradient(135deg,#fffdf7,#f5efe2);border-color:#dfcfaa}
+body.light-theme #eventsPage .events-heading h2,body.light-theme #eventsPage .events-section-title{color:#292318}
+body.light-theme #eventsPage .events-heading>p:not(.events-eyebrow){color:#625a4b}
+body.light-theme #eventsPage .events-filters{background:#fffdf8;border-color:#e4d8bd}
+body.light-theme #eventsPage .events-search-wrap{background:#fff;border-color:#d8c8a6}
+body.light-theme #eventsPage .events-search-wrap input,body.light-theme #eventsPage input,body.light-theme #eventsPage select{color:#282319!important;background:#fff!important}
+body.light-theme #eventsPage .event-filter-chip{background:#fff;color:#625638;border-color:#d8c8a6}
+body.light-theme #eventsPage .event-filter-chip.active{background:#d9b66e;color:#211a0d}
+body.light-theme #eventsPage .events-section-title span{color:#756b59}
+</style>
 </head>
 <body>
 <div id="stars" aria-hidden="true"></div>
@@ -6246,16 +6302,24 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
 <div class="events-toolbar"><button type="button" class="events-tab active" data-events-tab="browse">Explore events</button><button type="button" class="events-tab" data-events-tab="create">Host an event</button><button type="button" class="events-tab" data-events-tab="mine">My submissions</button><button type="button" class="events-tab hidden" id="eventsAdminTab" data-events-tab="admin">Review queue</button></div>
 <div id="eventsBrowsePanel">
 <div class="events-filters">
-<label for="eventsSearch">Search events</label><input id="eventsSearch" type="search" maxlength="100" placeholder="Search by event name or description">
+<label for="eventsSearch">Search events</label><div class="events-search-wrap"><span aria-hidden="true">⌕</span><input id="eventsSearch" type="search" maxlength="100" placeholder="Search events, experiences and communities"></div>
+<div class="events-quick-filters" role="group" aria-label="Quick event categories">
+<button type="button" class="event-filter-chip active" data-event-category="">All</button><button type="button" class="event-filter-chip" data-event-category="social">Social</button><button type="button" class="event-filter-chip" data-event-category="dating">Singles</button><button type="button" class="event-filter-chip" data-event-category="nightlife">Nightlife</button><button type="button" class="event-filter-chip" data-event-category="community">Community</button><button type="button" class="event-filter-chip" data-event-category="online">Online</button>
+</div>
 <div class="events-date-grid"><div><label for="eventsCityFilter">City</label><input id="eventsCityFilter" type="search" maxlength="100" placeholder="Filter by city"></div><div><label for="eventsCategoryFilter">Category</label><select id="eventsCategoryFilter"><option value="">All categories</option><option value="social">Social</option><option value="dating">Singles & dating</option><option value="nightlife">Nightlife</option><option value="community">Community</option><option value="online">Online</option><option value="other">Other</option></select></div></div>
 </div>
+<section class="events-featured-preview" aria-label="Featured sample event">
+<img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&amp;fit=crop&amp;w=1400&amp;q=85" alt="Outdoor community music and social gathering" loading="lazy">
+<div class="events-featured-shade"></div><div class="events-featured-copy"><span class="events-featured-kicker">COMMUNITY SPOTLIGHT · SAMPLE</span><h3>The Match Social: Lagos Edition</h3><p>Music, icebreakers and new connections in a welcoming community space.</p><div class="events-featured-meta"><span>12 Dec 2026 · 4 PM</span><strong>From ₦5,000</strong></div><a href="#eventSampleLagos" class="events-featured-link">Explore sample details <span aria-hidden="true">↗</span></a></div>
+</section>
+<h3 class="events-section-title">Upcoming events <span>Approved community listings</span></h3>
 <div class="events-discovery-note"><span aria-hidden="true">✦</span><p id="eventsPrivacyHint">Explore approved events. Your interest and attendance responses remain private to you.</p></div>
 <div id="eventsPublicList" class="events-grid"><p class="small">Loading events…</p></div>
 <section class="events-demo-section" aria-labelledby="demoEventsHeading" style="margin-top:22px">
 <div class="events-discovery-note"><span aria-hidden="true">✦</span><p><strong>Preview events</strong> — sample listings to demonstrate how event locations and ticket options will look. These are not real events.</p></div>
 <h3 id="demoEventsHeading" style="color:#e4c47d;margin:14px 0">Explore sample events</h3>
 <div class="events-grid">
-<article class="event-card event-demo-card"><div class="event-demo-cover"><img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&amp;fit=crop&amp;w=1200&amp;q=85" alt="Atmospheric outdoor music and social event" loading="lazy"><span class="event-demo-ribbon">DEMO EVENT</span></div><div class="event-card-top"><span class="event-category">SOCIAL</span><span>SAMPLE LISTING</span></div><h3>The Match Social: Lagos Edition</h3><p>A relaxed LGBTQ+ community mixer with icebreakers, music and space to meet new people.</p><div class="event-meta"><span>⌖ Victoria Island & Ikeja, Lagos</span><span>◷ 12 Dec 2026 · 4 PM</span></div><div class="event-card-bottom"><strong>From ₦5,000</strong><span>2 sample areas</span></div><details><summary class="event-open-details">View locations & tickets</summary><div style="padding:12px 0;color:#c9c0ae"><p><strong>Sample locations:</strong> Victoria Island, Lagos · Ikeja, Lagos</p><p><strong>Regular:</strong> ₦5,000 · General admission</p><p><strong>VIP:</strong> ₦10,000 · Reserved lounge access</p><p><strong>VVIP:</strong> ₦18,000 · Premium seating and welcome pack</p></div></details></article>
+<article id="eventSampleLagos" class="event-card event-demo-card"><div class="event-demo-cover"><img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&amp;fit=crop&amp;w=1200&amp;q=85" alt="Atmospheric outdoor music and social event" loading="lazy"><span class="event-demo-ribbon">DEMO EVENT</span></div><div class="event-card-top"><span class="event-category">SOCIAL</span><span>SAMPLE LISTING</span></div><h3>The Match Social: Lagos Edition</h3><p>A relaxed LGBTQ+ community mixer with icebreakers, music and space to meet new people.</p><div class="event-meta"><span>⌖ Victoria Island & Ikeja, Lagos</span><span>◷ 12 Dec 2026 · 4 PM</span></div><div class="event-card-bottom"><strong>From ₦5,000</strong><span>2 sample areas</span></div><details><summary class="event-open-details">View locations & tickets</summary><div style="padding:12px 0;color:#c9c0ae"><p><strong>Sample locations:</strong> Victoria Island, Lagos · Ikeja, Lagos</p><p><strong>Regular:</strong> ₦5,000 · General admission</p><p><strong>VIP:</strong> ₦10,000 · Reserved lounge access</p><p><strong>VVIP:</strong> ₦18,000 · Premium seating and welcome pack</p></div></details></article>
 <article class="event-card event-demo-card"><div class="event-demo-cover"><img src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&amp;fit=crop&amp;w=1200&amp;q=85" alt="Elegant community event venue with warm lighting" loading="lazy"><span class="event-demo-ribbon">DEMO EVENT</span></div><div class="event-card-top"><span class="event-category">COMMUNITY</span><span>SAMPLE LISTING</span></div><h3>Pride & Community Connect</h3><p>A friendly community afternoon featuring conversations, creative showcases and networking.</p><div class="event-meta"><span>⌖ Ibara & Oke-Ilewo, Abeokuta</span><span>◷ 19 Dec 2026 · 2 PM</span></div><div class="event-card-bottom"><strong>From ₦2,500</strong><span>2 sample areas</span></div><details><summary class="event-open-details">View locations & tickets</summary><div style="padding:12px 0;color:#c9c0ae"><p><strong>Sample locations:</strong> Ibara, Abeokuta · Oke-Ilewo, Abeokuta</p><p><strong>Early Access:</strong> ₦2,500 · Standard admission</p><p><strong>Plus:</strong> ₦6,000 · Reserved seating</p><p><strong>Supporter:</strong> ₦10,000 · Admission and keepsake</p></div></details></article>
 <article class="event-card event-demo-card"><div class="event-demo-cover"><img src="https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&amp;fit=crop&amp;w=1200&amp;q=85" alt="Nightlife gathering with colourful party lighting" loading="lazy"><span class="event-demo-ribbon">DEMO EVENT</span></div><div class="event-card-top"><span class="event-category">NIGHTLIFE</span><span>SAMPLE LISTING</span></div><h3>After Hours: Ibadan Meet & Mingle</h3><p>An adults-only sample social night with music, conversation and a welcoming community atmosphere.</p><div class="event-meta"><span>⌖ Ring Road & Bodija, Ibadan</span><span>◷ 9 Jan 2027 · 6 PM</span></div><div class="event-card-bottom"><strong>From ₦7,000</strong><span>2 sample areas</span></div><details><summary class="event-open-details">View locations & tickets</summary><div style="padding:12px 0;color:#c9c0ae"><p><strong>Sample locations:</strong> Ring Road, Ibadan · Bodija, Ibadan</p><p><strong>Standard:</strong> ₦7,000 · General entry</p><p><strong>Gold:</strong> ₦12,000 · Priority entry and reserved area</p><p><strong>Platinum:</strong> ₦20,000 · Premium area and welcome drink</p></div></details></article>
 </div>
@@ -15385,6 +15449,7 @@ E("eventInterestedBtn").textContent=response==="interested"?"✓ Interested":"In
 }
 document.querySelectorAll("[data-events-tab]").forEach(b=>b.addEventListener("click",()=>tab(b.dataset.eventsTab)));
 E("eventsSearch")?.addEventListener("input",renderEvents);E("eventsCityFilter")?.addEventListener("input",renderEvents);E("eventsCategoryFilter")?.addEventListener("change",renderEvents);
+document.querySelectorAll("[data-event-category]").forEach(b=>b.addEventListener("click",()=>{const value=b.dataset.eventCategory||"";E("eventsCategoryFilter").value=value;document.querySelectorAll("[data-event-category]").forEach(x=>{const active=x===b;x.classList.toggle("active",active);x.setAttribute("aria-pressed",String(active));});renderEvents();}));
 E("eventsPublicList")?.addEventListener("click",ev=>{const b=ev.target.closest("[data-event-details]");if(b)openDetails(b.dataset.eventDetails);});
 E("closeEventDetails")?.addEventListener("click",()=>E("eventDetailsModal").classList.add("hidden"));
 E("eventDetailsModal")?.addEventListener("click",ev=>{if(ev.target===E("eventDetailsModal"))E("eventDetailsModal").classList.add("hidden");});

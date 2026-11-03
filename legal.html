@@ -18,6 +18,12 @@ h2{color:var(--gold);margin-top:0}h3{color:#ead6a8;margin-bottom:5px}
 p,li{color:#e6e0d4}small,.muted{color:var(--muted)}
 a{color:#e7c77e}footer{text-align:center;padding:22px;color:var(--muted)}
 .notice{border-left:3px solid var(--gold);padding:10px 14px;background:#211b10;color:#f0e4ca}
+.terms-decision{margin-top:22px;padding:16px;border:1px solid var(--gold);border-radius:14px;background:#19160f}
+.terms-decision h3{margin-top:0}.terms-decision-actions{display:flex;flex-wrap:wrap;gap:10px}
+.terms-decision-actions button{flex:1;min-width:145px;min-height:46px;padding:11px 14px;border:1px solid var(--gold);border-radius:10px;font-weight:700;font-size:15px;cursor:pointer}
+#termsAgreeButton{background:linear-gradient(135deg,#e5cb91,#bd9653);color:#21190d}
+#termsDeclineButton{background:transparent;color:#f0dfbd}
+#termsDecisionStatus{min-height:1.4em;margin-bottom:0;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -44,6 +50,15 @@ a{color:#e7c77e}footer{text-align:center;padding:22px;color:var(--muted)}
 <h3>11. Liability</h3><p>To the maximum extent permitted by law, The Match is not responsible for losses caused by a member’s unlawful conduct, voluntary sharing of information with another member, or interruptions outside our reasonable control. Nothing in these Terms excludes liability, statutory rights or duties that cannot lawfully be excluded or limited, including applicable consumer and data-protection obligations.</p>
 <h3>12. Suspension, closure and changes</h3><p>We may suspend or terminate accounts for material breaches, safety risks, fraud or legal requirements. You may request account closure at <a href="mailto:thematchsuppprt@gmail.com">thematchsuppprt@gmail.com</a>. Some records may be retained where legally required or necessary for security, disputes or backups. We may update these Terms and will publish the revised version and date; where required, we will provide notice or obtain consent.</p>
 <h3>13. Law and contact</h3><p>These Terms are governed by the laws of the Federal Republic of Nigeria, subject to mandatory legal rights and the jurisdiction of competent authorities and courts. Contact <a href="mailto:thematchsuppprt@gmail.com">thematchsuppprt@gmail.com</a>.</p>
+<div class="terms-decision" role="group" aria-labelledby="termsDecisionTitle">
+  <h3 id="termsDecisionTitle">Your decision</h3>
+  <p>Please choose whether you agree to these Terms. You must agree to continue creating an account.</p>
+  <div class="terms-decision-actions">
+    <button type="button" id="termsAgreeButton">Yes, I agree</button>
+    <button type="button" id="termsDeclineButton">No, I do not agree</button>
+  </div>
+  <p id="termsDecisionStatus" role="status" aria-live="polite"></p>
+</div>
 </section>
 
 <section id="privacy">
@@ -93,4 +108,24 @@ a{color:#e7c77e}footer{text-align:center;padding:22px;color:var(--muted)}
 </section>
 <footer>© The Match · Nigeria · Privacy and support: <a href="mailto:thematchsuppprt@gmail.com">thematchsuppprt@gmail.com</a></footer>
 </main>
+<script>
+(function(){
+  const status = document.getElementById("termsDecisionStatus");
+  function sendDecision(decision) {
+    if (window.opener && !window.opener.closed) {
+      window.opener.postMessage({
+        type: "THE_MATCH_TERMS_DECISION",
+        decision
+      }, window.location.origin);
+      status.textContent = decision === "yes"
+        ? "Your agreement has been sent back to signup. Return to the signup tab and continue."
+        : "Your decision has been sent back. You cannot create an account unless you agree to the Terms.";
+    } else {
+      status.textContent = "Return to the signup page and select your answer to the Terms question.";
+    }
+  }
+  document.getElementById("termsAgreeButton")?.addEventListener("click",()=>sendDecision("yes"));
+  document.getElementById("termsDeclineButton")?.addEventListener("click",()=>sendDecision("no"));
+})();
+</script>
 </body></html>

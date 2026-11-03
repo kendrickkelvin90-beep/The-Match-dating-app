@@ -13883,8 +13883,7 @@ del.setAttribute("aria-label", "Delete photo");
           .from("profile_photos")
           .select("id,position")
           .eq("user_id",currentUser.id)
-          .order("position",{ascending:true})
-          .order("created_at",{ascending:true});
+          .order("position",{ascending:true});
         if(remainingError){
           await loadMyPhotos();
           status("photoStatus","Photo deleted, but the remaining photo order could not be refreshed. Please reload your profile.",true);

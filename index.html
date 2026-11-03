@@ -5244,7 +5244,7 @@ body.light-theme #nearbyPage #nearbyPremiumPrompt{background:rgba(255,254,250,.9
   </p>
   <div class="member-card" style="margin-top:14px">
     <strong>Before continuing, review our legal documents:</strong>
-    <p><a href="/legal.html#terms" target="_blank">Read Terms & Conditions, then choose Agree or Disagree</a></p>
+    <p><button class="link" id="openTermsFromOnboarding" type="button">Read Terms & Conditions</button></p>
     <p><a href="/legal.html#privacy" target="_blank" rel="noopener">Privacy Policy</a></p>
     <p><a href="/legal.html#community" target="_blank" rel="noopener">Community Guidelines</a></p>
     <p><a href="/legal.html#safety" target="_blank" rel="noopener">Member Safety</a></p>
@@ -5252,7 +5252,17 @@ body.light-theme #nearbyPage #nearbyPremiumPrompt{background:rgba(255,254,250,.9
   </div>
 </section>
 
-  <section class="panel hidden" id="auth">
+  <div id="termsReviewModal" class="hidden" role="dialog" aria-modal="true" aria-label="Review Terms and Conditions" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.82);padding:12px;display:flex;align-items:center;justify-content:center;">
+  <div style="width:min(100%,760px);height:min(92dvh,900px);background:#111214;border:1px solid #c6a66b;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #51432a;">
+      <strong style="color:#e7c77e">Terms & Conditions</strong>
+      <button type="button" id="closeTermsReview" class="btn secondary" style="width:auto;padding:7px 12px">Back to signup</button>
+    </div>
+    <iframe title="The Match Terms and Conditions" src="/legal.html#terms" style="width:100%;flex:1;border:0;background:#080808"></iframe>
+  </div>
+</div>
+
+<section class="panel hidden" id="auth">
 <h2 id="authTitle">Create your account</h2>
 <p class="small" style="font-weight:700;">Start your journey with The Match.</p>
 <p style="font-weight:800;font-size:14px;color:#ff3c79;text-align:center;letter-spacing:0.5px;">STRICTLY FOR THE LGBTQ+ COMMUNITY · ADULTS 18+</p>
@@ -8258,12 +8268,14 @@ window.addEventListener("message", event => {
   const decision = event.data.decision;
   if (decision !== "yes" && decision !== "no") return;
   onboardingAnswers.terms_accepted = decision;
+  const termsModal = $("termsReviewModal");
+  if (termsModal) termsModal.classList.add("hidden");
   if (onboardingQuestions[onboardingIndex]?.key === "terms_accepted") {
     renderOnboardingQuestion();
   }
   status("onboardingStatus",
     decision === "yes"
-      ? "Your Terms decision has been recorded. Select Continue when ready."
+      ? "Thank you. Your agreement is saved. Continue with your signup."
       : "You declined the Terms. You cannot continue creating an account unless you agree.",
     decision !== "yes"
   );
@@ -8338,6 +8350,13 @@ input.addEventListener("input", () => {
 
   status("onboardingStatus", "");
 }
+
+$("openTermsFromOnboarding").onclick = () => {
+  $("termsReviewModal").classList.remove("hidden");
+};
+$("closeTermsReview").onclick = () => {
+  $("termsReviewModal").classList.add("hidden");
+};
 
 $("onboardingBack").onclick = () => {
   if (onboardingIndex > 0) {

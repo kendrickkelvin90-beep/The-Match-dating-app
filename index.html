@@ -13868,11 +13868,20 @@ del.title = "Delete photo";
 del.setAttribute("aria-label", "Delete photo");
       del.onclick=async()=>{
         if(!await matchConfirm("Delete this photo?"))return;
-        const {error}=await db.storage.from("profile-photos")
-          .remove([p.storage_path]);
-        if(error){
-          status("photoStatus","Could not delete photo.",true);
-          return;
+        if (p.storage_path.startsWith("b2://")) {
+          const { data: deleteData, error } = await db.functions.invoke("b2-media", {
+            body: { action: "delete-object", objectKey: p.storage_path.slice(5) }
+          });
+          if (error || !deleteData?.deleted) {
+            status("photoStatus","Could not securely delete photo.",true);
+            return;
+          }
+        } else {
+          const {error}=await db.storage.from("profile-photos").remove([p.storage_path]);
+          if(error){
+            status("photoStatus","Could not delete photo.",true);
+            return;
+          }
         }
         const {error:dbError}=await db.from("profile_photos")
           .delete().eq("id",p.id).eq("user_id",currentUser.id);

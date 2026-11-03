@@ -3015,6 +3015,10 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
 
 
 /* Clickable admin metrics and activity detail panel */
+
+.admin-metrics-grid [data-admin-detail],.admin-metrics-grid [data-admin-jump]{cursor:pointer;transition:transform .16s ease,border-color .16s ease,background .16s ease}
+.admin-metrics-grid [data-admin-detail]:hover,.admin-metrics-grid [data-admin-jump]:hover,.admin-metrics-grid [data-admin-detail]:focus-visible,.admin-metrics-grid [data-admin-jump]:focus-visible{border-color:#c9a85f!important;outline:2px solid rgba(201,168,95,.3);outline-offset:2px;transform:translateY(-2px)}
+
 .admin-clickable-metric{width:100%;color:inherit;text-align:left;font:inherit;cursor:pointer;transition:transform .16s ease,border-color .16s ease,background .16s ease}
 .admin-clickable-metric:hover,.admin-clickable-metric:focus-visible{border-color:#c9a85f!important;outline:2px solid rgba(201,168,95,.35);outline-offset:2px;transform:translateY(-2px)}
 .admin-clickable-metric:active{transform:scale(.985)}

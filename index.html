@@ -6960,6 +6960,7 @@ async function startOnlinePresence(user) {
   onlinePresenceChannel
     .on("presence", { event: "sync" }, () => {
   onlinePresenceState = onlinePresenceChannel.presenceState();
+  refreshOutgoingVoiceCallPresence();
 
   if (activeChatUserId) {
     updateChatOnlineStatus(activeChatUserId);
@@ -15617,6 +15618,15 @@ async function invokeVoiceCall(action, extra = {}) {
   if (data?.error) throw new Error(data.error);
   return data;
 }
+function refreshOutgoingVoiceCallPresence() {
+  if (!activeVoiceCallId || activeVoiceCallRole !== "caller" || liveKitRoom || voiceCallJoining) return;
+  const online = isUserOnline(activeVoiceCallPeerId);
+  const title = online ? "Ringing…" : "Calling…";
+  if ($("voiceCallTitle")) $("voiceCallTitle").textContent = title;
+  if ($("voiceCallStatus")) $("voiceCallStatus").textContent = online
+    ? "The member is online. Waiting for them to answer."
+    : "The member is offline. Waiting for them to come online or return.";
+}
 async function startVoiceCall(peerId) {
   if (!currentUser || !peerId || peerId !== activeChatUserId || activeVoiceCallId || incomingVoiceCall) return;
   try {
@@ -15627,7 +15637,10 @@ async function startVoiceCall(peerId) {
     $("voiceCallPeer").textContent = $("chatPageTitle")?.textContent || "Calling your match";
     $("voiceCallAvatar").textContent = "☎";
     startVoiceCallRingtone();
-    showVoiceCallModal("Calling…", "Waiting for the member to answer.", [
+    const recipientOnline = isUserOnline(peerId);
+    showVoiceCallModal(recipientOnline ? "Ringing…" : "Calling…", recipientOnline
+      ? "The member is online. Waiting for them to answer."
+      : "The member is offline. Waiting for them to come online or return.", [
       { label:"Cancel call", danger:true, handler:() => finishVoiceCall() }
     ]);
     beginVoiceCallPolling();
@@ -15824,6 +15837,13 @@ function handleVoiceCallUpdate(call) {
       finishVoiceCall(false).then(() => showVoiceCallModal("Call ended", "The other member has ended the call.", [
         { label:"Close", danger:true, handler:hideVoiceCallModal }
       ]));
+      return;
+    }
+    if (call.status === "accepted" && activeVoiceCallRole === "caller" && !liveKitRoom && !voiceCallJoining) {
+      if (voiceCallRingTimer) clearTimeout(voiceCallRingTimer);
+      voiceCallRingTimer = null;
+      setVoiceCallStatus("The member accepted. Connecting your audio…");
+      joinVoiceCallRoom();
       return;
     }
     applyRemoteCallMuteState(call);

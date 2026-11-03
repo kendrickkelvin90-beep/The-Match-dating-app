@@ -18007,7 +18007,12 @@ body.light-theme #discover #profileList>.member-card .discover-profile-overlay{
 }
 #discover #discoverStatus{margin:5px 0 0!important;padding:0 12px!important}
 @media(max-height:740px){
-  #discover #profileList>.discover-option3-card{height:clamp(420px,calc(100svh - 315px),600px)!important;min-height:420px!important}
+  /* Give the portrait more vertical room while keeping the swipe controls and
+     the instruction line above the fixed bottom navigation. */
+  #discover #profileList>.discover-option3-card{
+    height:clamp(500px,calc(100svh - 235px),650px)!important;
+    min-height:500px!important;
+  }
   #discover .discover-option3-overlay{padding-top:82px!important}
 }
 @media(max-width:380px){

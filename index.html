@@ -10233,7 +10233,7 @@ function initializeNearbyMap(center) {
   }
   if (!nearbyLeafletMap) {
     nearbyLeafletMap = L.map(mapElement, {zoomControl:true,scrollWheelZoom:false,preferCanvas:true})
-      .setView(center || [9.08,8.67], 6);
+      .setView(center || [9.08,8.67], center ? 11 : 6);
     updateNearbyMapTiles();
     if (typeof L.markerClusterGroup === "function") {
       nearbyMapMarkersLayer = L.markerClusterGroup({
@@ -10309,6 +10309,8 @@ async function loadPremiumNearby(){
   const list=$("nearbyMembersList");
   list.replaceChildren();
   list.classList.add("hidden");
+  if (nearbyMapMarkersLayer) nearbyMapMarkersLayer.clearLayers();
+  $("nearbyMapEmptyState")?.classList.add("hidden");
   $("nearbyMapPanel")?.classList.remove("hidden");
   status("nearbyMembersStatus","Checking your location settings...");
   try{
@@ -10324,7 +10326,6 @@ async function loadPremiumNearby(){
     if(profileError)throw profileError;
     if(!profile?.location_sharing){
       status("nearbyMembersStatus","Enable location sharing in your profile to explore the Nearby map.");
-      $("nearbyMembersMap").innerHTML='<div style="padding:24px;color:var(--tm-muted,#aaa);text-align:center">Turn on location sharing in your profile to see the Nearby map.</div>';
       return;
     }
     if(!navigator.geolocation){

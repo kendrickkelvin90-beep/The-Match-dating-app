@@ -10197,6 +10197,7 @@ let nearbyViewerIsPremium = false;
 let nearbyLeafletMap = null;
 let nearbyMapMarkersLayer = null;
 let nearbyMapTileLayer = null;
+let nearbyMapRadiusCircle = null;
 let nearbyPremiumPromptTimer = null;
 
 function showNearbyPremiumPrompt() {
@@ -10232,14 +10233,14 @@ $("nearbyCardsViewBtn")?.addEventListener("click", () => {
 });
 
 function nearbyMapTileUrl() {
-  // Use a real, conventional street map in both themes.
-  return "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+  // Use the official single-host OpenStreetMap tile endpoint.
+  return "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 }
 function updateNearbyMapTiles() {
   if (!nearbyLeafletMap || !window.L) return;
   if (nearbyMapTileLayer) nearbyLeafletMap.removeLayer(nearbyMapTileLayer);
   nearbyMapTileLayer = L.tileLayer(nearbyMapTileUrl(), {
-    maxZoom: 19, subdomains: "abcd",
+    maxZoom: 19,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   }).addTo(nearbyLeafletMap);
 }
@@ -10266,8 +10267,26 @@ function initializeNearbyMap(center) {
     }
     nearbyMapMarkersLayer.addTo(nearbyLeafletMap);
   } else {
-    nearbyLeafletMap.setView(center || nearbyLeafletMap.getCenter(), center ? 11 : nearbyLeafletMap.getZoom());
+    nearbyLeafletMap.setView(center || nearbyLeafletMap.getCenter(), center ? 10 : nearbyLeafletMap.getZoom());
     nearbyLeafletMap.invalidateSize();
+  }
+
+  // Keep the map centred on the viewer and frame the complete 50 km radius.
+  if (center && Number.isFinite(Number(center[0])) && Number.isFinite(Number(center[1]))) {
+    if (nearbyMapRadiusCircle) nearbyLeafletMap.removeLayer(nearbyMapRadiusCircle);
+    nearbyMapRadiusCircle = L.circle(center, {
+      radius: 50000,
+      color: "#c6a15b",
+      weight: 2,
+      opacity: 0.9,
+      fillColor: "#c6a15b",
+      fillOpacity: 0.045,
+      interactive: false
+    }).addTo(nearbyLeafletMap);
+    nearbyLeafletMap.fitBounds(nearbyMapRadiusCircle.getBounds(), {
+      padding: [22, 22],
+      maxZoom: 10
+    });
   }
   if (!window.nearbyMapThemeObserver) {
     window.nearbyMapThemeObserver = new MutationObserver(updateNearbyMapTiles);
@@ -10317,11 +10336,9 @@ async function renderNearbyMapMarkers(center) {
     });
     nearbyMapMarkersLayer.addLayer(marker);
   });
-  const validPoints=markers
-    .map(person=>[Number(person.map_latitude),Number(person.map_longitude)])
-    .filter(point=>Number.isFinite(point[0])&&Number.isFinite(point[1]));
-  const bounds=validPoints.length?L.latLngBounds(validPoints):null;
-  if(bounds&&bounds.isValid())nearbyLeafletMap.fitBounds(bounds,{padding:[34,34],maxZoom:12});
+  // Do not fit the map to member markers: that shifts the map away from
+  // the viewer and can make distant towns appear to define the search area.
+  // The 50 km radius circle around the viewer is the map's fixed frame.
   return markers.length;
 }
 

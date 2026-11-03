@@ -4159,27 +4159,27 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
       </div>
 
       <div class="admin-metrics-grid">
-        <article class="admin-metric-card">
+        <article class="admin-metric-card" data-admin-detail="members" role="button" tabindex="0">
           <span class="admin-metric-icon">♙</span><p class="admin-metric-label">Total members</p>
           <p class="admin-metric-value" id="adminMembersCount">—</p><span class="admin-metric-foot">Registered profiles</span>
         </article>
-        <article class="admin-metric-card">
+        <article class="admin-metric-card" data-admin-detail="likes" role="button" tabindex="0">
           <span class="admin-metric-icon">♡</span><p class="admin-metric-label">Likes</p>
           <p class="admin-metric-value" id="adminLikesCount">—</p><span class="admin-metric-foot">Community activity</span>
         </article>
-        <article class="admin-metric-card">
+        <article class="admin-metric-card" data-admin-detail="messages" role="button" tabindex="0">
           <span class="admin-metric-icon">▤</span><p class="admin-metric-label">Messages</p>
           <p class="admin-metric-value" id="adminMessagesCount">—</p><span class="admin-metric-foot">Messages recorded</span>
         </article>
-        <article class="admin-metric-card admin-metric-attention">
+        <article class="admin-metric-card admin-metric-attention" data-admin-jump="verification" role="button" tabindex="0">
           <span class="admin-metric-icon">✓</span><p class="admin-metric-label">Pending verification</p>
           <p class="admin-metric-value" id="adminVerificationCount">—</p><span class="admin-metric-foot">Awaiting review</span>
         </article>
-        <article class="admin-metric-card admin-metric-attention">
+        <article class="admin-metric-card admin-metric-attention" data-admin-jump="payments" role="button" tabindex="0">
           <span class="admin-metric-icon">₦</span><p class="admin-metric-label">Premium payments</p>
           <p class="admin-metric-value" id="adminPaymentsCount">—</p><span class="admin-metric-foot">Awaiting confirmation</span>
         </article>
-        <article class="admin-metric-card admin-metric-attention">
+        <article class="admin-metric-card admin-metric-attention" data-admin-jump="reports" role="button" tabindex="0">
           <span class="admin-metric-icon">⚑</span><p class="admin-metric-label">Member reports</p>
           <p class="admin-metric-value" id="adminReportsCount">—</p><span class="admin-metric-foot">Require moderation</span>
         </article>
@@ -5365,6 +5365,15 @@ async function loadAdminActivityDetail(){
  renderAdminActivityDetail();
 }
 document.querySelectorAll("[data-admin-detail]").forEach(card=>card.addEventListener("click",()=>openAdminActivityDetail(card.dataset.adminDetail).catch(error=>{$("adminActivityDetailList").textContent="Could not load records: "+friendly(error);})));
+document.querySelectorAll("[data-admin-detail][role='button']").forEach(card=>card.addEventListener("keydown",event=>{
+ if(event.key==="Enter"||event.key===" "){event.preventDefault();card.click();}
+}));
+document.querySelectorAll("[data-admin-jump]").forEach(card=>{
+ const jump=()=>{const target={verification:"adminVerificationList",payments:"adminPaymentsList",reports:"adminReportsList"}[card.dataset.adminJump];$(target)?.scrollIntoView({behavior:"smooth",block:"center"});};
+ card.addEventListener("click",jump);
+ card.addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();jump();}});
+});
+
 $("adminActivityDetailClose")?.addEventListener("click",()=>$("adminActivityDetail").classList.add("hidden"));
 $("adminActivityDetailSearch")?.addEventListener("input",renderAdminActivityDetail);
 $("adminActivityDetailRefresh")?.addEventListener("click",()=>loadAdminActivityDetail().catch(error=>{$("adminActivityDetailList").textContent="Could not refresh records: "+friendly(error);}));

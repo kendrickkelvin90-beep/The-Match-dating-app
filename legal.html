@@ -112,16 +112,19 @@ a{color:#e7c77e}footer{text-align:center;padding:22px;color:var(--muted)}
 (function(){
   const status = document.getElementById("termsDecisionStatus");
   function sendDecision(decision) {
-    if (window.opener && !window.opener.closed) {
-      window.opener.postMessage({
+    const signupWindow = window.parent && window.parent !== window
+      ? window.parent
+      : (window.opener && !window.opener.closed ? window.opener : null);
+    if (signupWindow) {
+      signupWindow.postMessage({
         type: "THE_MATCH_TERMS_DECISION",
         decision
       }, window.location.origin);
       status.textContent = decision === "yes"
-        ? "Your agreement has been sent back to signup. Return to the signup tab and continue."
-        : "Your decision has been sent back. You cannot create an account unless you agree to the Terms.";
+        ? "Thank you. Your agreement is saved. You can continue your signup."
+        : "You declined the Terms. You cannot create an account unless you agree.";
     } else {
-      status.textContent = "Return to the signup page and select your answer to the Terms question.";
+      status.textContent = "Please open the Terms from the signup page so your decision can return to your application.";
     }
   }
   document.getElementById("termsAgreeButton")?.addEventListener("click",()=>sendDecision("yes"));

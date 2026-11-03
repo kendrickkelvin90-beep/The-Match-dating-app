@@ -7030,21 +7030,27 @@ async function resolveProfilePhotoUrl(storagePath) {
 
 let authCaptchaToken = "";
 let resetCaptchaToken = "";
+let authCaptchaIssuedAt = 0;
+let resetCaptchaIssuedAt = 0;
 
 window.onTurnstileSuccess = token => {
   authCaptchaToken = token || "";
+  authCaptchaIssuedAt = token ? Date.now() : 0;
 };
 
 window.onTurnstileExpired = () => {
   authCaptchaToken = "";
+  authCaptchaIssuedAt = 0;
 };
 
 window.onResetTurnstileSuccess = token => {
   resetCaptchaToken = token || "";
+  resetCaptchaIssuedAt = token ? Date.now() : 0;
 };
 
 window.onResetTurnstileExpired = () => {
   resetCaptchaToken = "";
+  resetCaptchaIssuedAt = 0;
 };  
   
 let authCaptchaWidgetId = null;
@@ -8804,17 +8810,31 @@ $("authForm").onsubmit = async e => {
     const email = $("email").value.trim();
     const password = $("password").value;
 
-if (!authCaptchaToken) {
-  status("authStatus", "Please complete the CAPTCHA check first.", true);
+const captchaToken = authCaptchaToken;
+if (!captchaToken || !authCaptchaIssuedAt || Date.now() - authCaptchaIssuedAt > 240000) {
+  authCaptchaToken = "";
+  authCaptchaIssuedAt = 0;
+  if (window.turnstile && authCaptchaWidgetId !== null) {
+    window.turnstile.reset(authCaptchaWidgetId);
+  }
+  status("authStatus", "Your CAPTCHA has expired. Please complete the check again.", true);
   button.disabled = false;
   return;
+}
+
+// Turnstile tokens are single-use. Consume this token once and immediately
+// reset the widget so the next login/signup attempt receives a fresh token.
+authCaptchaToken = "";
+authCaptchaIssuedAt = 0;
+if (window.turnstile && authCaptchaWidgetId !== null) {
+  window.turnstile.reset(authCaptchaWidgetId);
 }
 
     const result = loginMode
   ? await db.auth.signInWithPassword({
       email,
       password,
-      options: { captchaToken: authCaptchaToken }
+      options: { captchaToken }
     })
   
 : await db.auth.signUp({
@@ -8822,7 +8842,7 @@ if (!authCaptchaToken) {
     password,
     options: {
       emailRedirectTo: SITE_URL,
-      captchaToken: authCaptchaToken,
+      captchaToken,
       data: {
         referral_code: new URLSearchParams(window.location.search)
           .get("ref")
@@ -8928,16 +8948,29 @@ $("resetBack").onclick=()=>show("welcome");
 $("resetForm").onsubmit=async e=>{
 e.preventDefault();
 try{
-if (!resetCaptchaToken) {
-  status("resetStatus", "Please complete the CAPTCHA check first.", true);
+const captchaToken = resetCaptchaToken;
+if (!captchaToken || !resetCaptchaIssuedAt || Date.now() - resetCaptchaIssuedAt > 240000) {
+  resetCaptchaToken = "";
+  resetCaptchaIssuedAt = 0;
+  if (window.turnstile && resetCaptchaWidgetId !== null) {
+    window.turnstile.reset(resetCaptchaWidgetId);
+  }
+  status("resetStatus", "Your CAPTCHA has expired. Please complete the check again.", true);
   return;
+}
+
+// Reset immediately because Turnstile tokens can only be verified once.
+resetCaptchaToken = "";
+resetCaptchaIssuedAt = 0;
+if (window.turnstile && resetCaptchaWidgetId !== null) {
+  window.turnstile.reset(resetCaptchaWidgetId);
 }
 
 let r = await db.auth.resetPasswordForEmail(
   $("resetEmail").value.trim(),
   {
     redirectTo: SITE_URL,
-    captchaToken: resetCaptchaToken
+    captchaToken
   }
 );
 if(r.error)throw r.error;

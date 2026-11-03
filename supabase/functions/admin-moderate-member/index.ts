@@ -21,6 +21,45 @@ function json(body: unknown, status = 200, cors: Record<string, string> = {}) {
   });
 }
 
+
+async function sendModerationEmail(email: string, action: string, reason: string, expiresAt: string | null) {
+  const apiKey = Deno.env.get("RESEND_API_KEY");
+  const from = Deno.env.get("MODERATION_EMAIL_FROM");
+  if (!apiKey || !from) {
+    console.warn("Moderation email not sent: RESEND_API_KEY or MODERATION_EMAIL_FROM is not configured.");
+    return { sent: false, reason: "email_provider_not_configured" };
+  }
+
+  const temporary = action === "suspended";
+  const subject = temporary ? "Your The Match account has been temporarily suspended" : "Your The Match account has been permanently banned";
+  const expiryText = expiresAt
+    ? new Date(expiresAt).toLocaleString("en-NG", { dateStyle: "long", timeStyle: "short", timeZone: "Africa/Lagos" })
+    : "";
+  const safeReason = reason.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  const html = `<!doctype html><html><body style="margin:0;background:#080808;color:#f5f5f5;font-family:Arial,sans-serif;padding:32px">
+    <div style="max-width:600px;margin:auto;border:1px solid #9b7a32;border-radius:14px;padding:28px;background:#111">
+      <h1 style="color:#d6b45c;margin-top:0">The Match</h1>
+      <h2>${temporary ? "Temporary account suspension" : "Permanent account ban"}</h2>
+      <p>Hello,</p>
+      <p>${temporary ? "Your account has been temporarily suspended and you cannot access The Match during this period." : "Your account has been permanently banned from The Match and you can no longer access the service."}</p>
+      <p><strong>Reason:</strong><br>${safeReason}</p>
+      ${temporary ? `<p><strong>Access is scheduled to be restored:</strong><br>${expiryText} (WAT)</p>` : "<p>If you believe this decision was made in error, please contact The Match support team.</p>"}
+      <p style="color:#aaa;font-size:12px;margin-top:28px">This is an automated account notice. Please do not reply to this email.</p>
+    </div></body></html>`;
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from, to: [email], subject, html }),
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    console.error("Moderation email provider rejected delivery:", response.status, detail.slice(0, 400));
+    return { sent: false, reason: "provider_rejected" };
+  }
+  const result = await response.json();
+  return { sent: true, id: result?.id ?? null };
+}
+
 function previousBanDuration(previous: { status?: string; expires_at?: string | null } | null) {
   if (previous?.status === "banned") return "876000h";
   if (previous?.status === "suspended" && previous.expires_at) {
@@ -126,7 +165,22 @@ Deno.serve(async (req: Request) => {
       return json({ error: recordError?.message || "The moderation record could not be saved. The previous account restriction was restored." }, 400, cors);
     }
 
-    return json({ success: true, user_id: targetId, action, expires_at: expiresAt });
+    let emailDelivery: { sent: boolean; reason?: string; id?: string | null } = { sent: false, reason: "not_applicable" };
+    if (action === "suspended" || action === "banned") {
+      const recipientEmail = targetUser.user.email;
+      if (recipientEmail) {
+        try {
+          emailDelivery = await sendModerationEmail(recipientEmail, action, reason, expiresAt);
+        } catch (emailError) {
+          console.error("Moderation email delivery failed:", emailError instanceof Error ? emailError.message : "Unknown error");
+          emailDelivery = { sent: false, reason: "delivery_error" };
+        }
+      } else {
+        emailDelivery = { sent: false, reason: "member_email_missing" };
+      }
+    }
+
+    return json({ success: true, user_id: targetId, action, expires_at: expiresAt, email_delivery: emailDelivery });
   } catch (error) {
     console.error("Member moderation failed:", error instanceof Error ? error.message : "Unknown error");
     return json({ error: "Member moderation could not be completed. Please try again." }, 500, cors);

@@ -9595,7 +9595,7 @@ async function loadNearby(){
       greeting.appendChild(ownBadge);
     }
     await refreshDailyLikeCounter();
-    const savedPreferences = JSON.parse(localStorage.getItem("theMatchDiscoveryPreferences") || "{}");
+    const savedPreferences = viewerPremium ? JSON.parse(localStorage.getItem("theMatchDiscoveryPreferences") || "{}") : {};
     const preferredLocation = (savedPreferences.location || "").trim();
     const maxDistance = Math.min(Number(savedPreferences.distance) || 50, viewerPremium ? 200 : 50);
     const minAge = Number(savedPreferences.minAge) || 18;

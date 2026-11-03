@@ -15871,23 +15871,37 @@ select:focus-visible, textarea:focus-visible {
 button:disabled { cursor: not-allowed; }
 
 /* Form fields: consistent contrast and focus states */
-input, select, textarea {
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea {
   border-color: var(--tm-border-strong) !important;
   border-radius: 12px !important;
   background: #111 !important;
   color: #f5f1e8 !important;
 }
-input::placeholder, textarea::placeholder { color: #999184 !important; }
-input:focus, select:focus, textarea:focus {
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"])::placeholder,
+textarea::placeholder { color: #999184 !important; }
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+select:focus, textarea:focus {
   border-color: var(--tm-gold) !important;
   box-shadow: 0 0 0 3px rgba(214,180,110,.12);
 }
-body.light-theme input, body.light-theme select, body.light-theme textarea {
+input[type="checkbox"], input[type="radio"] {
+  width: auto !important; max-width: 1.15rem; min-width: 1.15rem;
+  height: 1.15rem; margin: 0 7px 0 0; padding: 0;
+  accent-color: var(--tm-gold);
+  vertical-align: middle;
+}
+input[type="range"] {
+  width: 100% !important; accent-color: var(--tm-gold);
+  padding: 0 !important; background: transparent !important;
+}
+input[type="file"] { max-width: 100%; color: var(--tm-muted) !important; }
+body.light-theme input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.light-theme select, body.light-theme textarea {
   background: #fffefa !important;
   color: #28251f !important;
   border-color: #d7c8aa !important;
 }
-body.light-theme input::placeholder,
+body.light-theme input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"])::placeholder,
 body.light-theme textarea::placeholder { color: #898174 !important; }
 body.light-theme label { color: #494338 !important; }
 
@@ -15953,6 +15967,239 @@ body.light-theme #nearbyStatus { color: var(--tm-gold-deep) !important; }
   .bottom-nav, .member-card, button { scroll-behavior: auto !important; }
 }
 </style>
+
+<style id="match-visual-excellence-phase1-detail">
+/* Remaining member-facing pages: page-specific polish without changing behaviour. */
+#nearbyPage #nearbyMembersList {
+  display:grid!important; grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:13px!important; margin:18px 0!important;
+}
+#nearbyPage #nearbyMembersList > .member-card {
+  min-width:0; padding:13px!important; border-radius:18px!important;
+  background:var(--tm-surface)!important; border:1px solid var(--tm-border)!important;
+}
+#nearbyPage #nearbyMembersList img {
+  border-radius:14px!important; max-width:100%;
+}
+#nearbyPage #nearbyMembersList h3 { color:var(--tm-text)!important; font-size:14px; }
+#nearbyPage #nearbyMembersList .small { color:var(--tm-muted)!important; }
+@media(max-width:360px) {
+  #nearbyPage #nearbyMembersList { grid-template-columns:minmax(0,1fr)!important; }
+}
+
+/* Matches and private message inbox */
+#matches #matchesList { display:grid; gap:12px; margin:18px 0; }
+#matches #matchesList > * {
+  min-width:0; padding:14px!important; border:1px solid var(--tm-border)!important;
+  border-radius:18px!important; background:var(--tm-surface)!important;
+  color:var(--tm-text)!important;
+}
+#messages #conversationList { display:grid; gap:10px; margin-top:16px; }
+#messages #conversationList > * {
+  min-width:0; border:1px solid var(--tm-border)!important;
+  border-radius:17px!important; background:var(--tm-surface)!important;
+  color:var(--tm-text)!important; box-shadow:0 5px 18px rgba(0,0,0,.09);
+}
+#messages #refreshConversationsButton, #messages #openCallHistoryButton {
+  min-height:44px; width:100%; margin:7px 0;
+}
+#messages #activeConversation {
+  border:1px solid var(--tm-border); border-radius:19px;
+  background:var(--tm-surface); padding:12px; margin-top:14px;
+}
+#messages #activeConversation h3 { color:var(--tm-text)!important; }
+#messages #chatComposer {
+  display:flex; align-items:center; gap:7px; flex-wrap:wrap;
+  padding:10px; border:1px solid var(--tm-border);
+  border-radius:17px; background:var(--tm-surface-raised);
+}
+#messages #chatComposer #chatMessageInput {
+  flex:1 1 145px; min-width:0; width:auto!important;
+  margin:0!important; border-radius:20px!important;
+  background:var(--tm-bg)!important; color:var(--tm-text)!important;
+}
+#messages #chatComposer #chatEmojiToggle,
+#messages #chatComposer #chatMediaButton {
+  flex:0 0 40px; width:40px!important; height:40px!important;
+  border-radius:50%!important; border:1px solid var(--tm-border-strong)!important;
+  background:var(--tm-surface)!important; color:var(--tm-gold)!important;
+}
+#messages #chatComposer #sendChatMessage {
+  flex:0 0 42px; width:42px!important; height:42px; margin:0!important;
+  border-radius:50%!important;
+}
+#messages #chatComposer label { display:flex; align-items:center; margin:0; color:var(--tm-muted)!important; }
+#messages #chatEmojiPicker {
+  display:flex; flex-wrap:wrap; gap:7px; padding:10px;
+  border:1px solid var(--tm-border); border-radius:14px;
+  background:var(--tm-surface);
+}
+#messages #chatEmojiPicker button {
+  width:40px; height:40px; border:0; border-radius:10px;
+  background:var(--tm-surface-raised); color:var(--tm-text);
+}
+
+/* Likes: keep the established layout, harmonise it with the shared palette. */
+#likes .likes-hero h2, #likes .likes-section-heading h3 {
+  color:var(--tm-text)!important;
+}
+#likes .likes-hero p, #likes .likes-section-heading p { color:var(--tm-muted)!important; }
+#likes .likes-premium-banner {
+  border:1px solid var(--tm-border-strong)!important;
+  border-radius:18px!important;
+  background:linear-gradient(120deg,rgba(214,180,110,.13),var(--tm-surface))!important;
+}
+#likes .likes-premium-copy strong { color:var(--tm-text)!important; }
+#likes .likes-premium-copy span { color:var(--tm-muted)!important; }
+#likes .likes-profile-card {
+  background:var(--tm-surface)!important; border-color:var(--tm-border)!important;
+  color:var(--tm-text)!important;
+}
+#likes .likes-profile-name { color:var(--tm-text)!important; }
+#likes .likes-profile-note { color:var(--tm-muted)!important; }
+#likes .likes-refresh-button {
+  border-color:var(--tm-border-strong)!important;
+  background:var(--tm-surface-raised)!important; color:var(--tm-gold)!important;
+}
+body.light-theme #likes .likes-premium-banner {
+  background:linear-gradient(120deg,#fff8e8,#fffefa)!important;
+}
+body.light-theme #likes .likes-premium-copy strong { color:#302719!important; }
+body.light-theme #likes .likes-premium-copy span { color:#6f6657!important; }
+
+/* Profile editor: comfortable grouping, readable choice controls and photo tools. */
+#profile .profile-navigation-actions {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+}
+#profile .profile-navigation-actions h2 { color:var(--tm-text)!important; }
+#profile .profile-eyebrow { color:var(--tm-gold)!important; letter-spacing:2px; font-weight:800; }
+#profile #photoGallery, #profile #genderPresentationSection,
+#profile #profileForm > .member-card {
+  padding:16px!important; margin:14px 0!important;
+  border:1px solid var(--tm-border)!important; border-radius:19px!important;
+  background:var(--tm-surface)!important;
+}
+#profile #profileForm > label { margin-top:16px; color:var(--tm-text)!important; font-weight:650; }
+#profile #profileForm > input,
+#profile #profileForm > select,
+#profile #profileForm > textarea { margin-top:7px; }
+#profile #profileForm > .member-card label {
+  display:inline-flex; align-items:center; gap:5px;
+  margin:7px 10px 7px 0; padding:8px 11px;
+  border:1px solid var(--tm-border); border-radius:999px;
+  background:var(--tm-surface-raised); color:var(--tm-text)!important;
+}
+#profile .photo-grid { gap:9px!important; }
+#profile .photo-item, #profile .add-photo-tile { border-radius:15px!important; }
+
+/* Premium: highlight plans without changing prices, selection or payment handling. */
+#premium .premium-hero {
+  border-color:var(--tm-border-strong)!important;
+  background:radial-gradient(circle at top right,rgba(214,180,110,.18),transparent 58%),var(--tm-surface)!important;
+  border-radius:22px!important; padding:clamp(20px,5vw,30px)!important;
+}
+#premium .premium-eyebrow { color:var(--tm-gold)!important; }
+#premium .premium-hero h3, #premium .premium-benefit strong { color:var(--tm-text)!important; }
+#premium .premium-hero p, #premium .premium-description { color:var(--tm-muted)!important; }
+#premium .premium-benefit, #premium .premium-account {
+  background:var(--tm-surface)!important; border-color:var(--tm-border)!important;
+  border-radius:16px!important;
+}
+#premium .premium-benefit span, #premium .premium-plan-note,
+#premium .premium-period, #premium .premium-note { color:var(--tm-muted)!important; }
+#premium .premium-icon { background:var(--tm-surface-raised)!important; color:var(--tm-gold)!important; }
+#premium .premium-plan {
+  background:var(--tm-surface)!important; color:var(--tm-text)!important;
+  border-color:var(--tm-border)!important; border-radius:18px!important;
+}
+#premium .premium-plan.recommended {
+  border:1px solid var(--tm-gold)!important;
+  background:linear-gradient(145deg,rgba(214,180,110,.14),var(--tm-surface))!important;
+}
+#premium .premium-plan-name, #premium .premium-price { color:var(--tm-text)!important; }
+#premium .premium-plan-cta { color:var(--tm-gold)!important; border-color:var(--tm-border)!important; }
+#premium .premium-tag { background:linear-gradient(135deg,#e4c982,#bd9149)!important; color:#21190c!important; }
+body.light-theme #premium .premium-hero h3,
+body.light-theme #premium .premium-benefit strong,
+body.light-theme #premium .premium-plan-name,
+body.light-theme #premium .premium-price { color:#29251e!important; }
+body.light-theme #premium .premium-plan { background:#fffefa!important; }
+body.light-theme #premium .premium-plan.recommended {
+  background:linear-gradient(145deg,#fff8e8,#fffefa)!important;
+}
+
+/* Referrals, notifications, events and settings */
+#referralsPage > .member-card {
+  padding:17px!important; border:1px solid var(--tm-border)!important;
+  border-radius:18px!important; background:var(--tm-surface)!important;
+}
+#referralsPage h2, #referralsPage h3 { color:var(--tm-text)!important; }
+#referralsPage #referralCode { color:var(--tm-gold)!important; }
+#referralsPage #referralLink { min-width:0; }
+#referralsPage .grid { gap:12px; }
+#notificationsPage .notifications-hero h2 { color:var(--tm-text)!important; }
+#notificationsPage .notifications-hero p { color:var(--tm-muted)!important; }
+#notificationsPage .notifications-categories { gap:7px; }
+#notificationsPage .notification-filter {
+  border:1px solid var(--tm-border)!important;
+  border-radius:13px!important; background:var(--tm-surface)!important;
+  color:var(--tm-muted)!important;
+}
+#notificationsPage .notification-filter.active {
+  border-color:var(--tm-gold)!important;
+  background:rgba(214,180,110,.12)!important; color:var(--tm-gold)!important;
+}
+#notificationsPage .notifications-toolbar button {
+  color:var(--tm-gold)!important;
+}
+#notificationsPage .notifications-list > *,
+#notificationsPage .notifications-empty {
+  border-color:var(--tm-border)!important; border-radius:16px!important;
+  background:var(--tm-surface)!important; color:var(--tm-text)!important;
+}
+#settings > .member-card {
+  padding:17px!important; margin:13px 0!important;
+  border:1px solid var(--tm-border)!important;
+  border-radius:18px!important; background:var(--tm-surface)!important;
+}
+#settings > .member-card h3 { color:var(--tm-text)!important; }
+#settings > .member-card p { color:var(--tm-muted); }
+#settings #settingsDeleteAccount {
+  border-color:#b85c57!important; color:#d97c76!important;
+}
+body.light-theme #settings #settingsDeleteAccount {
+  background:#fff5f3!important; color:#a33e38!important;
+}
+
+/* Events and call history retain their established layouts with theme-aware surfaces. */
+#eventsPage .events-host-intro, #eventsPage .events-info-card,
+#eventsPage .events-form, #eventsPage .event-admin-card,
+#eventsPage .events-empty {
+  border-color:var(--tm-border)!important;
+}
+#callHistoryPage .voice-call-history,
+#callHistoryPage .voice-call-history-item {
+  background:var(--tm-surface)!important; border-color:var(--tm-border)!important;
+}
+#callHistoryPage .voice-call-history-person strong { color:var(--tm-text)!important; }
+#callHistoryPage .voice-call-history-person span { color:var(--tm-muted)!important; }
+body.light-theme #callHistoryPage .voice-call-history-result { color:var(--tm-gold-deep)!important; }
+
+@media(max-width:520px) {
+  #profile #profileForm > .member-card label { padding:7px 9px; font-size:13px; }
+  #likes .likes-profile-card { gap:9px; padding:10px; }
+  #likes .likes-avatar-wrap, #likes .likes-avatar { width:62px; height:62px; flex-basis:62px; }
+  #likes .likes-profile-actions { min-width:68px; }
+  #likes .likes-profile-actions button { padding:0 8px; font-size:11px; }
+  #premium .premium-plan { padding:15px; }
+  #premium .premium-price { font-size:20px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  #premium .premium-plan, #likes .likes-profile-card,
+  #messages #conversationList > * { transition:none!important; }
+}
+</style>
+
 </body>
 </html>
 

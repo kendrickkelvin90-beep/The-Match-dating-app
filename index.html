@@ -5478,7 +5478,7 @@ body.light-theme #nearbyPage #nearbyPremiumPrompt{background:rgba(255,254,250,.9
 <div class="events-discover-entry"><div><strong>Meet beyond the swipe</strong><p class="small">Discover LGBTQ+ gatherings and shared experiences with members of The Match.</p></div><button class="btn secondary" id="openEventsFromDiscover" type="button">Explore events</button></div>
 
 <p class="small">Discover people, one swipe at a time.</p>
-<button class="btn secondary" id="refreshNearby" type="button">Refresh profiles</button>
+<div class="discover-premium-tools" style="display:flex;gap:9px;flex-wrap:wrap;margin:12px 0;align-items:center"><button class="btn secondary" id="rewindSwipeBtn" type="button">↶ Rewind</button><button class="btn secondary" id="profileBoostBtn" type="button">✦ Boost my profile</button><span id="dailyLikesStatus" class="small" aria-live="polite"></span></div><button class="btn secondary" id="refreshNearby" type="button">Refresh profiles</button>
 
     
 
@@ -12032,6 +12032,75 @@ $("enablePushNotifications").addEventListener("click", () => {
 });
 
   
+async function matchIsPremium(userId = currentUser?.id) {
+  if (!userId) return false;
+  const { data, error } = await db.from("premium_memberships")
+    .select("premium_until").eq("user_id", userId).maybeSingle();
+  if (error) throw error;
+  return !!data?.premium_until && new Date(data.premium_until).getTime() > Date.now();
+}
+
+function lagosDayStartIso() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit"
+  }).formatToParts(new Date()).reduce((out, part) => (out[part.type] = part.value, out), {});
+  return new Date(Date.UTC(Number(parts.year), Number(parts.month)-1, Number(parts.day), -1)).toISOString();
+}
+
+async function refreshDailyLikeCounter() {
+  if (!currentUser) return;
+  const target = $("dailyLikesStatus");
+  if (!target) return;
+  try {
+    if (await matchIsPremium()) {
+      target.textContent = "Unlimited likes · Premium";
+      return;
+    }
+    const { count, error } = await db.from("likes").select("id", { count: "exact", head: true })
+      .eq("liker_id", currentUser.id).gte("created_at", lagosDayStartIso());
+    if (error) throw error;
+    const used = Math.min(Number(count || 0), 10);
+    target.textContent = used >= 10 ? "Daily likes used · Resets at midnight" : (10-used) + " of 10 likes remaining today";
+  } catch (error) {
+    console.warn("Daily like counter failed:", error);
+    target.textContent = "Daily likes: 10";
+  }
+}
+
+$("rewindSwipeBtn")?.addEventListener("click", async () => {
+  const button = $("rewindSwipeBtn");
+  try {
+    if (!await matchIsPremium()) { show("premium"); return; }
+    button.disabled = true;
+    const { data, error } = await db.rpc("rewind_my_last_swipe");
+    if (error) throw error;
+    status("discoverStatus", data?.action === "like" ? "Your previous like was undone." : "Your previous pass was undone.");
+    await refreshDailyLikeCounter();
+    await loadNearby();
+  } catch (error) {
+    status("discoverStatus", "Could not rewind: " + friendly(error), true);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+$("profileBoostBtn")?.addEventListener("click", async () => {
+  const button = $("profileBoostBtn");
+  try {
+    if (!await matchIsPremium()) { show("premium"); return; }
+    button.disabled = true;
+    const { data, error } = await db.rpc("activate_my_profile_boost");
+    if (error) throw error;
+    const end = data?.ends_at ? new Date(data.ends_at) : new Date(Date.now()+30*60*1000);
+    status("discoverStatus", "Your profile is boosted for 30 minutes, until " + end.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}) + ".");
+    await loadNearby();
+  } catch (error) {
+    status("discoverStatus", "Could not activate boost: " + friendly(error), true);
+  } finally {
+    button.disabled = false;
+  }
+});
+
 $("openDiscoveryPreferencesTop").addEventListener("click", async () => {
   await loadDiscoveryPreferences();
   show("discoveryPreferencesPage");

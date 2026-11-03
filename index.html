@@ -997,7 +997,9 @@ body.light-theme .small,
 body.light-theme .status {
   color: #202020;
 }
-body.light-theme input,body.light-theme textarea,
+
+body.light-theme input,
+body.light-theme textarea,
 body.light-theme select {
   background: #ffffff !important;
   color: #202020 !important;
@@ -1995,8 +1997,10 @@ body:not(.light-theme) .card {
 
 body:not(.light-theme) h1,
 body:not(.light-theme) h2,
-body:not(.light-theme) h3,body:not(.light-theme) h4,
-body:not(.light-theme) p,body:not(.light-theme) label,
+body:not(.light-theme) h3,
+body:not(.light-theme) h4,
+body:not(.light-theme) p,
+body:not(.light-theme) label,
 body:not(.light-theme) .small,
 body:not(.light-theme) .status {
   color: var(--tm-white);
@@ -2993,9 +2997,11 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
   margin-top: 10px;
   padding: 12px;
   border: 1px solid #484238;
-  border-radius: 12px;  background: transparent;
+  border-radius: 12px;
+  background: transparent;
   color: #C9C3B7;
-  cursor: pointer;}
+  cursor: pointer;
+}
 
 @media (max-width: 380px) {
   .install-app-card {
@@ -3991,10 +3997,12 @@ body.light-theme #profile #photoGallery { background:linear-gradient(155deg,#fff
   padding:5px 1px!important;
   border:1px solid transparent!important;
   border-radius:13px!important;
-  background:transparent!important;  color:#938d83!important;
+  background:transparent!important;
+  color:#938d83!important;
   font-size:9px!important;
   line-height:1.15!important;
-  font-weight:650!important;  letter-spacing:-.1px!important;
+  font-weight:650!important;
+  letter-spacing:-.1px!important;
   white-space:nowrap!important;
   -webkit-tap-highlight-color:transparent;
   transition:background .18s ease,color .18s ease,border-color .18s ease;
@@ -4448,7 +4456,6 @@ textarea.match-dialog-input{min-height:112px;resize:vertical}
   }
 }
 
-
 </style>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
@@ -4865,7 +4872,8 @@ body.light-theme #messages #openCallHistoryButton{color:#17120a}
     box-sizing:border-box!important;
     padding:16px 10px 26px!important;
   }
-  #discover #storiesSection{    box-sizing:border-box!important;
+  #discover #storiesSection{
+    box-sizing:border-box!important;
     width:100%!important;
     max-width:none!important;
     margin:16px 0!important;
@@ -4989,7 +4997,8 @@ main{width:100%;max-width:none}
 }
 @media(min-width:700px){
   main{padding-left:24px!important;padding-right:24px!important}
-  #discover,#nearbyPage,#matches,#messages,#callHistoryPage,#likes,#profile,#settings,#notificationsPage,#eventsPage{    width:100%!important;max-width:1320px!important;margin-left:auto!important;margin-right:auto!important
+  #discover,#nearbyPage,#matches,#messages,#callHistoryPage,#likes,#profile,#settings,#notificationsPage,#eventsPage{
+    width:100%!important;max-width:1320px!important;margin-left:auto!important;margin-right:auto!important
   }
   #eventsPage .events-shell{max-width:none!important}
   #eventsPage .events-heading{padding:44px!important}
@@ -5864,7 +5873,8 @@ body.light-theme #nearbyPage #nearbyPremiumPrompt{background:rgba(255,254,250,.9
 #adminPanel .admin-queue-title p { margin: 4px 0 0; color: #85827c; font-size: 10px; }
 #adminPanel .admin-queue-list { color: #c9c6be; font-size: 12px; overflow-wrap: anywhere; }
 #adminPanel .admin-queue-list > p { color: #89867f; }
-#adminPanel .admin-queue-list button { margin: 5px 5px 5px 0; }#adminPanel .admin-footer { margin-top: 22px; padding-top: 16px; border-top: 1px solid #292720; flex-wrap: wrap; }
+#adminPanel .admin-queue-list button { margin: 5px 5px 5px 0; }
+#adminPanel .admin-footer { margin-top: 22px; padding-top: 16px; border-top: 1px solid #292720; flex-wrap: wrap; }
 #adminPanel #adminStatus { margin: 0; color: #aaa69d; font-size: 11px; }
 #adminPanel .admin-back-button { background: transparent; border-color: #39362e; color: #c9c3b6; }
 @media (max-width: 700px) {
@@ -5987,7 +5997,8 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
       <div><strong>See who likes you</strong><span>Discover members who have already liked your profile.</span></div>
     </div>
     <div class="premium-benefit">
-      <div class="premium-icon">⌖</div>      <div><strong>Premium Nearby</strong><span>Explore eligible members around your location.</span></div>
+      <div class="premium-icon">⌖</div>
+      <div><strong>Premium Nearby</strong><span>Explore eligible members around your location.</span></div>
     </div>
     <div class="premium-benefit">
       <div class="premium-icon">▣</div>
@@ -6863,7 +6874,8 @@ function matchDialog(options = {}) {
   });
   const result = matchDialogQueue.then(task, task); matchDialogQueue = result.then(() => undefined, () => undefined); return result;
 }
-function matchConfirm(message, title = "Please confirm") { return matchDialog({ type: "confirm", title, message, confirmText: "Continue" }); }function matchPrompt(message, defaultValue = "", options = {}) {
+function matchConfirm(message, title = "Please confirm") { return matchDialog({ type: "confirm", title, message, confirmText: "Continue" }); }
+function matchPrompt(message, defaultValue = "", options = {}) {
   return matchDialog({ type: "prompt", title: options.title || "A quick question", message, defaultValue,
     placeholder: options.placeholder || "Type your response...", multiline: Boolean(options.multiline),
     maxLength: options.maxLength || 2000, confirmText: options.confirmText || "Continue" });
@@ -6985,6 +6997,7 @@ function renderResetCaptcha() {
     resetCaptchaToken = "";
     return;
   }
+
   resetCaptchaWidgetId = window.turnstile.render("#resetCaptcha", {
     sitekey: "0x4AAAAAAFia9mw39tR1pGuq",
     callback: window.onResetTurnstileSuccess,
@@ -7863,6 +7876,7 @@ async function moderateAdminMember(member, action) {
     : (action === "banned" ? "Ban " : "Suspend ") +
       (member.display_name || "this member") + "?";
   if (!await matchConfirm(confirmText + (action === "banned" ? " This is a serious action." : ""))) return;
+
   status("adminStatus", "Applying account moderation...");
   const { data, error } = await db.functions.invoke("admin-moderate-member", {
     body: { user_id: member.id, action, reason: reason.trim(), expires_at: expiresAt }
@@ -7983,6 +7997,7 @@ async function loadAdminPremiumOverview() {
     list.appendChild(item);
   });
 }
+
 async function loadAdminSupplementaryAnalytics() {
   const results = await Promise.all([
     db.from("stories").select("id", { count: "exact", head: true }),
@@ -8861,6 +8876,7 @@ function showTopNotification(title, body, type) {
 
     const content = document.createElement("div");
     content.style.flex = "1";
+
     const heading = document.createElement("strong");
     heading.id = "matchTopToastTitle";
     heading.style.display = "block";
@@ -8981,7 +8997,8 @@ function showMatchNotification(title, body, type) {
     } catch (error) {
       console.warn("Notification unavailable:", error);
     }
-  }}
+  }
+}
 
 
 
@@ -9860,7 +9877,8 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
     const verificationById = new Map(
       (expandedVerification || []).map(profile => [
         profile.id,
-        {          is_verified: profile.is_verified,
+        {
+          is_verified: profile.is_verified,
           verification_level: profile.verification_level
         }
       ])
@@ -9973,6 +9991,7 @@ photoBox.appendChild(photoFallback);
 const onlineBadge = document.createElement("div");
 onlineBadge.dataset.discoverOnlineUser = p.id;
 onlineBadge.style.cssText = "position:absolute;top:12px;left:12px;z-index:3;display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:20px;background:#07120ddd;border:1px solid #52e39a66;color:#b9ffd8;font-size:12px;font-weight:700;";
+
 const onlineDot = document.createElement("span");
 onlineDot.dataset.onlineDot = "true";
 onlineDot.style.cssText = "width:7px;height:7px;border-radius:50%;display:inline-block;background:#777;";
@@ -10859,7 +10878,8 @@ async function loadStories(){
         });
 
         const heading = document.createElement("div");
-        heading.className = "tm-story-heading";        heading.textContent = story.user_id === currentUser.id
+        heading.className = "tm-story-heading";
+        heading.textContent = story.user_id === currentUser.id
   ? "Your Story"
   : name + "'s Story";
         Object.assign(heading.style, {
@@ -10968,7 +10988,8 @@ if (story.user_id === currentUser.id) {
           "position:absolute;bottom:70px;left:12px;right:12px;z-index:6;display:flex;justify-content:center;gap:10px;";
 
         const reactionStatus = document.createElement("p");
-        reactionStatus.style.cssText =          "position:absolute;bottom:48px;left:12px;right:12px;z-index:6;color:white;text-align:center;font-size:12px;";
+        reactionStatus.style.cssText =
+          "position:absolute;bottom:48px;left:12px;right:12px;z-index:6;color:white;text-align:center;font-size:12px;";
 
         ["❤️", "😂", "😍", "🔥", "👏"].forEach(emoji => {
           const reactionButton = document.createElement("button");
@@ -11858,6 +11879,7 @@ $("storyMediaFile").onchange = async () => {
         "Uploading your Story (" + (i + 1) + "/" + files.length + ")..."
       );
     }
+
     const { error: insertError } = await db
       .from("stories")
       .insert(storyRows);
@@ -11967,6 +11989,7 @@ async function loadBlockedMembers(){
       card.appendChild(btn);
       list.appendChild(card);
     }
+
     status("blockedMembersStatus","");
   }catch(e){
     status("blockedMembersStatus",
@@ -12857,7 +12880,8 @@ if(countError)throw countError;
             card.remove();
             status("likesStatus","Like declined and removed.");
           }catch(error){
-            status("likesStatus","Could not decline: "+friendly(error),true);            decline.disabled=false;
+            status("likesStatus","Could not decline: "+friendly(error),true);
+            decline.disabled=false;
             likeBack.disabled=false;
           }
         };
@@ -12964,7 +12988,8 @@ if (p.verification_level === "enhanced" ||
     p.verification_level === "basic" ||
     p.is_verified) {
   name.appendChild(badge);
-}if (memberIsPremium) {
+}
+if (memberIsPremium) {
   const premiumBadge = document.createElement("span");
   premiumBadge.textContent = " ✦ PREMIUM";
   premiumBadge.style.cssText = "display:inline-block;margin-left:7px;padding:4px 8px;border-radius:999px;background:linear-gradient(135deg,#e2c17d,#a77b32);color:#17130b;font-size:10px;font-weight:900;letter-spacing:.7px;vertical-align:middle;";
@@ -13856,7 +13881,8 @@ if (photoPath) {
       refreshConversationsButton.disabled = true;
       refreshConversationsButton.textContent = "↻ Refreshing...";
       try {
-        await loadMyConversations();      } catch (error) {
+        await loadMyConversations();
+      } catch (error) {
         console.error("Conversation refresh failed:", error);
         status("messagesStatus", "Refresh failed: " + friendly(error), true);
       } finally {
@@ -13963,6 +13989,7 @@ updateChatOnlineStatus(userId);
         clearInterval(chatRefreshTimer);
         chatRefreshTimer = null;
       }
+
       const conversationListNode = document.getElementById("conversationList");
 const activeConversationNode = document.getElementById("activeConversation");
 
@@ -14855,7 +14882,8 @@ button.textContent = "➤";
       const item=document.createElement("div");
       item.className="photo-item";
 
-      const img=document.createElement("img");      img.src=url;
+      const img=document.createElement("img");
+      img.src=url;
       img.alt="Profile photo";
       item.appendChild(img);
       img.style.cursor="zoom-in";
@@ -14960,7 +14988,8 @@ del.setAttribute("aria-label", "Delete photo");
               .eq("user_id",currentUser.id);
             if(positionError){
               await loadMyPhotos();
-              status("photoStatus","Photo deleted, but the remaining photo order could not be saved. Please reload your profile.",true);              return;
+              status("photoStatus","Photo deleted, but the remaining photo order could not be saved. Please reload your profile.",true);
+              return;
             }
           }
         }
@@ -15854,7 +15883,8 @@ async function loadVoiceCallHistory() {
   const list = $("voiceCallHistoryList");
   const statusBox = $("voiceCallHistoryStatus");
   if (!list || !statusBox || !currentUser) return;
-  list.replaceChildren();  statusBox.textContent = "Loading recent calls…";
+  list.replaceChildren();
+  statusBox.textContent = "Loading recent calls…";
   try {
     const { data: calls, error } = await db.from("call_sessions")
       .select("id,caller_id,callee_id,call_type,status,created_at,ended_at")
@@ -15958,7 +15988,8 @@ function showVoiceCallModal(title, message, actions) {
     if (danger) b.classList.add("voice-call-danger");
     b.onclick = handler;
     area.appendChild(b);
-  });  $("voiceCallModal").classList.remove("hidden");
+  });
+  $("voiceCallModal").classList.remove("hidden");
   $("voiceCallModal").style.display = "flex";
 }
 function hideVoiceCallModal() {
@@ -16853,7 +16884,8 @@ body.light-theme #likes .likes-premium-copy span { color:#6f6657!important; }
   background:var(--tm-surface)!important;
 }
 #profile #profileForm > label { margin-top:16px; color:var(--tm-text)!important; font-weight:650; }
-#profile #profileForm > input,#profile #profileForm > select,
+#profile #profileForm > input,
+#profile #profileForm > select,
 #profile #profileForm > textarea { margin-top:7px; }
 #profile #profileForm > .member-card label {
   display:inline-flex; align-items:center; gap:5px;
@@ -16956,6 +16988,7 @@ body.light-theme #settings #settingsDeleteAccount {
 #callHistoryPage .voice-call-history-person strong { color:var(--tm-text)!important; }
 #callHistoryPage .voice-call-history-person span { color:var(--tm-muted)!important; }
 body.light-theme #callHistoryPage .voice-call-history-result { color:var(--tm-gold-deep)!important; }
+
 @media(max-width:520px) {
   #profile #profileForm > .member-card label { padding:7px 9px; font-size:13px; }
   #likes .likes-profile-card { gap:9px; padding:10px; }
@@ -17853,123 +17886,58 @@ body.light-theme #discover #profileList>.member-card{
   border:0!important;
   box-shadow:none!important;
 }
+
+
 /* Discover Option 3 — large portrait with floating controls; Stories and Events stay above */
 #discover.panel{
-  min-height:0!important;
-  height:auto!important;
-  margin:0!important;
-  padding:8px 0 10px!important;
-  border:0!important;
-  outline:0!important;
-  border-radius:0!important;
-  box-shadow:none!important;
-  background:transparent!important;
+  min-height:0!important;height:auto!important;margin:0!important;padding:8px 0 10px!important;
+  border:0!important;outline:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;
 }
 body:has(#bottomNavigation:not(.hidden))>main>.panel:not(.hidden)#discover{
-  min-height:0!important;
-  margin:0!important;
-  padding:8px 0 10px!important;
-  border:0!important;
-  border-radius:0!important;
-  box-shadow:none!important;
-  background:transparent!important;
+  min-height:0!important;margin:0!important;padding:8px 0 10px!important;border:0!important;
+  border-radius:0!important;box-shadow:none!important;background:transparent!important;
 }
-#discover #profileList{
-  width:100%!important;
-  max-width:none!important;
-  margin:4px 0 0!important;
-  padding:0!important;
-}
+#discover #profileList{width:100%!important;max-width:none!important;margin:4px 0 0!important;padding:0!important}
 #discover #profileList>.member-card{
-  width:calc(100% + 24px)!important;
-  max-width:none!important;
-  height:clamp(420px,calc(100svh - 335px),700px)!important;
-  min-height:420px!important;
-  max-height:700px!important;
-  margin:0 0 0 -12px!important;
-  border:0!important;
-  outline:0!important;
-  border-radius:0!important;
-  box-shadow:none!important;
-  background:#080808!important;
-  overflow:hidden!important;
+  width:calc(100% + 24px)!important;max-width:none!important;
+  height:clamp(420px,calc(100svh - 335px),700px)!important;min-height:420px!important;max-height:700px!important;
+  margin:0 0 0 -12px!important;border:0!important;outline:0!important;border-radius:0!important;
+  box-shadow:none!important;background:#080808!important;overflow:hidden!important;
 }
 #discover #profileList>.member-card>div:first-child{
-  position:absolute!important;
-  inset:0!important;
-  width:100%!important;
-  height:100%!important;
-  background:#080808!important;
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;background:#080808!important;
 }
 #discover #profileList>.member-card>div:first-child>img[aria-hidden="true"]{display:none!important}
 #discover #profileList>.member-card>div:first-child>img:not([aria-hidden="true"]){
-  position:absolute!important;
-  inset:0!important;
-  width:100%!important;
-  height:100%!important;
-  object-fit:contain!important;
-  object-position:center center!important;
-  background:#080808!important;
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  object-fit:contain!important;object-position:center center!important;background:#080808!important;
 }
 #discover #profileList>.member-card .discover-profile-overlay{
-  left:0!important;
-  right:0!important;
-  bottom:0!important;
+  left:0!important;right:0!important;bottom:0!important;
   padding:100px 16px max(18px,env(safe-area-inset-bottom))!important;
   background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.12) 22%,rgba(0,0,0,.78) 66%,rgba(0,0,0,.96) 100%)!important;
 }
-#discover #profileList>.member-card .discover-profile-overlay h2{
-  font-size:clamp(29px,7vw,37px)!important;
-  font-weight:900!important;
-}
-#discover #profileList>.member-card .discover-profile-overlay .distance{
-  font-size:15px!important;
-  font-weight:850!important;
-  margin-bottom:8px!important;
-}
-#discover #profileList>.member-card .discover-profile-overlay button[aria-expanded]{
-  min-height:40px!important;
-}
+#discover #profileList>.member-card .discover-profile-overlay h2{font-size:clamp(29px,7vw,37px)!important;font-weight:900!important}
+#discover #profileList>.member-card .discover-profile-overlay .distance{font-size:15px!important;font-weight:850!important;margin-bottom:8px!important}
+#discover #profileList>.member-card .discover-profile-overlay button[aria-expanded]{min-height:40px!important}
 #discover #profileList>.member-card .discover-profile-overlay .discover-floating-actions{
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  gap:24px!important;
-  margin:12px 0 2px!important;
-  padding:0!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;gap:24px!important;
+  margin:12px 0 2px!important;padding:0!important;
 }
 #discover #profileList>.member-card .discover-floating-actions .btn{
-  flex:0 0 62px!important;
-  width:62px!important;
-  min-width:62px!important;
-  height:62px!important;
-  min-height:62px!important;
-  margin:0!important;
-  padding:0!important;
-  display:inline-flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  border-radius:50%!important;
-  font-size:25px!important;
-  font-weight:900!important;
-  box-shadow:0 8px 24px rgba(0,0,0,.48)!important;
+  flex:0 0 62px!important;width:62px!important;min-width:62px!important;height:62px!important;min-height:62px!important;
+  margin:0!important;padding:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  border-radius:50%!important;font-size:25px!important;font-weight:900!important;box-shadow:0 8px 24px rgba(0,0,0,.48)!important;
 }
 #discover #profileList>.member-card .discover-floating-actions .btn.secondary{
-  background:rgba(18,18,18,.92)!important;
-  color:#fff!important;
-  border:1px solid rgba(255,255,255,.58)!important;
+  background:rgba(18,18,18,.92)!important;color:#fff!important;border:1px solid rgba(255,255,255,.58)!important;
 }
 #discover #profileList>.member-card .discover-floating-actions .btn.primary{
-  background:linear-gradient(145deg,#f3d18a,#b88b42)!important;
-  color:#171108!important;
-  border:1px solid #f0d18b!important;
+  background:linear-gradient(145deg,#f3d18a,#b88b42)!important;color:#171108!important;border:1px solid #f0d18b!important;
 }
 #discover #discoverStatus{margin:4px 0 0!important;padding:0 12px!important}
 @media(max-height:740px){
-  #discover #profileList>.member-card{
-    height:clamp(390px,calc(100svh - 300px),560px)!important;
-    min-height:390px!important;
-  }
+  #discover #profileList>.member-card{height:clamp(390px,calc(100svh - 300px),560px)!important;min-height:390px!important}
   #discover #profileList>.member-card .discover-profile-overlay{padding-top:76px!important}
 }
 @media(max-width:380px){
@@ -17980,7 +17948,6 @@ body.light-theme #discover #profileList>.member-card{border:0!important;box-shad
 body.light-theme #discover #profileList>.member-card .discover-profile-overlay{
   background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.16) 22%,rgba(0,0,0,.82) 66%,rgba(0,0,0,.97) 100%)!important;
 }
-
 
 </style>
 </body>
@@ -18003,4 +17970,6 @@ body.light-theme #discover #profileList>.member-card .discover-profile-overlay{
     </div>
   </div>
 </div>
+
+
 

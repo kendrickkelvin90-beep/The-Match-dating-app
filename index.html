@@ -4593,7 +4593,7 @@ body.light-theme #discoveryPreferencesPage label{color:#494238}
 body.light-theme #discoveryPreferencesPage input:not([type=checkbox]):not([type=range]),body.light-theme #discoveryPreferencesPage select{background:#fff;color:#25211b;border-color:#d8d0c3}
 body.light-theme #discoveryPreferencesPage .discovery-save-card{background:rgba(255,255,255,.96);border-color:#e1d4bb}
 </style>
-<style id="discoveryRoleAndPresentationStyles">
+<style id="premiumDiscoveryControlsStyles">\n#discoveryPreferencesPage .premium-locked-preference{opacity:.58;position:relative;cursor:pointer}\n#discoveryPreferencesPage .premium-lock-tag{display:inline-block;color:#c6a15b;font-size:10px;font-weight:800;margin-left:5px}\n#discoveryPreferencesPage .premium-locked-preference input{cursor:not-allowed}\nbody.light-theme #discoveryPreferencesPage .premium-lock-tag{color:#8d6725}\n.discover-premium-tools button{min-height:42px;border-radius:12px}\n</style>\n<style id="discoveryRoleAndPresentationStyles">
 #profile .presentation-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
 #profile .presentation-options label{display:flex;align-items:center;gap:8px;padding:11px;border:1px solid rgba(210,177,112,.22);border-radius:12px;background:rgba(210,177,112,.045);font-size:13px}
 #profile .presentation-options input{accent-color:#d0aa62;width:18px;height:18px}
@@ -5478,7 +5478,7 @@ body.light-theme #nearbyPage #nearbyPremiumPrompt{background:rgba(255,254,250,.9
 <div class="events-discover-entry"><div><strong>Meet beyond the swipe</strong><p class="small">Discover LGBTQ+ gatherings and shared experiences with members of The Match.</p></div><button class="btn secondary" id="openEventsFromDiscover" type="button">Explore events</button></div>
 
 <p class="small">Discover people, one swipe at a time.</p>
-<button class="btn secondary" id="refreshNearby" type="button">Refresh profiles</button>
+<div class="discover-premium-tools" style="display:flex;gap:9px;flex-wrap:wrap;margin:12px 0;align-items:center"><button class="btn secondary" id="rewindSwipeBtn" type="button">↶ Rewind</button><button class="btn secondary" id="profileBoostBtn" type="button">✦ Boost my profile</button><span id="dailyLikesStatus" class="small" aria-live="polite"></span></div><button class="btn secondary" id="refreshNearby" type="button">Refresh profiles</button>
 
     
 
@@ -5877,6 +5877,26 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     <div class="premium-benefit">
       <div class="premium-icon">✓</div>
       <div><strong>Read receipts</strong><span>See message-read information where supported.</span></div>
+    </div>
+    <div class="premium-benefit">
+      <div class="premium-icon">↶</div>
+      <div><strong>Swipe Rewind</strong><span>Undo your most recent Like or Pass when you change your mind.</span></div>
+    </div>
+    <div class="premium-benefit">
+      <div class="premium-icon">✦</div>
+      <div><strong>Profile Boost</strong><span>Put your profile ahead of other eligible profiles in Discover for 30 minutes.</span></div>
+    </div>
+    <div class="premium-benefit">
+      <div class="premium-icon">♛</div>
+      <div><strong>Premium badge</strong><span>Show a gold Premium badge while your subscription is active.</span></div>
+    </div>
+    <div class="premium-benefit">
+      <div class="premium-icon">⚙</div>
+      <div><strong>Advanced Discovery controls</strong><span>Unlock expanded distance and age ranges, verified and recently active filters, and additional role preferences.</span></div>
+    </div>
+    <div class="premium-benefit">
+      <div class="premium-icon">♥</div>
+      <div><strong>Unlimited likes</strong><span>Like as many eligible profiles as you want, without the free daily limit.</span></div>
     </div>
     <div class="premium-benefit">
       <div class="premium-icon">✧</div>
@@ -9562,16 +9582,26 @@ async function loadNearby(){
   status("discoverStatus","Finding members...");
 
   try{
-
-    
-    const savedPreferences = JSON.parse(
-      localStorage.getItem("theMatchDiscoveryPreferences") || "{}"
-    );
-
+    const viewerPremium = await matchIsPremium();
+    $("rewindSwipeBtn").textContent = viewerPremium ? "↶ Rewind" : "↶ Rewind 🔒";
+    $("profileBoostBtn").textContent = viewerPremium ? "✦ Boost my profile" : "✦ Boost my profile 🔒";
+    const greeting = $("greeting");
+    greeting?.querySelector(".own-premium-badge")?.remove();
+    if (viewerPremium && greeting) {
+      const ownBadge = document.createElement("span");
+      ownBadge.className = "own-premium-badge";
+      ownBadge.textContent = " ✦ PREMIUM";
+      ownBadge.style.cssText = "display:inline-block;margin-left:7px;padding:4px 8px;border-radius:999px;background:linear-gradient(135deg,#e2c17d,#a77b32);color:#17130b;font-size:10px;font-weight:900;letter-spacing:.7px;";
+      greeting.appendChild(ownBadge);
+    }
+    await refreshDailyLikeCounter();
+    const savedPreferences = JSON.parse(localStorage.getItem("theMatchDiscoveryPreferences") || "{}");
     const preferredLocation = (savedPreferences.location || "").trim();
-    const maxDistance = Number(savedPreferences.distance) || 50;
+    const maxDistance = Math.min(Number(savedPreferences.distance) || 50, viewerPremium ? 200 : 50);
     const minAge = Number(savedPreferences.minAge) || 18;
-    const maxAge = Number(savedPreferences.maxAge) || 79;
+    const maxAge = Math.min(Number(savedPreferences.maxAge) || 79, viewerPremium ? 99 : 79);
+    const showMe = savedPreferences.showMe || "everyone";
+    const lookingFor = savedPreferences.lookingFor || "";
     const rolePreferences = Array.isArray(savedPreferences.rolePreferences) ? savedPreferences.rolePreferences : [];
 
     
@@ -9622,6 +9652,13 @@ let people = (peopleData || []).map(p => ({
         people=people.filter(person=>Array.isArray(person.sexual_roles)&&person.sexual_roles.some(role=>rolePreferences.includes(role)));
       }
     }
+    if (showMe !== "everyone") {
+      const expected = showMe === "nonbinary" ? "non-binary" : showMe;
+      people = people.filter(person => String(person.gender_identity || "").toLowerCase().includes(expected));
+    }
+    if (lookingFor) people = people.filter(person => String(person.interested_in || "").toLowerCase() === lookingFor.toLowerCase());
+    if (viewerPremium && savedPreferences.verifiedOnly) people = people.filter(person => person.is_verified || ["basic","enhanced"].includes(person.verification_level));
+    if (viewerPremium && savedPreferences.recentlyActive) people = people.filter(person => isUserOnline(person.id));
 
     // Randomize Discover profile order.
     for (let i = people.length - 1; i > 0; i--) {
@@ -9655,14 +9692,14 @@ people = people.filter(p =>
 
 
   
-if (!people.length && (preferredLocation || maxDistance < 500)) {
+if (!people.length && viewerPremium && savedPreferences.expandRange && (preferredLocation || maxDistance < 200)) {
   status("discoverStatus", "Searching a wider area...");
 
     const {
     data: expandedData,
     error: expandedError
   } = await db.rpc("discover_profiles_secure", {
-    p_max_distance_km: 500,
+    p_max_distance_km: 200,
     p_min_age: minAge,
     p_max_age: maxAge,
     p_city: null
@@ -9719,6 +9756,18 @@ if (!people.length && (preferredLocation || maxDistance < 500)) {
     const j = Math.floor(Math.random() * (i + 1));
     [people[i], people[j]] = [people[j], people[i]];
   }
+}
+
+const discoverMemberIds = people.map(person => person.id);
+if (discoverMemberIds.length) {
+  const { data: premiumRows, error: premiumRowsError } = await db.rpc("get_active_premium_member_ids", { p_user_ids: discoverMemberIds });
+  if (premiumRowsError) throw premiumRowsError;
+  const premiumSet = new Set((premiumRows || []).map(row => row.user_id));
+  people = people.map(person => ({ ...person, is_premium: premiumSet.has(person.id) }));
+  const { data: boostedRows, error: boostedError } = await db.rpc("get_active_discover_boost_ids");
+  if (boostedError) throw boostedError;
+  const boostedSet = new Set(boostedRows || []);
+  people.sort((a,b) => Number(boostedSet.has(b.id)) - Number(boostedSet.has(a.id)));
 }
 
 if (!people.length) {
@@ -9899,6 +9948,13 @@ if (p.is_verified || p.verification_level === "basic" ||
   name.appendChild(tick);
 }
 
+if (p.is_premium) {
+  const premiumBadge = document.createElement("span");
+  premiumBadge.textContent = " ✦ PREMIUM";
+  premiumBadge.style.cssText = "display:inline-block;margin-left:7px;padding:4px 8px;border-radius:999px;background:linear-gradient(135deg,#e2c17d,#a77b32);color:#17130b;font-size:10px;font-weight:900;letter-spacing:.7px;vertical-align:middle;";
+  premiumBadge.title = "Active Premium member";
+  name.appendChild(premiumBadge);
+}
 name.style.cssText="font-size:28px;font-weight:800;letter-spacing:-0.6px;line-height:1.15;margin:14px 4px 6px;color:#fff;overflow-wrap:anywhere;";
 card.appendChild(name);
 
@@ -10054,6 +10110,7 @@ like.onclick=async()=>{
       return;
     }
 
+  await refreshDailyLikeCounter();
   const {data:reverseLike,error:matchError}=await db
   .rpc("check_mutual_like",{p_other_user_id:p.id});
 
@@ -12006,8 +12063,88 @@ $("enablePushNotifications").addEventListener("click", () => {
 });
 
   
-$("openDiscoveryPreferencesTop").addEventListener("click", () => {
-  loadDiscoveryPreferences();
+async function matchIsPremium(userId = currentUser?.id) {
+  if (!userId) return false;
+  const { data, error } = await db.from("premium_memberships")
+    .select("premium_until").eq("user_id", userId).maybeSingle();
+  if (error) throw error;
+  return !!data?.premium_until && new Date(data.premium_until).getTime() > Date.now();
+}
+
+function lagosDayStartIso() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit"
+  }).formatToParts(new Date()).reduce((out, part) => (out[part.type] = part.value, out), {});
+  return new Date(Date.UTC(Number(parts.year), Number(parts.month)-1, Number(parts.day), -1)).toISOString();
+}
+
+async function refreshDailyLikeCounter() {
+  if (!currentUser) return;
+  const target = $("dailyLikesStatus");
+  if (!target) return;
+  try {
+    if (await matchIsPremium()) {
+      target.textContent = "Unlimited likes · Premium";
+      return;
+    }
+    const { count, error } = await db.from("likes").select("id", { count: "exact", head: true })
+      .eq("liker_id", currentUser.id).gte("created_at", lagosDayStartIso());
+    if (error) throw error;
+    const used = Math.min(Number(count || 0), 10);
+    target.textContent = used >= 10 ? "Daily likes used · Resets at midnight" : (10-used) + " of 10 likes remaining today";
+  } catch (error) {
+    console.warn("Daily like counter failed:", error);
+    target.textContent = "Daily likes: 10";
+  }
+}
+
+document.addEventListener("click", event => {
+  const locked = event.target.closest(".premium-locked-preference");
+  if (locked) {
+    const input = locked.querySelector("input");
+    if (input?.disabled) {
+      event.preventDefault();
+      show("premium");
+    }
+  }
+});
+
+$("rewindSwipeBtn")?.addEventListener("click", async () => {
+  const button = $("rewindSwipeBtn");
+  try {
+    if (!await matchIsPremium()) { show("premium"); return; }
+    button.disabled = true;
+    const { data, error } = await db.rpc("rewind_my_last_swipe");
+    if (error) throw error;
+    status("discoverStatus", data?.action === "like" ? "Your previous like was undone." : "Your previous pass was undone.");
+    await refreshDailyLikeCounter();
+    await loadNearby();
+  } catch (error) {
+    status("discoverStatus", "Could not rewind: " + friendly(error), true);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+$("profileBoostBtn")?.addEventListener("click", async () => {
+  const button = $("profileBoostBtn");
+  try {
+    if (!await matchIsPremium()) { show("premium"); return; }
+    button.disabled = true;
+    const { data, error } = await db.rpc("activate_my_profile_boost");
+    if (error) throw error;
+    const end = data?.ends_at ? new Date(data.ends_at) : new Date(Date.now()+30*60*1000);
+    status("discoverStatus", "Your profile is boosted for 30 minutes, until " + end.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}) + ".");
+    await loadNearby();
+  } catch (error) {
+    status("discoverStatus", "Could not activate boost: " + friendly(error), true);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+$("openDiscoveryPreferencesTop").addEventListener("click", async () => {
+  await loadDiscoveryPreferences();
   show("discoveryPreferencesPage");
 });
 $("backFromDiscoveryPreferences").addEventListener("click", () => {
@@ -12017,27 +12154,28 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
   $("discoveryDistanceValue").textContent = event.target.value + " km";
 });
   $("saveDiscoveryPreferences").addEventListener("click", async () => {
+  const premium = await matchIsPremium();
   const minAge = Number($("discoveryAgeMin").value);
   const maxAge = Number($("discoveryAgeMax").value);
 
-  if (minAge < 18 || maxAge > 99 || minAge > maxAge) {
+  if (minAge < 18 || maxAge > (premium ? 99 : 79) || minAge > maxAge) {
     $("discoveryPreferencesStatus").textContent =
-      "Please enter a valid age range from 18 to 99.";
+      "Please enter a valid age range from 18 to " + (premium ? "99" : "79") + ".";
     return;
   }
 
   const preferences = {
     location: $("discoveryLocation").value.trim(),
-    distance: Number($("discoveryDistance").value),
+    distance: Math.min(Number($("discoveryDistance").value), premium ? 200 : 50),
     minAge,
     maxAge,
     showMe: $("discoveryShowMe").value,
     lookingFor: $("discoveryLookingFor").value,
     interests: $("discoveryInterests").value.trim(),
-    verifiedOnly: $("discoveryVerifiedOnly").checked,
-    recentlyActive: $("discoveryRecentlyActive").checked,
-    expandRange: $("discoveryExpandRange").checked,
-    rolePreferences: Array.from(document.querySelectorAll('input[name="discoveryRolePreference"]:checked')).map(el=>el.value)
+    verifiedOnly: premium && $("discoveryVerifiedOnly").checked,
+    recentlyActive: premium && $("discoveryRecentlyActive").checked,
+    expandRange: premium && $("discoveryExpandRange").checked,
+    rolePreferences: Array.from(document.querySelectorAll('input[name="discoveryRolePreference"]:checked:not(:disabled)')).map(el=>el.value)
   };
 
   try {
@@ -12045,6 +12183,7 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
       "theMatchDiscoveryPreferences",
       JSON.stringify(preferences)
     );
+    await loadDiscoveryPreferences();
     // These Discover controls are explicitly device-local. Do not make a
     // profile-table request here that can fail and falsely report the save.
     $("discoveryPreferencesStatus").textContent =
@@ -12055,33 +12194,64 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
       "Could not save preferences on this device. Check your browser storage and try again.";
   }
 });
-  function loadDiscoveryPreferences() {
+  async function loadDiscoveryPreferences() {
   try {
-    const saved = JSON.parse(
-      localStorage.getItem("theMatchDiscoveryPreferences") || "{}"
-    );
-
+    const premium = await matchIsPremium();
+    const saved = JSON.parse(localStorage.getItem("theMatchDiscoveryPreferences") || "{}");
+    const distance = $("discoveryDistance");
+    distance.max = premium ? "200" : "50";
+    distance.value = Math.min(Number(saved.distance || 50), premium ? 200 : 50);
+    $("discoveryDistanceValue").textContent = distance.value + " km";
+    $("discoveryAgeMin").value = saved.minAge ?? 18;
+    $("discoveryAgeMax").value = Math.min(Number(saved.maxAge ?? 79), premium ? 99 : 79);
     if (saved.location !== undefined) $("discoveryLocation").value = saved.location;
-    if (saved.distance !== undefined) $("discoveryDistance").value = saved.distance;
-    if (saved.minAge !== undefined) $("discoveryAgeMin").value = saved.minAge;
-    if (saved.maxAge !== undefined) $("discoveryAgeMax").value = saved.maxAge;
     if (saved.showMe !== undefined) $("discoveryShowMe").value = saved.showMe;
     if (saved.lookingFor !== undefined) $("discoveryLookingFor").value = saved.lookingFor;
     if (saved.interests !== undefined) $("discoveryInterests").value = saved.interests;
-    if (saved.verifiedOnly !== undefined) $("discoveryVerifiedOnly").checked = saved.verifiedOnly;
-    if (saved.recentlyActive !== undefined) $("discoveryRecentlyActive").checked = saved.recentlyActive;
-    if (saved.expandRange !== undefined) $("discoveryExpandRange").checked = saved.expandRange;
-    document.querySelectorAll('input[name="discoveryRolePreference"]').forEach(el=>{
-      el.checked=Array.isArray(saved.rolePreferences)&&saved.rolePreferences.includes(el.value);
+
+    const premiumOnly = ["discoveryVerifiedOnly","discoveryRecentlyActive","discoveryExpandRange"];
+    premiumOnly.forEach(id => {
+      const input = $(id);
+      const label = input?.closest("label");
+      if (!input || !label) return;
+      input.disabled = !premium;
+      label.classList.toggle("premium-locked-preference", !premium);
+      let tag = label.querySelector(".premium-lock-tag");
+      if (!premium && !tag) {
+        tag = document.createElement("small");
+        tag.className = "premium-lock-tag";
+        tag.textContent = " 🔒 Premium";
+        label.querySelector("span")?.appendChild(tag);
+      } else if (premium && tag) tag.remove();
+      if (!premium) input.checked = false;
+      else if (saved[id.replace("discovery","").charAt(0).toLowerCase()+id.replace("discovery","").slice(1)] !== undefined) {
+        input.checked = !!saved[id.replace("discovery","").charAt(0).toLowerCase()+id.replace("discovery","").slice(1)];
+      }
     });
 
-    $("discoveryDistanceValue").textContent =
-      $("discoveryDistance").value + " km";
+    document.querySelectorAll('input[name="discoveryRolePreference"]').forEach(el=>{
+      const advanced = !["Top","Bottom","Versatile"].includes(el.value);
+      const label = el.closest("label");
+      el.disabled = !premium && advanced;
+      label?.classList.toggle("premium-locked-preference", !premium && advanced);
+      let tag = label?.querySelector(".premium-lock-tag");
+      if (!premium && advanced && !tag) {
+        tag = document.createElement("small");
+        tag.className = "premium-lock-tag";
+        tag.textContent = " 🔒";
+        label?.appendChild(tag);
+      } else if (premium && tag) tag.remove();
+      el.checked = Array.isArray(saved.rolePreferences) && saved.rolePreferences.includes(el.value) && (premium || !advanced);
+    });
+    $("discoveryPreferencesStatus").textContent = premium
+      ? "Premium discovery controls are unlocked."
+      : "Free access includes basic preferences. Upgrade to unlock advanced filters.";
   } catch (error) {
     console.error("Could not load discovery preferences:", error);
+    status("discoveryPreferencesStatus","Could not load preferences. Please try again.",true);
   }
   }
-  $("resetDiscoveryPreferences").addEventListener("click", () => {
+  $("resetDiscoveryPreferences").addEventListener("click", async () => {
   $("discoveryLocation").value = "";
   $("discoveryDistance").value = 50;
   $("discoveryAgeMin").value = 18;
@@ -12098,6 +12268,7 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
 
   try {
     localStorage.removeItem("theMatchDiscoveryPreferences");
+    await loadDiscoveryPreferences();
     if(currentUser){
       db.from("profiles").update({discovery_role_preferences:[]}).eq("id",currentUser.id)
         .then(({error})=>{if(error)console.error("Could not reset account role preferences:",error);});
@@ -12594,6 +12765,10 @@ async function openMemberProfile(memberId){
     if(error) throw error;
     if(!p) throw Error("This member's profile could not be found.");
 
+    const { data: premiumMemberRows, error: premiumMemberError } = await db.rpc("get_active_premium_member_ids", { p_user_ids: [memberId] });
+    if (premiumMemberError) throw premiumMemberError;
+    const memberIsPremium = (premiumMemberRows || []).some(row => row.user_id === memberId);
+
     const badge = document.createElement("span");
 badge.style.fontSize = "0.8em";
 badge.style.fontWeight = "bold";
@@ -12620,7 +12795,13 @@ if (p.verification_level === "enhanced" ||
     p.is_verified) {
   name.appendChild(badge);
 }
-
+if (memberIsPremium) {
+  const premiumBadge = document.createElement("span");
+  premiumBadge.textContent = " ✦ PREMIUM";
+  premiumBadge.style.cssText = "display:inline-block;margin-left:7px;padding:4px 8px;border-radius:999px;background:linear-gradient(135deg,#e2c17d,#a77b32);color:#17130b;font-size:10px;font-weight:900;letter-spacing:.7px;vertical-align:middle;";
+  premiumBadge.title = "Active Premium member";
+  name.appendChild(premiumBadge);
+}
 name.appendChild(document.createTextNode(" ❤️"));
 
     const details = $("memberProfileDetails");

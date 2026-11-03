@@ -6288,6 +6288,28 @@ const db=window.supabase.createClient(
 "sb_publishable_5OirCcmy8L5n3isPvi-P0w_Dgeb13U_"
 );
 Object.defineProperty(window,"db",{configurable:true,get:()=>db});
+// Resolve private B2 profile photos through the authenticated Edge Function.
+// Legacy Supabase storage paths continue using the existing public bucket URL.
+const profilePhotoUrlCache = new Map();
+async function resolveProfilePhotoUrl(storagePath) {
+  if (!storagePath) return "";
+  if (!storagePath.startsWith("b2://")) {
+    return db.storage.from("profile-photos").getPublicUrl(storagePath).data.publicUrl;
+  }
+  if (profilePhotoUrlCache.has(storagePath)) return profilePhotoUrlCache.get(storagePath);
+  const pending = (async () => {
+    const objectKey = storagePath.slice(5);
+    const { data, error } = await db.functions.invoke("b2-media", {
+      body: { action: "create-download-url", objectKey }
+    });
+    if (error || !data?.downloadUrl) throw error || new Error("Could not create secure photo link.");
+    return data.downloadUrl;
+  })();
+  profilePhotoUrlCache.set(storagePath, pending);
+  try { return await pending; }
+  catch (error) { profilePhotoUrlCache.delete(storagePath); throw error; }
+}
+
 let authCaptchaToken = "";
 let resetCaptchaToken = "";
 
@@ -13775,9 +13797,9 @@ button.textContent = "➤";
       show("discover", false);
     }
 
-    photos.forEach(p=>{
-      const url=db.storage.from("profile-photos")
-        .getPublicUrl(p.storage_path).data.publicUrl;
+    const photoUrls = await Promise.all((photos || []).map(p => resolveProfilePhotoUrl(p.storage_path)));
+    photos.forEach((p, photoIndex)=>{
+      const url=photoUrls[photoIndex];
 
       const item=document.createElement("div");
       item.className="photo-item";
@@ -13936,13 +13958,19 @@ async function uploadSelectedPhotos(){
       if(file.size>5242880)
         throw Error("Each photo must be 5 MB or smaller.");
 
-      const path=currentUser.id+"/"+Date.now()+"-"+Math.random().toString(36).slice(2,8)+"-"+file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
-
-      const {error:uploadError}=await db.storage
-        .from("profile-photos")
-        .upload(path,file,{contentType:file.type});
-
-      if(uploadError)throw uploadError;
+      const { data: uploadData, error: uploadUrlError } = await db.functions.invoke("b2-media", {
+        body: { action: "create-upload-url", contentType: file.type, fileName: file.name }
+      });
+      if (uploadUrlError || !uploadData?.uploadUrl || !uploadData?.objectKey) {
+        throw uploadUrlError || new Error("Could not prepare secure photo upload.");
+      }
+      const putResponse = await fetch(uploadData.uploadUrl, {
+        method: "PUT",
+        headers: uploadData.requiredHeaders || { "Content-Type": file.type },
+        body: file
+      });
+      if (!putResponse.ok) throw new Error("Secure photo upload failed (" + putResponse.status + ").");
+      const path = "b2://" + uploadData.objectKey;
 
       const {error:insertError}=await db.from("profile_photos")
         .insert({
@@ -13952,7 +13980,7 @@ async function uploadSelectedPhotos(){
         });
 
       if(insertError){
-        await db.storage.from("profile-photos").remove([path]);
+        await db.functions.invoke("b2-media", { body: { action: "delete-object", objectKey: uploadData.objectKey } });
         throw insertError;
       }
 

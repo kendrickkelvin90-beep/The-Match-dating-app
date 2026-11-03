@@ -9836,10 +9836,11 @@ async function loadStories(){
 
     if (photosError) throw photosError;
 
-    const avatars = new Map((profilePhotos || []).map(p => [
+    const avatarEntries = await Promise.all((profilePhotos || []).map(async p => [
       p.user_id,
-      db.storage.from("profile-photos").getPublicUrl(p.storage_path).data.publicUrl
+      await resolveProfilePhotoUrl(p.storage_path)
     ]));
+    const avatars = new Map(avatarEntries);
 
     
     const seen=new Set();
@@ -12948,9 +12949,7 @@ if (conversationListNode && activeConversationNode instanceof HTMLElement) {
     if(photoError) throw photoError;
 
     if(chatPhotos && chatPhotos.length){
-      $("chatPartnerAvatar").src = db.storage
-        .from("profile-photos")
-        .getPublicUrl(chatPhotos[0].storage_path).data.publicUrl;
+      $("chatPartnerAvatar").src = await resolveProfilePhotoUrl(chatPhotos[0].storage_path);
     }
 
     if(chatRefreshTimer) clearInterval(chatRefreshTimer);
@@ -15153,7 +15152,7 @@ if(organiserIds.length){
  if(profileError)throw profileError;
  const {data:photos,error:photoError}=await db.from("profile_photos").select("user_id,storage_path,position").in("user_id",organiserIds).order("position");
  if(photoError)throw photoError;
- (profiles||[]).forEach(p=>{const photo=(photos||[]).find(x=>x.user_id===p.id);eventOrganisers[p.id]={...p,photoUrl:photo?db.storage.from("profile-photos").getPublicUrl(photo.storage_path).data.publicUrl:null};});
+ await Promise.all((profiles||[]).map(async p=>{const photo=(photos||[]).find(x=>x.user_id===p.id);eventOrganisers[p.id]={...p,photoUrl:photo?await resolveProfilePhotoUrl(photo.storage_path):null};}));
 }
 const {data:responses,error:re}=await db.from("match_event_responses").select("event_id,response").eq("member_id",currentUser.id);
 if(re)throw re;myResponses=Object.fromEntries((responses||[]).map(x=>[x.event_id,x.response]));

@@ -17135,6 +17135,121 @@ body.light-theme #safetyDialogCancel { background:#e9e4d9!important; color:#3933
   #memberProfilePage #memberProfileDetails { padding:11px; }
   #matchCelebrationPage .match-moment-shell { padding:18px!important; }
 }
+
+
+/* Discover screen-fit pass: compact photo, remove trailing dead space, retain legal footer */
+#discover.panel {
+  box-sizing: border-box !important;
+  margin-top: 8px !important;
+  margin-bottom: 0 !important;
+  padding-top: 10px !important;
+  padding-bottom: 6px !important;
+  min-height: 0 !important;
+  height: auto !important;
+}
+#discover #storiesSection {
+  margin-top: 6px !important;
+  margin-bottom: 8px !important;
+  padding-top: 9px !important;
+  padding-bottom: 8px !important;
+}
+#discover #storiesSection > p.small {
+  margin-bottom: 4px !important;
+}
+#discover #storiesList {
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+#discover .events-discover-entry {
+  margin-top: 5px !important;
+  margin-bottom: 6px !important;
+}
+#discover .discover-premium-tools {
+  margin-top: 4px !important;
+  margin-bottom: 4px !important;
+}
+#discover #refreshNearby {
+  min-height: 36px !important;
+  margin-top: 2px !important;
+  margin-bottom: 4px !important;
+}
+#discover #profileList {
+  margin-top: 5px !important;
+  margin-bottom: 0 !important;
+  gap: 8px !important;
+}
+#discover #profileList > .member-card {
+  margin-bottom: 0 !important;
+  padding-bottom: 8px !important;
+}
+#discover #profileList > .member-card > div:first-child {
+  height: clamp(220px, 36svh, 390px) !important;
+  min-height: 220px !important;
+  max-height: 390px !important;
+}
+#discover #profileList > .member-card > h2 {
+  margin-top: 10px !important;
+  font-size: clamp(22px, 5.5vw, 26px) !important;
+}
+#discover #profileList > .member-card > button[aria-expanded] {
+  min-height: 38px !important;
+  margin-top: 3px !important;
+  margin-bottom: 7px !important;
+}
+#discover #profileList > .member-card > div:last-child {
+  margin-top: 6px !important;
+  margin-bottom: 2px !important;
+}
+#discover #profileList > .member-card .btn {
+  min-height: 46px !important;
+}
+#discover #discoverStatus {
+  margin-top: 4px !important;
+  margin-bottom: 0 !important;
+}
+body:has(#discover:not(.hidden)) main {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+body:has(#discover:not(.hidden)) footer {
+  margin-top: 0 !important;
+  padding: 4px 12px 8px !important;
+  font-size: 10px !important;
+  line-height: 1.35 !important;
+}
+body:has(#discover:not(.hidden)) footer p {
+  margin: 4px 0 !important;
+}
+@media (max-width: 699px) {
+  #discover #profileList > .member-card > div:first-child {
+    height: clamp(210px, 34svh, 340px) !important;
+    min-height: 210px !important;
+    max-height: 340px !important;
+  }
+  #discover #profileList > .member-card > h2 {
+    margin-top: 8px !important;
+    margin-bottom: 3px !important;
+  }
+  #discover #profileList > .member-card > .distance {
+    margin-bottom: 6px !important;
+  }
+  body:has(#discover:not(.hidden)) footer a {
+    white-space: nowrap;
+  }
+}
+@media (min-width: 700px) {
+  #discover #profileList > .member-card > div:first-child {
+    height: clamp(300px, 48vh, 440px) !important;
+    min-height: 300px !important;
+    max-height: 440px !important;
+  }
+}
+@supports not (height: 1svh) {
+  #discover #profileList > .member-card > div:first-child {
+    height: clamp(210px, 34vh, 340px) !important;
+  }
+}
+
 </style>
 </body>
 </html>

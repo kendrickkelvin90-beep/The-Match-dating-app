@@ -5026,6 +5026,23 @@ body.light-theme #matchFeaturePromoClose{background:#f7f2e8;color:#6b5228;border
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <style id="nearby-map-premium-design">
+/* Simple, consistent primary navigation */
+.bottom-nav{justify-content:space-between;gap:2px;padding:7px 5px calc(7px + env(safe-area-inset-bottom));background:#111;border-top:1px solid #302a20;box-shadow:0 -4px 18px rgba(0,0,0,.12)}
+.bottom-nav button{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:6px 1px;color:#aaa;font-size:10px;font-weight:500;white-space:nowrap}
+.bottom-nav button.active{color:#d5b36d;background:transparent;font-weight:650}
+.bottom-nav .nav-icon{font-size:19px;line-height:1.15;margin:0}
+.bottom-nav .nav-badge{top:0;left:56%;min-width:15px;font-size:9px}
+.discover-page-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px}
+.discover-page-heading h2{margin:0}
+.discover-page-heading p{margin:4px 0 0}
+.discover-likes-shortcut{position:relative;display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:8px 12px;border:1px solid #c6a15b;border-radius:10px;background:transparent;color:#c6a15b;font-size:12px;font-weight:600}
+.discover-likes-shortcut .nav-badge{position:absolute;top:-7px;right:-7px;left:auto;min-width:16px;padding:2px 4px;border-radius:20px;background:#c33;color:#fff;font-size:9px;line-height:1.2;text-align:center}
+body.light-theme .bottom-nav{background:#fff;border-top-color:#e7dfd1;box-shadow:0 -3px 14px rgba(40,30,10,.08)}
+body.light-theme .bottom-nav button{color:#777}
+body.light-theme .bottom-nav button.active{color:#9a742e}
+body.light-theme .discover-likes-shortcut{color:#8a682e;border-color:#b89452}
+@media(max-width:360px){.bottom-nav button{font-size:9px}.bottom-nav .nav-icon{font-size:18px}}
+
 #nearbyPage .nearby-intro{margin:6px 0 16px;color:var(--tm-muted,#aaa);line-height:1.55}
 #nearbyPage .nearby-view-toggle{display:flex;gap:5px;padding:4px;margin:16px 0 13px;border:1px solid var(--tm-border,#38342d);border-radius:14px;background:var(--tm-surface-raised,#111)}
 #nearbyPage .nearby-view-toggle button{flex:1;min-height:40px;border:0;border-radius:10px;background:transparent;color:var(--tm-muted,#aaa);font-size:13px;font-weight:500}
@@ -5037,12 +5054,12 @@ body.light-theme #matchFeaturePromoClose{background:#f7f2e8;color:#6b5228;border
 #nearbyPage .leaflet-container{font-family:Arial,sans-serif;background:var(--tm-surface,#111)}
 #nearbyPage .leaflet-control-attribution{font-size:9px}
 #nearbyPage .nearby-map-marker-shell{background:transparent;border:0}
-#nearbyPage .nearby-map-avatar{display:block;width:50px;height:50px;overflow:hidden;border:2px solid #d6b46e;border-radius:50%;background:#24211b;box-shadow:0 4px 14px rgba(0,0,0,.45),0 0 0 3px rgba(214,180,110,.15)}
+#nearbyPage .nearby-map-avatar{display:block;width:46px;height:46px;overflow:hidden;border:3px solid #fff;border-radius:50%;background:#e8e8e8;box-shadow:0 1px 5px rgba(0,0,0,.35)}
 #nearbyPage .nearby-map-avatar img{display:block;width:100%;height:100%;border:0;border-radius:50%;object-fit:cover}
-#nearbyPage .nearby-map-avatar-fallback{display:grid;width:100%;height:100%;place-items:center;color:#e4c987;font-size:21px}
-#nearbyPage .nearby-map-cluster{display:grid;width:42px;height:42px;place-items:center;border:2px solid #e2c17e;border-radius:50%;background:rgba(24,20,14,.94);color:#f6e5bd;font-size:13px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.35)}
-#nearbyPage .leaflet-tooltip.nearby-area-tooltip{padding:5px 8px;border:1px solid rgba(214,180,110,.45);border-radius:8px;background:rgba(15,15,15,.94);color:#f5e8ca;font-size:11px;box-shadow:0 4px 12px rgba(0,0,0,.18)}
-#nearbyPage .leaflet-tooltip.nearby-area-tooltip:before{border-top-color:rgba(15,15,15,.94)}
+#nearbyPage .nearby-map-avatar-fallback{display:grid;width:100%;height:100%;place-items:center;color:#555;font-size:19px}
+#nearbyPage .nearby-map-cluster{display:grid;width:38px;height:38px;place-items:center;border:2px solid #fff;border-radius:50%;background:#4b5563;color:#fff;font-size:13px;font-weight:600;box-shadow:0 1px 5px rgba(0,0,0,.3)}
+#nearbyPage .leaflet-tooltip.nearby-area-tooltip{padding:5px 8px;border:1px solid #c7c7c7;border-radius:4px;background:#fff;color:#242424;font-size:11px;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+#nearbyPage .leaflet-tooltip.nearby-area-tooltip:before{border-top-color:#fff}
 #nearbyPage #nearbyPremiumPrompt{position:absolute;z-index:700;top:12px;left:50%;width:max-content;max-width:calc(100% - 28px);transform:translateX(-50%);padding:9px 13px;border:1px solid rgba(214,180,110,.48);border-radius:999px;background:rgba(18,17,15,.96);color:#f0dfbd;box-shadow:0 6px 22px rgba(0,0,0,.28);text-align:center;font-size:11px;font-weight:400;line-height:1.4}
 #nearbyPage #nearbyPremiumPrompt button{display:inline;padding:0;margin:0;border:0;background:none;color:#e5c477;font:inherit;font-weight:400;text-decoration:underline;text-underline-offset:2px}
 #nearbyPage #nearbyMapEmptyState{position:absolute;z-index:500;left:50%;bottom:18px;width:max-content;max-width:calc(100% - 30px);transform:translateX(-50%);padding:9px 13px;border:1px solid var(--tm-border,#38342d);border-radius:12px;background:rgba(15,15,15,.91);color:#f1e5cd;font-size:12px;text-align:center;pointer-events:none}
@@ -5420,14 +5437,14 @@ body.light-theme #nearbyPage #nearbyPremiumPrompt{background:rgba(255,254,250,.9
   <button class="btn secondary" id="backFromVerification" type="button">← Back to profile</button>
 </section>
 
-  <nav id="discoveryTabs" class="discovery-tabs hidden" aria-label="Discovery sections">
-    <button type="button" data-discovery-page="discover" class="active">Discover</button>
-    <button type="button" data-discovery-page="nearbyPage">Nearby</button>
-    <button type="button" data-discovery-page="matches">Matches</button>
-  </nav>
   <section class="panel hidden" id="discover">
-<h2>Discover ❤️</h2>
-<p class="small">Swipe right to like, or left to pass.</p>
+<div class="discover-page-heading">
+  <div><h2>Discover</h2><p class="small">Find people you'd like to meet.</p></div>
+  <button type="button" id="openLikesFromDiscover" class="discover-likes-shortcut" aria-label="Open likes">
+    <span aria-hidden="true">♡</span> Likes
+    <span id="likesCount" class="nav-badge" style="display:none;">0</span>
+  </button>
+</div>
     
 <div id="storiesSection" class="stories-section">
   <h3>Stories</h3>
@@ -5466,13 +5483,13 @@ body.light-theme #nearbyPage #nearbyPremiumPrompt{background:rgba(255,254,250,.9
   </section>
 <section class="panel hidden" id="nearbyPage">
   <h2>Nearby</h2>
-  <p class="small nearby-intro">Explore members around you. Map positions show approximate neighbourhoods, never exact locations.</p>
+  <p class="small nearby-intro">See members in your area. Locations are approximate for privacy.</p>
   <div class="nearby-view-toggle" role="group" aria-label="Nearby display options">
     <button type="button" id="nearbyMapViewBtn" class="active" aria-pressed="true">Map</button>
     <button type="button" id="nearbyCardsViewBtn" aria-pressed="false" class="hidden">Cards</button>
   </div>
   <div id="nearbyMapPanel">
-    <div class="nearby-map-heading"><strong>Members around you</strong><span>Within 50 km · Approximate areas</span></div>
+    <div class="nearby-map-heading"><strong>Nearby members</strong><span>Within 50 km</span></div>
     <div style="position:relative">
       <div id="nearbyMembersMap" role="application" aria-label="Map showing approximate neighbourhoods of nearby members"></div>
       <div id="nearbyPremiumPrompt" class="hidden" role="status" aria-live="polite">Subscribe to <button type="button" id="nearbyPremiumPromptAction">Premium</button> to view this profile</div>
@@ -6618,13 +6635,15 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     <button type="button" data-page="discover" aria-label="Home">
       <span class="nav-icon" aria-hidden="true">⌂</span><span>Home</span>
     </button>
+    <button type="button" data-page="nearbyPage" aria-label="Nearby">
+      <span class="nav-icon" aria-hidden="true">⌖</span><span>Nearby</span>
+    </button>
+    <button type="button" data-page="matches" aria-label="Matches">
+      <span class="nav-icon" aria-hidden="true">♡</span><span>Matches</span>
+    </button>
     <button type="button" data-page="messages" aria-label="Messages">
       <span class="nav-icon" aria-hidden="true">▤</span>
       <span id="messagesCount" class="nav-badge" style="display:none;">0</span><span>Messages</span>
-    </button>
-    <button type="button" data-page="likes" aria-label="Likes">
-      <span class="nav-icon" aria-hidden="true">♡</span>
-      <span id="likesCount" class="nav-badge" style="display:none;">0</span><span>Likes</span>
     </button>
     <button type="button" data-page="profile" aria-label="Profile">
       <span class="nav-icon" aria-hidden="true">♙</span><span>Profile</span>
@@ -7258,19 +7277,15 @@ function show(id, addToHistory = true) {
     ["welcome", "onboarding", "auth", "reset"].includes(id)
   );
 
-  const discoveryTabs = $("discoveryTabs");
-  const discoveryAreaPages = ["discover", "nearbyPage", "matches"];
-  if (discoveryTabs) {
-    discoveryTabs.classList.toggle("hidden", !discoveryAreaPages.includes(id));
-    discoveryTabs.querySelectorAll("[data-discovery-page]").forEach(tab => {
-      tab.classList.toggle("active", tab.dataset.discoveryPage === id);
-      tab.setAttribute("aria-current", tab.dataset.discoveryPage === id ? "page" : "false");
-    });
-  }
-
-  const bottomPage = id === "messages" || id === "likes"
-    ? id
-    : (id === "profile" || id === "settings" ? "profile" : "discover");
+  const bottomPage = id === "nearbyPage"
+    ? "nearbyPage"
+    : id === "matches"
+      ? "matches"
+      : ["messages", "chatPage", "callHistoryPage", "voiceCallHistory"].includes(id)
+        ? "messages"
+        : ["profile", "settings", "verificationPage", "discoveryPreferencesPage", "referralsPage", "notificationsPage"].includes(id)
+          ? "profile"
+          : "discover";
   $("bottomNavigation")?.querySelectorAll("button[data-page]").forEach(button => {
     button.classList.toggle("active", button.dataset.page === bottomPage);
     button.setAttribute("aria-current", button.dataset.page === bottomPage ? "page" : "false");
@@ -10206,22 +10221,26 @@ function setNearbyView(view) {
   $("nearbyCardsViewBtn")?.setAttribute("aria-pressed", String(showCards));
   if (!showCards && nearbyLeafletMap) setTimeout(() => nearbyLeafletMap.invalidateSize(), 120);
 }
+$("openLikesFromDiscover")?.addEventListener("click", async () => {
+  show("likes");
+  await loadLikesPage();
+});
+
 $("nearbyMapViewBtn")?.addEventListener("click", () => setNearbyView("map"));
 $("nearbyCardsViewBtn")?.addEventListener("click", () => {
   if (nearbyViewerIsPremium) setNearbyView("cards");
 });
 
 function nearbyMapTileUrl() {
-  return document.body.classList.contains("light-theme")
-    ? "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-    : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+  // Use a real, conventional street map in both themes.
+  return "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 }
 function updateNearbyMapTiles() {
   if (!nearbyLeafletMap || !window.L) return;
   if (nearbyMapTileLayer) nearbyLeafletMap.removeLayer(nearbyMapTileLayer);
   nearbyMapTileLayer = L.tileLayer(nearbyMapTileUrl(), {
     maxZoom: 19, subdomains: "abcd",
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   }).addTo(nearbyLeafletMap);
 }
 function initializeNearbyMap(center) {
@@ -10239,7 +10258,7 @@ function initializeNearbyMap(center) {
       nearbyMapMarkersLayer = L.markerClusterGroup({
         showCoverageOnHover:false, spiderfyOnMaxZoom:true, maxClusterRadius:48,
         iconCreateFunction: function(cluster) {
-          return L.divIcon({className:"",html:'<span class="nearby-map-cluster">'+cluster.getChildCount()+'</span>',iconSize:[42,42],iconAnchor:[21,21]});
+          return L.divIcon({className:"",html:'<span class="nearby-map-cluster">'+cluster.getChildCount()+'</span>',iconSize:[38,38],iconAnchor:[19,19]});
         }
       });
     } else {

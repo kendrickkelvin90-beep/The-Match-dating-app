@@ -9944,7 +9944,7 @@ if (!people.length) {
 const card=document.createElement("div");
 card.className="member-card";
 
-card.style.cssText="position:relative;width:100%;max-width:560px;box-sizing:border-box;margin:0 auto;padding:0;border:1px solid rgba(255,65,125,.24);border-radius:26px;background:#080608;box-shadow:0 16px 44px rgba(0,0,0,.34);touch-action:pan-y;overflow:hidden;will-change:transform,opacity;animation:discoverCardEnter 260ms cubic-bezier(.2,.75,.25,1) both;";
+card.style.cssText="position:relative;width:100%;max-width:560px;height:calc(100svh - 208px);min-height:500px;max-height:780px;box-sizing:border-box;margin:0 auto;padding:0;border:1px solid rgba(210,173,104,.42);border-radius:26px;background:#050505;box-shadow:0 18px 48px rgba(0,0,0,.48);touch-action:pan-y;overflow:hidden;will-change:transform,opacity;animation:discoverCardEnter 260ms cubic-bezier(.2,.75,.25,1) both;";
 
 
 
@@ -9962,7 +9962,7 @@ card.style.cssText="position:relative;width:100%;max-width:560px;box-sizing:bord
       
       
 
-photoBox.style.cssText="position:relative;width:100%;height:clamp(480px,76vh,760px);min-height:460px;background:#050505;overflow:hidden;display:flex;align-items:center;justify-content:center;";
+photoBox.style.cssText="position:absolute;inset:0;width:100%;height:100%;background:#050505;overflow:hidden;display:flex;align-items:center;justify-content:center;";
 
 
 
@@ -9972,7 +9972,7 @@ photoBox.style.cssText="position:relative;width:100%;height:clamp(480px,76vh,760
 const photo=document.createElement("img");
 photo.alt="Profile photo";
 
-photo.style.cssText="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;background:#050505;display:none;z-index:1;";
+photo.style.cssText="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center center;background:#050505;display:none;z-index:1;";
 
 photoBox.appendChild(photo);
       
@@ -10078,9 +10078,9 @@ photoBox.appendChild(onlineBadge);
       };
 
       photoBox.append(previous,nextPhoto);
-      card.appendChild(photoBox);
-
-      
+      const infoOverlay=document.createElement("div");
+      infoOverlay.className="discover-profile-overlay";
+      infoOverlay.style.cssText="position:absolute;left:0;right:0;bottom:0;z-index:6;padding:82px 16px 16px;background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.30) 18%,rgba(0,0,0,.88) 55%,#050505 100%);box-sizing:border-box;display:flex;flex-direction:column;gap:0;";
 
 const name=document.createElement("h2");
 name.appendChild(
@@ -10103,14 +10103,15 @@ if (p.is_premium) {
   premiumBadge.title = "Active Premium member";
   name.appendChild(premiumBadge);
 }
-name.style.cssText="font-size:28px;font-weight:800;letter-spacing:-0.6px;line-height:1.15;margin:14px 4px 6px;color:#fff;overflow-wrap:anywhere;";
-card.appendChild(name);
+name.style.cssText="font-size:clamp(25px,6vw,32px);font-weight:850;letter-spacing:-0.6px;line-height:1.12;margin:0 0 5px;color:#fff;overflow-wrap:anywhere;text-shadow:0 2px 14px #000;";
+if(p.age){const age=document.createElement("span");age.textContent=" · "+p.age;age.style.cssText="font-weight:500;";name.appendChild(age);}
+infoOverlay.appendChild(name);
 
 const distance=document.createElement("div");
 distance.className="distance";
 distance.textContent=p._distance==null?"Distance unavailable":distanceLabel(p._distance);
-distance.style.cssText="font-size:14px;color:#ff9abb;margin:0 4px 8px;";
-card.appendChild(distance);
+distance.style.cssText="font-size:14px;color:#e4c783;margin:0 0 10px;font-weight:750;text-shadow:0 2px 12px #000;";
+infoOverlay.appendChild(distance);
 
 const detailsToggle = document.createElement("button");
 detailsToggle.type = "button";
@@ -10118,13 +10119,13 @@ detailsToggle.textContent = "⌄  View details";
 detailsToggle.setAttribute("aria-expanded", "false");
 detailsToggle.style.cssText =
   "display:flex;align-items:center;justify-content:center;gap:8px;" +
-  "width:calc(100% - 24px);margin:4px 12px 10px;padding:11px;" +
-  "border:1px solid #51452f;border-radius:14px;" +
-  "background:#17140f;color:#e5c782;font-size:14px;font-weight:700;";
+  "width:100%;min-height:38px;margin:0 0 6px;padding:8px 12px;box-sizing:border-box;" +
+  "border:1px solid rgba(228,199,131,.42);border-radius:12px;" +
+  "background:rgba(15,13,9,.72);color:#f0d79e;font-size:13px;font-weight:750;backdrop-filter:blur(10px);";
 
 const detailsPanel = document.createElement("div");
 detailsPanel.style.cssText =
-  "display:none;padding:4px 14px 12px;color:#ddd;";
+  "display:none;max-height:18svh;overflow-y:auto;padding:5px 10px 8px;margin:0 0 8px;border-radius:12px;background:rgba(8,8,8,.72);color:#f2eee5;backdrop-filter:blur(10px);";
 
 const details = document.createElement("p");
 details.className = "small";
@@ -10171,7 +10172,7 @@ detailsToggle.onclick = () => {
   detailsToggle.setAttribute("aria-expanded", String(!expanded));
 };
 
-card.append(detailsToggle, detailsPanel);
+infoOverlay.append(detailsToggle, detailsPanel);
 
 const actions = document.createElement("div");
 actions.style.cssText =
@@ -10353,7 +10354,10 @@ if(matchError)throw matchError;
 
 
       actions.append(pass,like);
-      card.appendChild(actions);
+      actions.style.cssText="display:flex;justify-content:center;align-items:center;gap:10px;margin:4px 0 0;padding:0;";
+      infoOverlay.appendChild(actions);
+      photoBox.appendChild(infoOverlay);
+      card.appendChild(photoBox);
       list.replaceChildren(card);
 
       let startX=0;
@@ -17248,6 +17252,120 @@ body:has(#discover:not(.hidden)) footer p {
   #discover #profileList > .member-card > div:first-child {
     height: clamp(210px, 34vh, 340px) !important;
   }
+}
+
+
+
+/* The Match signature immersive profile: full photo with readable gold-accent overlays */
+#discover #profileList > .member-card {
+  position:relative!important;
+  height:calc(100svh - 208px)!important;
+  min-height:500px!important;
+  max-height:780px!important;
+  padding:0!important;
+  margin:0 auto!important;
+  overflow:hidden!important;
+  border:1px solid rgba(210,173,104,.48)!important;
+  border-radius:25px!important;
+  background:#050505!important;
+}
+#discover #profileList > .member-card > .discover-profile-overlay {
+  position:absolute!important;
+  left:0!important;right:0!important;bottom:0!important;
+  z-index:6!important;
+  padding:82px 16px 15px!important;
+  background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.22) 15%,rgba(0,0,0,.82) 54%,#050505 100%)!important;
+  box-sizing:border-box!important;
+}
+#discover #profileList > .member-card .discover-profile-overlay h2 {
+  margin:0 0 5px!important;
+  padding:0!important;
+  color:#fff!important;
+  font-size:clamp(25px,6vw,32px)!important;
+  line-height:1.12!important;
+  font-weight:850!important;
+  text-shadow:0 2px 14px #000!important;
+}
+#discover #profileList > .member-card .discover-profile-overlay .distance {
+  margin:0 0 10px!important;
+  padding:0!important;
+  color:#e4c783!important;
+  font-weight:750!important;
+  font-size:14px!important;
+}
+#discover #profileList > .member-card .discover-profile-overlay button[aria-expanded] {
+  width:100%!important;
+  min-height:38px!important;
+  margin:0 0 6px!important;
+  padding:8px 12px!important;
+  border:1px solid rgba(228,199,131,.42)!important;
+  border-radius:12px!important;
+  background:rgba(15,13,9,.72)!important;
+  color:#f0d79e!important;
+  backdrop-filter:blur(10px);
+}
+#discover #profileList > .member-card .discover-profile-overlay .btn {
+  min-height:48px!important;
+  margin:0!important;
+  border-radius:15px!important;
+  font-size:15px!important;
+  font-weight:800!important;
+}
+#discover #profileList > .member-card .discover-profile-overlay .btn.secondary {
+  background:rgba(20,19,17,.92)!important;
+  color:#f4eee2!important;
+  border:1px solid rgba(220,205,175,.45)!important;
+}
+#discover #profileList > .member-card .discover-profile-overlay .btn.primary {
+  background:linear-gradient(135deg,#e5c982,#b98d49)!important;
+  color:#20180c!important;
+  border:1px solid #d5b46f!important;
+}
+#discover #profileList > .member-card .discover-profile-overlay [style*="display: none"],
+#discover #profileList > .member-card .discover-profile-overlay [style*="display:none"] {
+  color:#f2eee5!important;
+}
+#discover #profileList > .member-card > div:first-child {
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  max-height:none!important;
+  background:#050505!important;
+}
+#discover #profileList > .member-card > div:first-child > img {
+  object-fit:contain!important;
+  object-position:center center!important;
+}
+#discover #profileList > .member-card > div:first-child > div {
+  text-shadow:0 2px 12px #000;
+}
+#discover #profileList > .member-card .discover-profile-overlay [style*="max-height"] {
+  scrollbar-width:thin;
+}
+@media(max-width:699px) {
+  #discover #profileList > .member-card {
+    height:calc(100svh - 205px)!important;
+    min-height:490px!important;
+    max-height:760px!important;
+    border-radius:23px!important;
+  }
+  #discover #profileList > .member-card .discover-profile-overlay {
+    padding:78px 14px 13px!important;
+  }
+}
+@media(max-height:700px) {
+  #discover #profileList > .member-card {
+    height:calc(100svh - 175px)!important;
+    min-height:440px!important;
+  }
+  #discover #profileList > .member-card .discover-profile-overlay {
+    padding-top:62px!important;
+  }
+}
+@supports not (height: 1svh) {
+  #discover #profileList > .member-card {height:calc(100vh - 205px)!important}
 }
 
 </style>

@@ -5879,6 +5879,26 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
       <div><strong>Read receipts</strong><span>See message-read information where supported.</span></div>
     </div>
     <div class="premium-benefit">
+      <div class="premium-icon">↶</div>
+      <div><strong>Swipe Rewind</strong><span>Undo your most recent Like or Pass when you change your mind.</span></div>
+    </div>
+    <div class="premium-benefit">
+      <div class="premium-icon">✦</div>
+      <div><strong>Profile Boost</strong><span>Put your profile ahead of other eligible profiles in Discover for 30 minutes.</span></div>
+    </div>
+    <div class="premium-benefit">
+      <div class="premium-icon">♛</div>
+      <div><strong>Premium badge</strong><span>Show a gold Premium badge while your subscription is active.</span></div>
+    </div>
+    <div class="premium-benefit">
+      <div class="premium-icon">⚙</div>
+      <div><strong>Advanced Discovery controls</strong><span>Unlock expanded distance and age ranges, verified and recently active filters, and additional role preferences.</span></div>
+    </div>
+    <div class="premium-benefit">
+      <div class="premium-icon">♥</div>
+      <div><strong>Unlimited likes</strong><span>Like as many eligible profiles as you want, without the free daily limit.</span></div>
+    </div>
+    <div class="premium-benefit">
       <div class="premium-icon">✧</div>
       <div><strong>Exclusive access</strong><span>Enjoy the Premium features included in your membership.</span></div>
     </div>
@@ -12231,7 +12251,7 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
     status("discoveryPreferencesStatus","Could not load preferences. Please try again.",true);
   }
   }
-  $("resetDiscoveryPreferences").addEventListener("click", () => {
+  $("resetDiscoveryPreferences").addEventListener("click", async () => {
   $("discoveryLocation").value = "";
   $("discoveryDistance").value = 50;
   $("discoveryAgeMin").value = 18;
@@ -12248,6 +12268,7 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
 
   try {
     localStorage.removeItem("theMatchDiscoveryPreferences");
+    await loadDiscoveryPreferences();
     if(currentUser){
       db.from("profiles").update({discovery_role_preferences:[]}).eq("id",currentUser.id)
         .then(({error})=>{if(error)console.error("Could not reset account role preferences:",error);});

@@ -4813,6 +4813,195 @@ body.light-theme #eventsPage .event-filter-chip{background:#fff;color:#625638;bo
 body.light-theme #eventsPage .event-filter-chip.active{background:#d9b66e;color:#211a0d}
 body.light-theme #eventsPage .events-section-title span{color:#756b59}
 </style>
+
+<style id="full-width-bold-visual-refresh">
+/* One consistent, confident layout scale across member-facing screens. */
+main{width:100%;max-width:none}
+@media(max-width:699px){
+  main{padding-left:8px!important;padding-right:8px!important}
+  #discover,#nearbyPage,#matches,#messages,#callHistoryPage,#likes,#profile,#settings,#notificationsPage,#eventsPage{
+    width:100%!important;max-width:none!important;margin-left:0!important;margin-right:0!important;
+    box-sizing:border-box!important;
+  }
+  #discover,#nearbyPage,#matches,#messages,#callHistoryPage,#likes,#profile,#settings,#notificationsPage{
+    padding-left:12px!important;padding-right:12px!important;
+  }
+  #eventsPage{padding:8px 4px 24px!important}
+  #discover h2,#nearbyPage h2,#matches h2,#messages h2,#likes h2,#profile h2,#settings h2,#notificationsPage h2{
+    font-size:clamp(27px,7vw,34px)!important;line-height:1.12!important;font-weight:850!important;letter-spacing:-.7px!important
+  }
+  #eventsPage .events-shell{width:100%!important;max-width:none!important;padding:0!important}
+  #eventsPage .events-heading{padding:25px 20px!important;border-radius:20px!important}
+  #eventsPage .events-heading h2{font-size:clamp(34px,9vw,46px)!important;line-height:1.02!important;letter-spacing:-1.2px!important;font-weight:900!important}
+  #eventsPage .events-heading>p:not(.events-eyebrow){font-size:16px!important;line-height:1.65!important}
+  #eventsPage .events-eyebrow{font-size:11px!important;letter-spacing:.16em!important}
+  #eventsPage .events-trust-row span{font-size:11px!important;padding:8px 11px!important}
+  #eventsPage .events-toolbar{gap:8px!important;padding:14px 0!important}
+  #eventsPage .events-tab{font-size:13px!important;font-weight:800!important;padding:13px 15px!important}
+  #eventsPage .events-filters{padding:16px!important}
+  #eventsPage .events-filters label{font-size:13px!important;font-weight:800!important}
+  #eventsPage .events-search-wrap input,#eventsPage input,#eventsPage select{font-size:16px!important;min-height:48px!important}
+  #eventsPage .event-filter-chip{font-size:13px!important;padding:10px 16px!important}
+  #eventsPage .events-featured-preview{min-height:340px!important;margin:18px 0!important;border-radius:20px!important}
+  #eventsPage .events-featured-copy{min-height:340px!important;padding:24px 20px!important;max-width:100%!important}
+  #eventsPage .events-featured-copy h3{font-size:clamp(29px,8vw,38px)!important;font-weight:900!important}
+  #eventsPage .events-featured-copy p{font-size:15px!important;line-height:1.6!important}
+  #eventsPage .events-featured-meta{font-size:13px!important}
+  #eventsPage .events-featured-link{font-size:14px!important;padding:12px 17px!important}
+  #eventsPage .events-section-title{font-size:24px!important;font-weight:900!important;margin:26px 0 14px!important}
+  #eventsPage .events-section-title span{font-size:12px!important}
+  #eventsPage .events-discovery-note{padding:15px!important;font-size:14px!important;line-height:1.6!important}
+  #eventsPage #eventsPublicList,#eventsPage .events-demo-section .events-grid{grid-template-columns:minmax(0,1fr)!important;gap:18px!important}
+  #eventsPage #eventsPublicList .event-card,#eventsPage .event-demo-card{width:100%!important;max-width:none!important;border-radius:20px!important}
+  #eventsPage #eventsPublicList .event-card{padding:20px!important}
+  #eventsPage .event-card h3{font-size:23px!important;line-height:1.2!important;font-weight:850!important}
+  #eventsPage .event-card p{font-size:14px!important;line-height:1.65!important}
+  #eventsPage .event-meta{font-size:13px!important;line-height:1.5!important}
+  #eventsPage .event-card-bottom{font-size:14px!important;padding-top:15px!important}
+  #eventsPage .event-demo-cover{height:220px!important}
+  #eventsPage .event-demo-card>.event-card-top,#eventsPage .event-demo-card>h3,#eventsPage .event-demo-card>p,#eventsPage .event-demo-card>.event-meta,#eventsPage .event-demo-card>.event-card-bottom,#eventsPage .event-demo-card>details{margin-left:18px!important;margin-right:18px!important}
+}
+@media(min-width:700px){
+  main{padding-left:24px!important;padding-right:24px!important}
+  #discover,#nearbyPage,#matches,#messages,#callHistoryPage,#likes,#profile,#settings,#notificationsPage,#eventsPage{
+    width:100%!important;max-width:1320px!important;margin-left:auto!important;margin-right:auto!important
+  }
+  #eventsPage .events-shell{max-width:none!important}
+  #eventsPage .events-heading{padding:44px!important}
+  #eventsPage .events-heading h2{font-size:clamp(44px,5vw,62px)!important;font-weight:900!important}
+  #eventsPage .events-heading>p:not(.events-eyebrow){font-size:18px!important}
+  #eventsPage .events-section-title{font-size:27px!important;font-weight:900!important}
+  #eventsPage #eventsPublicList,#eventsPage .events-demo-section .events-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:20px!important}
+  #eventsPage .event-card h3{font-size:23px!important;font-weight:850!important}
+}
+body.light-theme #eventsPage .events-featured-preview{border-color:#c9a96a}
+body.light-theme #eventsPage .events-featured-copy h3{color:#fff!important}
+body.light-theme #eventsPage .event-card,body.light-theme #eventsPage .event-demo-card{
+  background:linear-gradient(145deg,#fffdf8,#f5efe3)!important;border-color:#dfcfaa!important;color:#292318!important
+}
+body.light-theme #eventsPage .event-card h3,body.light-theme #eventsPage .event-demo-card h3{color:#292318!important}
+body.light-theme #eventsPage .event-card p,body.light-theme #eventsPage .event-demo-card p{color:#625a4b!important}
+body.light-theme #eventsPage .event-meta{color:#665d4c!important}
+</style>
+
+
+<style id="professional-light-theme-refresh">
+/* Refined light theme: warm ivory surfaces, ink typography and restrained gold. */
+body.light-theme{
+  background:#f4f1e9!important;color:#28241d!important;
+}
+body.light-theme main{color:#28241d!important}
+body.light-theme #discover,
+body.light-theme #nearbyPage,
+body.light-theme #matches,
+body.light-theme #messages,
+body.light-theme #callHistoryPage,
+body.light-theme #likes,
+body.light-theme #profile,
+body.light-theme #settings,
+body.light-theme #notificationsPage,
+body.light-theme #eventsPage{
+  color:#28241d!important;
+}
+body.light-theme #discover h2,
+body.light-theme #nearbyPage h2,
+body.light-theme #matches h2,
+body.light-theme #messages h2,
+body.light-theme #likes h2,
+body.light-theme #profile h2,
+body.light-theme #settings h2,
+body.light-theme #notificationsPage h2{
+  color:#28241d!important;font-weight:850!important;letter-spacing:-.55px!important;
+}
+body.light-theme #discover .member-card,
+body.light-theme #nearbyPage .member-card,
+body.light-theme #matches #matchesList>*,
+body.light-theme #messages #conversationList>button,
+body.light-theme #likes .likes-profile-card,
+body.light-theme #profile .member-card,
+body.light-theme #settings .settings-section,
+body.light-theme #settings .settings-card{
+  background:linear-gradient(145deg,#fffefa,#f8f4eb)!important;
+  border:1px solid #e2d7c1!important;
+  box-shadow:0 8px 24px rgba(55,42,20,.055)!important;
+  color:#28241d!important;
+}
+body.light-theme #discover .member-card h2,
+body.light-theme #discover .member-card h3,
+body.light-theme #nearbyPage .member-card h3,
+body.light-theme #matches #matchesList>*,
+body.light-theme #messages #conversationList>button strong{
+  color:#28241d!important;
+}
+body.light-theme #discover .member-card p,
+body.light-theme #nearbyPage .member-card p,
+body.light-theme #matches #matchesList .small,
+body.light-theme #messages #conversationList>button span{
+  color:#6d665b!important;
+}
+body.light-theme #eventsPage{color:#28241d!important}
+body.light-theme #eventsPage .events-heading,
+body.light-theme #eventsPage .events-filters,
+body.light-theme #eventsPage .events-host-intro,
+body.light-theme #eventsPage .events-info-card,
+body.light-theme #eventsPage .events-fee-card{
+  background:linear-gradient(145deg,#fffefa,#f5efe3)!important;
+  border-color:#dfcfaa!important;color:#30291d!important;
+  box-shadow:0 10px 28px rgba(65,48,18,.06)!important;
+}
+body.light-theme #eventsPage .events-heading h2,
+body.light-theme #eventsPage .events-host-intro h3,
+body.light-theme #eventsPage .events-section-title,
+body.light-theme #eventsPage .event-card h3,
+body.light-theme #eventsPage .event-demo-card h3{
+  color:#292318!important;font-weight:900!important;
+}
+body.light-theme #eventsPage .events-heading>p:not(.events-eyebrow),
+body.light-theme #eventsPage .events-host-intro p,
+body.light-theme #eventsPage .event-card p,
+body.light-theme #eventsPage .event-demo-card p{
+  color:#625a4b!important;
+}
+body.light-theme #eventsPage .events-eyebrow,
+body.light-theme #eventsPage .events-host-kicker,
+body.light-theme #eventsPage .events-section-title span,
+body.light-theme #eventsPage .event-category,
+body.light-theme #eventsPage .event-meta{
+  color:#80612b!important;
+}
+body.light-theme #eventsPage .events-search-wrap,
+body.light-theme #eventsPage .event-transfer-details,
+body.light-theme #eventsPage .events-ticket-tier-editor,
+body.light-theme #eventsPage .event-ticket-options,
+body.light-theme #eventsPage .event-inquiry-box{
+  background:#fff!important;border-color:#e2d5bd!important;color:#30291d!important;
+}
+body.light-theme #eventsPage .events-search-wrap input,
+body.light-theme #eventsPage input,
+body.light-theme #eventsPage select,
+body.light-theme #eventsPage textarea{
+  color:#28241d!important;background:#fff!important;border-color:#d8c9ad!important;
+}
+body.light-theme #eventsPage .event-filter-chip{
+  background:#fffefa!important;color:#65512e!important;border-color:#dfcfaa!important;
+}
+body.light-theme #eventsPage .event-filter-chip.active{
+  background:linear-gradient(135deg,#e5c982,#c39a50)!important;color:#241b0c!important;border-color:#c39a50!important;
+}
+body.light-theme #eventsPage .events-featured-copy h3,
+body.light-theme #eventsPage .events-featured-copy p,
+body.light-theme #eventsPage .events-featured-meta{color:#fff!important}
+body.light-theme #eventsPage .events-discovery-note,
+body.light-theme #eventsPage .events-demo-section>.small{
+  background:#fffefa!important;border-color:#e2d5bd!important;color:#625a4b!important;
+}
+body.light-theme #eventsPage .event-card-bottom{color:#80612b!important;border-color:#e6dccb!important}
+body.light-theme #eventsPage .event-open-details,
+body.light-theme #eventsPage .event-response-actions .btn.primary{
+  background:linear-gradient(135deg,#e5c982,#bd9145)!important;color:#241b0c!important;border-color:#bd9145!important;font-weight:850!important;
+}
+</style>
+
 </head>
 <body>
 <div id="stars" aria-hidden="true"></div>

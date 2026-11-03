@@ -9948,10 +9948,15 @@ if (!people.length) {
       const p=people[personIndex];
       
 
+const discoverPanel=document.getElementById("discover");
+if(discoverPanel){
+  ["border","outline","border-radius","box-shadow"].forEach(property=>discoverPanel.style.setProperty(property,"0","important"));
+  discoverPanel.style.setProperty("background","transparent","important");
+  discoverPanel.style.setProperty("padding","8px 0 10px","important");
+}
 const card=document.createElement("div");
-card.className="member-card";
-
-card.style.cssText="position:relative;width:100%;max-width:560px;height:calc(100svh - 208px);min-height:500px;max-height:780px;box-sizing:border-box;margin:0 auto;padding:0;border:1px solid rgba(210,173,104,.42);border-radius:26px;background:#050505;box-shadow:0 18px 48px rgba(0,0,0,.48);touch-action:pan-y;overflow:hidden;will-change:transform,opacity;animation:discoverCardEnter 260ms cubic-bezier(.2,.75,.25,1) both;";
+card.className="member-card discover-option3-card";
+card.style.cssText="position:relative;display:block;width:calc(100% + 24px);max-width:none;height:clamp(440px,calc(100svh - 340px),680px);min-height:440px;max-height:680px;box-sizing:border-box;margin:0 0 0 -12px;padding:0;border:0;border-radius:0;background:#080808;box-shadow:none;touch-action:pan-y;overflow:hidden;will-change:transform,opacity;animation:discoverCardEnter 260ms cubic-bezier(.2,.75,.25,1) both;";
 
 
 
@@ -9966,6 +9971,7 @@ card.style.cssText="position:relative;width:100%;max-width:560px;height:calc(100
       });
 
       const photoBox=document.createElement("div");
+photoBox.className="discover-option3-photo";
       
       
 
@@ -9979,7 +9985,8 @@ photoBox.style.cssText="position:absolute;inset:0;width:100%;height:100%;backgro
 const photo=document.createElement("img");
 photo.alt="Profile photo";
 
-photo.style.cssText="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center center;background:transparent;display:none;z-index:1;";
+photo.className="discover-option3-image";
+photo.style.cssText="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center center;background:#080808;display:none;z-index:1;";
 
 photoBox.appendChild(photo);
       
@@ -10086,7 +10093,7 @@ photoBox.appendChild(onlineBadge);
 
       photoBox.append(previous,nextPhoto);
       const infoOverlay=document.createElement("div");
-      infoOverlay.className="discover-profile-overlay";
+      infoOverlay.className="discover-profile-overlay discover-option3-overlay";
       infoOverlay.style.cssText="position:absolute;left:0;right:0;bottom:0;z-index:6;padding:82px 16px 16px;background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.30) 18%,rgba(0,0,0,.88) 55%,#050505 100%);box-sizing:border-box;display:flex;flex-direction:column;gap:0;";
 
 const name=document.createElement("h2");
@@ -10192,7 +10199,9 @@ actions.style.cssText =
 const pass=document.createElement("button");
 pass.type="button";
 pass.className="btn secondary";
-pass.textContent="✕  Pass";
+pass.textContent="✕";
+pass.setAttribute("aria-label","Pass on this profile");
+pass.title="Pass";
 pass.style.cssText="flex:1;min-height:54px;border-radius:18px;border:1px solid #55404a;background:#171116;color:#fff;font-size:16px;font-weight:800;box-shadow:0 5px 16px #0005;";
 pass.onclick = async () => {
   pass.disabled = true;
@@ -10243,15 +10252,19 @@ const { error } = await db
 const like=document.createElement("button");
 like.type="button";
 like.className="btn primary";
-like.textContent="♥  Like";
+like.textContent="♥";
+like.setAttribute("aria-label","Like this profile");
+like.title="Like";
 like.style.cssText="flex:1;min-height:54px;border-radius:18px;border:1px solid #ff6b9d;background:linear-gradient(135deg,#ff397b,#d91659);color:#fff;font-size:16px;font-weight:800;box-shadow:0 5px 18px #ff397b35;";
-if (!currentDiscoverIsPremium && currentDailySwipesUsed >= 10) {
+if (!currentDiscoverIsPremium && currentDailySwipesUsed >= 20) {
   like.disabled = true;
   pass.disabled = true;
-  like.textContent = "Daily swipe limit reached 🔒";
-  pass.textContent = "Daily limit reached 🔒";
-  like.title = "Free members can make 20 swipes per day. Premium includes unlimited swipes.";
+  like.textContent = "🔒";
+  pass.textContent = "🔒";
+  like.title = "You've used your 20 free swipes for today. Premium includes unlimited swipes.";
   pass.title = like.title;
+  like.setAttribute("aria-label", like.title);
+  pass.setAttribute("aria-label", pass.title);
 }
 
       
@@ -10284,8 +10297,8 @@ like.onclick=async()=>{
         await refreshDailyLikeCounter();
         like.disabled = true;
         pass.disabled = true;
-        like.textContent = "Daily swipe limit reached 🔒";
-        pass.textContent = "Daily limit reached 🔒";
+        like.textContent = "🔒";
+        pass.textContent = "🔒";
       } else {
         like.disabled = false;
         pass.disabled = false;
@@ -17947,6 +17960,62 @@ body:has(#bottomNavigation:not(.hidden))>main>.panel:not(.hidden)#discover{
 body.light-theme #discover #profileList>.member-card{border:0!important;box-shadow:none!important}
 body.light-theme #discover #profileList>.member-card .discover-profile-overlay{
   background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.16) 22%,rgba(0,0,0,.82) 66%,rgba(0,0,0,.97) 100%)!important;
+}
+
+
+/* Option 3 final layout: immersive portrait with floating round actions */
+#discover.panel,
+#discover.panel:not(.hidden){
+  border:0!important;outline:0!important;border-radius:0!important;box-shadow:none!important;
+  background:transparent!important;padding:8px 0 10px!important;margin:0!important;
+}
+#discover #profileList{display:block!important;width:100%!important;max-width:none!important;margin:4px 0 0!important;padding:0!important}
+#discover #profileList>.discover-option3-card{
+  display:block!important;position:relative!important;width:calc(100% + 24px)!important;max-width:none!important;
+  height:clamp(440px,calc(100svh - 340px),680px)!important;min-height:440px!important;max-height:680px!important;
+  margin:0 0 0 -12px!important;padding:0!important;border:0!important;outline:0!important;border-radius:0!important;
+  box-shadow:none!important;background:#080808!important;overflow:hidden!important;
+}
+#discover .discover-option3-photo{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;background:#080808!important;overflow:hidden!important}
+#discover .discover-option3-photo>img[aria-hidden="true"]{display:none!important}
+#discover .discover-option3-photo>.discover-option3-image{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  object-fit:contain!important;object-position:center center!important;background:#080808!important;filter:none!important;
+}
+#discover .discover-option3-overlay{
+  position:absolute!important;left:0!important;right:0!important;bottom:0!important;z-index:6!important;
+  padding:110px 16px max(18px,env(safe-area-inset-bottom))!important;
+  background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.12) 22%,rgba(0,0,0,.78) 65%,rgba(0,0,0,.97) 100%)!important;
+}
+#discover .discover-option3-overlay h2{font-size:clamp(29px,7vw,38px)!important;font-weight:900!important;line-height:1.08!important}
+#discover .discover-option3-overlay .distance{font-size:15px!important;font-weight:850!important;margin-bottom:8px!important}
+#discover .discover-option3-overlay .discover-floating-actions{
+  display:flex!important;align-items:center!important;justify-content:center!important;gap:24px!important;
+  width:100%!important;margin:14px 0 0!important;padding:0!important;
+}
+#discover .discover-option3-overlay .discover-floating-actions .btn{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  flex:0 0 66px!important;width:66px!important;min-width:66px!important;height:66px!important;min-height:66px!important;
+  margin:0!important;padding:0!important;border-radius:50%!important;font-size:29px!important;font-weight:900!important;
+  line-height:1!important;box-shadow:0 8px 24px rgba(0,0,0,.5)!important;
+}
+#discover .discover-option3-overlay .discover-floating-actions .btn.secondary{
+  background:rgba(12,12,12,.94)!important;color:#fff!important;border:1px solid rgba(255,255,255,.7)!important;
+}
+#discover .discover-option3-overlay .discover-floating-actions .btn.primary{
+  background:linear-gradient(145deg,#f3d18a,#b88b42)!important;color:#171108!important;border:1px solid #f0d18b!important;
+}
+#discover #discoverStatus{margin:5px 0 0!important;padding:0 12px!important}
+@media(max-height:740px){
+  #discover #profileList>.discover-option3-card{height:clamp(420px,calc(100svh - 315px),600px)!important;min-height:420px!important}
+  #discover .discover-option3-overlay{padding-top:82px!important}
+}
+@media(max-width:380px){
+  #discover #profileList>.discover-option3-card{width:calc(100% + 24px)!important;margin-left:-12px!important}
+  #discover .discover-option3-overlay .discover-floating-actions{gap:18px!important}
+}
+body.light-theme #discover .discover-option3-overlay{
+  background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.16) 22%,rgba(0,0,0,.84) 66%,rgba(0,0,0,.97) 100%)!important;
 }
 
 </style>

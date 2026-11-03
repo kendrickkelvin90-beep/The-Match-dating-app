@@ -5896,7 +5896,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     </div>
     <div class="premium-benefit">
       <div class="premium-icon">♥</div>
-      <div><strong>Unlimited likes</strong><span>Like as many eligible profiles as you want, without the free daily limit.</span></div>
+      <div><strong>Unlimited swipes</strong><span>Like or Pass up to 10 profiles per day as a Free member; Premium includes unlimited swipes.</span></div>
     </div>
     <div class="premium-benefit">
       <div class="premium-icon">✧</div>
@@ -10130,8 +10130,16 @@ like.onclick=async()=>{
           :/duplicate/i.test(likeError.message)
             ?"You've already liked this member."
             :"Couldn't send like: "+friendly(likeError),true);
-      like.disabled=false;
-      pass.disabled=false;
+      if (/DAILY_SWIPE_LIMIT/i.test(likeError.message)) {
+        await refreshDailyLikeCounter();
+        like.disabled = true;
+        pass.disabled = true;
+        like.textContent = "Daily swipe limit reached 🔒";
+        pass.textContent = "Daily limit reached 🔒";
+      } else {
+        like.disabled = false;
+        pass.disabled = false;
+      }
       return;
     }
 

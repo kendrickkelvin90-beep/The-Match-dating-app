@@ -6296,7 +6296,8 @@ async function resolveProfilePhotoUrl(storagePath) {
   if (!storagePath.startsWith("b2://")) {
     return db.storage.from("profile-photos").getPublicUrl(storagePath).data.publicUrl;
   }
-  if (profilePhotoUrlCache.has(storagePath)) return profilePhotoUrlCache.get(storagePath);
+  const cached = profilePhotoUrlCache.get(storagePath);
+  if (cached && cached.expiresAt > Date.now()) return cached.promise;
   const pending = (async () => {
     const objectKey = storagePath.slice(5);
     const { data, error } = await db.functions.invoke("b2-media", {
@@ -6305,7 +6306,7 @@ async function resolveProfilePhotoUrl(storagePath) {
     if (error || !data?.downloadUrl) throw error || new Error("Could not create secure photo link.");
     return data.downloadUrl;
   })();
-  profilePhotoUrlCache.set(storagePath, pending);
+  profilePhotoUrlCache.set(storagePath, { promise: pending, expiresAt: Date.now() + 90000 });
   try { return await pending; }
   catch (error) { profilePhotoUrlCache.delete(storagePath); throw error; }
 }
@@ -13977,7 +13978,7 @@ async function uploadSelectedPhotos(){
         });
 
       if(insertError){
-        await db.functions.invoke("b2-media", { body: { action: "delete-object", objectKey: uploadData.objectKey } });
+        await db.functions.invoke("b2-media", { body: { action: "delete-upload", objectKey: uploadData.objectKey } });
         throw insertError;
       }
 

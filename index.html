@@ -5002,6 +5002,24 @@ body.light-theme #eventsPage .event-response-actions .btn.primary{
 }
 </style>
 
+<style id="staggered-feature-promo-styles">
+#matchFeaturePromoLayer{position:fixed;inset:0;z-index:6000;display:flex;align-items:center;justify-content:center;padding:20px;pointer-events:none}
+#matchFeaturePromoCard{position:relative;width:min(100%,410px);padding:26px 24px 23px;border:1px solid rgba(211,174,105,.75);border-radius:22px;background:linear-gradient(145deg,#1b1915,#090909 78%);color:#f7f2e8;box-shadow:0 20px 65px rgba(0,0,0,.48);text-align:left;cursor:pointer;pointer-events:auto;opacity:0;transform:translateY(-85vh) scale(.98);transition:transform .85s cubic-bezier(.2,.78,.2,1),opacity .65s ease;outline:none}
+#matchFeaturePromoCard.is-visible{opacity:1;transform:translateY(0) scale(1)}
+#matchFeaturePromoCard:focus-visible{outline:3px solid #d6b46e;outline-offset:4px}
+#matchFeaturePromoCard .match-promo-kicker{display:block;margin:0 38px 10px 0;color:#d6b46e;font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase}
+#matchFeaturePromoCard h3{margin:0 34px 9px 0;color:#fff;font-size:23px;line-height:1.2}
+#matchFeaturePromoCard p{margin:0 0 18px;color:#d0c8b9;font-size:14px;line-height:1.6}
+#matchFeaturePromoCard .match-promo-action{display:inline-flex;align-items:center;gap:8px;padding:10px 15px;border:1px solid #b99553;border-radius:999px;background:rgba(211,174,105,.12);color:#f0d49b;font-size:13px;font-weight:750}
+#matchFeaturePromoClose{position:absolute;top:12px;right:12px;width:36px;height:36px;border:1px solid rgba(211,174,105,.35);border-radius:50%;background:rgba(255,255,255,.06);color:#f2dfbd;font-size:23px;line-height:1;cursor:pointer}
+body.light-theme #matchFeaturePromoCard{background:linear-gradient(145deg,#fffefa,#f5f0e5);color:#29251e;border-color:#c5a15e;box-shadow:0 20px 60px rgba(48,39,20,.2)}
+body.light-theme #matchFeaturePromoCard h3{color:#24211b}
+body.light-theme #matchFeaturePromoCard p{color:#625b4d}
+body.light-theme #matchFeaturePromoCard .match-promo-kicker{color:#96702e}
+body.light-theme #matchFeaturePromoCard .match-promo-action{background:#f8f0df;color:#74531d;border-color:#b99553}
+body.light-theme #matchFeaturePromoClose{background:#f7f2e8;color:#6b5228;border-color:#d8c49e}
+@media(prefers-reduced-motion:reduce){#matchFeaturePromoCard{transition:none;transform:none}#matchFeaturePromoCard.is-visible{transform:none}}
+</style>
 </head>
 <body>
 <div id="stars" aria-hidden="true"></div>
@@ -8893,6 +8911,159 @@ function showReferralToast() {
   });
 }
 
+function showFeaturePromoSequence() {
+  if (!currentUser || currentPage !== "discover" || window.matchFeaturePromoRunning) return;
+
+  const userId = currentUser.id;
+  const sequenceKey = "matchFeaturePromoSequence_" + userId;
+  const lastSequence = Number(localStorage.getItem(sequenceKey) || 0);
+  const sevenDays = 7 * 24 * 60 * 60 * 1000;
+  if (Date.now() - lastSequence < sevenDays) return;
+
+  window.matchFeaturePromoRunning = true;
+  localStorage.setItem(sequenceKey, String(Date.now()));
+
+  const promos = [
+    {
+      key: "referral",
+      kicker: "Share The Match",
+      title: "Invite friends. Earn rewards.",
+      body: "Bring your friends into the community and track your referral rewards.",
+      action: "Open Referral Dashboard",
+      page: "referralsPage",
+      open: async () => {
+        show("referralsPage");
+        await loadReferralDashboard();
+      }
+    },
+    {
+      key: "premium",
+      kicker: "A little more discovery",
+      title: "Discover more with Premium",
+      body: "Explore Premium benefits and see what more is waiting for you on The Match.",
+      action: "Explore Premium",
+      page: "premium",
+      open: () => show("premium")
+    },
+    {
+      key: "events",
+      kicker: "Beyond the swipe",
+      title: "Explore community events",
+      body: "Find LGBTQ+ gatherings, shared experiences and events in The Match community.",
+      action: "Explore Events",
+      page: "eventsPage",
+      open: () => show("eventsPage")
+    }
+  ];
+
+  const finish = () => {
+    window.matchFeaturePromoRunning = false;
+    const layer = document.getElementById("matchFeaturePromoLayer");
+    if (layer) layer.remove();
+  };
+
+  const displayNext = async () => {
+    if (!currentUser || currentUser.id !== userId || currentPage !== "discover") {
+      finish();
+      return;
+    }
+
+    let promo = promos.shift();
+    while (promo && localStorage.getItem("matchFeaturePromoDismissed_" + userId + "_" + promo.key)) {
+      promo = promos.shift();
+    }
+    if (!promo) {
+      finish();
+      return;
+    }
+
+    if (promo.key === "premium") {
+      try {
+        const { data: membership, error } = await db
+          .from("premium_memberships")
+          .select("premium_until")
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (error) throw error;
+        const activePremium = !!membership?.premium_until &&
+          new Date(membership.premium_until).getTime() > Date.now();
+        if (activePremium) {
+          displayNext();
+          return;
+        }
+      } catch (error) {
+        console.warn("Could not check Premium promotion eligibility:", error);
+        displayNext();
+        return;
+      }
+    }
+
+    const layer = document.createElement("div");
+    layer.id = "matchFeaturePromoLayer";
+    const card = document.createElement("div");
+    card.id = "matchFeaturePromoCard";
+    card.setAttribute("role", "button");
+    card.setAttribute("tabindex", "0");
+    card.setAttribute("aria-label", promo.title + ". " + promo.action);
+    const kicker = document.createElement("span");
+    kicker.className = "match-promo-kicker";
+    kicker.textContent = promo.kicker;
+    const heading = document.createElement("h3");
+    heading.textContent = promo.title;
+    const body = document.createElement("p");
+    body.textContent = promo.body;
+    const action = document.createElement("span");
+    action.className = "match-promo-action";
+    action.textContent = promo.action + "  →";
+    const close = document.createElement("button");
+    close.id = "matchFeaturePromoClose";
+    close.type = "button";
+    close.setAttribute("aria-label", "Close this message");
+    close.textContent = "×";
+    card.append(kicker, heading, body, action, close);
+    layer.appendChild(card);
+    document.body.appendChild(layer);
+
+    let resolved = false;
+    const dismiss = () => {
+      if (resolved) return;
+      resolved = true;
+      localStorage.setItem("matchFeaturePromoDismissed_" + userId + "_" + promo.key, "1");
+      card.classList.remove("is-visible");
+      window.setTimeout(() => {
+        layer.remove();
+        window.setTimeout(displayNext, 1700);
+      }, 650);
+    };
+    const openPromo = async () => {
+      if (resolved) return;
+      resolved = true;
+      finish();
+      try { await promo.open(); }
+      catch (error) { console.warn("Feature promotion navigation failed:", error); }
+    };
+
+    close.addEventListener("click", event => {
+      event.stopPropagation();
+      dismiss();
+    });
+    card.addEventListener("click", event => {
+      if (event.target === close) return;
+      openPromo();
+    });
+    card.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openPromo();
+      }
+    });
+    requestAnimationFrame(() => requestAnimationFrame(() => card.classList.add("is-visible")));
+  };
+
+  // Premium membership is checked before its card is shown; referral and event cards remain available to everyone.
+  displayNext();
+}
+
 async function enforceVerificationGracePeriod(user) {
   try {
     const { data: profile, error } = await db
@@ -9183,7 +9354,7 @@ status("profileStatus","Your profile is loaded. Check your details and save when
   refreshNearbyCurrentLocation();
   
 setTimeout(() => {
-  maybeShowPremiumPromotion();
+  showFeaturePromoSequence();
 }, 15000);
 }
 

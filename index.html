@@ -4701,6 +4701,37 @@ body.light-theme #discoveryPreferencesPage #discoveryPreferencesStatus {
 #callHistoryPage #backFromCallHistory{width:100%;min-height:50px}
 body.light-theme #messages #openCallHistoryButton{color:#17120a}
 </style>
+
+<style id="actual-wide-content-fix">
+/* Correct the inner content constraints, not only the outer page panels */
+@media(max-width:699px){
+  main{padding-left:10px!important;padding-right:10px!important}
+  #discover,#nearbyPage,#matches,#messages,#callHistoryPage,#likes,#profile,#settings,#notificationsPage,#eventsPage{
+    width:100%!important;max-width:none!important;margin-left:0!important;margin-right:0!important;
+    padding-left:14px!important;padding-right:14px!important;
+  }
+  #discover #profileList{display:grid!important;grid-template-columns:minmax(0,1fr)!important;justify-content:stretch!important;width:100%!important;max-width:none!important;margin-left:0!important;margin-right:0!important}
+  #discover #profileList>.member-card{width:100%!important;max-width:none!important;margin-left:0!important;margin-right:0!important}
+  #discover .stories-section,#discover .stories-list{width:100%!important;max-width:none!important}
+  #nearbyPage #nearbyMembersList{width:100%!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #matches #matchesList,#messages #conversationList,#likes .likes-list,#profile>*:not(.profile-navigation-actions),#settings>* ,#notificationsPage>*{width:100%;max-width:none;min-width:0}
+  #eventsPage .events-shell{width:100%!important;max-width:none!important;margin:0!important;padding-left:0!important;padding-right:0!important}
+  #eventsPage .events-grid{grid-template-columns:minmax(0,1fr)!important}
+}
+@media(min-width:700px){
+  main{padding-left:20px!important;padding-right:20px!important}
+  #discover,#nearbyPage,#matches,#messages,#callHistoryPage,#likes,#profile,#settings,#notificationsPage,#eventsPage{width:100%!important;max-width:1180px!important;margin-left:auto!important;margin-right:auto!important}
+  #discover #profileList{grid-template-columns:minmax(0,1fr)!important;max-width:none!important}
+  #discover #profileList>.member-card{max-width:none!important}
+  #eventsPage .events-shell{width:100%!important;max-width:none!important}
+}
+#discover #profileList>.member-card>div:first-child{width:100%!important}
+#messages #conversationList>button{width:100%!important;max-width:none!important}
+#matches #matchesList>*{max-width:none!important}
+#likes .likes-profile-card{width:100%!important;max-width:none!important}
+#profile .photo-grid{width:100%!important}
+#settings .settings-section,#settings .settings-card{width:100%!important;max-width:none!important}
+</style>
 </head>
 <body>
 <div id="stars" aria-hidden="true"></div>

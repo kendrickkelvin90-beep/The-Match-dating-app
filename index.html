@@ -7954,11 +7954,17 @@ async function moderateAdminMember(member, action) {
   }
   const existing = adminModerationByUser.get(member.id);
   if (action === "restored" && !existing) return;
+  const enteredReason = await matchPrompt(
+    action === "restored"
+      ? "Reason for restoring this account (optional):"
+      : "Enter the reason for this " + (action === "banned" ? "ban" : "suspension") + ":"
+  );
+  if (enteredReason === null) return;
   const reason = action === "restored"
-    ? (await matchPrompt("Reason for restoring this account (optional):") || "Account restored after review")
-    : await matchPrompt("Enter the reason for this " + (action === "banned" ? "ban" : "suspension") + ":");
-  if (action !== "restored" && (!reason || reason.trim().length < 3)) {
-    alert("Please enter a reason of at least 3 characters.");
+    ? (enteredReason.trim() || "Account restored after review")
+    : enteredReason.trim();
+  if (reason.length < 3 || reason.length > 500) {
+    alert("Please enter a reason between 3 and 500 characters.");
     return;
   }
   let expiresAt = null;
@@ -8798,7 +8804,55 @@ async function enforceOneAccountPerDevice(user) {
   // Allow authenticated users to continue into the app.
   return true;
 }
-  
+
+// Moderation is checked after authentication and during an active session.
+// This is separate from signup/login credential handling.
+async function enforceMemberModeration(user) {
+  if (!user?.id) return true;
+
+  const { data, error } = await db
+    .from("member_moderation")
+    .select("status,reason,expires_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  // A temporary read/network failure must not lock existing members out.
+  // Supabase Auth bans still prevent future sign-ins and token refreshes.
+  if (error) {
+    console.warn("Member moderation status could not be checked:", error.message);
+    return true;
+  }
+
+  const banned = data?.status === "banned";
+  const suspended = data?.status === "suspended" &&
+    data.expires_at && new Date(data.expires_at).getTime() > Date.now();
+
+  if (!banned && !suspended) return true;
+
+  if (window.matchModerationInterval) {
+    clearInterval(window.matchModerationInterval);
+    window.matchModerationInterval = null;
+  }
+
+  try {
+    await db.auth.signOut({ scope: "local" });
+  } catch (signOutError) {
+    console.warn("Could not close a restricted member session:", signOutError);
+  }
+
+  currentUser = null;
+  openAuth(true);
+  status("authStatus",
+    banned
+      ? "This account has been permanently banned from The Match. Contact support if you believe this decision was made in error."
+      : "This account is temporarily suspended until " +
+        new Date(data.expires_at).toLocaleString() +
+        ". Contact support if you need assistance.",
+    true
+  );
+  return false;
+}
+
 $("authForm").onsubmit = async e => {
   e.preventDefault();
 
@@ -8925,7 +8979,10 @@ if (window.turnstile && authCaptchaWidgetId !== null) {
     }
   } catch (error) {
     console.error("Signup/login error:", error);
-    status("authStatus", friendly(error), true);
+    const authMessage = loginMode && /banned|ban duration|user is banned/i.test(error?.message || "")
+      ? "This account is suspended or permanently banned from The Match. Contact support if you believe this is a mistake."
+      : friendly(error);
+    status("authStatus", authMessage, true);
   } finally {
     button.disabled = false;
   }
@@ -9743,7 +9800,13 @@ function profileBioHasPhoneNumber(value) {
 }
 
 async function showProfile(user, restoreToDiscover = false){
+if (!(await enforceMemberModeration(user))) return;
 currentUser=user;
+
+  if (window.matchModerationInterval) clearInterval(window.matchModerationInterval);
+  window.matchModerationInterval = setInterval(() => {
+    if (currentUser?.id === user.id) enforceMemberModeration(user);
+  }, 45000);
   // Associate this device's OneSignal push subscription with the signed-in Match member.
   // This lets server-side notification events target only the intended member.
   window.OneSignalDeferred = window.OneSignalDeferred || [];

@@ -6703,6 +6703,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
           <button type="button" class="admin-metric-card admin-clickable-metric" data-admin-detail="chatMedia"><p class="admin-metric-label">Chat media records</p><p class="admin-metric-value" id="adminChatMediaCount">—</p><span class="admin-metric-foot">Tap to view media activity</span></button>
         </div>
       </section>
+      <p class="status hidden" id="adminStatus" role="status" aria-live="polite">Dashboard is ready.</p>
       <section class="admin-feature-section admin-activity-detail hidden" id="adminActivityDetail" aria-live="polite">
         <div class="admin-section-heading admin-queue-heading">
           <div><p class="admin-eyebrow">ACTIVITY DETAILS</p><h3 id="adminActivityDetailTitle">Activity</h3></div>
@@ -8478,7 +8479,9 @@ $("copyReferralCode").addEventListener("click", async () => {
   await loadAdminDashboard();
 });
 
-$("adminBackBtn").addEventListener("click", () => {
+// The old admin footer button was removed from the member-facing layout.
+ // Keep this listener optional so a missing admin-only control never blocks auth scripts.
+$("adminBackBtn")?.addEventListener("click", () => {
   show("settings");
 });
 

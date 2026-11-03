@@ -10298,7 +10298,10 @@ async function renderNearbyMapMarkers(center) {
     });
     nearbyMapMarkersLayer.addLayer(marker);
   });
-  const bounds=nearbyMapMarkersLayer.getBounds?.();
+  const validPoints=markers
+    .map(person=>[Number(person.map_latitude),Number(person.map_longitude)])
+    .filter(point=>Number.isFinite(point[0])&&Number.isFinite(point[1]));
+  const bounds=validPoints.length?L.latLngBounds(validPoints):null;
   if(bounds&&bounds.isValid())nearbyLeafletMap.fitBounds(bounds,{padding:[34,34],maxZoom:12});
   return markers.length;
 }

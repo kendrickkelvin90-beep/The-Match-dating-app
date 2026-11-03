@@ -10064,8 +10064,18 @@ const { error } = await db
 
       
 
-    if (error) throw error;
+    if (error) {
+      if (/DAILY_SWIPE_LIMIT/i.test(error.message)) {
+        status("discoverStatus","You have used your 10 free swipes for today. Go Premium for unlimited swipes.",true);
+        await refreshDailyLikeCounter();
+        pass.disabled = true;
+        like.disabled = true;
+        return;
+      }
+      throw error;
+    }
 
+    await refreshDailyLikeCounter();
     await animateCardExit("left");
     personIndex++;
     await showPerson();
@@ -10085,10 +10095,13 @@ like.type="button";
 like.className="btn primary";
 like.textContent="♥  Like";
 like.style.cssText="flex:1;min-height:54px;border-radius:18px;border:1px solid #ff6b9d;background:linear-gradient(135deg,#ff397b,#d91659);color:#fff;font-size:16px;font-weight:800;box-shadow:0 5px 18px #ff397b35;";
-if (!currentDiscoverIsPremium && currentDailyLikesUsed >= 10) {
+if (!currentDiscoverIsPremium && currentDailySwipesUsed >= 10) {
   like.disabled = true;
-  like.textContent = "Daily limit reached 🔒";
-  like.title = "Free members can send 10 likes per day. Premium includes unlimited likes.";
+  pass.disabled = true;
+  like.textContent = "Daily swipe limit reached 🔒";
+  pass.textContent = "Daily limit reached 🔒";
+  like.title = "Free members can make 10 swipes per day. Premium includes unlimited swipes.";
+  pass.title = like.title;
 }
 
       
@@ -10112,8 +10125,8 @@ like.onclick=async()=>{
 
     if(likeError){
       status("discoverStatus",
-        /DAILY_LIKE_LIMIT/i.test(likeError.message)
-          ?"You've used your 10 free likes for today. Go Premium to keep liking."
+        /DAILY_SWIPE_LIMIT/i.test(likeError.message)
+          ?"You've used your 10 free swipes for today. Go Premium for unlimited swipes."
           :/duplicate/i.test(likeError.message)
             ?"You've already liked this member."
             :"Couldn't send like: "+friendly(likeError),true);
@@ -12091,7 +12104,7 @@ function lagosDayStartIso() {
 }
 
 let currentDiscoverIsPremium = false;
-let currentDailyLikesUsed = 0;
+let currentDailySwipesUsed = 0;
 
 async function refreshDailyLikeCounter() {
   if (!currentUser) return;
@@ -12100,20 +12113,20 @@ async function refreshDailyLikeCounter() {
   try {
     if (await matchIsPremium()) {
       currentDiscoverIsPremium = true;
-      currentDailyLikesUsed = 0;
-      target.textContent = "Unlimited likes · Premium";
+      currentDailySwipesUsed = 0;
+      target.textContent = "Unlimited swipes · Premium";
       return;
     }
-    const { count, error } = await db.from("likes").select("id", { count: "exact", head: true })
-      .eq("liker_id", currentUser.id).gte("created_at", lagosDayStartIso());
+    const { count, error } = await db.from("match_swipe_history").select("id", { count: "exact", head: true })
+      .eq("user_id", currentUser.id).gte("created_at", lagosDayStartIso());
     if (error) throw error;
     const used = Math.min(Number(count || 0), 10);
     currentDiscoverIsPremium = false;
-    currentDailyLikesUsed = used;
-    target.textContent = used >= 10 ? "Daily likes used · Resets at midnight" : (10-used) + " of 10 likes remaining today";
+    currentDailySwipesUsed = used;
+    target.textContent = used >= 10 ? "Daily swipes used · Resets at midnight" : (10-used) + " of 10 swipes remaining today";
   } catch (error) {
     console.warn("Daily like counter failed:", error);
-    target.textContent = "Daily likes: 10";
+    target.textContent = "Daily swipes: 10";
   }
 }
 

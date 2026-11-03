@@ -9976,12 +9976,6 @@ photoBox.style.cssText="position:absolute;inset:0;width:100%;height:100%;backgro
 
       
 
-const photoBackdrop=document.createElement("img");
-photoBackdrop.alt="";
-photoBackdrop.setAttribute("aria-hidden","true");
-photoBackdrop.style.cssText="position:absolute;inset:-5%;width:110%;height:110%;object-fit:cover;filter:blur(22px) brightness(.48);transform:scale(1.04);opacity:.9;z-index:0;pointer-events:none;";
-photoBox.appendChild(photoBackdrop);
-
 const photo=document.createElement("img");
 photo.alt="Profile photo";
 
@@ -10031,7 +10025,6 @@ photoBox.appendChild(onlineBadge);
 
       if(photoUrls.length){
         photo.src=photoUrls[0];
-        photoBackdrop.src=photoUrls[0];
         photo.style.display="block";
         photoCount.textContent="1 of "+photoUrls.length+" "+(photoUrls.length === 1 ? "photo" : "photos");
       }else{
@@ -10065,7 +10058,6 @@ photoBox.appendChild(onlineBadge);
         if(photoUrls.length){
           photoIndex=(photoIndex-1+photoUrls.length)%photoUrls.length;
           photo.src=photoUrls[photoIndex];
-          photoBackdrop.src=photoUrls[photoIndex];
           photoCount.textContent=(photoIndex+1)+" of "+photoUrls.length+" photos";
         }
       };
@@ -10078,7 +10070,6 @@ photoBox.appendChild(onlineBadge);
         if(photoUrls.length){
           photoIndex=(photoIndex+1)%photoUrls.length;
           photo.src=photoUrls[photoIndex];
-          photoBackdrop.src=photoUrls[photoIndex];
           photoCount.textContent=(photoIndex+1)+" / "+photoUrls.length;
         }
       };
@@ -10088,7 +10079,6 @@ photoBox.appendChild(onlineBadge);
         if (photoUrls.length > 1) {
           photoIndex = (photoIndex + 1) % photoUrls.length;
           photo.src = photoUrls[photoIndex];
-          photoBackdrop.src = photoUrls[photoIndex];
           photoCount.textContent =
             (photoIndex + 1) + " of " + photoUrls.length + " photos";
         }
@@ -10192,6 +10182,7 @@ detailsToggle.onclick = () => {
 infoOverlay.append(detailsToggle, detailsPanel);
 
 const actions = document.createElement("div");
+actions.className = "discover-floating-actions";
 actions.style.cssText =
   "display:flex;justify-content:center;align-items:center;" +
   "gap:12px;margin:8px 12px 12px;padding:0;";
@@ -17894,6 +17885,68 @@ body.light-theme #discover #storiesSection>p.small{color:#766e61!important}
 body.light-theme #discover #profileList>.member-card{
   border:0!important;
   box-shadow:none!important;
+}
+
+
+/* Discover Option 3 — large portrait with floating controls; Stories and Events stay above */
+#discover.panel{
+  min-height:0!important;height:auto!important;margin:0!important;padding:8px 0 10px!important;
+  border:0!important;outline:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;
+}
+body:has(#bottomNavigation:not(.hidden))>main>.panel:not(.hidden)#discover{
+  min-height:0!important;margin:0!important;padding:8px 0 10px!important;border:0!important;
+  border-radius:0!important;box-shadow:none!important;background:transparent!important;
+}
+#discover #profileList{width:100%!important;max-width:none!important;margin:4px 0 0!important;padding:0!important}
+#discover #profileList>.member-card{
+  width:calc(100% + 24px)!important;max-width:none!important;
+  height:clamp(420px,calc(100svh - 335px),700px)!important;min-height:420px!important;max-height:700px!important;
+  margin:0 0 0 -12px!important;border:0!important;outline:0!important;border-radius:0!important;
+  box-shadow:none!important;background:#080808!important;overflow:hidden!important;
+}
+#discover #profileList>.member-card>div:first-child{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;background:#080808!important;
+}
+#discover #profileList>.member-card>div:first-child>img[aria-hidden="true"]{display:none!important}
+#discover #profileList>.member-card>div:first-child>img:not([aria-hidden="true"]){
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  object-fit:contain!important;object-position:center center!important;background:#080808!important;
+}
+#discover #profileList>.member-card .discover-profile-overlay{
+  left:0!important;right:0!important;bottom:0!important;
+  padding:100px 16px max(18px,env(safe-area-inset-bottom))!important;
+  background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.12) 22%,rgba(0,0,0,.78) 66%,rgba(0,0,0,.96) 100%)!important;
+}
+#discover #profileList>.member-card .discover-profile-overlay h2{font-size:clamp(29px,7vw,37px)!important;font-weight:900!important}
+#discover #profileList>.member-card .discover-profile-overlay .distance{font-size:15px!important;font-weight:850!important;margin-bottom:8px!important}
+#discover #profileList>.member-card .discover-profile-overlay button[aria-expanded]{min-height:40px!important}
+#discover #profileList>.member-card .discover-profile-overlay .discover-floating-actions{
+  display:flex!important;align-items:center!important;justify-content:center!important;gap:24px!important;
+  margin:12px 0 2px!important;padding:0!important;
+}
+#discover #profileList>.member-card .discover-floating-actions .btn{
+  flex:0 0 62px!important;width:62px!important;min-width:62px!important;height:62px!important;min-height:62px!important;
+  margin:0!important;padding:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  border-radius:50%!important;font-size:25px!important;font-weight:900!important;box-shadow:0 8px 24px rgba(0,0,0,.48)!important;
+}
+#discover #profileList>.member-card .discover-floating-actions .btn.secondary{
+  background:rgba(18,18,18,.92)!important;color:#fff!important;border:1px solid rgba(255,255,255,.58)!important;
+}
+#discover #profileList>.member-card .discover-floating-actions .btn.primary{
+  background:linear-gradient(145deg,#f3d18a,#b88b42)!important;color:#171108!important;border:1px solid #f0d18b!important;
+}
+#discover #discoverStatus{margin:4px 0 0!important;padding:0 12px!important}
+@media(max-height:740px){
+  #discover #profileList>.member-card{height:clamp(390px,calc(100svh - 300px),560px)!important;min-height:390px!important}
+  #discover #profileList>.member-card .discover-profile-overlay{padding-top:76px!important}
+}
+@media(max-width:380px){
+  #discover #profileList>.member-card{width:calc(100% + 24px)!important;margin-left:-12px!important}
+  #discover #profileList>.member-card .discover-floating-actions{gap:18px!important}
+}
+body.light-theme #discover #profileList>.member-card{border:0!important;box-shadow:none!important}
+body.light-theme #discover #profileList>.member-card .discover-profile-overlay{
+  background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.16) 22%,rgba(0,0,0,.82) 66%,rgba(0,0,0,.97) 100%)!important;
 }
 
 </style>

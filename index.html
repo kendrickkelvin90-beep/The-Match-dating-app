@@ -403,6 +403,16 @@ label{display:block;margin-top:14px;font-size:13px}
 .distance{color:#ff8da8;font-weight:bold;font-size:13px}
 footer{text-align:center;padding:15px 12px 30px;color:#ad8e9b;font-size:11px;line-height:1.8}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important}}
+/* Google OAuth button — consistent in dark and light themes */
+.google-auth-divider{display:flex;align-items:center;gap:12px;margin:16px 0 4px;color:#a99aa1;font-size:11px;font-weight:700;letter-spacing:1.5px}
+.google-auth-divider::before,.google-auth-divider::after{content:"";height:1px;flex:1;background:#593044}
+.google-auth-button{display:flex;align-items:center;justify-content:center;gap:12px;min-height:48px;margin-top:10px;border-color:#777!important;background:#fff!important;color:#202124!important;font-weight:700}
+.google-auth-button:disabled{opacity:.65}
+.google-auth-icon{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#fff;color:#4285f4;font-size:21px;font-weight:900;font-family:Arial,sans-serif}
+body.light-theme .google-auth-divider{color:#6b655b}
+body.light-theme .google-auth-divider::before,body.light-theme .google-auth-divider::after{background:#c9c0b1}
+body.light-theme .google-auth-button{background:#fff!important;color:#202124!important;border-color:#b8b8b8!important}
+
 /* The Match fixed bottom navigation */
 body {
 padding-bottom: 90px;
@@ -5369,7 +5379,7 @@ body.light-theme #matchFeaturePromoClose {
 <p class="small">Your story. Your identity. Your kind of connection.</p>
 <button class="btn primary" id="signup">Create an account</button>
 <button class="btn secondary" id="login">Log in</button>
-<p class="small">Google sign-in will be added later. Adults 18+ only.</p>
+<p class="small">Adults 18+ only.</p>
 <p class="status" id="welcomeStatus"></p>
 <p class="small" style="text-align:center;margin-top:14px"><a href="/legal.html#terms" target="_blank" rel="noopener">Terms</a> · <a href="/legal.html#privacy" target="_blank" rel="noopener">Privacy Policy</a> · <a href="/legal.html#safety" target="_blank" rel="noopener">Safety</a></p>
 </section>
@@ -5472,6 +5482,11 @@ body.light-theme #matchFeaturePromoClose {
 </div>
 <button class="btn primary" id="submit" type="submit">Create account</button>
 </form>
+<div class="google-auth-divider" aria-hidden="true"><span>OR</span></div>
+<button class="btn secondary google-auth-button" id="googleSignIn" type="button">
+  <span class="google-auth-icon" aria-hidden="true">G</span>
+  <span>Continue with Google</span>
+</button>
 <div class="links">
 <button class="link" id="forgot" type="button">Forgot password?</button>
 <button class="link" id="switch" type="button">Already registered? Log in</button>
@@ -8375,6 +8390,26 @@ $("copyReferralCode").addEventListener("click", async () => {
 
 $("adminBackBtn").addEventListener("click", () => {
   show("settings");
+});
+
+$("googleSignIn").addEventListener("click", async () => {
+  const button = $("googleSignIn");
+  button.disabled = true;
+  status("authStatus", "Connecting to Google...");
+  try {
+    const { error } = await db.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: SITE_URL,
+        queryParams: { prompt: "select_account" }
+      }
+    });
+    if (error) throw error;
+  } catch (error) {
+    console.error("Google sign-in failed:", error);
+    status("authStatus", friendly(error), true);
+    button.disabled = false;
+  }
 });
 
 function openAuth(isLogin){

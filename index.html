@@ -6288,6 +6288,29 @@ const db=window.supabase.createClient(
 "sb_publishable_5OirCcmy8L5n3isPvi-P0w_Dgeb13U_"
 );
 Object.defineProperty(window,"db",{configurable:true,get:()=>db});
+// Resolve private B2 profile photos through the authenticated Edge Function.
+// Legacy Supabase storage paths continue using the existing public bucket URL.
+const profilePhotoUrlCache = new Map();
+async function resolveProfilePhotoUrl(storagePath) {
+  if (!storagePath) return "";
+  if (!storagePath.startsWith("b2://")) {
+    return db.storage.from("profile-photos").getPublicUrl(storagePath).data.publicUrl;
+  }
+  const cached = profilePhotoUrlCache.get(storagePath);
+  if (cached && cached.expiresAt > Date.now()) return cached.promise;
+  const pending = (async () => {
+    const objectKey = storagePath.slice(5);
+    const { data, error } = await db.functions.invoke("b2-media", {
+      body: { action: "create-download-url", objectKey }
+    });
+    if (error || !data?.downloadUrl) throw error || new Error("Could not create secure photo link.");
+    return data.downloadUrl;
+  })();
+  profilePhotoUrlCache.set(storagePath, { promise: pending, expiresAt: Date.now() + 90000 });
+  try { return await pending; }
+  catch (error) { profilePhotoUrlCache.delete(storagePath); throw error; }
+}
+
 let authCaptchaToken = "";
 let resetCaptchaToken = "";
 
@@ -9121,9 +9144,7 @@ photoBox.appendChild(onlineBadge);
 
       if(photosError)throw photosError;
 
-      photoUrls=(photos||[]).map(item=>
-        db.storage.from("profile-photos").getPublicUrl(item.storage_path).data.publicUrl
-      );
+      photoUrls=await Promise.all((photos||[]).map(item=>resolveProfilePhotoUrl(item.storage_path)));
 
       if(photoUrls.length){
         photo.src=photoUrls[0];
@@ -9141,10 +9162,10 @@ photoBox.appendChild(onlineBadge);
           .eq("user_id", nextPerson.id)
           .order("position")
           .limit(1)
-          .then(({ data: nextPhotos }) => {
+          .then(async ({ data: nextPhotos }) => {
             const nextPath = nextPhotos?.[0]?.storage_path;
             if (!nextPath) return;
-            const nextUrl = db.storage.from("profile-photos").getPublicUrl(nextPath).data.publicUrl;
+            const nextUrl = await resolveProfilePhotoUrl(nextPath);
             const preloadImage = new Image();
             preloadImage.decoding = "async";
             preloadImage.src = nextUrl;
@@ -9391,11 +9412,11 @@ if(matchError)throw matchError;
       $("matchOtherName").textContent=p.display_name||"Your match";
 
       $("matchMyPhoto").src=myPhotos?.length
-        ?db.storage.from("profile-photos").getPublicUrl(myPhotos[0].storage_path).data.publicUrl
+        ?await resolveProfilePhotoUrl(myPhotos[0].storage_path)
         :"";
 
       $("matchOtherPhoto").src=theirPhotos?.length
-        ?db.storage.from("profile-photos").getPublicUrl(theirPhotos[0].storage_path).data.publicUrl
+        ?await resolveProfilePhotoUrl(theirPhotos[0].storage_path)
         :"";
 
       $("matchSendMessage").onclick=()=>{
@@ -9697,7 +9718,7 @@ if (p.is_verified || p.verification_level === "basic" ||
         .eq("user_id",p.id)
         .order("position",{ascending:true})
         .limit(1)
-        .then(({data:photos,error:photoError})=>{
+        .then(async ({data:photos,error:photoError})=>{
           if(photoError){
             console.warn("Nearby profile photo failed:",photoError);
             avatar.style.display="none";
@@ -9705,9 +9726,7 @@ if (p.is_verified || p.verification_level === "basic" ||
           }
 
           if(photos&&photos.length&&photos[0].storage_path){
-            avatar.src=db.storage
-              .from("profile-photos")
-              .getPublicUrl(photos[0].storage_path).data.publicUrl;
+            avatar.src=await resolveProfilePhotoUrl(photos[0].storage_path);
             avatar.onerror=()=>{avatar.style.display="none";};
           }else{
             avatar.style.display="none";
@@ -9818,10 +9837,11 @@ async function loadStories(){
 
     if (photosError) throw photosError;
 
-    const avatars = new Map((profilePhotos || []).map(p => [
+    const avatarEntries = await Promise.all((profilePhotos || []).map(async p => [
       p.user_id,
-      db.storage.from("profile-photos").getPublicUrl(p.storage_path).data.publicUrl
+      await resolveProfilePhotoUrl(p.storage_path)
     ]));
+    const avatars = new Map(avatarEntries);
 
     
     const seen=new Set();
@@ -11598,8 +11618,7 @@ if(countError)throw countError;
       if(photoError)throw photoError;
 
       if(photos&&photos.length){
-        avatar.src=db.storage.from("profile-photos")
-          .getPublicUrl(photos[0].storage_path).data.publicUrl;
+        avatar.src=await resolveProfilePhotoUrl(photos[0].storage_path);
         avatar.onerror=()=>{avatar.alt="Photo could not load";};
       }else{
         avatar.alt="No photo available";
@@ -11723,13 +11742,11 @@ if(countError)throw countError;
               p.display_name||"Your match";
 
             $("matchMyPhoto").src=myPhotos?.length
-              ?db.storage.from("profile-photos")
-                .getPublicUrl(myPhotos[0].storage_path).data.publicUrl
+              ?await resolveProfilePhotoUrl(myPhotos[0].storage_path)
               :"";
 
             $("matchOtherPhoto").src=theirPhotos?.length
-              ?db.storage.from("profile-photos")
-                .getPublicUrl(theirPhotos[0].storage_path).data.publicUrl
+              ?await resolveProfilePhotoUrl(theirPhotos[0].storage_path)
               :"";
 
             $("matchSendMessage").onclick=()=>{
@@ -11907,10 +11924,8 @@ name.appendChild(document.createTextNode(" ❤️"));
     if (memberPhotosError) throw memberPhotosError;
 
     if (memberPhotos && memberPhotos.length) {
-      memberPhotos.forEach((item, index) => {
-        const photoUrl = db.storage
-          .from("profile-photos")
-          .getPublicUrl(item.storage_path).data.publicUrl;
+      for (const [index, item] of memberPhotos.entries()) {
+        const photoUrl = await resolveProfilePhotoUrl(item.storage_path);
 
         const photo = document.createElement("img");
         photo.src = photoUrl;
@@ -12436,7 +12451,7 @@ async function loadMyMatches(){
     .eq("user_id",p.id)
     .order("position")
     .limit(1)
-    .then(({data,error})=>{
+    .then(async ({data,error})=>{
       if(error){
         console.warn("Could not load match photo:",error);
         showPhotoFallback();
@@ -12444,9 +12459,7 @@ async function loadMyMatches(){
       }
 
       if(data && data.length && data[0].storage_path){
-        avatar.src=db.storage
-          .from("profile-photos")
-          .getPublicUrl(data[0].storage_path).data.publicUrl;
+        avatar.src=await resolveProfilePhotoUrl(data[0].storage_path);
       }else{
         showPhotoFallback();
       }
@@ -12735,9 +12748,7 @@ const firstPhotoByUser = new Map();
 const photoPath = firstPhotoByUser.get(p.id);
 
 if (photoPath) {
-  avatar.src = db.storage
-    .from("profile-photos")
-    .getPublicUrl(photoPath).data.publicUrl;
+  avatar.src = await resolveProfilePhotoUrl(photoPath);
 }
 
 
@@ -12937,9 +12948,7 @@ if (conversationListNode && activeConversationNode instanceof HTMLElement) {
     if(photoError) throw photoError;
 
     if(chatPhotos && chatPhotos.length){
-      $("chatPartnerAvatar").src = db.storage
-        .from("profile-photos")
-        .getPublicUrl(chatPhotos[0].storage_path).data.publicUrl;
+      $("chatPartnerAvatar").src = await resolveProfilePhotoUrl(chatPhotos[0].storage_path);
     }
 
     if(chatRefreshTimer) clearInterval(chatRefreshTimer);
@@ -13775,9 +13784,9 @@ button.textContent = "➤";
       show("discover", false);
     }
 
-    photos.forEach(p=>{
-      const url=db.storage.from("profile-photos")
-        .getPublicUrl(p.storage_path).data.publicUrl;
+    const photoUrls = await Promise.all((photos || []).map(p => resolveProfilePhotoUrl(p.storage_path)));
+    photos.forEach((p, photoIndex)=>{
+      const url=photoUrls[photoIndex];
 
       const item=document.createElement("div");
       item.className="photo-item";
@@ -13846,11 +13855,20 @@ del.title = "Delete photo";
 del.setAttribute("aria-label", "Delete photo");
       del.onclick=async()=>{
         if(!await matchConfirm("Delete this photo?"))return;
-        const {error}=await db.storage.from("profile-photos")
-          .remove([p.storage_path]);
-        if(error){
-          status("photoStatus","Could not delete photo.",true);
-          return;
+        if (p.storage_path.startsWith("b2://")) {
+          const { data: deleteData, error } = await db.functions.invoke("b2-media", {
+            body: { action: "delete-object", objectKey: p.storage_path.slice(5) }
+          });
+          if (error || !deleteData?.deleted) {
+            status("photoStatus","Could not securely delete photo.",true);
+            return;
+          }
+        } else {
+          const {error}=await db.storage.from("profile-photos").remove([p.storage_path]);
+          if(error){
+            status("photoStatus","Could not delete photo.",true);
+            return;
+          }
         }
         const {error:dbError}=await db.from("profile_photos")
           .delete().eq("id",p.id).eq("user_id",currentUser.id);
@@ -13936,13 +13954,19 @@ async function uploadSelectedPhotos(){
       if(file.size>5242880)
         throw Error("Each photo must be 5 MB or smaller.");
 
-      const path=currentUser.id+"/"+Date.now()+"-"+Math.random().toString(36).slice(2,8)+"-"+file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
-
-      const {error:uploadError}=await db.storage
-        .from("profile-photos")
-        .upload(path,file,{contentType:file.type});
-
-      if(uploadError)throw uploadError;
+      const { data: uploadData, error: uploadUrlError } = await db.functions.invoke("b2-media", {
+        body: { action: "create-upload-url", contentType: file.type, fileName: file.name }
+      });
+      if (uploadUrlError || !uploadData?.uploadUrl || !uploadData?.objectKey) {
+        throw uploadUrlError || new Error("Could not prepare secure photo upload.");
+      }
+      const putResponse = await fetch(uploadData.uploadUrl, {
+        method: "PUT",
+        headers: uploadData.requiredHeaders || { "Content-Type": file.type },
+        body: file
+      });
+      if (!putResponse.ok) throw new Error("Secure photo upload failed (" + putResponse.status + ").");
+      const path = "b2://" + uploadData.objectKey;
 
       const {error:insertError}=await db.from("profile_photos")
         .insert({
@@ -13952,7 +13976,7 @@ async function uploadSelectedPhotos(){
         });
 
       if(insertError){
-        await db.storage.from("profile-photos").remove([path]);
+        await db.functions.invoke("b2-media", { body: { action: "delete-upload", objectKey: uploadData.objectKey } });
         throw insertError;
       }
 
@@ -15127,7 +15151,7 @@ if(organiserIds.length){
  if(profileError)throw profileError;
  const {data:photos,error:photoError}=await db.from("profile_photos").select("user_id,storage_path,position").in("user_id",organiserIds).order("position");
  if(photoError)throw photoError;
- (profiles||[]).forEach(p=>{const photo=(photos||[]).find(x=>x.user_id===p.id);eventOrganisers[p.id]={...p,photoUrl:photo?db.storage.from("profile-photos").getPublicUrl(photo.storage_path).data.publicUrl:null};});
+ await Promise.all((profiles||[]).map(async p=>{const photo=(photos||[]).find(x=>x.user_id===p.id);eventOrganisers[p.id]={...p,photoUrl:photo?await resolveProfilePhotoUrl(photo.storage_path):null};}));
 }
 const {data:responses,error:re}=await db.from("match_event_responses").select("event_id,response").eq("member_id",currentUser.id);
 if(re)throw re;myResponses=Object.fromEntries((responses||[]).map(x=>[x.event_id,x.response]));

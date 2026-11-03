@@ -5244,7 +5244,7 @@ body.light-theme #nearbyPage #nearbyPremiumPrompt{background:rgba(255,254,250,.9
   </p>
   <div class="member-card" style="margin-top:14px">
     <strong>Before continuing, review our legal documents:</strong>
-    <p><a href="/legal.html#terms" target="_blank" rel="noopener">Terms & Conditions</a></p>
+    <p><a href="/legal.html#terms" target="_blank" rel="noopener">Read Terms & Conditions, then choose Agree or Disagree</a></p>
     <p><a href="/legal.html#privacy" target="_blank" rel="noopener">Privacy Policy</a></p>
     <p><a href="/legal.html#community" target="_blank" rel="noopener">Community Guidelines</a></p>
     <p><a href="/legal.html#safety" target="_blank" rel="noopener">Member Safety</a></p>
@@ -8249,6 +8249,25 @@ const onboardingQuestions = [
 
 let onboardingIndex = 0;
 let onboardingAnswers = {};
+
+// The Legal Centre opens in a new tab. Accept/decline choices made there
+// are sent back to this signup tab and applied to the Terms question.
+window.addEventListener("message", event => {
+  if (event.origin !== window.location.origin) return;
+  if (event.data?.type !== "THE_MATCH_TERMS_DECISION") return;
+  const decision = event.data.decision;
+  if (decision !== "yes" && decision !== "no") return;
+  onboardingAnswers.terms_accepted = decision;
+  if (onboardingQuestions[onboardingIndex]?.key === "terms_accepted") {
+    renderOnboardingQuestion();
+  }
+  status("onboardingStatus",
+    decision === "yes"
+      ? "Your Terms decision has been recorded. Select Continue when ready."
+      : "You declined the Terms. You cannot continue creating an account unless you agree.",
+    decision !== "yes"
+  );
+});
 
 function renderOnboardingQuestion() {
   const q = onboardingQuestions[onboardingIndex];

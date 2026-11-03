@@ -4671,6 +4671,36 @@ body.light-theme #discoveryPreferencesPage #discoveryPreferencesStatus {
   color:#4f492f !important;
 }
 </style>
+
+<style id="wide-app-layout-and-call-history">
+/* Wider, consistent mobile-first content rhythm across member-facing pages */
+@media(max-width:699px){
+  #discover,#nearbyPage,#matches,#messages,#callHistoryPage,#likes,#profile,#settings,#notificationsPage,#eventsPage{
+    width:calc(100% - 20px)!important;max-width:none!important;
+    margin-left:10px!important;margin-right:10px!important;
+    box-sizing:border-box!important;
+  }
+  #discover,#nearbyPage,#matches,#messages,#callHistoryPage,#likes,#profile,#settings,#notificationsPage,#eventsPage{
+    padding-left:14px!important;padding-right:14px!important;
+  }
+}
+@media(min-width:700px){
+  #discover,#nearbyPage,#matches,#messages,#callHistoryPage,#likes,#profile,#settings,#notificationsPage,#eventsPage{
+    width:calc(100% - 40px)!important;max-width:1120px!important;
+    margin-left:auto!important;margin-right:auto!important;box-sizing:border-box!important;
+  }
+}
+#discover #profileList{grid-template-columns:minmax(0,1fr)!important}
+#nearbyPage #nearbyMembersList{gap:14px!important}
+#messages #conversationList{width:100%!important}
+#messages #openCallHistoryButton{width:100%;min-height:50px;margin:12px 0;border:1px solid rgba(210,173,104,.55);border-radius:14px;background:linear-gradient(135deg,#e2c17e,#b58a43);color:#17120a;font-weight:800}
+#callHistoryPage .voice-call-history{margin:16px 0 18px;padding:18px;border-radius:20px}
+#callHistoryPage .voice-call-history-heading{align-items:center}
+#callHistoryPage #voiceCallHistoryList{gap:12px}
+#callHistoryPage .voice-call-history-item{min-height:66px;padding:15px;border-radius:15px}
+#callHistoryPage #backFromCallHistory{width:100%;min-height:50px}
+body.light-theme #messages #openCallHistoryButton{color:#17120a}
+</style>
 </head>
 <body>
 <div id="stars" aria-hidden="true"></div>
@@ -5634,19 +5664,13 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
 >
   ↻ Refresh conversations
   </button>
+  <button class="btn secondary" type="button" id="openCallHistoryButton">◷ Call history</button>
   <p class="small">Chat privately with your mutual matches.</p>
   <button class="btn secondary" type="button" onclick="show('premium')">Want to know if your message has been seen? Tap here to explore Premium.</button>
 
   <div id="conversationList"></div>
 
-  <section id="voiceCallHistory" class="voice-call-history" aria-labelledby="voiceCallHistoryTitle">
-    <div class="voice-call-history-heading">
-      <div><h3 id="voiceCallHistoryTitle">Recent calls</h3><p class="small">Your recent voice-call activity</p></div>
-      <button type="button" id="refreshVoiceCallHistory" class="btn secondary">Refresh</button>
-    </div>
-    <div id="voiceCallHistoryList"><p class="small">Loading call history…</p></div>
-    <p id="voiceCallHistoryStatus" class="status" role="status" aria-live="polite"></p>
-  </section>
+
 
   <div id="activeConversation" class="hidden">
     <h3 id="chatPartnerName">Conversation</h3>
@@ -5699,6 +5723,21 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
   <button class="btn secondary" id="backFromMessages" type="button">
     Back to Matches
   </button>
+</section>
+
+<section class="panel hidden" id="callHistoryPage" aria-labelledby="callHistoryPageTitle">
+  <div class="call-history-page-heading">
+    <div><p class="profile-eyebrow">THE MATCH · CALLS</p><h2 id="callHistoryPageTitle">Call history</h2><p class="small">Your recent voice-call activity.</p></div>
+  </div>
+  <section id="voiceCallHistory" class="voice-call-history" aria-labelledby="voiceCallHistoryTitle">
+    <div class="voice-call-history-heading">
+      <div><h3 id="voiceCallHistoryTitle">Recent calls</h3><p class="small">Your recent voice-call activity</p></div>
+      <button type="button" id="refreshVoiceCallHistory" class="btn secondary">Refresh</button>
+    </div>
+    <div id="voiceCallHistoryList"><p class="small">Loading call history…</p></div>
+    <p id="voiceCallHistoryStatus" class="status" role="status" aria-live="polite"></p>
+  </section>
+  <button class="btn secondary" type="button" id="backFromCallHistory">← Back to messages</button>
 </section>
 
 <section class="panel hidden" id="likes">
@@ -6550,7 +6589,7 @@ async function startOnlinePresence(user) {
 
   
 
-const panels=["welcome","onboarding","auth","reset","profile","verificationPage","discover","nearbyPage","eventsPage","premium","matches","matchCelebrationPage","memberProfilePage","chatPage","messages","likes","blockedMembers","settings","discoveryPreferencesPage","adminPanel","referralsPage","notificationsPage"];
+const panels=["welcome","onboarding","auth","reset","profile","verificationPage","discover","nearbyPage","eventsPage","premium","matches","matchCelebrationPage","memberProfilePage","chatPage","messages","callHistoryPage","likes","blockedMembers","settings","discoveryPreferencesPage","adminPanel","referralsPage","notificationsPage"];
 
 
 
@@ -14883,6 +14922,14 @@ async function loadVoiceCallHistory() {
 }
 
 $("refreshVoiceCallHistory")?.addEventListener("click", loadVoiceCallHistory);
+$("openCallHistoryButton")?.addEventListener("click", async () => {
+  show("callHistoryPage");
+  await loadVoiceCallHistory();
+});
+$("backFromCallHistory")?.addEventListener("click", async () => {
+  show("messages");
+  await loadMyConversations();
+});
 
 function ensureVoiceCallUI() {
   const header = $("chatHeader");

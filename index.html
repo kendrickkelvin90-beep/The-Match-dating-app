@@ -8026,8 +8026,9 @@ function renderAdminMemberDirectory(query = "") {
     const state = document.createElement("p");
     state.className = "small";
     state.textContent = moderation
-      ? (moderation.status === "banned" ? "BANNED" :
-          "SUSPENDED until " + new Date(moderation.expires_at).toLocaleString())
+      ? (moderation.status === "banned" ? "PERMANENTLY BANNED" :
+          "SUSPENDED until " + new Date(moderation.expires_at).toLocaleString()) +
+        " · Reason: " + (moderation.reason || "Not provided")
       : "Account status: Active";
     const suspend = document.createElement("button");
     suspend.type = "button";
@@ -16636,6 +16637,11 @@ ensureVoiceCallUI();
 
 db.auth.onAuthStateChange((event,session)=>{
 if (event === "SIGNED_OUT") {
+  if (window.matchModerationInterval) {
+    clearInterval(window.matchModerationInterval);
+    window.matchModerationInterval = null;
+  }
+  currentUser = null;
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push(async function (OneSignal) {
     try { await OneSignal.logout(); }

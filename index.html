@@ -4593,7 +4593,7 @@ body.light-theme #discoveryPreferencesPage label{color:#494238}
 body.light-theme #discoveryPreferencesPage input:not([type=checkbox]):not([type=range]),body.light-theme #discoveryPreferencesPage select{background:#fff;color:#25211b;border-color:#d8d0c3}
 body.light-theme #discoveryPreferencesPage .discovery-save-card{background:rgba(255,255,255,.96);border-color:#e1d4bb}
 </style>
-<style id="discoveryRoleAndPresentationStyles">
+<style id="premiumDiscoveryControlsStyles">\n#discoveryPreferencesPage .premium-locked-preference{opacity:.58;position:relative;cursor:pointer}\n#discoveryPreferencesPage .premium-lock-tag{display:inline-block;color:#c6a15b;font-size:10px;font-weight:800;margin-left:5px}\n#discoveryPreferencesPage .premium-locked-preference input{cursor:not-allowed}\nbody.light-theme #discoveryPreferencesPage .premium-lock-tag{color:#8d6725}\n.discover-premium-tools button{min-height:42px;border-radius:12px}\n</style>\n<style id="discoveryRoleAndPresentationStyles">
 #profile .presentation-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
 #profile .presentation-options label{display:flex;align-items:center;gap:8px;padding:11px;border:1px solid rgba(210,177,112,.22);border-radius:12px;background:rgba(210,177,112,.045);font-size:13px}
 #profile .presentation-options input{accent-color:#d0aa62;width:18px;height:18px}
@@ -9563,6 +9563,17 @@ async function loadNearby(){
 
   try{
     const viewerPremium = await matchIsPremium();
+    $("rewindSwipeBtn").textContent = viewerPremium ? "↶ Rewind" : "↶ Rewind 🔒";
+    $("profileBoostBtn").textContent = viewerPremium ? "✦ Boost my profile" : "✦ Boost my profile 🔒";
+    const greeting = $("greeting");
+    greeting?.querySelector(".own-premium-badge")?.remove();
+    if (viewerPremium && greeting) {
+      const ownBadge = document.createElement("span");
+      ownBadge.className = "own-premium-badge";
+      ownBadge.textContent = " ✦ PREMIUM";
+      ownBadge.style.cssText = "display:inline-block;margin-left:7px;padding:4px 8px;border-radius:999px;background:linear-gradient(135deg,#e2c17d,#a77b32);color:#17130b;font-size:10px;font-weight:900;letter-spacing:.7px;";
+      greeting.appendChild(ownBadge);
+    }
     await refreshDailyLikeCounter();
     const savedPreferences = JSON.parse(localStorage.getItem("theMatchDiscoveryPreferences") || "{}");
     const preferredLocation = (savedPreferences.location || "").trim();
@@ -12067,6 +12078,17 @@ async function refreshDailyLikeCounter() {
   }
 }
 
+document.addEventListener("click", event => {
+  const locked = event.target.closest(".premium-locked-preference");
+  if (locked) {
+    const input = locked.querySelector("input");
+    if (input?.disabled) {
+      event.preventDefault();
+      show("premium");
+    }
+  }
+});
+
 $("rewindSwipeBtn")?.addEventListener("click", async () => {
   const button = $("rewindSwipeBtn");
   try {
@@ -12122,7 +12144,6 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
     return;
   }
 
-  const premium = await matchIsPremium();
   const preferences = {
     location: $("discoveryLocation").value.trim(),
     distance: Math.min(Number($("discoveryDistance").value), premium ? 200 : 50),

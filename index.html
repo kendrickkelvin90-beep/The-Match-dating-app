@@ -14922,6 +14922,14 @@ async function loadVoiceCallHistory() {
 }
 
 $("refreshVoiceCallHistory")?.addEventListener("click", loadVoiceCallHistory);
+$("openCallHistoryButton")?.addEventListener("click", async () => {
+  show("callHistoryPage");
+  await loadVoiceCallHistory();
+});
+$("backFromCallHistory")?.addEventListener("click", async () => {
+  show("messages");
+  await loadMyConversations();
+});
 
 function ensureVoiceCallUI() {
   const header = $("chatHeader");

@@ -5496,7 +5496,7 @@ body.light-theme #nearbyPage #nearbyPremiumPrompt{background:rgba(255,254,250,.9
   <p class="small nearby-intro">See members in your area. Locations are approximate for privacy.</p>
   <div class="nearby-view-toggle" role="group" aria-label="Nearby display options">
     <button type="button" id="nearbyMapViewBtn" class="active" aria-pressed="true">Map</button>
-    <button type="button" id="nearbyCardsViewBtn" aria-pressed="false" class="hidden">Cards</button>
+    <button type="button" id="nearbyCardsViewBtn" aria-pressed="false">Cards</button>
   </div>
   <div id="nearbyMapPanel">
     <div class="nearby-map-heading"><strong>Nearby members</strong><span>Within 50 km</span></div>
@@ -10260,7 +10260,7 @@ $("nearbyPremiumPromptAction")?.addEventListener("click", () => {
 });
 
 function setNearbyView(view) {
-  const showCards = view === "cards" && nearbyViewerIsPremium;
+  const showCards = view === "cards";
   $("nearbyMapPanel")?.classList.toggle("hidden", showCards);
   $("nearbyMembersList")?.classList.toggle("hidden", !showCards);
   $("nearbyMapViewBtn")?.classList.toggle("active", !showCards);
@@ -10276,7 +10276,7 @@ $("openLikesFromDiscover")?.addEventListener("click", async () => {
 
 $("nearbyMapViewBtn")?.addEventListener("click", () => setNearbyView("map"));
 $("nearbyCardsViewBtn")?.addEventListener("click", () => {
-  if (nearbyViewerIsPremium) setNearbyView("cards");
+  setNearbyView("cards");
 });
 
 function nearbyMapTileUrl() {
@@ -10378,7 +10378,6 @@ async function renderNearbyMapMarkers(center) {
     const marker=L.marker([lat,lon],{icon:nearbyMapAvatarIcon(photoUrls.get(person.id))});
     if(area)marker.bindTooltip(area,{direction:"top",offset:[0,-25],opacity:.96,className:"nearby-area-tooltip"});
     marker.on("click",()=>{
-      if(!nearbyViewerIsPremium){showNearbyPremiumPrompt();return;}
       openMemberProfile(person.id);
     });
     nearbyMapMarkersLayer.addLayer(marker);
@@ -10404,7 +10403,7 @@ async function loadPremiumNearby(){
       .select("premium_until").eq("user_id",currentUser.id).maybeSingle();
     if(premiumError)throw premiumError;
     nearbyViewerIsPremium=!!membership&&!!membership.premium_until&&new Date(membership.premium_until).getTime()>Date.now();
-    $("nearbyCardsViewBtn")?.classList.toggle("hidden",!nearbyViewerIsPremium);
+    $("nearbyCardsViewBtn")?.classList.remove("hidden");
     setNearbyView("map");
 
     const {data:profile,error:profileError}=await db.from("profiles")
@@ -10435,14 +10434,7 @@ async function loadPremiumNearby(){
     status("nearbyMembersStatus","Loading nearby members...");
     const mapCount=await renderNearbyMapMarkers(ownCenter);
 
-    if(!nearbyViewerIsPremium){
-      status("nearbyMembersStatus",mapCount
-        ? "The Nearby map is ready. Tap a profile photo to learn about Premium."
-        : "The map is ready. No eligible nearby members are showing yet.");
-      return;
-    }
-
-    const {data:peopleData,error:peopleError}=await db.rpc("premium_nearby_profiles_secure",{p_max_distance_km:50});
+    const {data:peopleData,error:peopleError}=await db.rpc("nearby_profiles_secure",{p_max_distance_km:50});
     if(peopleError)throw peopleError;
     const uniquePeople=new Map();
     (peopleData||[]).forEach(person=>{if(person?.id&&!uniquePeople.has(person.id))uniquePeople.set(person.id,person);});

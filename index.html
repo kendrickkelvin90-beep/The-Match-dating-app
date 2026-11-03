@@ -17611,6 +17611,46 @@ body.light-theme #discover #profileList > .member-card {
   box-shadow:0 18px 46px rgba(45,35,18,.20),0 0 0 1px rgba(160,120,48,.16)!important;
 }
 
+
+/* THE MATCH shared signed-in app layout */
+body:has(#bottomNavigation:not(.hidden)){background:#050505!important;color:#f7f3eb!important}
+body:has(#bottomNavigation:not(.hidden))>header{position:sticky!important;top:0!important;z-index:950!important;min-height:54px!important;padding:10px 54px!important;display:flex!important;align-items:center!important;justify-content:center!important;background:#050505!important;border-bottom:1px solid rgba(213,179,109,.25)!important;color:#f7f0e3!important;font-size:22px!important}
+body:has(#bottomNavigation:not(.hidden))>header span{color:#e2c17e!important}
+body:has(#bottomNavigation:not(.hidden))>main{width:100%!important;max-width:760px!important;margin:0 auto!important;padding:0 12px 82px!important}
+body:has(#bottomNavigation:not(.hidden))>main>.panel:not(.hidden){min-height:calc(100dvh - 142px)!important;margin:8px auto 14px!important;padding:16px 14px 18px!important;border:1px solid rgba(211,176,105,.3)!important;border-radius:23px!important;background:linear-gradient(155deg,#14120e,#060606)!important}
+body:has(#bottomNavigation:not(.hidden))>main>.panel:not(.hidden) h2{color:#f3d99f!important}
+body:has(#bottomNavigation:not(.hidden))>main>.panel:not(.hidden) .btn.primary{background:linear-gradient(120deg,#f0d18a,#bd9149)!important;color:#1b1409!important;border:1px solid #e1bd72!important}
+body:has(#bottomNavigation:not(.hidden))>footer{display:none!important}
+#discover.panel{min-height:0!important;padding:9px 10px!important;margin:5px auto 10px!important}
+#discover .discover-page-heading{margin:0 2px 6px!important}
+#discover #storiesSection{display:block!important;margin:0 0 7px!important;padding:8px 10px!important;border:1px solid rgba(218,183,111,.36)!important;border-radius:16px!important;background:linear-gradient(120deg,#261f12,#0a0a0a)!important}
+#discover #storiesSection h3{margin:0 0 5px!important;color:#e9c77f!important;font-size:15px!important}
+#discover #storiesSection>p.small{display:none!important}
+#discover #storiesList{display:flex!important;gap:10px!important;margin:0!important;padding:0!important;overflow-x:auto!important}
+#discover #storiesList>*{flex:0 0 54px!important;width:54px!important;min-width:54px!important}
+#discover #storiesSection .story-plus,#discover #storiesSection .story-avatar,#discover #storiesSection .story-circle img{width:46px!important;height:46px!important;border-radius:50%!important;border:2px solid #d9b76f!important}
+#discover .events-discover-entry{margin:6px 0!important;padding:7px 10px!important;border:1px solid rgba(218,183,111,.45)!important;border-radius:14px!important;background:linear-gradient(110deg,#241d10,#090909)!important}
+#discover .events-discover-entry strong{color:#e9c77f!important;font-size:12px!important}
+#discover .events-discover-entry p{display:none!important}
+#discover #openEventsFromDiscover{width:auto!important;min-height:30px!important;margin:0!important;padding:5px 9px!important;font-size:10px!important}
+#discover>p.small:not(.discover-page-heading .small){display:none!important}
+#discover .discover-premium-tools{display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important;margin:5px 0!important}
+#discover .discover-premium-tools .btn{min-height:34px!important;margin:0!important;padding:5px 7px!important;font-size:11px!important}
+#discover #dailyLikesStatus{grid-column:1/-1!important;text-align:right!important;font-size:10px!important}
+#discover #refreshNearby{width:auto!important;min-height:31px!important;margin:1px 0 5px!important;padding:5px 10px!important;font-size:10px!important}
+#discover #profileList{margin:3px 0 0!important}
+#discover #profileList>.member-card{height:clamp(350px,calc(100svh - 470px),510px)!important;min-height:350px!important;max-height:510px!important;margin:0 auto!important;border:2px solid #d9b66f!important;border-radius:23px!important}
+#discover #profileList>.member-card .discover-profile-overlay{padding:70px 14px 13px!important}
+#discover #profileList>.member-card .discover-profile-overlay h2{font-size:clamp(27px,6.5vw,34px)!important;font-weight:900!important}
+#discover #profileList>.member-card .discover-profile-overlay .btn{min-height:48px!important;font-size:16px!important;font-weight:850!important}
+#nearbyPage>h2,#matches>h2,#messages>h2,#likes>h2,#premium>h2,#settings>h2,#notificationsPage>h2,#eventsPage>h2,#referralsPage>h2{padding-bottom:9px!important;border-bottom:1px solid rgba(211,176,105,.24)!important;color:#f0d49a!important}
+#bottomNavigation.bottom-nav button.active{border:1px solid rgba(218,183,111,.32)!important;border-radius:14px!important;background:linear-gradient(145deg,rgba(69,54,29,.58),rgba(20,17,12,.88))!important;color:#f0d18a!important}
+body.light-theme:has(#bottomNavigation:not(.hidden)){background:#f4f0e8!important;color:#25231f!important}
+body.light-theme:has(#bottomNavigation:not(.hidden))>header{background:#fffdf8!important;color:#25231f!important}
+body.light-theme:has(#bottomNavigation:not(.hidden))>main>.panel:not(.hidden){background:linear-gradient(155deg,#fffefa,#f5f0e6)!important;border-color:rgba(160,120,48,.3)!important}
+body.light-theme #discover #storiesSection,body.light-theme #discover .events-discover-entry{background:linear-gradient(120deg,#fffdf8,#f2eadb)!important;border-color:rgba(160,120,48,.36)!important}
+@media(max-height:740px){#discover #profileList>.member-card{height:350px!important;min-height:350px!important;max-height:350px!important}}
+
 </style>
 </body>
 </html>

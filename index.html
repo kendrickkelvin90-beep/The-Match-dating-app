@@ -18023,6 +18023,60 @@ body.light-theme #discover .discover-option3-overlay{
   background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.16) 22%,rgba(0,0,0,.84) 66%,rgba(0,0,0,.97) 100%)!important;
 }
 
+
+/* Discover portrait correction: preserve the wide card and use the available
+   vertical space down to the fixed bottom navigation. */
+#discover #profileList > .discover-option3-card {
+  width: calc(100% + 24px) !important;
+  max-width: none !important;
+  height: clamp(460px, calc(100dvh - 250px), 900px) !important;
+  min-height: 460px !important;
+  max-height: none !important;
+  margin: 0 0 0 -12px !important;
+}
+#discover .discover-option3-photo {
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+#discover .discover-option3-photo > .discover-option3-image {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center 30% !important;
+  background: #080808 !important;
+}
+/* Keep swipe guidance/status readable without reserving a blank strip below
+   the full-height photo; the bottom navigation stays above it and clickable. */
+#discover #discoverStatus {
+  position: fixed !important;
+  left: 8px !important;
+  right: 8px !important;
+  bottom: calc(76px + env(safe-area-inset-bottom)) !important;
+  z-index: 999 !important;
+  margin: 0 !important;
+  padding: 4px 8px !important;
+  text-align: center !important;
+  font-size: 11px !important;
+  line-height: 1.35 !important;
+  color: #f3e8d1 !important;
+  text-shadow: 0 1px 5px #000 !important;
+  pointer-events: none !important;
+}
+@media (max-height: 700px) {
+  #discover #profileList > .discover-option3-card {
+    height: max(420px, calc(100dvh - 220px)) !important;
+  }
+}
+@media (max-width: 380px) {
+  #discover #profileList > .discover-option3-card {
+    width: calc(100% + 24px) !important;
+    margin-left: -12px !important;
+  }
+}
+
 </style>
 </body>
 </html>

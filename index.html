@@ -15441,6 +15441,9 @@ let incomingVoiceCall = null;
 let voiceCallPollTimer = null;
 let voiceCallRingTimer = null;
 let voiceCallMicMuted = false;
+let voiceCallSpeakerEnabled = true;
+let voiceCallRemoteMuted = false;
+let voiceCallJoining = false;
 let voiceCallRingInterval = null;
 let voiceCallAudioContext = null;
 
@@ -15653,6 +15656,7 @@ async function acceptVoiceCall() {
     activeVoiceCallId = call.id;
     activeVoiceCallPeerId = call.caller_id;
     activeVoiceCallRole = "callee";
+    beginVoiceCallPolling();
     await joinVoiceCallRoom();
   } catch (error) {
     showVoiceCallModal("Call unavailable", error.message || "Could not accept this call.", [
@@ -15670,6 +15674,8 @@ async function rejectVoiceCall() {
   await loadVoiceCallHistory();
 }
 async function joinVoiceCallRoom() {
+  if (liveKitRoom || voiceCallJoining || !activeVoiceCallId) return;
+  voiceCallJoining = true;
   try {
     setVoiceCallStatus("Connecting securely…");
     voiceCallMicMuted = false;
@@ -15684,8 +15690,14 @@ async function joinVoiceCallRoom() {
       const audioElement = track.attach();
       audioElement.autoplay = true;
       audioElement.setAttribute("playsinline", "");
+      audioElement.setAttribute("webkit-playsinline", "");
+      audioElement.volume = voiceCallSpeakerEnabled ? 1 : 0;
+      audioElement.muted = false;
       $("voiceCallAudio")?.appendChild(audioElement);
-      audioElement.play().catch(() => setVoiceCallStatus("Call connected. Tap Enable audio to hear the other member."));
+      audioElement.play().catch((error) => {
+        console.warn("Remote call audio playback was blocked:", error);
+        setVoiceCallStatus("Your call is connected. Tap Audio on to hear the other member.");
+      });
     });
     room.on(client.RoomEvent.TrackUnsubscribed, (track) => track.detach().forEach(element => element.remove()));
     room.on(client.RoomEvent.Disconnected, () => {
@@ -15693,16 +15705,22 @@ async function joinVoiceCallRoom() {
       if (activeVoiceCallId) finishVoiceCall(false);
     });
     await room.connect(credentials.server_url, credentials.participant_token);
-    await room.localParticipant.setMicrophoneEnabled(true);
+    liveKitRoom = room;
+    await room.localParticipant.setMicrophoneEnabled(true, {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true
+    });
+    try { await room.startAudio(); } catch (audioError) {
+      console.warn("Automatic call audio start was blocked by the browser:", audioError);
+    }
     stopVoiceCallRingtone();
     $("voiceCallPeer").textContent = "Connected securely";
     $("voiceCallAvatar").textContent = "✓";
-    showVoiceCallModal("Voice call connected", "You are connected. Your microphone is on.", [
-      { label:"Mute microphone", handler:() => toggleVoiceCallMute() },
-      { label:"Enable audio", handler:() => enableVoiceCallAudio() },
-      { label:"End call", danger:true, handler:() => finishVoiceCall() }
-    ]);
+    voiceCallJoining = false;
+    showConnectedVoiceCallControls();
   } catch (error) {
+    voiceCallJoining = false;
     console.error("LiveKit connection failed", error);
     showVoiceCallModal("Could not connect", error.message || "Check your connection and try again.", [
       { label:"End call", danger:true, handler:() => finishVoiceCall() }
@@ -15714,24 +15732,38 @@ async function toggleVoiceCallMute() {
   voiceCallMicMuted = !voiceCallMicMuted;
   try {
     await liveKitRoom.localParticipant.setMicrophoneEnabled(!voiceCallMicMuted);
-    showVoiceCallModal("Voice call connected", voiceCallMicMuted ? "Your microphone is muted." : "Your microphone is on.", [
-      { label:voiceCallMicMuted ? "Unmute microphone" : "Mute microphone", handler:() => toggleVoiceCallMute() },
-      { label:"Enable audio", handler:() => enableVoiceCallAudio() },
-      { label:"End call", danger:true, handler:() => finishVoiceCall() }
-    ]);
+    await invokeVoiceCall("mute", { call_id:activeVoiceCallId, muted:voiceCallMicMuted });
+    showConnectedVoiceCallControls();
   } catch (error) {
     voiceCallMicMuted = !voiceCallMicMuted;
     setVoiceCallStatus(error.message || "Could not change microphone state.");
   }
 }
-async function enableVoiceCallAudio() {
-  if (!liveKitRoom) return;
-  try {
-    await liveKitRoom.startAudio();
-    setVoiceCallStatus(voiceCallMicMuted ? "Audio is enabled. Your microphone is muted." : "Audio is enabled. Your microphone is on.");
-  } catch (error) {
-    setVoiceCallStatus("Audio could not start. Check your phone's media volume and try again.");
+function showConnectedVoiceCallControls() {
+  const localText = voiceCallMicMuted ? "You are muted" : "Microphone is on";
+  const remoteText = voiceCallRemoteMuted ? " · The other member is muted" : "";
+  showVoiceCallModal("Voice call", localText + remoteText, [
+    { label:voiceCallMicMuted ? "Unmute" : "Mute", handler:() => toggleVoiceCallMute() },
+    { label:voiceCallSpeakerEnabled ? "Audio on" : "Audio off", handler:() => toggleVoiceCallSpeaker() },
+    { label:"End call", danger:true, handler:() => finishVoiceCall() }
+  ]);
+}
+async function toggleVoiceCallSpeaker() {
+  voiceCallSpeakerEnabled = !voiceCallSpeakerEnabled;
+  document.querySelectorAll("#voiceCallAudio audio").forEach(audio => {
+    audio.volume = voiceCallSpeakerEnabled ? 1 : 0;
+  });
+  try { if (voiceCallSpeakerEnabled && liveKitRoom) await liveKitRoom.startAudio(); } catch (error) {
+    console.warn("Audio playback could not be resumed:", error);
   }
+  showConnectedVoiceCallControls();
+}
+function applyRemoteCallMuteState(call) {
+  if (!call || !currentUser) return;
+  voiceCallRemoteMuted = call.caller_id === currentUser.id
+    ? !!call.callee_muted
+    : !!call.caller_muted;
+  if (activeVoiceCallId === call.id && liveKitRoom) showConnectedVoiceCallControls();
 }
 async function finishVoiceCall(updateServer = true) {
   stopVoiceCallRingtone();
@@ -15749,6 +15781,8 @@ async function finishVoiceCall(updateServer = true) {
   }
   $("voiceCallAudio")?.replaceChildren();
   voiceCallMicMuted = false;
+  voiceCallRemoteMuted = false;
+  voiceCallSpeakerEnabled = true;
   if (updateServer && callId) {
     try { await invokeVoiceCall("end", { call_id:callId }); } catch (e) { console.warn("Could not update call end state",e); }
   }
@@ -15760,19 +15794,40 @@ function beginVoiceCallPolling() {
   voiceCallPollTimer = setInterval(async () => {
     if (!activeVoiceCallId) return;
     try {
-      const { data, error } = await db.from("call_sessions").select("status,callee_id,caller_id").eq("id",activeVoiceCallId).maybeSingle();
+      const { data, error } = await db.from("call_sessions").select("status,callee_id,caller_id,caller_muted,callee_muted").eq("id",activeVoiceCallId).maybeSingle();
       if (error) throw error;
       if (!data || ["rejected","ended","missed"].includes(data.status)) {
         await finishVoiceCall(false);
+        showVoiceCallModal("Call ended", "The other member has ended the call.", [
+          { label:"Close", danger:true, handler:hideVoiceCallModal }
+        ]);
         return;
       }
-      if (data.status === "accepted" && activeVoiceCallRole === "caller") {
-        if (voiceCallPollTimer) { clearInterval(voiceCallPollTimer); voiceCallPollTimer = null; }
+      applyRemoteCallMuteState(data);
+      if (data.status === "accepted" && activeVoiceCallRole === "caller" && !liveKitRoom && !voiceCallJoining) {
         if (voiceCallRingTimer) { clearTimeout(voiceCallRingTimer); voiceCallRingTimer = null; }
         await joinVoiceCallRoom();
       }
     } catch (e) { console.warn("Call status check failed",e); }
   }, 2500);
+}
+function handleVoiceCallUpdate(call) {
+  if (!call) return;
+  if (incomingVoiceCall?.id === call.id && ["ended","rejected","missed"].includes(call.status)) {
+    incomingVoiceCall = null;
+    stopVoiceCallRingtone();
+    hideVoiceCallModal();
+    return;
+  }
+  if (activeVoiceCallId === call.id) {
+    if (["ended","rejected","missed"].includes(call.status)) {
+      finishVoiceCall(false).then(() => showVoiceCallModal("Call ended", "The other member has ended the call.", [
+        { label:"Close", danger:true, handler:hideVoiceCallModal }
+      ]));
+      return;
+    }
+    applyRemoteCallMuteState(call);
+  }
 }
 function subscribeToVoiceCalls(user) {
   if (!user?.id) return;
@@ -15796,16 +15851,16 @@ function subscribeToVoiceCalls(user) {
   };
   callSessionChannel = db.channel("voice-calls-"+user.id)
     .on("postgres_changes", { event:"INSERT", schema:"public", table:"call_sessions", filter:"callee_id=eq."+user.id }, payload => displayIncomingCall(payload.new))
-    .on("postgres_changes", { event:"UPDATE", schema:"public", table:"call_sessions", filter:"callee_id=eq."+user.id }, payload => {
-      if (incomingVoiceCall?.id === payload.new.id && ["ended","rejected","missed"].includes(payload.new.status)) {
-        incomingVoiceCall = null; stopVoiceCallRingtone(); hideVoiceCallModal();
-      }
-    })
-    .subscribe();
+    .on("postgres_changes", { event:"UPDATE", schema:"public", table:"call_sessions", filter:"callee_id=eq."+user.id }, payload => handleVoiceCallUpdate(payload.new))
+    .on("postgres_changes", { event:"UPDATE", schema:"public", table:"call_sessions", filter:"caller_id=eq."+user.id }, payload => handleVoiceCallUpdate(payload.new))
+    .subscribe((status) => {
+      if (status === "SUBSCRIBED") console.info("Voice call realtime channel connected for member.");
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") console.warn("Voice call realtime channel status:", status);
+    });
   // Poll as a fallback in case Realtime delivery is delayed or disabled for this table.
   if (window.voiceIncomingPoll) clearInterval(window.voiceIncomingPoll);
   window.voiceIncomingPoll = setInterval(async () => {
-    if (document.hidden || !currentUser || activeVoiceCallId || incomingVoiceCall) return;
+    if (!currentUser || activeVoiceCallId || incomingVoiceCall) return;
     const { data, error } = await db.from("call_sessions").select("id,caller_id,callee_id,call_type,status,created_at")
       .eq("callee_id", user.id).eq("status", "ringing").order("created_at", { ascending:false }).limit(1).maybeSingle();
     if (!error && data) displayIncomingCall(data);

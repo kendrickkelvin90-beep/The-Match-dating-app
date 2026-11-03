@@ -4731,6 +4731,33 @@ body.light-theme #messages #openCallHistoryButton{color:#17120a}
 #likes .likes-profile-card{width:100%!important;max-width:none!important}
 #profile .photo-grid{width:100%!important}
 #settings .settings-section,#settings .settings-card{width:100%!important;max-width:none!important}
+
+<style id="discover-mobile-inner-spacing-fix">
+/* Keep Discover content aligned with the full page width on narrow screens. */
+@media (max-width:699px){
+  #discover.panel{
+    box-sizing:border-box!important;
+    padding:16px 10px 26px!important;
+  }
+  #discover #storiesSection{
+    box-sizing:border-box!important;
+    width:100%!important;
+    max-width:none!important;
+    margin:16px 0!important;
+    padding:16px 12px!important;
+  }
+  #discover .events-discover-entry{
+    width:100%!important;
+    max-width:none!important;
+    margin-left:0!important;
+    margin-right:0!important;
+  }
+  #discover #profileList{
+    width:100%!important;
+    max-width:none!important;
+  }
+}
+</style>
 </style>
 </head>
 <body>

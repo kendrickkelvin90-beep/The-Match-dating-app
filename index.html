@@ -5244,7 +5244,7 @@ body.light-theme #nearbyPage #nearbyPremiumPrompt{background:rgba(255,254,250,.9
   </p>
   <div class="member-card" style="margin-top:14px">
     <strong>Before continuing, review our legal documents:</strong>
-    <p><a href="/legal.html#terms" target="_blank" rel="noopener">Terms & Conditions</a></p>
+    <p><a href="/legal.html#terms" target="_blank">Read Terms & Conditions, then choose Agree or Disagree</a></p>
     <p><a href="/legal.html#privacy" target="_blank" rel="noopener">Privacy Policy</a></p>
     <p><a href="/legal.html#community" target="_blank" rel="noopener">Community Guidelines</a></p>
     <p><a href="/legal.html#safety" target="_blank" rel="noopener">Member Safety</a></p>
@@ -5881,7 +5881,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     <button class="premium-plan" type="button" data-premium-plan="weekly">
       <div class="premium-plan-top">
         <div><span class="premium-plan-name">Weekly</span><span class="premium-plan-note">A flexible start</span></div>
-        <div class="premium-price">₦2,000<span class="premium-period">7 days</span></div>
+        <div class="premium-price">₦4,000<span class="premium-period">7 days</span></div>
       </div>
       <div class="premium-plan-cta"><span>Choose weekly</span><span>→</span></div>
     </button>
@@ -5890,7 +5890,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
       <span class="premium-tag">POPULAR CHOICE</span>
       <div class="premium-plan-top">
         <div><span class="premium-plan-name">Monthly</span><span class="premium-plan-note">A month to connect</span></div>
-        <div class="premium-price">₦5,000<span class="premium-period">30 days</span></div>
+        <div class="premium-price">₦8,000<span class="premium-period">30 days</span></div>
       </div>
       <div class="premium-plan-cta"><span>Choose monthly</span><span>→</span></div>
     </button>
@@ -5898,7 +5898,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     <button class="premium-plan" type="button" data-premium-plan="yearly">
       <div class="premium-plan-top">
         <div><span class="premium-plan-name">Yearly</span><span class="premium-plan-note">Long-term value</span></div>
-        <div class="premium-price">₦45,000<span class="premium-period">12 months</span></div>
+        <div class="premium-price">₦49,800<span class="premium-period">12 months</span></div>
       </div>
       <div class="premium-plan-cta"><span>Choose yearly</span><span>→</span></div>
     </button>
@@ -5916,9 +5916,9 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     <label for="premiumPlan">Selected plan</label>
     <select id="premiumPlan" required>
       <option value="">Choose a plan</option>
-      <option value="weekly">Weekly — ₦2,000</option>
-      <option value="monthly">Monthly — ₦5,000</option>
-      <option value="yearly">Yearly — ₦45,000</option>
+      <option value="weekly">Weekly — ₦4,000</option>
+      <option value="monthly">Monthly — ₦8,000</option>
+      <option value="yearly">Yearly — ₦49,800</option>
     </select>
 
     <p>Amount to transfer: <strong id="premiumAmount">Choose a plan above</strong></p>
@@ -8249,6 +8249,25 @@ const onboardingQuestions = [
 
 let onboardingIndex = 0;
 let onboardingAnswers = {};
+
+// The Legal Centre opens in a new tab. Accept/decline choices made there
+// are sent back to this signup tab and applied to the Terms question.
+window.addEventListener("message", event => {
+  if (event.origin !== window.location.origin) return;
+  if (event.data?.type !== "THE_MATCH_TERMS_DECISION") return;
+  const decision = event.data.decision;
+  if (decision !== "yes" && decision !== "no") return;
+  onboardingAnswers.terms_accepted = decision;
+  if (onboardingQuestions[onboardingIndex]?.key === "terms_accepted") {
+    renderOnboardingQuestion();
+  }
+  status("onboardingStatus",
+    decision === "yes"
+      ? "Your Terms decision has been recorded. Select Continue when ready."
+      : "You declined the Terms. You cannot continue creating an account unless you agree.",
+    decision !== "yes"
+  );
+});
 
 function renderOnboardingQuestion() {
   const q = onboardingQuestions[onboardingIndex];
@@ -14953,9 +14972,9 @@ $("backFromPremium").onclick=()=>show("profile");
 
 
 const premiumPlanPrices = {
-  weekly: 2000,
-  monthly: 5000,
-  yearly: 45000
+  weekly: 4000,
+  monthly: 8000,
+  yearly: 49800
 };
 
 $("premiumPlan").onchange = () => {

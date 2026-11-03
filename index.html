@@ -15885,7 +15885,7 @@ select:focus, textarea:focus {
   box-shadow: 0 0 0 3px rgba(214,180,110,.12);
 }
 input[type="checkbox"], input[type="radio"] {
-  width: auto !important; max-width: 1.15rem; min-width: 1.15rem;
+  display:inline-block !important; width: auto !important; max-width: 1.15rem; min-width: 1.15rem;
   height: 1.15rem; margin: 0 7px 0 0; padding: 0;
   accent-color: var(--tm-gold);
   vertical-align: middle;
@@ -16197,6 +16197,34 @@ body.light-theme #callHistoryPage .voice-call-history-result { color:var(--tm-go
 @media(prefers-reduced-motion:reduce) {
   #premium .premium-plan, #likes .likes-profile-card,
   #messages #conversationList > * { transition:none!important; }
+}
+
+/* Fine alignment for the two-column Nearby cards and accessible choice chips. */
+#nearbyPage #nearbyMembersList > .member-card img {
+  height:clamp(190px,48vw,245px)!important;
+  object-fit:cover!important; object-position:center!important;
+}
+#profile #profileForm input[type="checkbox"],
+#profile #profileForm input[type="radio"],
+#messages #chatViewOnce {
+  display:inline-block!important; width:1.1rem!important; min-width:1.1rem!important;
+  height:1.1rem!important; padding:0!important; margin:0 6px 0 0!important;
+  accent-color:var(--tm-gold)!important;
+}
+#profile #profileForm > .member-card label {
+  display:inline-flex!important; align-items:center!important;
+  vertical-align:middle; line-height:1.35;
+}
+#messages #chatComposer #chatViewOnce { flex:0 0 auto; }
+#messages #chatComposer textarea { min-height:44px; max-height:120px; }
+body.light-theme #messages #chatComposer {
+  background:#f1ede4!important; border-color:#ded3bf!important;
+}
+body.light-theme #messages #chatComposer #chatMessageInput {
+  background:#fffefa!important; color:#28251f!important; border-color:#d7c8aa!important;
+}
+body.light-theme #messages #chatEmojiPicker button {
+  background:#f1ede4!important; color:#28251f!important;
 }
 </style>
 

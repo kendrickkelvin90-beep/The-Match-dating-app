@@ -10256,13 +10256,15 @@ like.textContent="♥";
 like.setAttribute("aria-label","Like this profile");
 like.title="Like";
 like.style.cssText="flex:1;min-height:54px;border-radius:18px;border:1px solid #ff6b9d;background:linear-gradient(135deg,#ff397b,#d91659);color:#fff;font-size:16px;font-weight:800;box-shadow:0 5px 18px #ff397b35;";
-if (!currentDiscoverIsPremium && currentDailySwipesUsed >= 10) {
+if (!currentDiscoverIsPremium && currentDailySwipesUsed >= 20) {
   like.disabled = true;
   pass.disabled = true;
-  like.textContent = "Daily swipe limit reached 🔒";
-  pass.textContent = "Daily limit reached 🔒";
-  like.title = "Free members can make 20 swipes per day. Premium includes unlimited swipes.";
+  like.textContent = "🔒";
+  pass.textContent = "🔒";
+  like.title = "You've used your 20 free swipes for today. Premium includes unlimited swipes.";
   pass.title = like.title;
+  like.setAttribute("aria-label", like.title);
+  pass.setAttribute("aria-label", pass.title);
 }
 
       
@@ -10295,8 +10297,8 @@ like.onclick=async()=>{
         await refreshDailyLikeCounter();
         like.disabled = true;
         pass.disabled = true;
-        like.textContent = "Daily swipe limit reached 🔒";
-        pass.textContent = "Daily limit reached 🔒";
+        like.textContent = "🔒";
+        pass.textContent = "🔒";
       } else {
         like.disabled = false;
         pass.disabled = false;

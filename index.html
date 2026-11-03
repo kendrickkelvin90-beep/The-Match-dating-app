@@ -5502,7 +5502,7 @@ body.light-theme #nearbyPage #nearbyPremiumPrompt{background:rgba(255,254,250,.9
     <div class="nearby-map-heading"><strong>Nearby members</strong><span>Within 50 km</span></div>
     <div style="position:relative">
       <div id="nearbyMembersMap" role="application" aria-label="Map showing approximate neighbourhoods of nearby members"></div>
-      <div id="nearbyPremiumPrompt" class="hidden" role="status" aria-live="polite">Subscribe to <button type="button" id="nearbyPremiumPromptAction">Premium</button> to view this profile</div>
+      <div id="nearbyPremiumPrompt" class="hidden" role="status" aria-live="polite">Subscribe to <button type="button" id="nearbyPremiumPromptAction">Premium</button> to view and chat with nearby members</div>
       <div id="nearbyMapEmptyState" class="hidden">No nearby members are showing on the map yet.</div>
     </div>
     <p class="small" style="margin:10px 3px 0">Profile photos mark approximate areas. Tap a photo to see what you can unlock.</p>
@@ -10260,6 +10260,10 @@ $("nearbyPremiumPromptAction")?.addEventListener("click", () => {
 });
 
 function setNearbyView(view) {
+  if (view === "cards" && !nearbyViewerIsPremium) {
+    showNearbyPremiumPrompt();
+    view = "map";
+  }
   const showCards = view === "cards";
   $("nearbyMapPanel")?.classList.toggle("hidden", showCards);
   $("nearbyMembersList")?.classList.toggle("hidden", !showCards);
@@ -10276,6 +10280,7 @@ $("openLikesFromDiscover")?.addEventListener("click", async () => {
 
 $("nearbyMapViewBtn")?.addEventListener("click", () => setNearbyView("map"));
 $("nearbyCardsViewBtn")?.addEventListener("click", () => {
+  if (!nearbyViewerIsPremium) { showNearbyPremiumPrompt(); return; }
   setNearbyView("cards");
 });
 
@@ -10378,6 +10383,7 @@ async function renderNearbyMapMarkers(center) {
     const marker=L.marker([lat,lon],{icon:nearbyMapAvatarIcon(photoUrls.get(person.id))});
     if(area)marker.bindTooltip(area,{direction:"top",offset:[0,-25],opacity:.96,className:"nearby-area-tooltip"});
     marker.on("click",()=>{
+      if (!nearbyViewerIsPremium) { showNearbyPremiumPrompt(); return; }
       openMemberProfile(person.id);
     });
     nearbyMapMarkersLayer.addLayer(marker);
@@ -10404,6 +10410,7 @@ async function loadPremiumNearby(){
     if(premiumError)throw premiumError;
     nearbyViewerIsPremium=!!membership&&!!membership.premium_until&&new Date(membership.premium_until).getTime()>Date.now();
     $("nearbyCardsViewBtn")?.classList.remove("hidden");
+    $("nearbyCardsViewBtn").textContent = nearbyViewerIsPremium ? "Cards" : "Cards 🔒";
     setNearbyView("map");
 
     const {data:profile,error:profileError}=await db.from("profiles")
@@ -10434,7 +10441,13 @@ async function loadPremiumNearby(){
     status("nearbyMembersStatus","Loading nearby members...");
     const mapCount=await renderNearbyMapMarkers(ownCenter);
 
-    const {data:peopleData,error:peopleError}=await db.rpc("nearby_profiles_secure",{p_max_distance_km:50});
+    if(!nearbyViewerIsPremium){
+      status("nearbyMembersStatus",mapCount
+        ? "The Nearby map is ready. Subscribe to Premium to view profiles and cards."
+        : "The map is ready. No eligible nearby members are showing yet.");
+      return;
+    }
+    const {data:peopleData,error:peopleError}=await db.rpc("premium_nearby_profiles_secure",{p_max_distance_km:50});
     if(peopleError)throw peopleError;
     const uniquePeople=new Map();
     (peopleData||[]).forEach(person=>{if(person?.id&&!uniquePeople.has(person.id))uniquePeople.set(person.id,person);});

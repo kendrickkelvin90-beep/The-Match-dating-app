@@ -5287,7 +5287,7 @@ body.light-theme #nearbyPage #nearbyPremiumPrompt{background:rgba(255,254,250,.9
     type="button"
     id="openNotifications"
     aria-label="Notifications"
-    style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:transparent;border:0;color:white;font-size:23px;padding:8px"
+    style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:transparent;border:0;color:white;font-size:23px;padding:8px;overflow:visible"
   >
     ♡<span id="notificationBadge" style="display:none"></span>
   </button>
@@ -7355,6 +7355,7 @@ async function loadNotificationBadge() {
   if (!currentUser) return;
 
   const badge = $("notificationBadge");
+  if (!badge) return;
 
   try {
     const { count, error } = await db
@@ -7366,11 +7367,14 @@ async function loadNotificationBadge() {
     if (error) throw error;
 
     const unread = count || 0;
-    badge.textContent = unread > 9 ? "9+" : String(unread);
+    badge.textContent = unread > 99 ? "99+" : String(unread);
     badge.style.cssText = unread
-      ? "display:inline-block;background:#ef4444;color:white;" +
-        "border-radius:50%;padding:2px 6px;font-size:11px;" +
-        "margin-left:4px;vertical-align:top"
+      ? "position:absolute;top:0;right:0;transform:translate(35%,-25%);" +
+        "display:inline-flex;align-items:center;justify-content:center;" +
+        "min-width:18px;height:18px;box-sizing:border-box;padding:0 5px;" +
+        "border-radius:999px;background:#ef4444;color:#fff;" +
+        "font-size:10px;font-weight:800;line-height:1;" +
+        "white-space:nowrap;pointer-events:none;z-index:2;"
       : "display:none";
   } catch (error) {
     console.error("Notification badge failed:", error);
@@ -7432,6 +7436,16 @@ function show(id, addToHistory = true) {
   }
 
   currentPage = id;
+
+  // Start the shared feature-message sequence when a member reaches Discover.
+  // This also covers members who complete their profile after the initial login.
+  if (id === "discover" && currentUser) {
+    window.setTimeout(() => {
+      if (currentUser && currentPage === "discover") {
+        showFeaturePromoSequence();
+      }
+    }, 30000);
+  }
 
   panels.forEach(p => {
     const panel = $(p);
@@ -9129,9 +9143,9 @@ async function checkMatchNotifications() {
 let notificationPolling = false; 
  
 function showReferralToast() {
-  if (!currentUser || sessionStorage.getItem("referralToastDismissed")) {
-    return;
-  }
+  if (!currentUser) return;
+  const dismissedKey = "referralToastDismissed_" + currentUser.id;
+  if (sessionStorage.getItem(dismissedKey)) return;
 
   if (document.getElementById("referralToast")) return;
 
@@ -9163,7 +9177,7 @@ function showReferralToast() {
     "background:#292929;color:#fff;font-weight:700;";
 
   close.onclick = () => {
-    sessionStorage.setItem("referralToastDismissed", "1");
+    sessionStorage.setItem(dismissedKey, "1");
     toast.style.transform = "translateY(-150%)";
     toast.style.opacity = "0";
     setTimeout(() => toast.remove(), 700);

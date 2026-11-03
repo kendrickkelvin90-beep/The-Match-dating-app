@@ -6957,38 +6957,46 @@ async function startOnlinePresence(user) {
   });
 
   
+  const refreshPresenceSnapshot = () => {
+    if (!onlinePresenceChannel) return;
+    onlinePresenceState = onlinePresenceChannel.presenceState();
+    refreshOutgoingVoiceCallPresence();
+
+    if (activeChatUserId) updateChatOnlineStatus(activeChatUserId);
+
+    document.querySelectorAll("[data-discover-online-user]").forEach(badge => {
+      const userId = badge.dataset.discoverOnlineUser;
+      const online = isUserOnline(userId);
+      const dot = badge.querySelector("[data-online-dot]");
+      const label = badge.querySelector("[data-online-label]");
+      if (dot) dot.style.background = online ? "#52e39a" : "#777";
+      if (label) {
+        label.textContent = online ? "Online" : "Offline";
+        label.style.color = online ? "#b9ffd8" : "#ddd";
+      }
+    });
+  };
+
   onlinePresenceChannel
-    .on("presence", { event: "sync" }, () => {
-  onlinePresenceState = onlinePresenceChannel.presenceState();
-  refreshOutgoingVoiceCallPresence();
-
-  if (activeChatUserId) {
-    updateChatOnlineStatus(activeChatUserId);
-  }
-
-  document.querySelectorAll("[data-discover-online-user]").forEach(badge => {
-    const userId = badge.dataset.discoverOnlineUser;
-    const online = isUserOnline(userId);
-    const dot = badge.querySelector("[data-online-dot]");
-    const label = badge.querySelector("[data-online-label]");
-
-    if (dot) {
-      dot.style.background = online ? "#52e39a" : "#777";
-    }
-
-    if (label) {
-      label.textContent = online ? "Online" : "Offline";
-      label.style.color = online ? "#b9ffd8" : "#ddd";
-    }
-  });
-})
-
+    .on("presence", { event: "sync" }, refreshPresenceSnapshot)
+    .on("presence", { event: "join" }, refreshPresenceSnapshot)
+    .on("presence", { event: "leave" }, refreshPresenceSnapshot)
     .subscribe(async state => {
       if (state === "SUBSCRIBED") {
-        await onlinePresenceChannel.track({
-          user_id: user.id,
-          online_at: new Date().toISOString()
-        });
+        try {
+          const { error } = await onlinePresenceChannel.track({
+            user_id: user.id,
+            online_at: new Date().toISOString()
+          });
+          if (error) throw error;
+          // Refresh immediately after subscribing/tracking, not only after a
+          // later sync event, so the call screen always gets an initial state.
+          refreshPresenceSnapshot();
+        } catch (error) {
+          console.warn("Online presence could not be tracked:", error);
+        }
+      } else if (state === "CHANNEL_ERROR" || state === "TIMED_OUT" || state === "CLOSED") {
+        console.warn("Online presence channel status:", state);
       }
     });
 }

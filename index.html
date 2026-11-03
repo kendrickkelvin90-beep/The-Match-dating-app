@@ -18146,6 +18146,85 @@ body.light-theme #discover .discover-option3-overlay{
   }
 }
 
+
+/* GLOBAL LIGHT THEME READABILITY — consistent contrast on every page */
+body.light-theme {
+  color: #24211b !important;
+  -webkit-font-smoothing: antialiased;
+}
+body.light-theme :is(
+  main p, main h1, main h2, main h3, main h4, main h5, main h6,
+  main label, main li, main dt, main dd, main figcaption,
+  main .small, main .status, main .description, main .subtitle,
+  main .helper-text, main .empty-state, main .section-description,
+  main .muted, main .text-muted, main .form-hint,
+  #eventsPage p, #eventsPage h1, #eventsPage h2, #eventsPage h3,
+  #eventsPage h4, #eventsPage label, #eventsPage li,
+  #eventsPage .events-eyebrow, #eventsPage .events-host-kicker,
+  #eventsPage .events-trust-row span, #eventsPage .events-discovery-note p,
+  #eventsPage .event-card-top, #eventsPage .event-meta,
+  #eventsPage .event-card-bottom, #eventsPage .event-status-row,
+  #eventsPage .events-empty, #eventsPage .event-category
+) {
+  color: #302b22 !important;
+  opacity: 1 !important;
+  text-shadow: none;
+}
+/* Rich text and secondary copy must remain readable, not washed-out grey. */
+body.light-theme :is(main p, main li, main label, main .small, main .status,
+  main .description, main .subtitle, main .helper-text, main .form-hint,
+  #eventsPage p, #eventsPage label, #eventsPage .events-trust-row span,
+  #eventsPage .events-discovery-note p, #eventsPage .event-meta) {
+  color: #514b40 !important;
+  line-height: 1.6;
+}
+/* Use a deeper, accessible gold for accent headings and labels on pale surfaces. */
+body.light-theme :is(main .eyebrow, main .section-kicker, main .accent-text,
+  #eventsPage .events-eyebrow, #eventsPage .events-host-kicker,
+  #eventsPage .event-category, #eventsPage .event-card-bottom strong) {
+  color: #79591f !important;
+}
+/* Inputs and their hints stay legible throughout the app. */
+body.light-theme :is(input, textarea, select) {
+  color: #24211b !important;
+  background-color: #ffffff !important;
+  border-color: #bca878 !important;
+}
+body.light-theme :is(input, textarea)::placeholder {
+  color: #6b655b !important;
+  opacity: 1 !important;
+}
+/* Preserve intentional white text on dark photo overlays and dark feature cards. */
+body.light-theme :is(
+  #discover .discover-option3-overlay,
+  #discover .discover-profile-overlay,
+  #eventsPage .events-featured-preview,
+  #eventsPage .event-demo-cover,
+  .match-confirm-backdrop,
+  .match-confirm-backdrop *,
+  .safety-dialog,
+  .safety-dialog *,
+  #matchFeaturePromoCard
+) {
+  color: inherit;
+}
+body.light-theme :is(
+  #discover .discover-option3-overlay h1, #discover .discover-option3-overlay h2,
+  #discover .discover-option3-overlay p, #discover .discover-option3-overlay span,
+  #discover .discover-profile-overlay h1, #discover .discover-profile-overlay h2,
+  #discover .discover-profile-overlay p, #discover .discover-profile-overlay span,
+  #eventsPage .events-featured-copy h1, #eventsPage .events-featured-copy h2,
+  #eventsPage .events-featured-copy h3, #eventsPage .events-featured-copy p,
+  #eventsPage .events-featured-meta, #eventsPage .events-featured-meta strong,
+  #eventsPage .events-featured-kicker, #eventsPage .events-featured-link
+) {
+  color: #ffffff !important;
+}
+body.light-theme #eventsPage .events-featured-kicker,
+body.light-theme #eventsPage .events-featured-meta strong {
+  color: #f0cf86 !important;
+}
+
 </style>
 </body>
 </html>

@@ -8952,7 +8952,11 @@ function showFeaturePromoSequence() {
       body: "Find LGBTQ+ gatherings, shared experiences and events in The Match community.",
       action: "Explore Events",
       page: "eventsPage",
-      open: () => show("eventsPage")
+      open: () => {
+        const eventsEntry = $("openEventsFromDiscover");
+        if (eventsEntry) eventsEntry.click();
+        else show("eventsPage");
+      }
     }
   ];
 

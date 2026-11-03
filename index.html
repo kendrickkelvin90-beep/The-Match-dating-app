@@ -10126,8 +10126,11 @@ async function refreshNearbyCurrentLocation() {
 }
 
 
+let premiumNearbyLoadInProgress = false;
+
 async function loadPremiumNearby(){
-  if(!currentUser)return;
+  if(!currentUser || premiumNearbyLoadInProgress)return;
+  premiumNearbyLoadInProgress = true;
 
   const list=$("nearbyMembersList");
   list.replaceChildren();
@@ -10228,7 +10231,15 @@ status("nearbyMembersStatus", "Finding nearby members...");
 
     if (peopleError) throw peopleError;
 
-    let people = (peopleData || []).map(p => ({
+    // A profile should appear only once, even if an RPC response ever repeats an id.
+    const uniqueNearbyPeople = new Map();
+    (peopleData || []).forEach(person => {
+      if (person?.id && !uniqueNearbyPeople.has(person.id)) {
+        uniqueNearbyPeople.set(person.id, person);
+      }
+    });
+
+    let people = [...uniqueNearbyPeople.values()].map(p => ({
       ...p,
       _distance:
         p.distance_km == null ? null : Number(p.distance_km)
@@ -10294,11 +10305,16 @@ if (p.is_verified || p.verification_level === "basic" ||
         });
       const details=document.createElement("p");
 details.className="small";
+const locationParts = [p.nearby_current_city, p.nearby_current_state]
+  .map(value => (value || "").trim())
+  .filter(Boolean);
+const uniqueLocationParts = [...new Map(
+  locationParts.map(value => [value.toLocaleLowerCase(), value])
+).values()];
 details.textContent=[
   p.age?String(p.age):"",
   p.gender_identity||"",
-  p.nearby_current_city||"",
-  p.nearby_current_state||""
+  ...uniqueLocationParts
 ].filter(Boolean).join(" · ");
 
       const distance=document.createElement("p");
@@ -10330,6 +10346,8 @@ details.textContent=[
       "Could not load nearby members: "+friendly(e),
       true
     );
+  } finally {
+    premiumNearbyLoadInProgress = false;
   }
 }
 

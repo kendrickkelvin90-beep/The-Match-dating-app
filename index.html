@@ -10085,6 +10085,11 @@ like.type="button";
 like.className="btn primary";
 like.textContent="♥  Like";
 like.style.cssText="flex:1;min-height:54px;border-radius:18px;border:1px solid #ff6b9d;background:linear-gradient(135deg,#ff397b,#d91659);color:#fff;font-size:16px;font-weight:800;box-shadow:0 5px 18px #ff397b35;";
+if (!currentDiscoverIsPremium && currentDailyLikesUsed >= 10) {
+  like.disabled = true;
+  like.textContent = "Daily limit reached 🔒";
+  like.title = "Free members can send 10 likes per day. Premium includes unlimited likes.";
+}
 
       
 like.onclick=async()=>{
@@ -12085,12 +12090,17 @@ function lagosDayStartIso() {
   return new Date(Date.UTC(Number(parts.year), Number(parts.month)-1, Number(parts.day), -1)).toISOString();
 }
 
+let currentDiscoverIsPremium = false;
+let currentDailyLikesUsed = 0;
+
 async function refreshDailyLikeCounter() {
   if (!currentUser) return;
   const target = $("dailyLikesStatus");
   if (!target) return;
   try {
     if (await matchIsPremium()) {
+      currentDiscoverIsPremium = true;
+      currentDailyLikesUsed = 0;
       target.textContent = "Unlimited likes · Premium";
       return;
     }
@@ -12098,6 +12108,8 @@ async function refreshDailyLikeCounter() {
       .eq("liker_id", currentUser.id).gte("created_at", lagosDayStartIso());
     if (error) throw error;
     const used = Math.min(Number(count || 0), 10);
+    currentDiscoverIsPremium = false;
+    currentDailyLikesUsed = used;
     target.textContent = used >= 10 ? "Daily likes used · Resets at midnight" : (10-used) + " of 10 likes remaining today";
   } catch (error) {
     console.warn("Daily like counter failed:", error);

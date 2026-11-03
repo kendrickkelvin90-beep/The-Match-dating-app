@@ -6608,27 +6608,27 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
       </div>
 
       <div class="admin-metrics-grid">
-        <article class="admin-metric-card">
+        <article class="admin-metric-card" data-admin-detail="members" role="button" tabindex="0">
           <span class="admin-metric-icon">♙</span><p class="admin-metric-label">Total members</p>
           <p class="admin-metric-value" id="adminMembersCount">—</p><span class="admin-metric-foot">Registered profiles</span>
         </article>
-        <article class="admin-metric-card">
+        <article class="admin-metric-card" data-admin-detail="likes" role="button" tabindex="0">
           <span class="admin-metric-icon">♡</span><p class="admin-metric-label">Likes</p>
           <p class="admin-metric-value" id="adminLikesCount">—</p><span class="admin-metric-foot">Community activity</span>
         </article>
-        <article class="admin-metric-card">
+        <article class="admin-metric-card" data-admin-detail="messages" role="button" tabindex="0">
           <span class="admin-metric-icon">▤</span><p class="admin-metric-label">Messages</p>
           <p class="admin-metric-value" id="adminMessagesCount">—</p><span class="admin-metric-foot">Messages recorded</span>
         </article>
-        <article class="admin-metric-card admin-metric-attention">
+        <article class="admin-metric-card admin-metric-attention" data-admin-jump="verification" role="button" tabindex="0">
           <span class="admin-metric-icon">✓</span><p class="admin-metric-label">Pending verification</p>
           <p class="admin-metric-value" id="adminVerificationCount">—</p><span class="admin-metric-foot">Awaiting review</span>
         </article>
-        <article class="admin-metric-card admin-metric-attention">
+        <article class="admin-metric-card admin-metric-attention" data-admin-jump="payments" role="button" tabindex="0">
           <span class="admin-metric-icon">₦</span><p class="admin-metric-label">Premium payments</p>
           <p class="admin-metric-value" id="adminPaymentsCount">—</p><span class="admin-metric-foot">Awaiting confirmation</span>
         </article>
-        <article class="admin-metric-card admin-metric-attention">
+        <article class="admin-metric-card admin-metric-attention" data-admin-jump="reports" role="button" tabindex="0">
           <span class="admin-metric-icon">⚑</span><p class="admin-metric-label">Member reports</p>
           <p class="admin-metric-value" id="adminReportsCount">—</p><span class="admin-metric-foot">Require moderation</span>
         </article>
@@ -6698,9 +6698,22 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
           <span class="admin-data-note">Live database totals · not historical trends</span>
         </div>
         <div class="admin-metrics-grid admin-analytics-grid">
-          <article class="admin-metric-card"><p class="admin-metric-label">Active Premium memberships</p><p class="admin-metric-value" id="adminActivePremiumCount">—</p></article>
-          <article class="admin-metric-card"><p class="admin-metric-label">Stories stored</p><p class="admin-metric-value" id="adminStoriesCount">—</p></article>
-          <article class="admin-metric-card"><p class="admin-metric-label">Chat media records</p><p class="admin-metric-value" id="adminChatMediaCount">—</p></article>
+          <button type="button" class="admin-metric-card admin-clickable-metric" data-admin-detail="premium"><p class="admin-metric-label">Active Premium memberships</p><p class="admin-metric-value" id="adminActivePremiumCount">—</p><span class="admin-metric-foot">Tap to view subscribers</span></button>
+          <button type="button" class="admin-metric-card admin-clickable-metric" data-admin-detail="stories"><p class="admin-metric-label">Stories stored</p><p class="admin-metric-value" id="adminStoriesCount">—</p><span class="admin-metric-foot">Tap to view story activity</span></button>
+          <button type="button" class="admin-metric-card admin-clickable-metric" data-admin-detail="chatMedia"><p class="admin-metric-label">Chat media records</p><p class="admin-metric-value" id="adminChatMediaCount">—</p><span class="admin-metric-foot">Tap to view media activity</span></button>
+        </div>
+      </section>
+      <section class="admin-feature-section admin-activity-detail hidden" id="adminActivityDetail" aria-live="polite">
+        <div class="admin-section-heading admin-queue-heading">
+          <div><p class="admin-eyebrow">ACTIVITY DETAILS</p><h3 id="adminActivityDetailTitle">Activity</h3></div>
+          <button type="button" id="adminActivityDetailClose" class="admin-refresh-button">← Back to dashboard</button>
+        </div>
+        <p class="admin-data-note" id="adminActivityDetailDescription">Live records from the database.</p>
+        <div class="admin-tool-row">
+          <input type="search" id="adminActivityDetailSearch" placeholder="Search these records" aria-label="Search activity records">
+          <button type="button" id="adminActivityDetailRefresh" class="admin-refresh-button">↻ Refresh list</button>
+        </div>
+        <div id="adminActivityDetailList" class="admin-queue-list admin-directory-list"><p>Select an activity to view its records.</p></div>
         </div>
       </section>
 
@@ -8092,6 +8105,87 @@ async function loadAdminSupplementaryAnalytics() {
   $("adminStoriesCount").textContent = String(results[0].count ?? 0);
   $("adminChatMediaCount").textContent = String(results[1].count ?? 0);
 }
+
+
+/* Admin dashboard metric detail views */
+const adminActivityDefinitions={premium:"Premium subscribers",stories:"Stories activity",chatMedia:"Chat media activity",members:"Member directory",likes:"Likes activity",messages:"Message activity"};
+let adminActivityCurrentKey=null;
+let adminActivityRows=[];
+function renderAdminActivityDetail(){
+ const list=$("adminActivityDetailList");if(!list)return;
+ const term=($("adminActivityDetailSearch")?.value||"").trim().toLowerCase();
+ const rows=adminActivityRows.filter(row=>Object.values(row).some(value=>String(value??"").toLowerCase().includes(term)));
+ list.replaceChildren();
+ if(!rows.length){const empty=document.createElement("p");empty.className="admin-detail-empty";empty.textContent=term?"No records match your search.":"No records found.";list.appendChild(empty);return;}
+ rows.forEach(row=>{
+  const card=document.createElement("article");card.className="admin-detail-row";
+  const heading=document.createElement("strong");heading.textContent=row._title||"Activity record";card.appendChild(heading);
+  Object.entries(row).forEach(([key,value])=>{
+   if(key.startsWith("_")||value===null||value===undefined||value==="")return;
+   const line=document.createElement("p");
+   const label=key.replace(/_/g," ");
+   const formatted=/(created_at|premium_until|premium_started_at|expires_at|opened_at|read_at|registered_at)$/.test(key)&&!Number.isNaN(Date.parse(value))?new Date(value).toLocaleString():String(value);
+   line.textContent=label+": "+formatted;card.appendChild(line);
+  });
+  list.appendChild(card);
+ });
+}
+async function openAdminActivityDetail(key){
+ if(!(await checkMatchAdmin())){status("adminStatus","Admin access denied.",true);show("settings");return;}
+ if(!adminActivityDefinitions[key])return;
+ adminActivityCurrentKey=key;
+ $("adminActivityDetailTitle").textContent=adminActivityDefinitions[key];
+ $("adminActivityDetailDescription").textContent="Latest database records. Search to narrow the list.";
+ $("adminActivityDetailSearch").value="";
+ $("adminActivityDetail").classList.remove("hidden");
+ $("adminActivityDetailList").textContent="Loading records...";
+ $("adminActivityDetail").scrollIntoView({behavior:"smooth",block:"start"});
+ await loadAdminActivityDetail();
+}
+async function loadAdminActivityDetail(){
+ if(!(await checkMatchAdmin()))throw new Error("Admin access denied.");
+ const key=adminActivityCurrentKey;if(!key)return;
+ let result;
+ if(key==="premium"){
+  result=await db.from("premium_memberships").select("user_id,premium_started_at,premium_until").order("premium_until",{ascending:false}).limit(200);
+  if(!result.error){
+   const ids=[...new Set((result.data||[]).map(row=>row.user_id).filter(Boolean))];
+   const profiles=ids.length?await db.from("profiles").select("id,display_name,city").in("id",ids):{data:[],error:null};
+   if(profiles.error)throw profiles.error;
+   const byId=new Map((profiles.data||[]).map(profile=>[profile.id,profile]));
+   adminActivityRows=(result.data||[]).map(row=>{const profile=byId.get(row.user_id)||{};return {_title:profile.display_name||("Member "+String(row.user_id).slice(0,8)+"…"),member_id:row.user_id,city:profile.city||"Not provided",status:row.premium_until&&new Date(row.premium_until).getTime()>Date.now()?"Active":"Expired",premium_started_at:row.premium_started_at,premium_until:row.premium_until};});
+  }
+ }else if(key==="stories"){
+  result=await db.from("stories").select("id,user_id,story_group_id,media_type,caption,created_at,expires_at").order("created_at",{ascending:false}).limit(100);
+  if(!result.error)adminActivityRows=(result.data||[]).map(row=>({_title:"Story "+String(row.id).slice(0,8),id:row.id,user_id:row.user_id,story_group_id:row.story_group_id,media_type:row.media_type,caption:row.caption,created_at:row.created_at,expires_at:row.expires_at}));
+ }else if(key==="chatMedia"){
+  result=await db.from("chat_media").select("id,sender_id,receiver_id,media_type,view_once,opened_at,created_at").order("created_at",{ascending:false}).limit(100);
+  if(!result.error)adminActivityRows=(result.data||[]).map(row=>({_title:"Chat media "+String(row.id).slice(0,8),id:row.id,sender_id:row.sender_id,receiver_id:row.receiver_id,media_type:row.media_type,view_once:row.view_once,opened_at:row.opened_at,created_at:row.created_at}));
+ }else if(key==="members"){
+  result=await db.from("profiles").select("id,display_name,city,age,is_verified,created_at").order("created_at",{ascending:false}).limit(100);
+  if(!result.error)adminActivityRows=(result.data||[]).map(row=>({_title:row.display_name||("Member "+String(row.id).slice(0,8)),member_id:row.id,city:row.city,age:row.age,verified:row.is_verified,registered_at:row.created_at}));
+ }else if(key==="likes"){
+  result=await db.from("likes").select("id,liker_id,liked_id,created_at").order("created_at",{ascending:false}).limit(100);
+  if(!result.error)adminActivityRows=(result.data||[]).map(row=>({_title:"Like "+String(row.id).slice(0,8),id:row.id,liker_id:row.liker_id,liked_id:row.liked_id,created_at:row.created_at}));
+ }else if(key==="messages"){
+  result=await db.from("messages").select("id,sender_id,receiver_id,created_at,read_at").order("created_at",{ascending:false}).limit(100);
+  if(!result.error)adminActivityRows=(result.data||[]).map(row=>({_title:"Message "+String(row.id).slice(0,8),id:row.id,sender_id:row.sender_id,receiver_id:row.receiver_id,created_at:row.created_at,read_at:row.read_at,read_status:row.read_at?"Read":"Unread"}));
+ }
+ if(result?.error)throw result.error;
+ renderAdminActivityDetail();
+}
+document.querySelectorAll("[data-admin-detail]").forEach(card=>card.addEventListener("click",()=>openAdminActivityDetail(card.dataset.adminDetail).catch(error=>{$("adminActivityDetailList").textContent="Could not load records: "+friendly(error);})));
+document.querySelectorAll("[data-admin-detail][role='button']").forEach(card=>card.addEventListener("keydown",event=>{
+ if(event.key==="Enter"||event.key===" "){event.preventDefault();card.click();}
+}));
+document.querySelectorAll("[data-admin-jump]").forEach(card=>{
+ const jump=()=>{const target={verification:"adminVerificationList",payments:"adminPaymentsList",reports:"adminReportsList"}[card.dataset.adminJump];$(target)?.scrollIntoView({behavior:"smooth",block:"center"});};
+ card.addEventListener("click",jump);
+ card.addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();jump();}});
+});
+$("adminActivityDetailClose")?.addEventListener("click",()=>$("adminActivityDetail").classList.add("hidden"));
+$("adminActivityDetailSearch")?.addEventListener("input",renderAdminActivityDetail);
+$("adminActivityDetailRefresh")?.addEventListener("click",()=>loadAdminActivityDetail().catch(error=>{$("adminActivityDetailList").textContent="Could not refresh records: "+friendly(error);}));
 
 async function reviewMatchAdminRequest(table, id, decision) {
   if (!(await checkMatchAdmin())) {
@@ -18259,6 +18353,23 @@ body.light-theme #eventsPage .events-featured-kicker,
 body.light-theme #eventsPage .events-featured-meta strong {
   color: #f0cf86 !important;
 }
+
+
+/* Clickable admin metrics and activity detail panel */
+.admin-metrics-grid [data-admin-detail],.admin-metrics-grid [data-admin-jump]{cursor:pointer;transition:transform .16s ease,border-color .16s ease,background .16s ease}
+.admin-metrics-grid [data-admin-detail]:hover,.admin-metrics-grid [data-admin-jump]:hover,.admin-metrics-grid [data-admin-detail]:focus-visible,.admin-metrics-grid [data-admin-jump]:focus-visible{border-color:#c9a85f!important;outline:2px solid rgba(201,168,95,.3);outline-offset:2px;transform:translateY(-2px)}
+.admin-clickable-metric{width:100%;color:inherit;text-align:left;font:inherit;cursor:pointer;transition:transform .16s ease,border-color .16s ease,background .16s ease}
+.admin-clickable-metric:hover,.admin-clickable-metric:focus-visible{border-color:#c9a85f!important;outline:2px solid rgba(201,168,95,.35);outline-offset:2px;transform:translateY(-2px)}
+.admin-clickable-metric:active{transform:scale(.985)}
+.admin-clickable-metric .admin-metric-foot{display:block;margin-top:8px;color:#c9ad70;font-size:12px}
+.admin-activity-detail{margin-top:22px;padding:18px;border:1px solid rgba(201,168,95,.3);border-radius:18px;background:rgba(20,20,20,.72)}
+.admin-activity-detail .admin-tool-row{margin:14px 0}
+.admin-activity-detail .admin-detail-row{padding:14px 4px;border-bottom:1px solid rgba(201,168,95,.15);overflow-wrap:anywhere}
+.admin-activity-detail .admin-detail-row:last-child{border-bottom:0}
+.admin-detail-row strong{display:block;margin-bottom:5px;color:inherit}
+.admin-detail-row p{margin:4px 0;color:inherit;opacity:.78;font-size:13px}
+.admin-detail-empty{padding:18px 4px;opacity:.75}
+@media(max-width:600px){.admin-activity-detail{padding:14px 12px}.admin-activity-detail .admin-section-heading{align-items:flex-start;gap:10px;flex-wrap:wrap}.admin-activity-detail .admin-tool-row{display:flex;flex-direction:column}.admin-activity-detail .admin-tool-row input,.admin-activity-detail .admin-tool-row button{width:100%}}
 
 </style>
 </body>

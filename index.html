@@ -15443,6 +15443,7 @@ let voiceCallRingTimer = null;
 let voiceCallMicMuted = false;
 let voiceCallSpeakerEnabled = true;
 let voiceCallRemoteMuted = false;
+let voiceCallJoining = false;
 let voiceCallRingInterval = null;
 let voiceCallAudioContext = null;
 
@@ -15655,6 +15656,7 @@ async function acceptVoiceCall() {
     activeVoiceCallId = call.id;
     activeVoiceCallPeerId = call.caller_id;
     activeVoiceCallRole = "callee";
+    beginVoiceCallPolling();
     await joinVoiceCallRoom();
   } catch (error) {
     showVoiceCallModal("Call unavailable", error.message || "Could not accept this call.", [
@@ -15672,6 +15674,8 @@ async function rejectVoiceCall() {
   await loadVoiceCallHistory();
 }
 async function joinVoiceCallRoom() {
+  if (liveKitRoom || voiceCallJoining || !activeVoiceCallId) return;
+  voiceCallJoining = true;
   try {
     setVoiceCallStatus("Connecting securely…");
     voiceCallMicMuted = false;
@@ -15701,6 +15705,7 @@ async function joinVoiceCallRoom() {
       if (activeVoiceCallId) finishVoiceCall(false);
     });
     await room.connect(credentials.server_url, credentials.participant_token);
+    liveKitRoom = room;
     await room.localParticipant.setMicrophoneEnabled(true, {
       echoCancellation: true,
       noiseSuppression: true,
@@ -15712,8 +15717,10 @@ async function joinVoiceCallRoom() {
     stopVoiceCallRingtone();
     $("voiceCallPeer").textContent = "Connected securely";
     $("voiceCallAvatar").textContent = "✓";
+    voiceCallJoining = false;
     showConnectedVoiceCallControls();
   } catch (error) {
+    voiceCallJoining = false;
     console.error("LiveKit connection failed", error);
     showVoiceCallModal("Could not connect", error.message || "Check your connection and try again.", [
       { label:"End call", danger:true, handler:() => finishVoiceCall() }
@@ -15797,8 +15804,7 @@ function beginVoiceCallPolling() {
         return;
       }
       applyRemoteCallMuteState(data);
-      if (data.status === "accepted" && activeVoiceCallRole === "caller") {
-        if (voiceCallPollTimer) { clearInterval(voiceCallPollTimer); voiceCallPollTimer = null; }
+      if (data.status === "accepted" && activeVoiceCallRole === "caller" && !liveKitRoom && !voiceCallJoining) {
         if (voiceCallRingTimer) { clearTimeout(voiceCallRingTimer); voiceCallRingTimer = null; }
         await joinVoiceCallRoom();
       }

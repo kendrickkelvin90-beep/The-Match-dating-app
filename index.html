@@ -6717,10 +6717,6 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
         </div>
       </section>
 
-      <footer class="admin-footer">
-        <p class="status" id="adminStatus" role="status" aria-live="polite">Dashboard is ready.</p>
-        <button type="button" id="adminBackBtn" class="admin-back-button">← Back to settings</button>
-      </footer>
     </div>
   </section>
 <section class="panel hidden" id="referralsPage">
@@ -18371,6 +18367,9 @@ body.light-theme #eventsPage .events-featured-meta strong {
 .admin-detail-empty{padding:18px 4px;opacity:.75}
 @media(max-width:600px){.admin-activity-detail{padding:14px 12px}.admin-activity-detail .admin-section-heading{align-items:flex-start;gap:10px;flex-wrap:wrap}.admin-activity-detail .admin-tool-row{display:flex;flex-direction:column}.admin-activity-detail .admin-tool-row input,.admin-activity-detail .admin-tool-row button{width:100%}}
 
+
+/* Keep the admin control centre fully hidden outside its own view. */
+#adminPanel.hidden{display:none!important}
 </style>
 </body>
 </html>

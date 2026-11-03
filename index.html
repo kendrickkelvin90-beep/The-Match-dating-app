@@ -997,7 +997,6 @@ body.light-theme .small,
 body.light-theme .status {
   color: #202020;
 }
-
 body.light-theme input,
 body.light-theme textarea,
 body.light-theme select {
@@ -1997,8 +1996,7 @@ body:not(.light-theme) .card {
 
 body:not(.light-theme) h1,
 body:not(.light-theme) h2,
-body:not(.light-theme) h3,
-body:not(.light-theme) h4,
+body:not(.light-theme) h3,body:not(.light-theme) h4,
 body:not(.light-theme) p,
 body:not(.light-theme) label,
 body:not(.light-theme) .small,
@@ -2997,8 +2995,7 @@ body:has(#chatPage:not(.hidden)) #bottomNavigation {
   margin-top: 10px;
   padding: 12px;
   border: 1px solid #484238;
-  border-radius: 12px;
-  background: transparent;
+  border-radius: 12px;  background: transparent;
   color: #C9C3B7;
   cursor: pointer;
 }
@@ -3997,8 +3994,7 @@ body.light-theme #profile #photoGallery { background:linear-gradient(155deg,#fff
   padding:5px 1px!important;
   border:1px solid transparent!important;
   border-radius:13px!important;
-  background:transparent!important;
-  color:#938d83!important;
+  background:transparent!important;  color:#938d83!important;
   font-size:9px!important;
   line-height:1.15!important;
   font-weight:650!important;
@@ -4454,6 +4450,135 @@ textarea.match-dialog-input{min-height:112px;resize:vertical}
     font-size: 12px !important;
     padding: 8px 5px !important;
   }
+}
+
+
+/* Discover Option 3 — large portrait with floating controls; Stories and Events stay above */
+#discover.panel{
+  min-height:0!important;
+  height:auto!important;
+  margin:0!important;
+  padding:8px 0 10px!important;
+  border:0!important;
+  outline:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  background:transparent!important;
+}
+body:has(#bottomNavigation:not(.hidden))>main>.panel:not(.hidden)#discover{
+  min-height:0!important;
+  margin:0!important;
+  padding:8px 0 10px!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  background:transparent!important;
+}
+#discover #profileList{
+  width:100%!important;
+  max-width:none!important;
+  margin:4px 0 0!important;
+  padding:0!important;
+}
+#discover #profileList>.member-card{
+  width:calc(100% + 24px)!important;
+  max-width:none!important;
+  height:clamp(420px,calc(100svh - 335px),700px)!important;
+  min-height:420px!important;
+  max-height:700px!important;
+  margin:0 0 0 -12px!important;
+  border:0!important;
+  outline:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  background:#080808!important;
+  overflow:hidden!important;
+}
+#discover #profileList>.member-card>div:first-child{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  background:#080808!important;
+}
+#discover #profileList>.member-card>div:first-child>img[aria-hidden="true"]{display:none!important}
+#discover #profileList>.member-card>div:first-child>img:not([aria-hidden="true"]){
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  background:#080808!important;
+}
+#discover #profileList>.member-card .discover-profile-overlay{
+  left:0!important;
+  right:0!important;
+  bottom:0!important;
+  padding:100px 16px max(18px,env(safe-area-inset-bottom))!important;
+  background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.12) 22%,rgba(0,0,0,.78) 66%,rgba(0,0,0,.96) 100%)!important;
+}
+#discover #profileList>.member-card .discover-profile-overlay h2{
+  font-size:clamp(29px,7vw,37px)!important;
+  font-weight:900!important;
+}
+#discover #profileList>.member-card .discover-profile-overlay .distance{
+  font-size:15px!important;
+  font-weight:850!important;
+  margin-bottom:8px!important;
+}
+#discover #profileList>.member-card .discover-profile-overlay button[aria-expanded]{
+  min-height:40px!important;
+}
+#discover #profileList>.member-card .discover-profile-overlay .discover-floating-actions{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:24px!important;
+  margin:12px 0 2px!important;
+  padding:0!important;
+}
+#discover #profileList>.member-card .discover-floating-actions .btn{
+  flex:0 0 62px!important;
+  width:62px!important;
+  min-width:62px!important;
+  height:62px!important;
+  min-height:62px!important;
+  margin:0!important;
+  padding:0!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border-radius:50%!important;
+  font-size:25px!important;
+  font-weight:900!important;
+  box-shadow:0 8px 24px rgba(0,0,0,.48)!important;
+}
+#discover #profileList>.member-card .discover-floating-actions .btn.secondary{
+  background:rgba(18,18,18,.92)!important;
+  color:#fff!important;
+  border:1px solid rgba(255,255,255,.58)!important;
+}
+#discover #profileList>.member-card .discover-floating-actions .btn.primary{
+  background:linear-gradient(145deg,#f3d18a,#b88b42)!important;
+  color:#171108!important;
+  border:1px solid #f0d18b!important;
+}
+#discover #discoverStatus{margin:4px 0 0!important;padding:0 12px!important}
+@media(max-height:740px){
+  #discover #profileList>.member-card{
+    height:clamp(390px,calc(100svh - 300px),560px)!important;
+    min-height:390px!important;
+  }
+  #discover #profileList>.member-card .discover-profile-overlay{padding-top:76px!important}
+}
+@media(max-width:380px){
+  #discover #profileList>.member-card{width:calc(100% + 24px)!important;margin-left:-12px!important}
+  #discover #profileList>.member-card .discover-floating-actions{gap:18px!important}
+}
+body.light-theme #discover #profileList>.member-card{border:0!important;box-shadow:none!important}
+body.light-theme #discover #profileList>.member-card .discover-profile-overlay{
+  background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.16) 22%,rgba(0,0,0,.82) 66%,rgba(0,0,0,.97) 100%)!important;
 }
 
 </style>
@@ -4997,8 +5122,7 @@ main{width:100%;max-width:none}
 }
 @media(min-width:700px){
   main{padding-left:24px!important;padding-right:24px!important}
-  #discover,#nearbyPage,#matches,#messages,#callHistoryPage,#likes,#profile,#settings,#notificationsPage,#eventsPage{
-    width:100%!important;max-width:1320px!important;margin-left:auto!important;margin-right:auto!important
+  #discover,#nearbyPage,#matches,#messages,#callHistoryPage,#likes,#profile,#settings,#notificationsPage,#eventsPage{    width:100%!important;max-width:1320px!important;margin-left:auto!important;margin-right:auto!important
   }
   #eventsPage .events-shell{max-width:none!important}
   #eventsPage .events-heading{padding:44px!important}
@@ -5997,8 +6121,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
       <div><strong>See who likes you</strong><span>Discover members who have already liked your profile.</span></div>
     </div>
     <div class="premium-benefit">
-      <div class="premium-icon">⌖</div>
-      <div><strong>Premium Nearby</strong><span>Explore eligible members around your location.</span></div>
+      <div class="premium-icon">⌖</div>      <div><strong>Premium Nearby</strong><span>Explore eligible members around your location.</span></div>
     </div>
     <div class="premium-benefit">
       <div class="premium-icon">▣</div>
@@ -6997,7 +7120,6 @@ function renderResetCaptcha() {
     resetCaptchaToken = "";
     return;
   }
-
   resetCaptchaWidgetId = window.turnstile.render("#resetCaptcha", {
     sitekey: "0x4AAAAAAFia9mw39tR1pGuq",
     callback: window.onResetTurnstileSuccess,
@@ -7997,7 +8119,6 @@ async function loadAdminPremiumOverview() {
     list.appendChild(item);
   });
 }
-
 async function loadAdminSupplementaryAnalytics() {
   const results = await Promise.all([
     db.from("stories").select("id", { count: "exact", head: true }),
@@ -8997,8 +9118,7 @@ function showMatchNotification(title, body, type) {
     } catch (error) {
       console.warn("Notification unavailable:", error);
     }
-  }
-}
+  }}
 
 
 
@@ -9976,12 +10096,6 @@ photoBox.style.cssText="position:absolute;inset:0;width:100%;height:100%;backgro
 
       
 
-const photoBackdrop=document.createElement("img");
-photoBackdrop.alt="";
-photoBackdrop.setAttribute("aria-hidden","true");
-photoBackdrop.style.cssText="position:absolute;inset:-5%;width:110%;height:110%;object-fit:cover;filter:blur(22px) brightness(.48);transform:scale(1.04);opacity:.9;z-index:0;pointer-events:none;";
-photoBox.appendChild(photoBackdrop);
-
 const photo=document.createElement("img");
 photo.alt="Profile photo";
 
@@ -9997,7 +10111,6 @@ photoBox.appendChild(photoFallback);
 const onlineBadge = document.createElement("div");
 onlineBadge.dataset.discoverOnlineUser = p.id;
 onlineBadge.style.cssText = "position:absolute;top:12px;left:12px;z-index:3;display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:20px;background:#07120ddd;border:1px solid #52e39a66;color:#b9ffd8;font-size:12px;font-weight:700;";
-
 const onlineDot = document.createElement("span");
 onlineDot.dataset.onlineDot = "true";
 onlineDot.style.cssText = "width:7px;height:7px;border-radius:50%;display:inline-block;background:#777;";
@@ -10031,7 +10144,6 @@ photoBox.appendChild(onlineBadge);
 
       if(photoUrls.length){
         photo.src=photoUrls[0];
-        photoBackdrop.src=photoUrls[0];
         photo.style.display="block";
         photoCount.textContent="1 of "+photoUrls.length+" "+(photoUrls.length === 1 ? "photo" : "photos");
       }else{
@@ -10065,7 +10177,6 @@ photoBox.appendChild(onlineBadge);
         if(photoUrls.length){
           photoIndex=(photoIndex-1+photoUrls.length)%photoUrls.length;
           photo.src=photoUrls[photoIndex];
-          photoBackdrop.src=photoUrls[photoIndex];
           photoCount.textContent=(photoIndex+1)+" of "+photoUrls.length+" photos";
         }
       };
@@ -10078,7 +10189,6 @@ photoBox.appendChild(onlineBadge);
         if(photoUrls.length){
           photoIndex=(photoIndex+1)%photoUrls.length;
           photo.src=photoUrls[photoIndex];
-          photoBackdrop.src=photoUrls[photoIndex];
           photoCount.textContent=(photoIndex+1)+" / "+photoUrls.length;
         }
       };
@@ -10088,7 +10198,6 @@ photoBox.appendChild(onlineBadge);
         if (photoUrls.length > 1) {
           photoIndex = (photoIndex + 1) % photoUrls.length;
           photo.src = photoUrls[photoIndex];
-          photoBackdrop.src = photoUrls[photoIndex];
           photoCount.textContent =
             (photoIndex + 1) + " of " + photoUrls.length + " photos";
         }
@@ -10192,6 +10301,7 @@ detailsToggle.onclick = () => {
 infoOverlay.append(detailsToggle, detailsPanel);
 
 const actions = document.createElement("div");
+actions.className = "discover-floating-actions";
 actions.style.cssText =
   "display:flex;justify-content:center;align-items:center;" +
   "gap:12px;margin:8px 12px 12px;padding:0;";
@@ -10997,8 +11107,7 @@ if (story.user_id === currentUser.id) {
           "position:absolute;bottom:70px;left:12px;right:12px;z-index:6;display:flex;justify-content:center;gap:10px;";
 
         const reactionStatus = document.createElement("p");
-        reactionStatus.style.cssText =
-          "position:absolute;bottom:48px;left:12px;right:12px;z-index:6;color:white;text-align:center;font-size:12px;";
+        reactionStatus.style.cssText =          "position:absolute;bottom:48px;left:12px;right:12px;z-index:6;color:white;text-align:center;font-size:12px;";
 
         ["❤️", "😂", "😍", "🔥", "👏"].forEach(emoji => {
           const reactionButton = document.createElement("button");
@@ -11998,7 +12107,6 @@ async function loadBlockedMembers(){
       card.appendChild(btn);
       list.appendChild(card);
     }
-
     status("blockedMembersStatus","");
   }catch(e){
     status("blockedMembersStatus",
@@ -12997,8 +13105,7 @@ if (p.verification_level === "enhanced" ||
     p.verification_level === "basic" ||
     p.is_verified) {
   name.appendChild(badge);
-}
-if (memberIsPremium) {
+}if (memberIsPremium) {
   const premiumBadge = document.createElement("span");
   premiumBadge.textContent = " ✦ PREMIUM";
   premiumBadge.style.cssText = "display:inline-block;margin-left:7px;padding:4px 8px;border-radius:999px;background:linear-gradient(135deg,#e2c17d,#a77b32);color:#17130b;font-size:10px;font-weight:900;letter-spacing:.7px;vertical-align:middle;";
@@ -13998,7 +14105,6 @@ updateChatOnlineStatus(userId);
         clearInterval(chatRefreshTimer);
         chatRefreshTimer = null;
       }
-
       const conversationListNode = document.getElementById("conversationList");
 const activeConversationNode = document.getElementById("activeConversation");
 
@@ -14997,8 +15103,7 @@ del.setAttribute("aria-label", "Delete photo");
               .eq("user_id",currentUser.id);
             if(positionError){
               await loadMyPhotos();
-              status("photoStatus","Photo deleted, but the remaining photo order could not be saved. Please reload your profile.",true);
-              return;
+              status("photoStatus","Photo deleted, but the remaining photo order could not be saved. Please reload your profile.",true);              return;
             }
           }
         }
@@ -15997,8 +16102,7 @@ function showVoiceCallModal(title, message, actions) {
     if (danger) b.classList.add("voice-call-danger");
     b.onclick = handler;
     area.appendChild(b);
-  });
-  $("voiceCallModal").classList.remove("hidden");
+  });  $("voiceCallModal").classList.remove("hidden");
   $("voiceCallModal").style.display = "flex";
 }
 function hideVoiceCallModal() {
@@ -16997,7 +17101,6 @@ body.light-theme #settings #settingsDeleteAccount {
 #callHistoryPage .voice-call-history-person strong { color:var(--tm-text)!important; }
 #callHistoryPage .voice-call-history-person span { color:var(--tm-muted)!important; }
 body.light-theme #callHistoryPage .voice-call-history-result { color:var(--tm-gold-deep)!important; }
-
 @media(max-width:520px) {
   #profile #profileForm > .member-card label { padding:7px 9px; font-size:13px; }
   #likes .likes-profile-card { gap:9px; padding:10px; }
@@ -17917,6 +18020,5 @@ body.light-theme #discover #profileList>.member-card{
     </div>
   </div>
 </div>
-
 
 

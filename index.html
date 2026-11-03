@@ -9853,7 +9853,16 @@ status("profileStatus","Your profile is loaded. Check your details and save when
 
   await loadVerificationStatus();
   refreshNearbyCurrentLocation();
-  
+
+  // Invite returning members to install The Match after their app/site
+  // session has been restored or they have logged in successfully.
+  // Never show during first-time signup or inside the installed app.
+  if (restoreToDiscover && !isTheMatchInstalled()) {
+    setTimeout(() => {
+      if (currentUser && !isTheMatchInstalled()) openTheMatchInstallModal();
+    }, 1600);
+  }
+
 setTimeout(() => {
   showFeaturePromoSequence();
 }, 30000);
@@ -12309,10 +12318,15 @@ async function requestTheMatchInstall() {
     return;
   }
 
+  const description = document.getElementById("installAppDescription");
+  if (description) {
+    description.textContent = /iphone|ipad|ipod/i.test(navigator.userAgent)
+      ? "To add The Match on iPhone: open this page in Safari, tap Share, then choose Add to Home Screen."
+      : "To add The Match on Android: open your browser menu (⋮), then choose Install app or Add to Home screen.";
+  }
+  if (confirmInstallButton) confirmInstallButton.textContent = "GOT IT";
   if (installHelp) {
-    installHelp.textContent = /iphone|ipad|ipod/i.test(navigator.userAgent)
-      ? "To install on iPhone: open this website in Safari, tap Share, then choose Add to Home Screen."
-      : "Open your browser menu (⋮) and choose Install app or Add to Home screen.";
+    installHelp.textContent = "Follow the steps above to add The Match to your home screen.";
   }
 }
 
@@ -12321,7 +12335,14 @@ if (installButton) {
 }
 
 if (confirmInstallButton) {
-  confirmInstallButton.addEventListener("click", requestTheMatchInstall);
+  confirmInstallButton.addEventListener("click", () => {
+    if (!deferredInstallPrompt && !isTheMatchInstalled() &&
+        confirmInstallButton.textContent === "GOT IT") {
+      closeTheMatchInstallModal();
+      return;
+    }
+    requestTheMatchInstall();
+  });
 }
 
 if (laterInstallButton) {
@@ -12351,12 +12372,9 @@ window.addEventListener("appinstalled", () => {
   }
 });
 
-/* Show automatically after a short delay unless already installed. */
-window.addEventListener("load", () => {
-  if (!isTheMatchInstalled()) {
-    setTimeout(openTheMatchInstallModal, 9000);
-  }
-});
+/* The install invitation is shown after a successful returning-member
+   login/session restore, from showProfile(). It is not shown to signed-out
+   visitors or during first-time account creation. */
 
   // Settings page actions
 $("openNotifications").onclick = async () => {
@@ -16737,18 +16755,22 @@ if ("serviceWorker" in navigator) {
 
     <div class="install-app-icon">♥</div>
     <p class="install-app-brand">THE MATCH</p>
-    <h2 id="installAppTitle">Your next connection is one tap away.</h2>
-    <p class="install-app-description">
-      Add The Match to your home screen for quick, convenient access to your matches and conversations.
+    <h2 id="installAppTitle">Make The Match part of your home screen.</h2>
+    <p class="install-app-description" id="installAppDescription">
+      Download The Match for quicker, easier access whenever you want to connect.
     </p>
 
     <div class="install-app-benefit">
       <span>✓</span>
-      <span>Open The Match directly from your home screen</span>
+      <span>Open The Match with one tap from your home screen</span>
     </div>
     <div class="install-app-benefit">
       <span>✓</span>
-      <span>Return to your matches and chats more conveniently</span>
+      <span>Get back to your matches, messages and community faster</span>
+    </div>
+    <div class="install-app-benefit">
+      <span>✓</span>
+      <span>Enjoy a convenient app-like experience on your phone</span>
     </div>
 
     <button type="button" id="confirmInstallApp" class="install-app-primary">

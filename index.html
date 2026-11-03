@@ -16228,6 +16228,125 @@ body.light-theme #messages #chatEmojiPicker button {
 }
 </style>
 
+
+<style id="match-visual-excellence-phase1-completion">
+/* Supporting screens: verification, preferences, member profiles and match moment. */
+#verificationPage > .member-card, #blockedMembers > .member-card {
+  padding:18px!important; border:1px solid var(--tm-border)!important;
+  border-radius:19px!important; background:var(--tm-surface)!important;
+}
+#verificationPage h2, #verificationPage h3,
+#blockedMembers h2, #blockedMembers h3,
+#memberProfilePage h2 { color:var(--tm-text)!important; }
+#verificationPage .verification-camera {
+  padding:14px; margin:14px 0; border:1px solid var(--tm-border);
+  border-radius:17px; background:var(--tm-surface-raised);
+}
+#verificationPage video { max-width:100%; border-radius:15px!important; }
+#verificationPage #verificationCameraStatus { color:var(--tm-muted)!important; }
+#discoveryPreferencesPage .discovery-hero {
+  padding:22px 18px!important; border:1px solid var(--tm-border-strong)!important;
+  border-radius:22px!important;
+  background:radial-gradient(ellipse at top right,rgba(214,180,110,.14),transparent 62%),var(--tm-surface)!important;
+}
+#discoveryPreferencesPage .discovery-kicker { color:var(--tm-gold)!important; }
+#discoveryPreferencesPage .discovery-hero h2 { color:var(--tm-text)!important; }
+#discoveryPreferencesPage .discovery-hero p,
+#discoveryPreferencesPage .discovery-card-heading p,
+#discoveryPreferencesPage .discovery-helper { color:var(--tm-muted)!important; }
+#discoveryPreferencesPage .discovery-preference-card {
+  margin:13px 0!important; padding:17px!important;
+  border:1px solid var(--tm-border)!important; border-radius:18px!important;
+  background:var(--tm-surface)!important;
+}
+#discoveryPreferencesPage .discovery-card-heading h3,
+#discoveryPreferencesPage .discovery-distance-heading strong { color:var(--tm-text)!important; }
+#discoveryPreferencesPage .discovery-card-icon {
+  background:var(--tm-surface-raised)!important; color:var(--tm-gold)!important;
+}
+#discoveryPreferencesPage .discovery-range { accent-color:var(--tm-gold)!important; }
+#discoveryPreferencesPage .discovery-range-ends { color:var(--tm-muted)!important; }
+#memberProfilePage #memberProfileDetails {
+  margin:14px 0; padding:14px; border:1px solid var(--tm-border);
+  border-radius:18px; background:var(--tm-surface);
+}
+#memberProfilePage #memberProfileDetails img {
+  max-width:100%; border-radius:16px;
+}
+#memberProfilePage #memberProfileName { overflow-wrap:anywhere; }
+#matchCelebrationPage {
+  background:radial-gradient(ellipse at 50% 10%,rgba(214,180,110,.12),transparent 60%),var(--tm-bg)!important;
+}
+#matchCelebrationPage .match-moment-shell {
+  border-color:var(--tm-border-strong)!important;
+  background:var(--tm-surface)!important;
+  border-radius:26px!important;
+}
+#matchCelebrationPage .match-moment-brand,
+#matchCelebrationPage .match-moment-eyebrow,
+#matchCelebrationPage .match-moment-footer { color:var(--tm-gold)!important; }
+#matchCelebrationPage .match-moment-heading h1,
+#matchCelebrationPage .match-moment-heading p { color:var(--tm-text)!important; }
+#matchCelebrationPage .match-moment-card {
+  border-color:var(--tm-border-strong)!important; background:var(--tm-surface-raised)!important;
+}
+#matchCelebrationPage .match-moment-name { color:var(--tm-text)!important; }
+
+/* Chat screen: preserve the existing full-screen interaction, add a true light palette. */
+body.light-theme #chatPage {
+  background:#f7f5ef!important; color:#28251f!important;
+}
+body.light-theme #chatPage #chatHeader {
+  background:#fffefa!important; border-bottom-color:#e2d8c6!important;
+}
+body.light-theme #chatPage #backFromChatHeader { color:#51452e!important; }
+body.light-theme #chatPage #chatPageTitle { color:#28251f!important; }
+body.light-theme #chatPage #chatPartnerLocation,
+body.light-theme #chatPage #chatOnlineStatus { color:#716a5d!important; }
+body.light-theme #chatPage #chatMessages {
+  background:#f1eee7!important; border-color:#e1d9cb!important;
+  scrollbar-color:#c8b58f transparent;
+}
+body.light-theme #chatPage #chatMessages .chat-bubble.sent {
+  background:#eadfc8!important; border-color:#d5c19a!important; color:#302719!important;
+}
+body.light-theme #chatPage #chatMessages .chat-bubble.received {
+  background:#fffefa!important; border-color:#e1d9cb!important; color:#28251f!important;
+}
+body.light-theme #chatPage #chatMessageInput {
+  background:#fffefa!important; color:#28251f!important; border-color:#d7c8aa!important;
+}
+body.light-theme #chatPage #chatPageContent,
+body.light-theme #chatPage #activeConversation { color:#28251f!important; }
+body.light-theme #chatPage #chatPageContent h3 { color:#28251f!important; }
+body.light-theme #chatPage #chatPageStatus { color:#6f695d!important; }
+
+/* Media preview and safety dialogs follow the selected app theme. */
+body.light-theme #chatMediaPreview {
+  background:#f7f5ef!important; color:#28251f!important;
+}
+body.light-theme #chatMediaPreview .chat-media-preview-header {
+  background:#fffefa!important; color:#28251f!important; border-color:#e2d8c6!important;
+}
+body.light-theme #chatMediaPreviewStage { background:#eeeae1!important; color:#514b40!important; }
+body.light-theme .safety-dialog { background:rgba(35,31,24,.48)!important; }
+body.light-theme .safety-dialog-card {
+  background:#fffefa!important; color:#28251f!important; border-color:#d9c9a8!important;
+}
+body.light-theme .safety-dialog-card h2 { color:#80612b!important; }
+body.light-theme .safety-dialog-card textarea {
+  background:#fff!important; color:#28251f!important; border-color:#d7c8aa!important;
+}
+body.light-theme #safetyDialogCancel { background:#e9e4d9!important; color:#393328!important; }
+
+@media(max-width:520px) {
+  #discoveryPreferencesPage .discovery-preference-card { padding:14px!important; }
+  #verificationPage > .member-card { padding:14px!important; }
+  #memberProfilePage #memberProfileDetails { padding:11px; }
+  #matchCelebrationPage .match-moment-shell { padding:18px!important; }
+}
+</style>
+
 </body>
 </html>
 

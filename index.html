@@ -12117,8 +12117,7 @@ async function refreshDailyLikeCounter() {
       target.textContent = "Unlimited swipes · Premium";
       return;
     }
-    const { count, error } = await db.from("match_swipe_history").select("id", { count: "exact", head: true })
-      .eq("user_id", currentUser.id).gte("created_at", lagosDayStartIso());
+    const { data: count, error } = await db.rpc("get_my_daily_swipe_count");
     if (error) throw error;
     const used = Math.min(Number(count || 0), 10);
     currentDiscoverIsPremium = false;

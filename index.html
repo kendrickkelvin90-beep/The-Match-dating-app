@@ -12748,9 +12748,7 @@ const firstPhotoByUser = new Map();
 const photoPath = firstPhotoByUser.get(p.id);
 
 if (photoPath) {
-  avatar.src = db.storage
-    .from("profile-photos")
-    await resolveProfilePhotoUrl(photoPath);
+  avatar.src = await resolveProfilePhotoUrl(photoPath);
 }
 
 

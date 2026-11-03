@@ -10081,6 +10081,7 @@ photoBox.appendChild(onlineBadge);
         if (photoUrls.length > 1) {
           photoIndex = (photoIndex + 1) % photoUrls.length;
           photo.src = photoUrls[photoIndex];
+          photoBackdrop.src = photoUrls[photoIndex];
           photoCount.textContent =
             (photoIndex + 1) + " of " + photoUrls.length + " photos";
         }

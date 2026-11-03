@@ -15713,6 +15713,12 @@ async function joinVoiceCallRoom() {
       });
     });
     room.on(client.RoomEvent.TrackUnsubscribed, (track) => track.detach().forEach(element => element.remove()));
+    room.on(client.RoomEvent.ParticipantConnected, () => {
+      if (!voiceCallJoining) updateVoiceCallPeerConnectionState();
+    });
+    room.on(client.RoomEvent.ParticipantDisconnected, () => {
+      if (!voiceCallJoining && liveKitRoom) updateVoiceCallPeerConnectionState();
+    });
     room.on(client.RoomEvent.Disconnected, () => {
       liveKitRoom = null;
       if (activeVoiceCallId) finishVoiceCall(false);
@@ -15728,10 +15734,8 @@ async function joinVoiceCallRoom() {
       console.warn("Automatic call audio start was blocked by the browser:", audioError);
     }
     stopVoiceCallRingtone();
-    $("voiceCallPeer").textContent = "Connected securely";
-    $("voiceCallAvatar").textContent = "✓";
     voiceCallJoining = false;
-    showConnectedVoiceCallControls();
+    updateVoiceCallPeerConnectionState();
   } catch (error) {
     voiceCallJoining = false;
     console.error("LiveKit connection failed", error);
@@ -15751,6 +15755,21 @@ async function toggleVoiceCallMute() {
     voiceCallMicMuted = !voiceCallMicMuted;
     setVoiceCallStatus(error.message || "Could not change microphone state.");
   }
+}
+function updateVoiceCallPeerConnectionState() {
+  if (!liveKitRoom || !activeVoiceCallId || voiceCallJoining) return;
+  const hasOtherParticipant = liveKitRoom.remoteParticipants && liveKitRoom.remoteParticipants.size > 0;
+  if (hasOtherParticipant) {
+    $("voiceCallPeer").textContent = "Connected securely";
+    $("voiceCallAvatar").textContent = "✓";
+    showConnectedVoiceCallControls();
+    return;
+  }
+  $("voiceCallPeer").textContent = "Waiting for the other member";
+  $("voiceCallAvatar").textContent = "☎";
+  showVoiceCallModal("Connecting voice call", "You have joined securely. Waiting for the other member to join…", [
+    { label:"End call", danger:true, handler:() => finishVoiceCall() }
+  ]);
 }
 function showConnectedVoiceCallControls() {
   const localText = voiceCallMicMuted ? "You are muted" : "Microphone is on";
@@ -15804,11 +15823,15 @@ async function finishVoiceCall(updateServer = true) {
 }
 function beginVoiceCallPolling() {
   if (voiceCallPollTimer) clearInterval(voiceCallPollTimer);
+  let statusCheckRunning = false;
   voiceCallPollTimer = setInterval(async () => {
-    if (!activeVoiceCallId) return;
+    if (!activeVoiceCallId || statusCheckRunning) return;
+    statusCheckRunning = true;
     try {
-      const { data, error } = await db.from("call_sessions").select("status,callee_id,caller_id,caller_muted,callee_muted").eq("id",activeVoiceCallId).maybeSingle();
-      if (error) throw error;
+      // Read call state through the authenticated Edge Function so caller updates
+      // do not depend on client-side SELECT/RLS access to call_sessions.
+      const result = await invokeVoiceCall("status", { call_id:activeVoiceCallId });
+      const data = result?.call;
       if (!data || ["rejected","ended","missed"].includes(data.status)) {
         await finishVoiceCall(false);
         showVoiceCallModal("Call ended", "The other member has ended the call.", [
@@ -15819,10 +15842,12 @@ function beginVoiceCallPolling() {
       applyRemoteCallMuteState(data);
       if (data.status === "accepted" && activeVoiceCallRole === "caller" && !liveKitRoom && !voiceCallJoining) {
         if (voiceCallRingTimer) { clearTimeout(voiceCallRingTimer); voiceCallRingTimer = null; }
+        setVoiceCallStatus("The member accepted. Connecting your audio…");
         await joinVoiceCallRoom();
       }
     } catch (e) { console.warn("Call status check failed",e); }
-  }, 2500);
+    finally { statusCheckRunning = false; }
+  }, 1000);
 }
 function handleVoiceCallUpdate(call) {
   if (!call) return;

@@ -92,6 +92,18 @@ Deno.serve(async (req: Request) => {
 
     const otherId = call.caller_id === userId ? call.callee_id : call.caller_id;
 
+    if (action === "status") {
+      // Only the two participants may read this minimal call state.
+      return reply({ call: {
+        id: call.id,
+        status: call.status,
+        caller_id: call.caller_id,
+        callee_id: call.callee_id,
+        caller_muted: call.caller_muted === true,
+        callee_muted: call.callee_muted === true,
+      } });
+    }
+
     if (action === "accept") {
       if (call.callee_id !== userId || call.status !== "ringing") return reply({ error: "This call can no longer be accepted." }, 409);
       if (!(await canCall(otherId))) {

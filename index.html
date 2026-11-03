@@ -13876,6 +13876,33 @@ del.setAttribute("aria-label", "Delete photo");
           status("photoStatus","Photo record could not be deleted.",true);
           return;
         }
+
+        // Re-number the remaining photos after every deletion.
+        // If position 0 was deleted, the next photo becomes the new main photo.
+        const {data:remainingPhotos,error:remainingError}=await db
+          .from("profile_photos")
+          .select("id,position")
+          .eq("user_id",currentUser.id)
+          .order("position",{ascending:true})
+          .order("created_at",{ascending:true});
+        if(remainingError){
+          await loadMyPhotos();
+          status("photoStatus","Photo deleted, but the remaining photo order could not be refreshed. Please reload your profile.",true);
+          return;
+        }
+        for(let i=0;i<(remainingPhotos||[]).length;i++){
+          if(remainingPhotos[i].position!==i){
+            const {error:positionError}=await db.from("profile_photos")
+              .update({position:i})
+              .eq("id",remainingPhotos[i].id)
+              .eq("user_id",currentUser.id);
+            if(positionError){
+              await loadMyPhotos();
+              status("photoStatus","Photo deleted, but the remaining photo order could not be saved. Please reload your profile.",true);
+              return;
+            }
+          }
+        }
         await loadMyPhotos();
       };
       item.appendChild(del);

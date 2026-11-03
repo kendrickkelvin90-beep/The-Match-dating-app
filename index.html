@@ -9746,6 +9746,13 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
       people=people.filter(person=>Array.isArray(person.sexual_roles)&&person.sexual_roles.some(role=>rolePreferences.includes(role)));
     }
   }
+  if (showMe !== "everyone") {
+    const expected = showMe === "nonbinary" ? "non-binary" : showMe;
+    people = people.filter(person => String(person.gender_identity || "").toLowerCase().includes(expected));
+  }
+  if (lookingFor) people = people.filter(person => String(person.interested_in || "").toLowerCase() === lookingFor.toLowerCase());
+  if (viewerPremium && savedPreferences.verifiedOnly) people = people.filter(person => person.is_verified || ["basic","enhanced"].includes(person.verification_level));
+  if (viewerPremium && savedPreferences.recentlyActive) people = people.filter(person => isUserOnline(person.id));
 
   people = people.filter(p =>
     !alreadyLiked.has(p.id) &&
@@ -12202,6 +12209,8 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
     distance.max = premium ? "200" : "50";
     distance.value = Math.min(Number(saved.distance || 50), premium ? 200 : 50);
     $("discoveryDistanceValue").textContent = distance.value + " km";
+    $("discoveryAgeMin").max = premium ? "99" : "79";
+    $("discoveryAgeMax").max = premium ? "99" : "79";
     $("discoveryAgeMin").value = saved.minAge ?? 18;
     $("discoveryAgeMax").value = Math.min(Number(saved.maxAge ?? 79), premium ? 99 : 79);
     if (saved.location !== undefined) $("discoveryLocation").value = saved.location;

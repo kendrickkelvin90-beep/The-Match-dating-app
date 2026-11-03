@@ -12006,8 +12006,8 @@ $("enablePushNotifications").addEventListener("click", () => {
 });
 
   
-$("openDiscoveryPreferencesTop").addEventListener("click", () => {
-  loadDiscoveryPreferences();
+$("openDiscoveryPreferencesTop").addEventListener("click", async () => {
+  await loadDiscoveryPreferences();
   show("discoveryPreferencesPage");
 });
 $("backFromDiscoveryPreferences").addEventListener("click", () => {
@@ -12017,27 +12017,29 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
   $("discoveryDistanceValue").textContent = event.target.value + " km";
 });
   $("saveDiscoveryPreferences").addEventListener("click", async () => {
+  const premium = await matchIsPremium();
   const minAge = Number($("discoveryAgeMin").value);
   const maxAge = Number($("discoveryAgeMax").value);
 
-  if (minAge < 18 || maxAge > 99 || minAge > maxAge) {
+  if (minAge < 18 || maxAge > (premium ? 99 : 79) || minAge > maxAge) {
     $("discoveryPreferencesStatus").textContent =
-      "Please enter a valid age range from 18 to 99.";
+      "Please enter a valid age range from 18 to " + (premium ? "99" : "79") + ".";
     return;
   }
 
+  const premium = await matchIsPremium();
   const preferences = {
     location: $("discoveryLocation").value.trim(),
-    distance: Number($("discoveryDistance").value),
+    distance: Math.min(Number($("discoveryDistance").value), premium ? 200 : 50),
     minAge,
     maxAge,
     showMe: $("discoveryShowMe").value,
     lookingFor: $("discoveryLookingFor").value,
     interests: $("discoveryInterests").value.trim(),
-    verifiedOnly: $("discoveryVerifiedOnly").checked,
-    recentlyActive: $("discoveryRecentlyActive").checked,
-    expandRange: $("discoveryExpandRange").checked,
-    rolePreferences: Array.from(document.querySelectorAll('input[name="discoveryRolePreference"]:checked')).map(el=>el.value)
+    verifiedOnly: premium && $("discoveryVerifiedOnly").checked,
+    recentlyActive: premium && $("discoveryRecentlyActive").checked,
+    expandRange: premium && $("discoveryExpandRange").checked,
+    rolePreferences: Array.from(document.querySelectorAll('input[name="discoveryRolePreference"]:checked:not(:disabled)')).map(el=>el.value)
   };
 
   try {
@@ -12045,6 +12047,7 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
       "theMatchDiscoveryPreferences",
       JSON.stringify(preferences)
     );
+    await loadDiscoveryPreferences();
     // These Discover controls are explicitly device-local. Do not make a
     // profile-table request here that can fail and falsely report the save.
     $("discoveryPreferencesStatus").textContent =
@@ -12055,30 +12058,61 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
       "Could not save preferences on this device. Check your browser storage and try again.";
   }
 });
-  function loadDiscoveryPreferences() {
+  async function loadDiscoveryPreferences() {
   try {
-    const saved = JSON.parse(
-      localStorage.getItem("theMatchDiscoveryPreferences") || "{}"
-    );
-
+    const premium = await matchIsPremium();
+    const saved = JSON.parse(localStorage.getItem("theMatchDiscoveryPreferences") || "{}");
+    const distance = $("discoveryDistance");
+    distance.max = premium ? "200" : "50";
+    distance.value = Math.min(Number(saved.distance || 50), premium ? 200 : 50);
+    $("discoveryDistanceValue").textContent = distance.value + " km";
+    $("discoveryAgeMin").value = saved.minAge ?? 18;
+    $("discoveryAgeMax").value = Math.min(Number(saved.maxAge ?? 79), premium ? 99 : 79);
     if (saved.location !== undefined) $("discoveryLocation").value = saved.location;
-    if (saved.distance !== undefined) $("discoveryDistance").value = saved.distance;
-    if (saved.minAge !== undefined) $("discoveryAgeMin").value = saved.minAge;
-    if (saved.maxAge !== undefined) $("discoveryAgeMax").value = saved.maxAge;
     if (saved.showMe !== undefined) $("discoveryShowMe").value = saved.showMe;
     if (saved.lookingFor !== undefined) $("discoveryLookingFor").value = saved.lookingFor;
     if (saved.interests !== undefined) $("discoveryInterests").value = saved.interests;
-    if (saved.verifiedOnly !== undefined) $("discoveryVerifiedOnly").checked = saved.verifiedOnly;
-    if (saved.recentlyActive !== undefined) $("discoveryRecentlyActive").checked = saved.recentlyActive;
-    if (saved.expandRange !== undefined) $("discoveryExpandRange").checked = saved.expandRange;
-    document.querySelectorAll('input[name="discoveryRolePreference"]').forEach(el=>{
-      el.checked=Array.isArray(saved.rolePreferences)&&saved.rolePreferences.includes(el.value);
+
+    const premiumOnly = ["discoveryVerifiedOnly","discoveryRecentlyActive","discoveryExpandRange"];
+    premiumOnly.forEach(id => {
+      const input = $(id);
+      const label = input?.closest("label");
+      if (!input || !label) return;
+      input.disabled = !premium;
+      label.classList.toggle("premium-locked-preference", !premium);
+      let tag = label.querySelector(".premium-lock-tag");
+      if (!premium && !tag) {
+        tag = document.createElement("small");
+        tag.className = "premium-lock-tag";
+        tag.textContent = " 🔒 Premium";
+        label.querySelector("span")?.appendChild(tag);
+      } else if (premium && tag) tag.remove();
+      if (!premium) input.checked = false;
+      else if (saved[id.replace("discovery","").charAt(0).toLowerCase()+id.replace("discovery","").slice(1)] !== undefined) {
+        input.checked = !!saved[id.replace("discovery","").charAt(0).toLowerCase()+id.replace("discovery","").slice(1)];
+      }
     });
 
-    $("discoveryDistanceValue").textContent =
-      $("discoveryDistance").value + " km";
+    document.querySelectorAll('input[name="discoveryRolePreference"]').forEach(el=>{
+      const advanced = !["Top","Bottom","Versatile"].includes(el.value);
+      const label = el.closest("label");
+      el.disabled = !premium && advanced;
+      label?.classList.toggle("premium-locked-preference", !premium && advanced);
+      let tag = label?.querySelector(".premium-lock-tag");
+      if (!premium && advanced && !tag) {
+        tag = document.createElement("small");
+        tag.className = "premium-lock-tag";
+        tag.textContent = " 🔒";
+        label?.appendChild(tag);
+      } else if (premium && tag) tag.remove();
+      el.checked = Array.isArray(saved.rolePreferences) && saved.rolePreferences.includes(el.value) && (premium || !advanced);
+    });
+    $("discoveryPreferencesStatus").textContent = premium
+      ? "Premium discovery controls are unlocked."
+      : "Free access includes basic preferences. Upgrade to unlock advanced filters.";
   } catch (error) {
     console.error("Could not load discovery preferences:", error);
+    status("discoveryPreferencesStatus","Could not load preferences. Please try again.",true);
   }
   }
   $("resetDiscoveryPreferences").addEventListener("click", () => {

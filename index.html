@@ -9595,14 +9595,26 @@ async function loadNearby(){
       greeting.appendChild(ownBadge);
     }
     await refreshDailyLikeCounter();
-    const savedPreferences = viewerPremium ? JSON.parse(localStorage.getItem("theMatchDiscoveryPreferences") || "{}") : {};
-    const preferredLocation = (savedPreferences.location || "").trim();
-    const maxDistance = Math.min(Number(savedPreferences.distance) || 50, viewerPremium ? 200 : 50);
-    const minAge = Number(savedPreferences.minAge) || 18;
-    const maxAge = Math.min(Number(savedPreferences.maxAge) || 79, viewerPremium ? 99 : 79);
+    const allSavedPreferences = JSON.parse(localStorage.getItem("theMatchDiscoveryPreferences") || "{}");
+    // Free members keep basic gender/connection choices, while advanced filters
+    // (city, custom age range, distance, roles and activity filters) are Premium-only.
+    const savedPreferences = viewerPremium ? allSavedPreferences : {
+      showMe: allSavedPreferences.showMe || "everyone",
+      lookingFor: allSavedPreferences.lookingFor || ""
+    };
+    const preferredLocation = viewerPremium ? (savedPreferences.location || "").trim() : "";
+    const maxDistance = viewerPremium
+      ? Math.min(Number(savedPreferences.distance) || 50, 200)
+      : 50;
+    const minAge = viewerPremium ? (Number(savedPreferences.minAge) || 18) : 18;
+    const maxAge = viewerPremium
+      ? Math.min(Number(savedPreferences.maxAge) || 79, 99)
+      : 79;
     const showMe = savedPreferences.showMe || "everyone";
     const lookingFor = savedPreferences.lookingFor || "";
-    const rolePreferences = Array.isArray(savedPreferences.rolePreferences) ? savedPreferences.rolePreferences : [];
+    const rolePreferences = viewerPremium && Array.isArray(savedPreferences.rolePreferences)
+      ? savedPreferences.rolePreferences
+      : [];
 
     
     const { data: peopleData, error } = await db.rpc(
@@ -9780,7 +9792,9 @@ if (discoverMemberIds.length) {
 if (!people.length) {
   status(
     "discoverStatus",
-    "No eligible profiles found. Try changing your age or location preferences."
+    viewerPremium
+      ? "No profiles match your current Discover preferences. Try widening your filters or check again later."
+      : "There are no eligible profiles available within your normal discovery area right now. Your Discover settings are already set to show available members. Please check again soon."
   );
   return;
 }

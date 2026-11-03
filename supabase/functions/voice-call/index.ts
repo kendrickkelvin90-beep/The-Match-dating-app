@@ -107,6 +107,18 @@ Deno.serve(async (req: Request) => {
       return reply({ call: data });
     }
 
+    if (action === "mute") {
+      if (call.status !== "accepted") return reply({ error: "Mute controls are available only during a connected call." }, 409);
+      const muted = body.muted === true;
+      const muteColumn = call.caller_id === userId ? "caller_muted" : "callee_muted";
+      const { error } = await admin.from("call_sessions").update({
+        [muteColumn]: muted,
+        updated_at: new Date().toISOString(),
+      }).eq("id", callId).eq("status", "accepted");
+      if (error) throw error;
+      return reply({ call: { id: callId, [muteColumn]: muted } });
+    }
+
     if (action === "reject" || action === "end") {
       if (action === "reject" && (call.callee_id !== userId || call.status !== "ringing")) {
         return reply({ error: "Only the invited member can reject a ringing call." }, 403);

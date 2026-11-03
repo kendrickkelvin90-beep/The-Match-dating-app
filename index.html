@@ -5211,6 +5211,61 @@ body.light-theme #nearbyPage #nearbyMapEmptyState{background:rgba(255,254,250,.9
 body.light-theme #nearbyPage #nearbyPremiumPrompt{background:rgba(255,254,250,.97);color:#30291d;border-color:#d8c69e;box-shadow:0 6px 22px rgba(50,40,20,.12)}
 @media(max-width:390px){#nearbyPage #nearbyMembersMap{height:58vh;min-height:340px;border-radius:17px}#nearbyPage .nearby-map-avatar{width:45px;height:45px}}
 </style>
+<style id="light-theme-notification-promo-parity">
+/* Keep the notification count clearly attached to its icon in Light Theme. */
+body.light-theme #openNotifications {
+  position: relative !important;
+  overflow: visible !important;
+}
+body.light-theme #notificationBadge {
+  position: absolute !important;
+  top: -5px !important;
+  right: -5px !important;
+  left: auto !important;
+  z-index: 5 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 19px !important;
+  height: 19px !important;
+  padding: 0 4px !important;
+  border: 2px solid #ffffff !important;
+  border-radius: 999px !important;
+  background: #c6a66b !important;
+  color: #171717 !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,.16) !important;
+}
+
+/* Match the feature announcement cards to the white, black and gold theme. */
+body.light-theme #matchFeaturePromoCard {
+  background: linear-gradient(145deg, #ffffff 0%, #f7f1e5 100%) !important;
+  color: #171717 !important;
+  border: 1px solid #c6a66b !important;
+  box-shadow: 0 18px 50px rgba(35, 28, 15, .18) !important;
+}
+body.light-theme #matchFeaturePromoCard .match-promo-kicker {
+  color: #98732f !important;
+}
+body.light-theme #matchFeaturePromoCard h3 {
+  color: #171717 !important;
+}
+body.light-theme #matchFeaturePromoCard p {
+  color: #514b40 !important;
+}
+body.light-theme #matchFeaturePromoCard .match-promo-action {
+  background: #f5ecd8 !important;
+  color: #684c1e !important;
+  border: 1px solid #c6a66b !important;
+}
+body.light-theme #matchFeaturePromoClose {
+  background: #ffffff !important;
+  color: #51401f !important;
+  border: 1px solid #d8c49e !important;
+}
+</style>
 </head>
 <body>
 <div id="stars" aria-hidden="true"></div>

@@ -13954,18 +13954,25 @@ async function uploadSelectedPhotos(){
       if(file.size>5242880)
         throw Error("Each photo must be 5 MB or smaller.");
 
-      const { data: uploadData, error: uploadUrlError } = await db.functions.invoke("b2-media", {
-        body: { action: "create-upload-url", contentType: file.type, fileName: file.name }
-      });
-      if (uploadUrlError || !uploadData?.uploadUrl || !uploadData?.objectKey) {
-        throw uploadUrlError || new Error("Could not prepare secure photo upload.");
-      }
-      const putResponse = await fetch(uploadData.uploadUrl, {
-        method: "PUT",
-        headers: uploadData.requiredHeaders || { "Content-Type": file.type },
+      const { data: authData, error: authError } = await db.auth.getSession();
+      const accessToken = authData?.session?.access_token;
+      if (authError || !accessToken) throw authError || new Error("Please sign in again before uploading.");
+      const uploadResponse = await fetch("https://rxbdmgzmwhjnkcclyrcq.supabase.co/functions/v1/b2-media", {
+        method: "POST",
+        headers: {
+          "apikey": "sb_publishable_5OirCcmy8L5n3isPvi-P0w_Dgeb13U_",
+          "Authorization": "Bearer " + accessToken,
+          "x-action": "upload-file",
+          "x-file-name": encodeURIComponent(file.name),
+          "Content-Type": file.type
+        },
         body: file
       });
-      if (!putResponse.ok) throw new Error("Secure photo upload failed (" + putResponse.status + ").");
+      const uploadResult = await uploadResponse.json().catch(() => ({}));
+      if (!uploadResponse.ok || !uploadResult?.objectKey) {
+        throw new Error(uploadResult?.error || "Secure photo upload failed (" + uploadResponse.status + ").");
+      }
+      const uploadData = { objectKey: uploadResult.objectKey };
       const path = "b2://" + uploadData.objectKey;
 
       const {error:insertError}=await db.from("profile_photos")

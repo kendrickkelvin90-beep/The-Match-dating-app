@@ -113,7 +113,7 @@
     const {data:wallet,error}=await client.from("coin_wallets").select("balance").eq("user_id",user.id).maybeSingle();
     if(error)throw error;
     document.getElementById("cwBalance").textContent=(wallet?.balance||0).toLocaleString("en-NG")+" coins";
-    const [ledger,requests]=await Promise.all([
+    const [ledger,requests,inventory]=await Promise.all([
       client.from("coin_ledger").select("amount,entry_type,description,created_at,balance_after").eq("user_id",user.id).order("created_at",{ascending:false}).limit(40),
       client.from("coin_purchase_requests").select("id,coins,amount_ngn,status,admin_note,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(20),
       client.from("coin_store_inventory").select("item_code,quantity").eq("user_id",user.id)

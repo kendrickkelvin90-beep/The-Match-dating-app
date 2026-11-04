@@ -45,12 +45,16 @@ async function sendMembershipEmail(
   type: string,
   title: string,
   body: string,
-  supabaseKey: string,
+  supabaseApiKey: string,
 ): Promise<void> {
   const resendKey = Deno.env.get("RESEND_API_KEY");
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  // Auth Admin API requires the legacy service-role JWT in Authorization.
+  // A new sb_secret_ key is valid as apikey but is not a JWT bearer token.
+  const serviceRoleJwt = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!resendKey) throw new Error("RESEND_API_KEY is not configured.");
   if (!supabaseUrl) throw new Error("SUPABASE_URL is not configured.");
+  if (!serviceRoleJwt) throw new Error("SUPABASE_SERVICE_ROLE_KEY is unavailable for the Auth Admin lookup.");
   if (!notificationId) throw new Error("Membership email requires a notification ID for idempotency.");
 
   // Look up the recipient server-side. Never accept an email address from the webhook payload.
@@ -58,8 +62,8 @@ async function sendMembershipEmail(
     `${supabaseUrl}/auth/v1/admin/users/${encodeURIComponent(userId)}`,
     {
       headers: {
-        "apikey": supabaseKey,
-        "Authorization": `Bearer ${supabaseKey}`,
+        "apikey": supabaseApiKey,
+        "Authorization": `Bearer ${serviceRoleJwt}`,
       },
     },
   );

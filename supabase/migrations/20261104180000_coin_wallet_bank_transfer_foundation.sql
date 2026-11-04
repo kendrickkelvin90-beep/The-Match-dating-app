@@ -220,14 +220,15 @@ begin
     for update
   loop
     v_key:='annual-bonus:'||v_period::text;
-    insert into public.coin_wallets(user_id) values(v_row.user_id) on conflict(user_id) do nothing;
-    select balance into v_balance from public.coin_wallets where user_id=v_row.user_id for update;
-    update public.coin_wallets set balance=balance+50,updated_at=now() where user_id=v_row.user_id returning balance into v_balance;
-    insert into public.coin_ledger(user_id,amount,balance_after,entry_type,idempotency_key,description)
-    values(v_row.user_id,50,v_balance,'annual_bonus',v_key,'Match Annual 30-day coin reward')
-    on conflict(user_id,idempotency_key) do nothing;
+    if not exists(select 1 from public.coin_ledger where user_id=v_row.user_id and idempotency_key=v_key) then
+      insert into public.coin_wallets(user_id) values(v_row.user_id) on conflict(user_id) do nothing;
+      select balance into v_balance from public.coin_wallets where user_id=v_row.user_id for update;
+      update public.coin_wallets set balance=balance+50,updated_at=now() where user_id=v_row.user_id returning balance into v_balance;
+      insert into public.coin_ledger(user_id,amount,balance_after,entry_type,idempotency_key,description)
+      values(v_row.user_id,50,v_balance,'annual_bonus',v_key,'Match Annual 30-day coin reward');
+      v_count:=v_count+1;
+    end if;
     update public.match_plus_memberships set last_bonus_period=v_period,updated_at=now() where user_id=v_row.user_id;
-    v_count:=v_count+1;
   end loop;
   return v_count;
 end;

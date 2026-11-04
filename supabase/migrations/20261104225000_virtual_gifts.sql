@@ -66,6 +66,8 @@ declare
  v_gift public.gift_catalog%rowtype;
  v_balance integer;
  v_id uuid;
+ v_existing_recipient uuid;
+ v_existing_code text;
 begin
  if v_sender is null then raise exception 'Please sign in.'; end if;
  if p_request_id is null then raise exception 'Please retry sending this gift.'; end if;
@@ -73,9 +75,14 @@ begin
  if not public.can_interact_with_member(p_recipient_id) then raise exception 'This conversation is unavailable.'; end if;
  if p_message is not null and char_length(p_message)>160 then raise exception 'Gift message is too long.'; end if;
 
- select id into v_id from public.member_gifts
- where sender_id=v_sender and request_id=p_request_id;
- if found then return v_id; end if;
+ select id,recipient_id,gift_code into v_id,v_existing_recipient,v_existing_code
+ from public.member_gifts where sender_id=v_sender and request_id=p_request_id;
+ if found then
+   if v_existing_recipient<>p_recipient_id or v_existing_code<>p_gift_code then
+     raise exception 'This gift request ID was already used for a different gift.';
+   end if;
+   return v_id;
+ end if;
 
  select * into v_gift from public.gift_catalog where code=p_gift_code and active for share;
  if not found then raise exception 'This gift is unavailable.'; end if;
@@ -83,9 +90,14 @@ begin
  select balance into v_balance from public.coin_wallets where user_id=v_sender for update;
 
  -- Recheck after taking the wallet lock so simultaneous retries cannot charge twice.
- select id into v_id from public.member_gifts
- where sender_id=v_sender and request_id=p_request_id;
- if found then return v_id; end if;
+ select id,recipient_id,gift_code into v_id,v_existing_recipient,v_existing_code
+ from public.member_gifts where sender_id=v_sender and request_id=p_request_id;
+ if found then
+   if v_existing_recipient<>p_recipient_id or v_existing_code<>p_gift_code then
+     raise exception 'This gift request ID was already used for a different gift.';
+   end if;
+   return v_id;
+ end if;
 
  if v_balance < v_gift.send_cost then raise exception 'Not enough coins in your wallet.'; end if;
  update public.coin_wallets set balance=balance-v_gift.send_cost,updated_at=now()

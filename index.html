@@ -14800,8 +14800,10 @@ show("messages");
 
 
 
+let chatSendInProgress = false;
+
 async function loadChatMessages(){
-  if (!currentUser || !activeChatUserId) return;
+  if (!currentUser || !activeChatUserId || chatSendInProgress) return;
 
   
   const requestedChatUserId = activeChatUserId;
@@ -15438,6 +15440,7 @@ const receiverId = activeChatUserId;
 const viewOnce = false;
 
 button.disabled = true;
+chatSendInProgress = true;
 button.textContent = "➤"; // Keep the send arrow visible; never show a blocking “Sending…” label.
 let optimisticBubble = null;
 let textMessageSaved = false;
@@ -15540,6 +15543,8 @@ input.style.height = "auto";
 if (fileInput) fileInput.value = "";
 // No composer-level View Once toggle.
 
+// Release the refresh guard before reloading the persisted conversation.
+chatSendInProgress = false;
 await loadChatMessages();
 
 status(
@@ -15567,6 +15572,7 @@ status(
 );
 
 } finally {
+chatSendInProgress = false;
 button.disabled = false;
 button.textContent = "➤";
 }

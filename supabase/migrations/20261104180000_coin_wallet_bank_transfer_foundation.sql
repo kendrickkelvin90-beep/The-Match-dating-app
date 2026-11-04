@@ -108,7 +108,8 @@ alter table public.notifications add constraint notifications_type_check check (
     'coin_purchase_rejected'::text
   ])
 );
-\ncreate or replace function public.coin_is_admin()
+
+create or replace function public.coin_is_admin()
 returns boolean language sql stable security definer set search_path = ''
 as $$
   select exists(select 1 from public.app_admins a where a.user_id = (select auth.uid()));

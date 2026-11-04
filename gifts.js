@@ -131,7 +131,7 @@ function addGiftAdminButton(){
  const head=document.querySelector("#adminPanel .admin-top-actions");
  if(!head||head.querySelector("#openGiftAdmin"))return;
  const b=document.createElement("button");b.type="button";b.id="openGiftAdmin";b.className="admin-refresh-button";b.textContent="🎁 Gift Manager";
- b.onclick=async()=>{adminPanel.classList.add("open");mgaStatus("Verifying administrator access…");try{await loadGiftAdmin();mgaStatus("Gift Manager ready.");}catch(e){adminPanel.classList.remove("open");status("Admin access denied or Gift Manager unavailable.");}};
+ b.onclick=async()=>{adminPanel.classList.add("open");mgaStatus("Verifying administrator access…");try{await loadGiftAdmin();mgaStatus("Gift Manager ready.");}catch(e){mgaStatus(e.message||"Admin access denied or Gift Manager unavailable.");}};
  head.insertBefore(b,head.firstChild);
 }
 document.addEventListener("match:admin-opened",addGiftAdminButton);

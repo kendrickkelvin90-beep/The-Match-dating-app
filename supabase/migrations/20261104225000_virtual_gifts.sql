@@ -60,7 +60,7 @@ drop function if exists public.send_member_gift(uuid,text,text);
 create or replace function public.send_member_gift(
  p_recipient_id uuid,p_gift_code text,p_message text default null,p_request_id uuid default null
 )
-returns uuid language plpgsql security definer set search_path='' as $
+returns uuid language plpgsql security definer set search_path='' as $$
 declare
  v_sender uuid:=auth.uid();
  v_gift public.gift_catalog%rowtype;
@@ -108,7 +108,7 @@ begin
  insert into public.coin_ledger(user_id,amount,balance_after,entry_type,reference_id,idempotency_key,description)
  values(v_sender,-v_gift.send_cost,v_balance,'gift_send',v_id,'gift-send:'||v_id,'Sent '||v_gift.name);
  return v_id;
-end $;
+end $$;
 revoke all on function public.send_member_gift(uuid,text,text,uuid) from public,anon;
 grant execute on function public.send_member_gift(uuid,text,text,uuid) to authenticated;
 

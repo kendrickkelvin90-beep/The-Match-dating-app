@@ -12931,8 +12931,8 @@ async function matchCanBoost(userId = currentUser?.id) {
   return (await matchIsPremium(userId)) || tier === "quarterly" || tier === "annual";
 }
 async function matchHasAdvancedFilters(userId = currentUser?.id) {
-  // Advanced Discovery filters remain Premium-only until their tier support is implemented.
-  return await matchIsPremium(userId);
+  const tier = await matchPlusTier(userId);
+  return (await matchIsPremium(userId)) || tier === "quarterly" || tier === "annual";
 }
 
 async function matchIsLite(userId = currentUser?.id) {
@@ -13326,7 +13326,8 @@ async function loadLikesPage(){
     if(liteError)throw liteError;
     const isLite=!!liteMembership?.lite_until && new Date(liteMembership.lite_until).getTime()>Date.now();
 
-    if(!isPremium && !isLite){
+    const coinTier=await matchPlusTier();
+    if(!isPremium && !isLite && coinTier!=="quarterly" && coinTier!=="annual"){
       const {data:count,error:countError}=await db
   .rpc("get_my_incoming_like_count");
 
@@ -13340,7 +13341,7 @@ if(countError)throw countError;
       const lockTitle=document.createElement("h3");
       lockTitle.textContent=(count||0)===1 ? "Someone likes you" : (count||0)+" people like you";
       const lockMessage=document.createElement("p");
-      lockMessage.textContent="Unlock your incoming likes and see full profile photos with The Match Lite or Premium.";
+      lockMessage.textContent="Unlock your incoming likes and see full profile photos with Match Lite, Match Quarterly or Match Annual.";
       const upgradeButton=document.createElement("button");
       upgradeButton.type="button";
       upgradeButton.textContent="Explore membership  →";

@@ -43,6 +43,13 @@ revoke all on public.gift_catalog,public.member_gifts from anon,authenticated;
 grant select on public.gift_catalog,public.member_gifts to authenticated;
 create policy gift_catalog_active_read on public.gift_catalog for select to authenticated using(active);
 create policy gift_catalog_admin_read on public.gift_catalog for select to authenticated using (public.is_match_admin());
+create policy gift_catalog_gift_participant_read on public.gift_catalog for select to authenticated using (
+  exists (
+    select 1 from public.member_gifts g
+    where g.gift_code = gift_catalog.code
+      and (g.sender_id = auth.uid() or g.recipient_id = auth.uid())
+  )
+);
 create policy member_gifts_participant_read on public.member_gifts for select to authenticated using(auth.uid()=sender_id or auth.uid()=recipient_id);
 
 create or replace function public.send_member_gift(p_recipient_id uuid,p_gift_code text,p_message text default null)

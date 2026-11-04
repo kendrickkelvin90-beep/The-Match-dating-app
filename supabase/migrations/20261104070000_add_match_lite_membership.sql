@@ -26,28 +26,19 @@ $$;
 revoke all on function public.is_match_lite(uuid) from public;
 grant execute on function public.is_match_lite(uuid) to authenticated;
 
-alter table public.notifications
-  drop constraint if exists notifications_type_check;
-alter table public.notifications
-  add constraint notifications_type_check
-  check (type = any (array[
-    'verification_approved','verification_rejected','verification_reminder',
-    'verification_grace_expired','like','message','premium_welcome','premium_expired',
-    'story_uploaded','story_limit','lite_welcome'
-  ]::text[]));
-
 alter table public.premium_payment_requests
   drop constraint if exists premium_payment_requests_plan_check;
 alter table public.premium_payment_requests
   add constraint premium_payment_requests_plan_check
-  check (plan = any (array['monthly','yearly','lite_monthly']::text[]));
+  check (plan = any (array['weekly','monthly','yearly','lite_monthly']::text[]));
 alter table public.premium_payment_requests
   drop constraint if exists premium_payment_plan_amount_check;
 alter table public.premium_payment_requests
   add constraint premium_payment_plan_amount_check
   check (
-    (plan = 'monthly' and amount_ngn = any(array[3000,5000]::integer[]))
-    or (plan = 'yearly' and amount_ngn = any(array[20000,50000]::integer[]))
+    (plan = 'weekly' and amount_ngn = 4000)
+    or (plan = 'monthly' and amount_ngn = any(array[3000,5000,8000]::integer[]))
+    or (plan = 'yearly' and amount_ngn = any(array[20000,49800,50000]::integer[]))
     or (plan = 'lite_monthly' and amount_ngn = 1000)
   );
 
@@ -128,20 +119,20 @@ begin
         lite_until=greatest(public.lite_memberships.lite_until,v_now)+interval '30 days'
       returning lite_until into v_lite_until;
       insert into public.notifications(user_id,type,title,body)
-      values(v_user_id,'lite_welcome','The Match Lite is active!',
+      values(v_user_id,'premium_welcome','The Match Lite is active!',
         'Hello '||coalesce(v_display_name,'there')||', your 30-day The Match Lite membership is now active until '||
         to_char(v_lite_until at time zone 'Africa/Lagos','DD Mon YYYY, HH12:MI AM')||
         ' (WAT). You now have unlimited swipes and can see who likes you.');
     elsif p_decision='approved' then
       insert into public.premium_memberships(user_id,premium_started_at,premium_until)
-      values(v_user_id,v_now,v_now+case when v_plan='yearly' then interval '1 year' else interval '1 month' end)
+      values(v_user_id,v_now,v_now+case when v_plan='yearly' then interval '1 year' when v_plan='weekly' then interval '7 days' else interval '1 month' end)
       on conflict(user_id) do update set
         premium_started_at=case when public.premium_memberships.premium_until is null or public.premium_memberships.premium_until<=v_now then v_now else public.premium_memberships.premium_started_at end,
-        premium_until=greatest(coalesce(public.premium_memberships.premium_until,v_now),v_now)+case when v_plan='yearly' then interval '1 year' else interval '1 month' end
+        premium_until=greatest(coalesce(public.premium_memberships.premium_until,v_now),v_now)+case when v_plan='yearly' then interval '1 year' when v_plan='weekly' then interval '7 days' else interval '1 month' end
       returning premium_until into v_premium_until;
       insert into public.notifications(user_id,type,title,body)
       values(v_user_id,'premium_welcome','Welcome to The Match Premium!',
-        'Hello '||coalesce(v_display_name,'there')||', your '||case when v_plan='yearly' then 'yearly' else 'monthly' end||
+        'Hello '||coalesce(v_display_name,'there')||', your '||case when v_plan='yearly' then 'yearly' when v_plan='weekly' then 'weekly' else 'monthly' end||
         ' Premium subscription is now active. It expires on '||
         to_char(v_premium_until at time zone 'Africa/Lagos','DD Mon YYYY, HH12:MI AM')||' (WAT). Enjoy your exclusive benefits!');
     else

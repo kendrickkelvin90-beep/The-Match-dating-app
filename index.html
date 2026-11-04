@@ -9061,6 +9061,9 @@ const DISCOVER_CITY_COORDINATES = {
   "abuja":[9.0765,7.3986],"fct":[9.0765,7.3986],"federal capital territory":[9.0765,7.3986],
   "lagos":[6.5244,3.3792],"ikeja":[6.6018,3.3515],"lekki":[6.4698,3.5852],"ajah":[6.4698,3.5852],
   "abeokuta":[7.1475,3.3619],"ogun":[7.1475,3.3619],"ogun state":[7.1475,3.3619],
+  "sagamu":[6.8485,3.6460],"ijebu ode":[6.8194,3.9173],"ota":[6.6886,3.2320],
+  "ifo":[6.8140,3.1950],"mowe":[6.8020,3.4360],"obafemi":[6.9500,3.5000],
+  "obafemi owode":[6.9500,3.5000],"owode":[6.9500,3.5000],
   "ibadan":[7.3775,3.9470],"oyo":[7.8500,3.9333],"osogbo":[7.7827,4.5418],
   "ilorin":[8.4966,4.5421],"lokoja":[7.8023,6.7333],"akure":[7.2571,5.2058],
   "ado ekiti":[7.6233,5.2209],"benin city":[6.3350,5.6037],"asaba":[6.1980,6.7330],
@@ -9100,7 +9103,15 @@ function resolveDiscoverCityCoordinates(value){
     if(DISCOVER_CITY_COORDINATES[part]) return DISCOVER_CITY_COORDINATES[part];
   }
   const whole=normalize(value);
+  if(DISCOVER_CITY_COORDINATES[whole]) return DISCOVER_CITY_COORDINATES[whole];
+  const keys=Object.keys(DISCOVER_CITY_COORDINATES).sort((a,b)=>b.length-a.length);
+  for(const key of keys){
+    const escaped=key.replace(/[.*+?^\\${}()|[\\]\\\\]/g,"\\\\  const whole=normalize(value);
   return DISCOVER_CITY_COORDINATES[whole] || null;
+}");
+    if(new RegExp("(^| )"+escaped+"( |$)").test(whole)) return DISCOVER_CITY_COORDINATES[key];
+  }
+  return null;
 }
 function approximateDiscoverCityDistanceKm(fromCity,toCity){
   const from=resolveDiscoverCityCoordinates(fromCity);

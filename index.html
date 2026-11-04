@@ -9703,28 +9703,37 @@ function startMatchLitePromotionSchedule() {
   const userId=currentUser.id, key="matchLitePromo_"+userId;
   const read=()=>{try{return JSON.parse(localStorage.getItem(key)||"{}");}catch(_){return {};}};
   const write=v=>localStorage.setItem(key,JSON.stringify(v));
-  const tick=async()=>{
+  const tick=async(forceStage=0)=>{
     if(!currentUser||currentUser.id!==userId||document.visibilityState!=="visible"||currentPage!=="discover")return;
     try{if(await matchIsPremium(userId)||await matchIsLite(userId)){clearInterval(window.matchLitePromoTimer);window.matchLitePromoTimer=null;return;}}
     catch(e){console.warn("Lite offer eligibility check failed:",e);return;}
     const state=read(); state.activeMs=(state.activeMs||0)+15000;
     let stage=0;
-    if((!state.firstShownAt||(!state.firstDismissedAt&&Date.now()-state.firstShownAt>1800000))&&state.activeMs>=600000)stage=1;
+    if(forceStage===4){
+      if(window.matchFeaturePromoRunning){setTimeout(()=>tick(4),1000);return;}
+      const today=new Date().toLocaleDateString("en-CA",{timeZone:"Africa/Lagos"});
+      if(state.limitPopupDate===today)return;
+      state.limitPopupDate=today;
+      stage=4;
+    }else if((!state.firstShownAt||(!state.firstDismissedAt&&Date.now()-state.firstShownAt>1800000))&&state.activeMs>=600000)stage=1;
     else if(state.firstDismissedAt&&!state.secondShownAt&&Date.now()>=state.secondDueAt)stage=2;
     else if(state.secondDismissedAt&&!state.thirdShownAt&&Date.now()>=state.thirdDueAt)stage=3;
     if(!stage||document.getElementById("matchLitePromoLayer")||window.matchFeaturePromoRunning){write(state);return;}
-    state[["","firstShownAt","secondShownAt","thirdShownAt"][stage]]=Date.now();write(state);
+    if(stage===4)state.limitPopupShownAt=Date.now();
+    else state[["","firstShownAt","secondShownAt","thirdShownAt"][stage]]=Date.now();
+    write(state);
     const layer=document.createElement("div");layer.id="matchLitePromoLayer";
     layer.style.cssText="position:fixed;inset:0;z-index:6100;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.48)";
     const card=document.createElement("div");card.style.cssText="position:relative;width:min(100%,410px);padding:26px 24px;border:1px solid #c6a15a;border-radius:22px;background:linear-gradient(145deg,#1b1915,#090909);color:#f7f2e8;box-shadow:0 20px 65px rgba(0,0,0,.5);text-align:center";
     const close=document.createElement("button");close.type="button";close.textContent="×";close.setAttribute("aria-label","Close offer");close.style.cssText="position:absolute;right:12px;top:10px;border:0;background:transparent;color:#f2dfbd;font-size:28px";
-    const title=document.createElement("h3");title.textContent=stage===1?"Meet The Match Lite":stage===2?"Your Lite membership is waiting":"Ready for more freedom on The Match?";title.style.cssText="color:#f2d49a;margin:8px 24px 12px;font-size:23px";
-    const body=document.createElement("p");body.textContent="Get unlimited swipes and see who likes you for 30 days for just ₦1,000. Tap below to view the payment account details, transfer ₦1,000 and submit your transfer information. Your Lite access starts only after an admin approves your payment. Lite does not include Premium-only messaging to non-matches, Nearby, Rewind or Boost.";body.style.cssText="color:#e3dccf;line-height:1.6;font-size:14px";
+    const title=document.createElement("h3");title.textContent=stage===4?"You’ve used your 20 free swipes today":stage===1?"Meet The Match Lite":stage===2?"Your Lite membership is waiting":"Ready for more freedom on The Match?";title.style.cssText="color:#f2d49a;margin:8px 24px 12px;font-size:23px";
+    const body=document.createElement("p");body.textContent=stage===4?"You’ve reached today’s free swipe limit. Get unlimited swipes and see who likes you for 30 days for just ₦1,000. Tap below to view the bank details, transfer ₦1,000 and submit your transfer information. Your Lite access starts only after admin approval. Lite does not include Premium-only messaging to non-matches, Nearby, Rewind or Boost.":"Get unlimited swipes and see who likes you for 30 days for just ₦1,000. Tap below to view the payment account details, transfer ₦1,000 and submit your transfer information. Your Lite access starts only after an admin approves your payment. Lite does not include Premium-only messaging to non-matches, Nearby, Rewind or Boost.";body.style.cssText="color:#e3dccf;line-height:1.6;font-size:14px";
     const action=document.createElement("button");action.type="button";action.textContent="Pay ₦1,000 for The Match Lite";action.style.cssText="margin-top:10px;padding:12px 18px;border-radius:999px;border:1px solid #c6a15a;background:#c6a15a;color:#17120a;font-weight:800";
-    const dismiss=()=>{if(stage===1){state.firstDismissedAt=Date.now();state.secondDueAt=Date.now()+86400000;}if(stage===2){state.secondDismissedAt=Date.now();state.thirdDueAt=Date.now()+259200000;}if(stage===3)state.thirdDismissedAt=Date.now();write(state);layer.remove();};
+    const dismiss=()=>{if(stage===1){state.firstDismissedAt=Date.now();state.secondDueAt=Date.now()+86400000;}if(stage===2){state.secondDismissedAt=Date.now();state.thirdDueAt=Date.now()+259200000;}if(stage===3)state.thirdDismissedAt=Date.now();if(stage===4)state.limitPopupDismissedAt=Date.now();write(state);layer.remove();};
     close.onclick=dismiss;action.onclick=()=>{dismiss();show("premium");const select=$("premiumPlan");if(select){select.value="lite_monthly";select.dispatchEvent(new Event("change",{bubbles:true}));}setTimeout(()=>{$("premiumAccountDetails")?.scrollIntoView({behavior:"smooth",block:"start"});},150);};
     card.append(close,title,body,action);layer.appendChild(card);document.body.appendChild(layer);
   };
+  window.showMatchLiteLimitPopup=()=>tick(4);
   window.matchLitePromoTimer=setInterval(tick,15000);
 }
 
@@ -12899,6 +12908,7 @@ async function refreshDailyLikeCounter() {
     const used = Math.min(Number(count || 0), 20);
     currentDiscoverIsPremium = false;
     currentDailySwipesUsed = used;
+    if (used >= 20) window.showMatchLiteLimitPopup?.();
     // Keep the daily limit entirely behind the scenes for Free members.
     target.textContent = "";
     target.style.display = "none";

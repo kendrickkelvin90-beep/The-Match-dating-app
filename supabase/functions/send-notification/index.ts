@@ -19,13 +19,17 @@ function reply(body: Record<string, unknown>, status = 200) {
   });
 }
 
-function getSupabaseSecretKey(): string | null {
-  const legacy = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (legacy) return legacy;
-
+function getServiceRoleJwt(req: Request): string | null {
+  const authorization = req.headers.get("Authorization") ?? "";
+  const token = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
+  const payload = token.split(".")[1];
+  if (!payload) return null;
   try {
-    const keys = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") ?? "{}");
-    return typeof keys.default === "string" ? keys.default : null;
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const claims = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
+    if (claims.role !== "service_role" || claims.ref !== "rxbdmgzmwhjnkcclyrcq") return null;
+    // Supabase gateway verifies the JWT signature because verify_jwt is enabled.
+    return token;
   } catch {
     return null;
   }
@@ -47,13 +51,10 @@ async function sendMembershipEmail(
   type: string,
   title: string,
   body: string,
-  supabaseApiKey: string,
+  serviceRoleJwt: string,
 ): Promise<void> {
   const resendKey = Deno.env.get("RESEND_API_KEY");
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  // Auth Admin API requires the legacy service-role JWT in Authorization.
-  // A new sb_secret_ key is valid as apikey but is not a JWT bearer token.
-  const serviceRoleJwt = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!resendKey) throw new Error("RESEND_API_KEY is not configured.");
   if (!supabaseUrl) throw new Error("SUPABASE_URL is not configured.");
   if (!serviceRoleJwt) throw new Error("SUPABASE_SERVICE_ROLE_KEY is unavailable for the Auth Admin lookup.");
@@ -64,7 +65,7 @@ async function sendMembershipEmail(
     `${supabaseUrl}/auth/v1/admin/users/${encodeURIComponent(userId)}`,
     {
       headers: {
-        "apikey": supabaseApiKey,
+        "apikey": serviceRoleJwt,
         "Authorization": `Bearer ${serviceRoleJwt}`,
       },
     },
@@ -124,14 +125,8 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return reply({ error: "Method not allowed." }, 405);
 
   // Database Webhooks send the project secret in the apikey header.
-  const expectedKey = getSupabaseSecretKey();
-  const apiKeyHeader = req.headers.get("apikey") ?? "";
-  const authorization = req.headers.get("Authorization") ?? "";
-  const bearerKey = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
-  const suppliedKey = apiKeyHeader || bearerKey;
-  if (!expectedKey || !suppliedKey || suppliedKey !== expectedKey) {
-    return reply({ error: "Unauthorized webhook." }, 401);
-  }
+  const serviceRoleJwt = getServiceRoleJwt(req);
+  if (!serviceRoleJwt) return reply({ error: "Unauthorized webhook." }, 401);
 
   try {
     const payload = await req.json();
@@ -187,7 +182,7 @@ Deno.serve(async (req: Request) => {
 
     if (ACCOUNT_EMAIL_TYPES.has(type)) {
       try {
-        await sendMembershipEmail(userId, notificationId, type, title, body, expectedKey);
+        await sendMembershipEmail(userId, notificationId, type, title, body, serviceRoleJwt);
       } catch (error) {
         console.error("Membership email delivery failed:", error);
         failures.push("email");

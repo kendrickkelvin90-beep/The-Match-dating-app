@@ -12,7 +12,7 @@ begin
   if auth.uid() is null then
     raise exception 'Sign in to continue';
   end if;
-  if p_item_code not in ('super_like_1','super_like_5','extra_likes_10','extra_likes_30') then
+  if p_item_code not in ('super_like_1','super_like_5','extra_likes_10','extra_likes_30','profile_boost_24h','profile_boost_3','priority_7d','priority_30d','decorative_badge','animated_effect') then
     raise exception 'This store item is not available for purchase';
   end if;
   if p_idempotency_key is null or length(p_idempotency_key) not between 8 and 120 then

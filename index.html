@@ -6301,10 +6301,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
   <input id="chatMediaInput" type="file" accept="image/*,video/*" hidden>
     
 
-<label for="chatViewOnce" style="display:flex;align-items:center;gap:5px;color:#f3d28a;font-size:12px;white-space:nowrap;">
-  <input id="chatViewOnce" type="checkbox">
-  View Once
-</label>
+
 
   <textarea id="chatMessageInput" maxlength="2000"
     placeholder="Write a message..." rows="1"></textarea>
@@ -14858,15 +14855,16 @@ async function loadChatMessages(){
     chat.appendChild(bubble);
   }
   }
+  const wasNearBottom =
+    chat.scrollHeight - chat.scrollTop - chat.clientHeight < 100 ||
+    chat.children.length === 0;
   Object.assign(chat.style,{
     display:"flex",
     flexDirection:"column",
     gap:"4px",
-    maxHeight:"55vh",
     overflowY:"auto",
     padding:"12px",
-    borderRadius:"12px",
-    background:"#100d12"
+    borderRadius:"12px"
   });
     status("chatPageStatus","Loading messages...");
 
@@ -14951,7 +14949,14 @@ data.reverse();
       chat.querySelectorAll("[data-empty-message]").forEach(node => node.remove());
 
       data.forEach(message => {
-        
+        const mine = message.sender_id === me;
+        if (mine) {
+          const pendingBubble = Array.from(
+            chat.querySelectorAll('[data-optimistic-message="true"]')
+          ).find(node => node.dataset.optimisticBody === message.body);
+          if (pendingBubble) pendingBubble.remove();
+        }
+
         const existingBubble = chat.querySelector(
           '[data-message-id="' + message.id + '"]'
         );
@@ -14987,7 +14992,6 @@ data.reverse();
           return;
         }
 
-        const mine = message.sender_id === me;
         const bubble = document.createElement("div");
         bubble.dataset.messageId = message.id;
         bubble.dataset.createdAt = message.created_at;
@@ -15332,7 +15336,9 @@ for (const media of mediaRows || []) {
 
   insertBubbleInTimeOrder(bubble, media.created_at);
         }
-    chat.scrollTop = chat.scrollHeight;
+    // Preserve a member's reading position. Only follow the latest message
+    // when they were already at the bottom or this is the first load.
+    if (wasNearBottom) chat.scrollTop = chat.scrollHeight;
     status("chatPageStatus","Conversation loaded.");
   } catch(e) {
     status("chatPageStatus","Could not load messages: "+friendly(e),true);
@@ -15385,8 +15391,6 @@ $("sendChatMessage").addEventListener("click", async () => {
 const button = $("sendChatMessage");
 const input = $("chatMessageInput");
 const fileInput = $("chatMediaInput");
-const viewOnceToggle = $("chatViewOnce");
-
 const body = input.value.trim();
 const file = fileInput?.files?.[0];
   if (file) {
@@ -15432,8 +15436,6 @@ if (file.size > 25 * 1024 * 1024) {
 
 const senderId = currentUser.id;
 const receiverId = activeChatUserId;
-const viewOnce = Boolean(file && viewOnceToggle?.checked);
-
 button.disabled = true;
 button.textContent = "➤"; // Keep the send arrow visible; never show a blocking “Sending…” label.
 let optimisticBubble = null;
@@ -15458,6 +15460,7 @@ if (body) {
   optimisticBubble = document.createElement("div");
   optimisticBubble.className = "chat-bubble sent";
   optimisticBubble.dataset.optimisticMessage = "true";
+  optimisticBubble.dataset.optimisticBody = body;
   optimisticBubble.style.cssText = "align-self:flex-end;max-width:84%;padding:11px 14px;margin:6px 0;border-radius:16px;background:#29272c;color:#fff;overflow-wrap:anywhere;";
   const optimisticText = document.createElement("span");
   optimisticText.textContent = body;
@@ -15478,11 +15481,9 @@ if (body) {
 
   if (error) throw error;
   textMessageSaved = true;
-  if (optimisticBubble) {
-    const state = optimisticBubble.querySelector("small");
-    if (state) state.textContent = "Sent";
-    optimisticBubble.removeAttribute("data-optimistic-message");
-  }
+  // Remove the temporary bubble before the authoritative reload. The loader
+  // also reconciles a pending bubble if a live refresh wins this race.
+  if (optimisticBubble?.isConnected) optimisticBubble.remove();
 }
 
 // Upload an attachment to the private chat-media bucket.
@@ -15527,8 +15528,6 @@ input.value = "";
 input.style.height = "auto";
 
 if (fileInput) fileInput.value = "";
-if (viewOnceToggle) viewOnceToggle.checked = false;
-
 await loadChatMessages();
 
 status(
@@ -18935,6 +18934,22 @@ body.light-theme #eventsPage .events-featured-meta strong {
 
 /* Keep the admin control centre fully hidden outside its own view. */
 #adminPanel.hidden{display:none!important}
+
+/* Chat layout and history fixes: scoped to the conversation screen. */
+#chatPage{box-sizing:border-box;padding:calc(env(safe-area-inset-top) + 8px) 12px calc(env(safe-area-inset-bottom) + 10px)!important;gap:10px}
+#chatPage #chatHeader{position:relative!important;inset:auto!important;top:auto!important;left:auto!important;right:auto!important;flex:0 0 auto!important;width:100%;min-height:72px;z-index:2}
+#chatPage #chatPageContent{flex:1 1 0!important;min-height:0!important;overflow:hidden}
+#chatPage #activeConversation{flex:1 1 0!important;min-height:0!important;overflow:hidden}
+#chatPage #chatMessages{flex:1 1 0!important;min-height:0!important;max-height:none!important;width:100%;box-sizing:border-box;overflow-y:auto!important;overscroll-behavior:contain;scroll-behavior:auto}
+#chatPage #chatComposer{flex:0 0 auto;display:flex;align-items:center;gap:8px;width:100%;min-width:0;box-sizing:border-box}
+#chatPage #chatComposer #chatMessageInput{flex:1 1 0!important;width:0!important;min-width:0!important;max-width:none!important;min-height:44px;max-height:120px;resize:none;overflow-y:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+#chatPage #chatComposer #chatEmojiToggle{flex:0 0 34px;width:34px;height:40px}
+#chatPage #chatComposer #chatMediaButton{flex:0 0 40px;width:40px!important;height:40px!important}
+#chatPage #chatComposer #sendChatMessage{flex:0 0 44px;width:44px!important;min-width:44px!important;height:44px;min-height:44px}
+#chatPage #chatPageStatus{flex:0 0 auto;min-height:0}
+#chatPage #backFromChatPage{display:none!important}
+@media(max-width:390px){#chatPage #chatComposer{gap:5px;padding:7px 8px}#chatPage #chatComposer #chatEmojiToggle{flex-basis:30px;width:30px}#chatPage #chatComposer #chatMediaButton{flex-basis:36px;width:36px!important;height:36px!important}#chatPage #chatComposer #sendChatMessage{flex-basis:40px;width:40px!important;min-width:40px!important;height:40px;min-height:40px}}
+
 </style>
 <script src="/coin-wallet.js"></script>
 <script src="/gifts.js"></script>

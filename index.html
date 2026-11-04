@@ -6137,13 +6137,6 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
       <div class="premium-plan-cta"><span>Choose yearly</span><span>→</span></div>
     </button>
 
-    <button class="premium-plan" type="button" data-premium-plan="lite_monthly">
-      <div class="premium-plan-top">
-        <div><span class="premium-plan-name">The Match Lite</span><span class="premium-plan-note">Unlimited swipes + see who likes you</span></div>
-        <div class="premium-price">₦1,000<span class="premium-period">30 days</span></div>
-      </div>
-      <div class="premium-plan-cta"><span>Choose Lite</span><span>→</span></div>
-    </button>
   </div>
 
   <div class="premium-account" id="premiumAccountDetails">
@@ -6151,7 +6144,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     <div class="premium-account-row"><span class="premium-account-label">Network</span><span class="premium-account-value">MTN MoMo</span></div>
     <div class="premium-account-row"><span class="premium-account-label">Account name</span><span class="premium-account-value">JUSTICE TRUST UGOALA</span></div>
     <div class="premium-account-row"><span class="premium-account-label">Account number</span><span class="premium-account-value">0896939533</span></div>
-    <p class="premium-note">Transfer the exact amount for your selected membership. Then enter the transfer name and reference below. Your membership remains pending until an admin reviews and approves your payment.</p>
+    <p class="premium-note" id="premiumPaymentNote">Transfer the exact amount for your selected Premium plan. Then enter the transfer name and reference below. Premium remains pending until an admin reviews and approves your payment.</p>
   </div>
 
   <form id="premiumPaymentForm">
@@ -6161,7 +6154,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
       <option value="weekly">Weekly — ₦4,000</option>
       <option value="monthly">Monthly — ₦8,000</option>
       <option value="yearly">Yearly — ₦49,800</option>
-      <option value="lite_monthly">The Match Lite — 30 days · ₦1,000</option>
+      <option value="lite_monthly" hidden>The Match Lite — 30 days · ₦1,000</option>
     </select>
 
     <p>Amount to transfer: <strong id="premiumAmount">Choose a plan above</strong></p>
@@ -9720,7 +9713,7 @@ function startMatchLitePromotionSchedule() {
     const close=document.createElement("button");close.type="button";close.textContent="×";close.setAttribute("aria-label","Close offer");close.style.cssText="position:absolute;right:12px;top:10px;border:0;background:transparent;color:#f2dfbd;font-size:28px";
     const title=document.createElement("h3");title.textContent=stage===1?"Meet The Match Lite":stage===2?"Your Lite membership is waiting":"Ready for more freedom on The Match?";title.style.cssText="color:#f2d49a;margin:8px 24px 12px;font-size:23px";
     const body=document.createElement("p");body.textContent="Get unlimited swipes and see who likes you for 30 days for just ₦1,000. Tap below to view the payment account details, transfer ₦1,000 and submit your transfer information. Your Lite access starts only after an admin approves your payment. Lite does not include Premium-only messaging to non-matches, Nearby, Rewind or Boost.";body.style.cssText="color:#e3dccf;line-height:1.6;font-size:14px";
-    const action=document.createElement("button");action.type="button";action.textContent="Pay ₦1,000 for The Match Lite";action.style.cssText="margin-top:10px;padding:12px 18px;border-radius:999px;border:1px solid #c6a15a;background:#c6a15a;color:#17120a;font-weight:800";
+    const action=document.createElement("button");action.type="button";action.textContent="View bank details and pay ₦1,000";action.style.cssText="margin-top:10px;padding:12px 18px;border-radius:999px;border:1px solid #c6a15a;background:#c6a15a;color:#17120a;font-weight:800";
     const dismiss=()=>{if(stage===1){state.firstDismissedAt=Date.now();state.secondDueAt=Date.now()+86400000;}if(stage===2){state.secondDismissedAt=Date.now();state.thirdDueAt=Date.now()+259200000;}if(stage===3)state.thirdDismissedAt=Date.now();write(state);layer.remove();};
     close.onclick=dismiss;action.onclick=()=>{dismiss();show("premium");const select=$("premiumPlan");if(select){select.value="lite_monthly";select.dispatchEvent(new Event("change",{bubbles:true}));}setTimeout(()=>{$("premiumAccountDetails")?.scrollIntoView({behavior:"smooth",block:"start"});},150);};
     card.append(close,title,body,action);layer.appendChild(card);document.body.appendChild(layer);
@@ -16014,6 +16007,13 @@ $("premiumPlan").onchange = () => {
   $("premiumAmount").textContent = premiumPlanPrices[plan]
     ? "₦" + premiumPlanPrices[plan].toLocaleString("en-NG")
     : "Choose a plan above";
+
+  const paymentNote = $("premiumPaymentNote");
+  if (paymentNote) {
+    paymentNote.textContent = plan === "lite_monthly"
+      ? "The Match Lite payment: transfer exactly ₦1,000 to the account above. Then enter the name used for the transfer and your transfer reference below. Your 30-day Lite membership activates only after an admin approves your payment."
+      : "Transfer the exact amount for your selected Premium plan. Then enter the transfer name and reference below. Premium remains pending until an admin reviews and approves your payment.";
+  }
 };
 
 document.querySelectorAll("#premium .premium-plan").forEach((card) => {
@@ -16043,7 +16043,7 @@ $("premiumPaymentForm").addEventListener("submit", async (e) => {
   const btn = $("submitPremiumPayment");
 
   if (!amount) {
-    status("premiumStatus", "Please choose a Premium plan.", true);
+    status("premiumStatus", "Please choose a membership plan.", true);
     return;
   }
 
@@ -16071,7 +16071,7 @@ $("premiumPaymentForm").addEventListener("submit", async (e) => {
 
     status(
       "premiumStatus",
-      plan === "lite_monthly" ? "Request submitted! Your The Match Lite membership will activate after admin approval." : "Request submitted successfully! Your payment is pending admin review. Premium is not active yet."
+      plan === "lite_monthly" ? "Request submitted! Your 30-day The Match Lite membership will activate only after admin approval." : "Request submitted successfully! Your payment is pending admin review. Premium is not active yet."
     );
 
     $("premiumPaymentForm").reset();

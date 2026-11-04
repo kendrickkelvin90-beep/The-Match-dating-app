@@ -9527,6 +9527,15 @@ function showReferralToast() {
     "transform:translateY(-150%);opacity:0;" +
     "transition:transform .65s ease,opacity .65s ease;";
 
+  // Match the referral toast to the active theme without changing its behavior.
+  const isLightTheme = document.body.classList.contains("light-theme");
+  if (isLightTheme) {
+    toast.style.background = "linear-gradient(145deg,#fffefa,#f5f0e5)";
+    toast.style.color = "#29251e";
+    toast.style.borderColor = "#c5a15e";
+    toast.style.boxShadow = "0 12px 35px rgba(48,39,20,.2)";
+  }
+
   const message = document.createElement("div");
   message.textContent =
     "🎁 Invite friends to The Match and share your referral link!";
@@ -9542,6 +9551,11 @@ function showReferralToast() {
     "display:block;margin:14px auto 0;padding:8px 24px;" +
     "border:1px solid #555;border-radius:20px;" +
     "background:#292929;color:#fff;font-weight:700;";
+  if (isLightTheme) {
+    close.style.background = "#f7f2e8";
+    close.style.color = "#6b5228";
+    close.style.borderColor = "#d8c49e";
+  }
 
   close.onclick = () => {
     sessionStorage.setItem(dismissedKey, "1");

@@ -178,11 +178,24 @@ grant execute on function public.activate_my_profile_boost() to authenticated;
 create or replace function public.coin_buy_membership(p_tier text,p_idempotency_key text)
 returns integer language plpgsql security definer set search_path = ''
 as $$
-declare v_code text; v_current_tier text; v_current_expiry timestamptz; v_new_rank integer; v_current_rank integer;
+declare v_code text; v_current_tier text; v_current_expiry timestamptz; v_new_rank integer; v_current_rank integer; v_existing_description text; v_balance integer;
 begin
   v_code:=case p_tier when 'plus' then 'plus_30d' when 'quarterly' then 'quarterly_90d'
     when 'annual' then 'annual_365d' else null end;
   if v_code is null then raise exception 'Invalid Match membership tier'; end if;
+  if auth.uid() is null then raise exception 'Sign in to continue'; end if;
+  -- Make a retry after a successful purchase safe even if the new tier now
+  -- outranks the tier the member previously held.
+  select description into v_existing_description
+    from public.coin_ledger
+    where user_id=auth.uid() and idempotency_key=p_idempotency_key;
+  if found then
+    if v_existing_description <> 'Purchased '||v_code then
+      raise exception 'This purchase reference was already used for another transaction.';
+    end if;
+    select balance into v_balance from public.coin_wallets where user_id=auth.uid();
+    return coalesce(v_balance,0);
+  end if;
   select tier,expires_at into v_current_tier,v_current_expiry
     from public.match_plus_memberships where user_id=auth.uid() for update;
   v_new_rank:=case p_tier when 'plus' then 1 when 'quarterly' then 2 else 3 end;

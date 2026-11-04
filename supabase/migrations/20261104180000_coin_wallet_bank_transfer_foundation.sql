@@ -206,8 +206,9 @@ begin
   return v_balance;
 end;
 $$;
-revoke all on function public.coin_spend(text,integer,text) from public, anon;
-grant execute on function public.coin_spend(text,integer,text) to authenticated;
+-- Keep coin spending unavailable until every membership/store benefit has a tested
+-- server-side fulfillment path. The UI also keeps these actions disabled.
+revoke all on function public.coin_spend(text,integer,text) from public, anon, authenticated;
 
 create or replace function public.coin_grant_annual_bonus()
 returns integer language plpgsql security definer set search_path = ''

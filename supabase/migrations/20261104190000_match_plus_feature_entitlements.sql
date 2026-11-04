@@ -32,25 +32,30 @@ $$;
 revoke all on function public.match_has_unlimited_swipes() from public, anon;
 grant execute on function public.match_has_unlimited_swipes() to authenticated;
 
--- Preserve the current Free / Premium / Lite swipe behavior; Quarterly and Annual
--- join the existing unlimited-swipe entitlement. Match Plus remains on the free cap.
-create or replace function public.enforce_daily_like_limit()
+-- The live trigger is attached to enforce_daily_swipe_limit(), not enforce_daily_like_limit().
+-- Preserve the existing 20 total daily swipe cap and Premium/Lite unlimited access.
+-- Quarterly and Annual also receive unlimited swipes; Match Plus retains the free cap.
+create or replace function public.enforce_daily_swipe_limit()
 returns trigger language plpgsql security definer set search_path = ''
 as $$
 declare
-  likes_today integer;
-  premium_expiry timestamptz;
+  v_user uuid;
+  v_swipes_today integer;
 begin
-  if auth.uid() is null or auth.uid() <> new.liker_id then
-    raise exception 'You can only send likes as yourself.';
+  if tg_table_name = 'likes' then v_user := new.liker_id;
+  else v_user := new.passer_id;
   end if;
+  if auth.uid() is null or auth.uid() <> v_user then
+    raise exception 'You can only swipe as yourself.';
+  end if;
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(v_user::text, 0));
   if public.match_has_unlimited_swipes() then return new; end if;
-  select count(*)::integer into likes_today
-  from public.likes l
-  where l.liker_id=new.liker_id
-    and l.created_at >= (date_trunc('day',now() at time zone 'Africa/Lagos') at time zone 'Africa/Lagos');
-  if likes_today >= 10 then
-    raise exception 'DAILY_LIKE_LIMIT: Free members can send only 10 likes per day. Upgrade to Premium or Match Quarterly/Annual for more.';
+  select count(*)::integer into v_swipes_today
+  from public.match_swipe_history h
+  where h.user_id = v_user
+    and h.created_at >= (date_trunc('day', now() at time zone 'Africa/Lagos') at time zone 'Africa/Lagos');
+  if v_swipes_today >= 20 then
+    raise exception 'DAILY_SWIPE_LIMIT: Free members can make 20 swipes per day. Upgrade to Match Lite or Match Quarterly/Annual for unlimited swipes.';
   end if;
   return new;
 end;
@@ -89,6 +94,7 @@ revoke all on function public.premium_nearby_profiles_secure(double precision) f
 grant execute on function public.premium_nearby_profiles_secure(double precision) to authenticated;
 
 -- Rewind allowances: Plus 3/day, Quarterly 10/day, Annual unlimited; Premium remains unlimited.
+-- Validate the swipe before consuming a daily allowance, and serialize per-user requests.
 create or replace function public.rewind_my_last_swipe()
 returns jsonb language plpgsql security definer set search_path = ''
 as $$
@@ -101,6 +107,15 @@ declare
   v_day date:=(now() at time zone 'Africa/Lagos')::date;
 begin
   if v_user is null then raise exception 'Authentication required.'; end if;
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(v_user::text, 1));
+  select * into v_swipe from public.match_swipe_history
+    where user_id=v_user order by created_at desc,id desc limit 1 for update;
+  if v_swipe.id is null then raise exception 'NO_SWIPE_TO_REWIND: There is no previous swipe to undo.'; end if;
+  if v_swipe.created_at<now()-interval '24 hours' then raise exception 'SWIPE_TOO_OLD: The previous swipe is too old to rewind.'; end if;
+  if v_swipe.action='like' and exists(
+    select 1 from public.likes l where l.liker_id=v_swipe.target_user_id and l.liked_id=v_user
+  ) then raise exception 'MATCH_ALREADY_CREATED: A mutual match cannot be rewound.'; end if;
+
   if exists(select 1 from public.premium_memberships pm where pm.user_id=v_user and pm.premium_until>now()) then
     v_limit:=null;
   else
@@ -117,21 +132,15 @@ begin
     returning rewinds_used into v_used;
     if v_used is null then raise exception 'REWIND_DAILY_LIMIT: You have used today’s Rewinds.'; end if;
   end if;
-  select * into v_swipe from public.match_swipe_history
-    where user_id=v_user order by created_at desc,id desc limit 1 for update;
-  if v_swipe.id is null then raise exception 'NO_SWIPE_TO_REWIND: There is no previous swipe to undo.'; end if;
-  if v_swipe.created_at<now()-interval '24 hours' then raise exception 'SWIPE_TOO_OLD: The previous swipe is too old to rewind.'; end if;
+
   if v_swipe.action='like' then
-    if exists(select 1 from public.likes l where l.liker_id=v_swipe.target_user_id and l.liked_id=v_user) then
-      raise exception 'MATCH_ALREADY_CREATED: A mutual match cannot be rewound.';
-    end if;
     delete from public.likes where liker_id=v_user and liked_id=v_swipe.target_user_id;
   else
     delete from public.profile_passes where passer_id=v_user and passed_id=v_swipe.target_user_id;
   end if;
   delete from public.match_swipe_history where id=v_swipe.id;
-  return jsonb_build_object('success',true,'target_user_id',v_swipe.target_user_id,'action',v_swipe.action,'rewinds_remaining',
-    case when v_limit is null then null else greatest(0,v_limit-coalesce(v_used,0)) end);
+  return jsonb_build_object('success',true,'target_user_id',v_swipe.target_user_id,'action',v_swipe.action,
+    'rewinds_remaining',case when v_limit is null then null else greatest(0,v_limit-coalesce(v_used,0)) end);
 end;
 $$;
 revoke all on function public.rewind_my_last_swipe() from public, anon;
@@ -145,6 +154,7 @@ as $$
 declare v_user uuid:=auth.uid(); v_last timestamptz; v_end timestamptz; v_tier text; v_cooldown interval;
 begin
   if v_user is null then raise exception 'Authentication required.'; end if;
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(v_user::text, 2));
   if exists(select 1 from public.premium_memberships pm where pm.user_id=v_user and pm.premium_until>now()) then
     v_cooldown:=interval '24 hours';
   else
@@ -189,9 +199,10 @@ grant execute on function public.coin_buy_membership(text,text) to authenticated
 comment on table public.match_plus_daily_usage is 'Lagos-day usage counters for Match Plus tier allowances.';
 
 
--- Story publishing allowances: Free / Lite retain one active Story at a time;
--- Match Plus gets three per Lagos calendar day; Quarterly / Annual / Premium are unlimited.
-create or replace function public.enforce_match_story_entitlement()
+-- Replace the function already attached to enforce_story_upload_limit_trigger.
+-- This preserves the existing trigger and its 24-hour free/Lite rule without stacking
+-- a second trigger. Per-user advisory locking keeps Plus daily counts atomic.
+create or replace function public.enforce_story_upload_limit()
 returns trigger language plpgsql security definer set search_path = ''
 as $$
 declare
@@ -200,8 +211,9 @@ declare
   v_used integer;
 begin
   if auth.uid() is null or auth.uid() <> new.user_id then
-    raise exception 'You can only publish Stories as yourself.';
+    raise exception 'You must be signed in to upload a Story.';
   end if;
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(new.user_id::text, 0));
   if exists(select 1 from public.premium_memberships pm where pm.user_id=new.user_id and pm.premium_until>now())
      or public.match_plus_active_tier() in ('quarterly','annual') then
     return new;
@@ -217,14 +229,10 @@ begin
     if v_used is null then raise exception 'STORY_DAILY_LIMIT: Match Plus includes up to 3 Stories each day.'; end if;
     return new;
   end if;
-  if exists(select 1 from public.stories s where s.user_id=new.user_id and s.expires_at>now()) then
-    raise exception 'STORY_LIMIT: Free members can have one active Story at a time. Upgrade to Match Plus for more.';
+  if exists(select 1 from public.stories st where st.user_id=new.user_id and st.created_at>now()-interval '24 hours') then
+    raise exception using errcode='P0001',
+      message='FREE_STORY_LIMIT: Free members can post one individual Story item every 24 hours. Upgrade to Match Plus for more Stories.';
   end if;
   return new;
 end;
 $$;
-drop trigger if exists enforce_match_story_entitlement on public.stories;
-create trigger enforce_match_story_entitlement
-before insert on public.stories
-for each row execute function public.enforce_match_story_entitlement();
-revoke all on function public.enforce_match_story_entitlement() from public, anon, authenticated;

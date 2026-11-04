@@ -109,3 +109,28 @@ This is a product proposal, not a verified parity map. Before connecting these e
 - No changes to existing Premium plans, payment requests or member entitlements; all coin and Match Plus prices remain proposals until Kelvin confirms them.
 - No changes to login/signup, Discover, Nearby, chat, verification or Match Lite.
 - No merge to `main` and no deployment.
+
+
+## Production authorization audit — read-only database verification (2026-11-04)
+
+The live Match Supabase project was inspected using read-only catalog queries. No production data or schema was changed.
+
+### Admin identity and RPC execution
+- `public.is_match_admin()` is a stable SECURITY DEFINER SQL function with an empty search_path. It returns true only when the caller's `auth.uid()` exists in `public.app_admins`. This is a server-side table check, not a client-editable profile flag.
+- `app_admins` has RLS enabled. Its only observed policy allows authenticated users to select their own row; authenticated users have SELECT only, with no INSERT/UPDATE/DELETE privilege. Anonymous SELECT is not granted.
+- `admin_review_match_request(text, uuid, text)` is SECURITY DEFINER, uses an empty search_path, and checks `is_match_admin()` internally before processing. Runtime privilege inspection found EXECUTE granted to authenticated and service_role, but not anon. The function is therefore callable by authenticated users, but its internal admin check is the authorization gate.
+- `activate_my_profile_boost()`, `is_match_admin()`, and `is_match_premium(uuid)` were also found not executable by anon; authenticated execution is granted.
+
+### Membership/payment row policies
+- RLS is enabled on `premium_memberships`, `lite_memberships`, `premium_payment_requests`, `app_admins`, and `profile_boosts`.
+- `lite_memberships`: authenticated SELECT only, constrained to `auth.uid() = user_id`; no authenticated INSERT/UPDATE/DELETE table privileges; no anon SELECT.
+- `premium_memberships`: observed policies allow members to SELECT only their own row and admins to review/manage rows via `is_match_admin()`. Table-level grants to anon/authenticated are broader than ideal, but RLS denies anon access and limits authenticated row actions to the applicable policies. Recommend tightening grants to least privilege in a separately reviewed migration, after confirming all frontend and RPC dependencies.
+- `premium_payment_requests`: members can INSERT their own pending request and SELECT their own requests; admins can SELECT and UPDATE requests via `is_match_admin()`. Authenticated users do not have DELETE or UPDATE table privileges. Anon SELECT is not granted.
+- `profile_boosts`: RLS is enabled and direct table privileges are not granted to anon or authenticated; use the existing controlled RPC path rather than exposing direct table writes.
+- `referral_codes`, `referral_rewards`, and `referrals`: RLS policies observed for authenticated owner/participant SELECT. Their table-level anon grants are broader than necessary, although no anon-targeted row policies were observed. Recommend a separate least-privilege review before any changes.
+
+### Current assessment and next work
+- The admin identity source and the membership/payment row policies are directionally sound; no evidence from these checks suggests ordinary authenticated members can directly approve payments or write membership rows.
+- The `admin_review_match_request` function has an internal admin check and anon execution is revoked. Its EXECUTE privilege remains available to all authenticated users, so a future hardening migration could revoke PUBLIC/anon and grant only authenticated explicitly; this is defense-in-depth, not a substitute for the internal check.
+- Broad table grants where RLS is relied upon should be tightened only after a dependency review. Do not apply production changes as part of this audit.
+- No production DDL, payment approval, membership mutation, or user-data modification was performed.

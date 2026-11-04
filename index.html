@@ -9736,7 +9736,7 @@ function startMatchLitePromotionSchedule() {
   const write=v=>localStorage.setItem(key,JSON.stringify(v));
   const tick=async(forceStage=0)=>{
     if(!currentUser||currentUser.id!==userId||document.visibilityState!=="visible"||currentPage!=="discover")return;
-    try{if(await matchIsPremium(userId)||await matchIsLite(userId)){clearInterval(window.matchLitePromoTimer);window.matchLitePromoTimer=null;return;}}
+    try{const tier=await matchPlusTier(userId);if(await matchIsPremium(userId)||await matchIsLite(userId)||tier==="quarterly"||tier==="annual"){clearInterval(window.matchLitePromoTimer);window.matchLitePromoTimer=null;return;}}
     catch(e){console.warn("Lite offer eligibility check failed:",e);return;}
     const state=read(); state.activeMs=(state.activeMs||0)+15000;
     let stage=0;

@@ -2,50 +2,48 @@
 
 ## Approved product decisions
 - Coin packs: 50 / ₦1,000; 120 / ₦2,000; 260 / ₦4,000; 700 / ₦10,000; 1,500 / ₦20,000.
-- Payment: existing MTN MoMo bank-transfer account and manual administrator verification. Coins are credited only by the admin review RPC after a pending request is approved.
+- Payment: manual MTN MoMo transfer and administrator verification. Coins are credited only after an admin approves a pending request.
 - Match Plus: 30 days / 300 coins.
 - Match Quarterly: 90 days / 800 coins.
 - Match Annual: 365 days / 2,800 coins.
-- Active Match Annual members receive 50 bonus coins every 30 days.
-- Match Store prices: 40 coins for one 30-minute boost; 100 for three boosts; 10 for one Super Like; 45 for five; 30 for 10 Extra Likes; 75 for 30 Extra Likes; 100 for 7-day Priority Visibility; 250 for 30-day Priority Visibility; 100 for a decorative profile badge; 150 for an animated profile effect.
-- Match Plus/Quarterly/Annual benefit allocation follows the previously reviewed tier outline in the app's wallet UI. Annual includes all lower-tier benefits plus its additional annual benefits.
-- Existing Premium pricing and Match Lite are out of scope and must remain unchanged.
+- Active Match Annual members are eligible for 50 bonus coins every 30 days. The grant is currently manual and admin-only; no scheduler exists.
+- Store prices remain listed, but Store purchases are disabled until secure fulfillment exists.
+- Existing Premium pricing, Match Lite pricing and existing authentication flows must remain unchanged.
 
-## Current branch contents
-- `supabase/migrations/20261104180000_coin_wallet_bank_transfer_foundation.sql`: wallet, append-only ledger, manual coin purchase requests, Match Plus membership records, inventory, purchase records, owner-only read policies, and server-side RPCs for request submission, admin review/crediting, coin spending and annual bonus grants.
-- `coin-wallet.js`: member wallet screen, bank transfer instructions, package request submission, balance/ledger/request history, admin transfer review queue, and visible Match Plus/store catalogue.
-- `index.html`: loads the wallet script without rewriting the existing authentication flow.
+## Branch contents
+- Wallet foundation migration: wallet, append-only ledger, transfer requests, membership records, store inventory/purchase records, RLS, and admin/member RPCs.
+- Entitlement migration: active tier helper, Quarterly/Annual unlimited swipes, Match Plus Nearby access, tier-based Rewind and Boost rules, Story limits, and membership checkout RPC.
+- `coin-wallet.js`: wallet UI, manual transfer submission, balance/history, membership catalogue, disabled Store catalogue and admin review queue.
+- `index.html`: wallet script integration and tier feature checks.
+
+## Confirmed live-schema integration findings
+- The live Likes and Passes triggers use `enforce_daily_swipe_limit()`, not `enforce_daily_like_limit()`. The staged migration now updates the function actually attached to the live trigger and preserves the existing 20 total daily swipe cap, Premium and Match Lite unlimited access, and adds unlimited swipes for Quarterly/Annual.
+- The live Stories trigger is already attached to `enforce_story_upload_limit()`. The staged migration now replaces that existing function rather than stacking a second Story trigger. Free/Lite retain one Story item per rolling 24 hours; Plus gets three per Lagos calendar day; Quarterly/Annual/Premium are unlimited.
+- Rewind validates that a swipe can be undone before consuming the daily allowance and serializes per-member requests.
+- Boost activation uses a per-member advisory lock to prevent simultaneous requests bypassing the cooldown.
+- Admin checks use the existing `app_admins` table; the live `is_match_admin()` function and coin RPC admin check both reference that table.
+
+## Tier benefits currently connected
+- Match Plus: secure Nearby access, up to 3 Rewinds per Lagos day and up to 3 Stories per Lagos day. It does not receive unlimited swipes.
+- Match Quarterly: unlimited swipes, up to 10 Rewinds per Lagos day, unlimited Stories and one 30-minute Profile Boost every 7 days.
+- Match Annual: Quarterly benefits, unlimited Rewinds and one 30-minute Profile Boost every 24 hours. The 50-coin monthly reward requires a manual admin grant.
+- Premium retains its existing unlimited swipes, Nearby, unlimited Rewinds and 24-hour Boost cooldown.
+- Advanced Discovery filters remain Premium-only until the Match tier-specific filters are fully implemented. The UI must not promise unavailable benefits such as Incognito browsing, read receipts, priority visibility, or a decorative membership badge.
+- Match Plus is not treated as Premium globally. Existing Premium/Lite records and prices are not rewritten.
 
 ## Safety and incomplete integrations
-- This branch has not applied its migration to the live Supabase project. Do not deploy the frontend before applying and testing the migration in an isolated database.
-- The Match Plus tier records are separate from existing Premium and Lite entitlements. The UI intentionally does not offer membership activation yet: feature gates throughout Discover, Nearby, Stories, messaging, Rewind and Boost must be mapped and tested before coin debit is enabled for a tier. Do not silently convert Match Plus to Premium or modify current Premium membership rows.
-- Store catalogue buttons remain disabled until each purchased item is connected to real feature fulfillment. In particular, decorative badges must never resemble identity verification; Super Likes, Extra Likes and Priority Visibility need their own server-enforced behavior.
-- Annual bonus grant is currently an admin-only RPC and is not scheduled. Add a secure recurring schedule and test idempotency before production launch.
-- Coin purchase rejection/approval notifications are in-app notifications. Coin-specific email delivery has not been connected.
-- The bank account shown is reused from the existing Premium transfer flow. Verify the account details in the production app before public release.
-- No production DDL, payment approval, wallet credit, or membership mutation was performed.
+- The migrations are staged in PR #114 and have NOT been applied to production. No wallet rows, balances, transfer approvals or memberships have been created or changed.
+- No Windows backup is available. Live testing is the agreed route, but database migrations must still be reviewed carefully before application because a bad production DDL change can be difficult to reverse.
+- The bank transfer account is reused from the existing Premium flow and must be confirmed before public coin purchases are enabled.
+- Coin approval/rejection notifications are in-app only; coin-specific email delivery is not connected.
+- Store item purchases remain disabled. Super Likes, Extra Likes, Priority Visibility, badges and animated effects need server-side fulfillment before coins can be deducted.
+- Annual bonus grants are manual; do not describe them as automatic.
 
-## Existing feature-gate findings
-- The current Discover boost action calls `activate_my_profile_boost()` and is explicitly Premium-only; the existing boost window is 30 minutes. The coin Store label now reflects 30 minutes, not 24 hours. Coin-purchased boosts need a separate server-side fulfillment path and must not bypass Premium authorization by calling the existing RPC unsafely.
-- Existing Rewind is also explicitly Premium-only and calls `rewind_my_last_swipe()`; the current swipe-limit bypass is shared by Premium and Match Lite. Match Plus tier benefits therefore need deliberate server-side entitlement checks rather than changing Premium/Lite checks globally.
-- The existing database exposes `is_match_admin()` for the admin queue; the coin migration adds a separate `coin_is_admin()` helper. Both are admin-gated, but the deployed function behavior and grants still need test coverage.
-
-## Tier feature-gate integration staged on this branch
-- Added a second migration defining a current-member-only Match Plus tier helper and server-side unlimited-swipe entitlement for Quarterly/Annual, while preserving existing Premium and Match Lite unlimited swipes.
-- Connected the secure Nearby RPC to active Match Plus tiers without exposing precise coordinates or changing the 50 km cap.
-- Connected server-side Rewind allowances: Plus 3/day, Quarterly 10/day, Annual unlimited; Premium remains unlimited. Usage counters are keyed to the Lagos calendar day.
-- Connected Profile Boost eligibility: Quarterly once every 7 days, Annual once every 24 hours, Premium retains its existing 24-hour cooldown; boosts remain 30 minutes.
-- Added server-side Story creation limits: Plus 3 per Lagos day; Quarterly/Annual/Premium unlimited; Free/Lite retain one active Story. This must be regression-tested against current Story creation UX.
-- Enabled Match Plus membership checkout through a dedicated authenticated RPC. Active higher tiers cannot be downgraded by buying a lower tier.
-- Updated Discover and Nearby controls to recognize the relevant Match Plus entitlements without treating Match Plus as Premium globally.
-- Store item purchases remain disabled; no inventory debit can happen before real item delivery is connected.
-- Annual 50-coin reward remains a manual admin-only grant; no recurring schedule is configured.
-
-## Required next validation
-1. Apply the migration only to a disposable Match development database and check all RLS/grants and function execution privileges.
-2. Test member isolation, duplicate transfer references, pending/review state transitions, duplicate approvals, concurrent wallet spends, insufficient balance and idempotency.
-3. Fix and test annual reward concurrency and schedule before launch.
-4. Connect each tier to the correct existing feature gates without removing any Premium/Lite benefit.
-5. Connect each store item to a secure fulfillment path before enabling purchase buttons.
-6. Test as anonymous, regular member and admin; regression-test login, signup, Discover, Nearby, chat, verification, Premium and Match Lite.
-7. Only then prepare a production migration and deployment plan. This branch is not merged or deployed.
+## Required validation before merge
+1. Complete static review of both SQL migrations and frontend integration.
+2. Apply the migrations in a controlled order to the live project only after confirming the exact SQL and expected impact.
+3. Test wallet creation, pack selection, duplicate transfer references, pending requests, admin approval/rejection, duplicate approvals, balance/ledger consistency and RLS isolation.
+4. Test each tier with controlled member accounts and confirm swipe, Nearby, Rewind, Boost and Story behavior.
+5. Regression-test login, signup, Discover, Nearby, chat, verification, Premium and Match Lite.
+6. Confirm the bank-transfer account and admin queue on the live website.
+7. Merge only after the live checks pass. Render deployment must be checked separately.

@@ -123,4 +123,63 @@ select public.test_assert((select count(*)>=1 from public.admin_gift_activity(10
 select public.test_assert(not has_function_privilege('authenticated','public.coin_spend(text,integer,text)','EXECUTE'),'authenticated role can execute coin_spend directly');
 select public.test_assert(has_function_privilege('authenticated','public.coin_buy_membership(text,text)','EXECUTE'),'authenticated role cannot execute coin_buy_membership');
 
+
+-- Step 10: exercise the actual gift RLS policies as authenticated members.
+-- The disposable database uses auth.uid() backed by the same JWT-sub setting
+-- Supabase exposes to Postgres, but does not use any production credentials.
+set role authenticated;
+select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+select public.test_assert(
+  (select count(*)=1 from public.member_gifts where request_id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'),
+  'sender cannot read their own sent gift'
+);
+select public.test_assert(
+  (select count(*)=0 from public.member_gifts where recipient_id='22222222-2222-4222-8222-222222222222'),
+  'sender can read a gift addressed to another member'
+);
+select public.test_assert(
+  (select count(*)=1 from public.gift_catalog where code='rose'),
+  'authenticated member cannot read active gift catalogue'
+);
+select public.test_assert(
+  (select count(*)=0 from public.gift_catalog where code='test_gift'),
+  'non-admin can read an inactive catalogue entry without participating in it'
+);
+select public.test_assert(
+  not has_table_privilege('authenticated','public.member_gifts','INSERT')
+  and not has_table_privilege('authenticated','public.member_gifts','UPDATE')
+  and not has_table_privilege('authenticated','public.member_gifts','DELETE')
+  and not has_table_privilege('authenticated','public.gift_catalog','INSERT')
+  and not has_table_privilege('authenticated','public.gift_catalog','UPDATE')
+  and not has_table_privilege('authenticated','public.gift_catalog','DELETE'),
+  'authenticated role has direct write privileges on gift tables'
+);
+select set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',false);
+select public.test_assert(
+  (select count(*)=1 from public.member_gifts where request_id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'),
+  'recipient cannot read their received gift'
+);
+select set_config('request.jwt.claim.sub','33333333-3333-4333-8333-333333333333',false);
+select public.test_assert(
+  (select count(*)=0 from public.member_gifts where request_id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'),
+  'unrelated member can read another pair of members gift'
+);
+select public.test_assert(
+  not has_function_privilege('anon','public.send_member_gift(uuid,text,text,uuid)','EXECUTE')
+  and has_function_privilege('authenticated','public.send_member_gift(uuid,text,text,uuid)','EXECUTE')
+  and not has_function_privilege('anon','public.redeem_member_gift(uuid)','EXECUTE')
+  and has_function_privilege('authenticated','public.redeem_member_gift(uuid)','EXECUTE'),
+  'gift RPC execution grants are incorrect'
+);
+select set_config('request.jwt.claim.sub','99999999-9999-4999-8999-999999999999',false);
+select public.test_assert(
+  (select count(*)=1 from public.gift_catalog where code='test_gift'),
+  'admin cannot read inactive catalogue entries'
+);
+select public.test_assert(
+  (select count(*)=1 from public.admin_gift_activity(10) where gift_id is not null),
+  'admin activity RPC is not available to an authorized admin'
+);
+reset role;
+
 select 'COIN WALLET AND GIFT ASSERTIONS PASSED' as result;

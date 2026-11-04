@@ -6153,7 +6153,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
       <option value="weekly">Weekly — ₦4,000</option>
       <option value="monthly">Monthly — ₦8,000</option>
       <option value="yearly">Yearly — ₦49,800</option>
-      <option value="lite_monthly" hidden>The Match Lite — 30 days · ₦1,000</option>
+      <option value="lite_monthly" hidden>The Match Lite — 30 days · ₦2,000</option>
     </select>
 
     <p>Amount to transfer: <strong id="premiumAmount">Choose a plan above</strong></p>
@@ -15996,7 +15996,7 @@ const premiumPlanPrices = {
   weekly: 4000,
   monthly: 8000,
   yearly: 49800,
-  lite_monthly: 1000
+  lite_monthly: 2000
 };
 
 $("premiumPlan").onchange = () => {
@@ -16008,7 +16008,7 @@ $("premiumPlan").onchange = () => {
   const paymentNote = $("premiumPaymentNote");
   if (paymentNote) {
     paymentNote.textContent = plan === "lite_monthly"
-      ? "The Match Lite payment: transfer exactly ₦1,000 to the account above. Then enter the name used for the transfer and your transfer reference below. Your 30-day Lite membership activates only after an admin approves your payment."
+      ? "The Match Lite payment: transfer exactly ₦2,000 to the account above. Then enter the name used for the transfer and your transfer reference below. Your 30-day Lite membership activates only after an admin approves your payment."
       : "Transfer the exact amount for your selected Premium plan. Then enter the transfer name and reference below. Premium remains pending until an admin reviews and approves your payment.";
   }
 };

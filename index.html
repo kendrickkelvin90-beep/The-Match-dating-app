@@ -6153,6 +6153,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
       <option value="weekly">Weekly — ₦4,000</option>
       <option value="monthly">Monthly — ₦8,000</option>
       <option value="yearly">Yearly — ₦49,800</option>
+      <option value="lite_monthly">The Match Lite — 30 days · ₦1,000</option>
     </select>
 
     <p>Amount to transfer: <strong id="premiumAmount">Choose a plan above</strong></p>
@@ -7532,6 +7533,9 @@ function show(id, addToHistory = true) {
       }
     }, 30000);
   }
+  if (id === "discover" && currentUser) {
+    startMatchLitePromotionSchedule();
+  }
 
   panels.forEach(p => {
     const panel = $(p);
@@ -7855,8 +7859,8 @@ async function loadAdminPaymentRequests() {
 
       const title = document.createElement("h4");
       title.textContent =
-        (request.plan === "monthly" ? "Monthly" : "Yearly") +
-        " Premium · ₦" +
+        (request.plan === "lite_monthly" ? "The Match Lite · 30 days" : (request.plan === "monthly" ? "Monthly" : "Yearly") + " Premium") +
+        " · ₦" +
         Number(request.amount_ngn).toLocaleString("en-NG");
 
       const details = document.createElement("p");
@@ -9684,6 +9688,64 @@ function showFeaturePromoSequence() {
 
   // Premium membership is checked before its card is shown; referral and event cards remain available to everyone.
   displayNext();
+}
+
+// The Match Lite offer is intentionally spaced out: first after 10 minutes on Discover,
+// then 24 hours after the first dismissal, then 3 days after the second dismissal.
+function startMatchLitePromotionSchedule() {
+  if (window.matchLitePromoTimer || !currentUser) return;
+  const userId = currentUser.id;
+  const key = "matchLitePromo_" + userId;
+  const read = () => { try { return JSON.parse(localStorage.getItem(key) || "{}"); } catch (_) { return {}; } };
+  const write = value => localStorage.setItem(key, JSON.stringify(value));
+  const tick = async () => {
+    if (!currentUser || currentUser.id !== userId) return;
+    if (document.visibilityState !== "visible" || currentPage !== "discover") return;
+    try {
+      if (await matchIsPremium(userId) || await matchIsLite(userId)) {
+        clearInterval(window.matchLitePromoTimer); window.matchLitePromoTimer = null; return;
+      }
+    } catch (error) { console.warn("Lite offer eligibility check failed:", error); return; }
+    const state = read();
+    if (!state.activeMs) state.activeMs = 0;
+    state.activeMs += 15000;
+    write(state);
+    let stage = 0;
+    if (!state.firstShownAt && state.activeMs >= 10 * 60 * 1000) stage = 1;
+    else if (state.firstDismissedAt && !state.secondShownAt && Date.now() >= state.secondDueAt) stage = 2;
+    else if (state.secondDismissedAt && !state.thirdShownAt && Date.now() >= state.thirdDueAt) stage = 3;
+    if (!stage || document.getElementById("matchLitePromoLayer") || window.matchFeaturePromoRunning) return;
+    state[["","firstShownAt","secondShownAt","thirdShownAt"][stage]] = Date.now();
+    write(state);
+    const layer = document.createElement("div");
+    layer.id = "matchLitePromoLayer";
+    layer.style.cssText = "position:fixed;inset:0;z-index:6100;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.48);";
+    const card = document.createElement("div");
+    card.style.cssText = "position:relative;width:min(100%,410px);padding:26px 24px;border:1px solid #c6a15a;border-radius:22px;background:linear-gradient(145deg,#1b1915,#090909);color:#f7f2e8;box-shadow:0 20px 65px rgba(0,0,0,.5);text-align:center;";
+    const close = document.createElement("button");
+    close.type = "button"; close.textContent = "×";
+    close.setAttribute("aria-label","Close offer");
+    close.style.cssText = "position:absolute;right:12px;top:10px;border:0;background:transparent;color:#f2dfbd;font-size:28px;";
+    const title = document.createElement("h3");
+    title.textContent = stage === 1 ? "Meet The Match Lite" : stage === 2 ? "Your Lite membership is waiting" : "Ready for more freedom on The Match?";
+    title.style.cssText = "color:#f2d49a;margin:8px 24px 12px;font-size:23px;";
+    const body = document.createElement("p");
+    body.textContent = "Enjoy unlimited swipes and see who likes you for 30 days — just ₦1,000. Lite does not include Premium-only messaging to non-matches, Nearby, Rewind or Boost.";
+    body.style.cssText = "color:#e3dccf;line-height:1.6;font-size:14px;";
+    const action = document.createElement("button");
+    action.type = "button"; action.textContent = "Get The Match Lite · ₦1,000";
+    action.style.cssText = "margin-top:10px;padding:12px 18px;border-radius:999px;border:1px solid #c6a15a;background:#c6a15a;color:#17120a;font-weight:800;";
+    const dismiss = () => {
+      if (stage === 1) { state.firstDismissedAt = Date.now(); state.secondDueAt = Date.now() + 24*60*60*1000; }
+      if (stage === 2) { state.secondDismissedAt = Date.now(); state.thirdDueAt = Date.now() + 3*24*60*60*1000; }
+      if (stage === 3) state.thirdDismissedAt = Date.now();
+      write(state); layer.remove();
+    };
+    close.onclick = dismiss;
+    action.onclick = () => { dismiss(); show("premium"); const select = $("premiumPlan"); if (select) { select.value = "lite_monthly"; select.dispatchEvent(new Event("change",{bubbles:true})); } };
+    card.append(close,title,body,action); layer.appendChild(card); document.body.appendChild(layer);
+  };
+  window.matchLitePromoTimer = setInterval(tick,15000);
 }
 
 async function enforceVerificationGracePeriod(user) {
@@ -12819,6 +12881,18 @@ async function matchIsPremium(userId = currentUser?.id) {
   return !!data?.premium_until && new Date(data.premium_until).getTime() > Date.now();
 }
 
+async function matchIsLite(userId = currentUser?.id) {
+  if (!userId) return false;
+  const { data, error } = await db.from("lite_memberships")
+    .select("lite_until").eq("user_id", userId).maybeSingle();
+  if (error) throw error;
+  return !!data?.lite_until && new Date(data.lite_until).getTime() > Date.now();
+}
+
+async function matchHasUnlimitedSwipes(userId = currentUser?.id) {
+  return (await matchIsPremium(userId)) || (await matchIsLite(userId));
+}
+
 function lagosDayStartIso() {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit"
@@ -13182,8 +13256,12 @@ async function loadLikesPage(){
 
     const isPremium=!!membership &&
       new Date(membership.premium_until).getTime()>Date.now();
+    const {data:liteMembership,error:liteError}=await db
+      .from("lite_memberships").select("lite_until").eq("user_id",currentUser.id).maybeSingle();
+    if(liteError)throw liteError;
+    const isLite=!!liteMembership?.lite_until && new Date(liteMembership.lite_until).getTime()>Date.now();
 
-    if(!isPremium){
+    if(!isPremium && !isLite){
       const {data:count,error:countError}=await db
   .rpc("get_my_incoming_like_count");
 
@@ -13197,10 +13275,10 @@ if(countError)throw countError;
       const lockTitle=document.createElement("h3");
       lockTitle.textContent=(count||0)===1 ? "Someone likes you" : (count||0)+" people like you";
       const lockMessage=document.createElement("p");
-      lockMessage.textContent="Unlock your incoming likes and see full profile photos with The Match Premium.";
+      lockMessage.textContent="Unlock your incoming likes and see full profile photos with The Match Lite or Premium.";
       const upgradeButton=document.createElement("button");
       upgradeButton.type="button";
-      upgradeButton.textContent="Unlock my likes  →";
+      upgradeButton.textContent="Explore membership  →";
       upgradeButton.onclick=()=>show("premium");
       lockedCard.append(lockIcon,lockTitle,lockMessage,upgradeButton);
       receivedList.appendChild(lockedCard);
@@ -15943,7 +16021,8 @@ $("backFromPremium").onclick=()=>show("profile");
 const premiumPlanPrices = {
   weekly: 4000,
   monthly: 8000,
-  yearly: 49800
+  yearly: 49800,
+  lite_monthly: 1000
 };
 
 $("premiumPlan").onchange = () => {
@@ -16008,7 +16087,7 @@ $("premiumPaymentForm").addEventListener("submit", async (e) => {
 
     status(
       "premiumStatus",
-      "Request submitted successfully! Your payment is pending admin review. Premium is not active yet."
+      plan === "lite_monthly" ? "Request submitted! Your The Match Lite membership will activate after admin approval." : "Request submitted successfully! Your payment is pending admin review. Premium is not active yet."
     );
 
     $("premiumPaymentForm").reset();
@@ -16055,6 +16134,7 @@ $("refreshPremiumRequests").onclick=async()=>{
 
             const plan=document.createElement("h4");
       plan.textContent =
+        request.plan === "lite_monthly" ? "The Match Lite · 30 days" :
         request.plan === "weekly" ? "Weekly Premium" :
         request.plan === "monthly" ? "Monthly Premium" :
         "Yearly Premium";

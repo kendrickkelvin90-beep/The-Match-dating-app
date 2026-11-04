@@ -7734,7 +7734,6 @@ async function loadAdminVerificationRequests() {
           viewSelfie.disabled = true;
           viewSelfie.textContent = "Opening selfie...";
 
-          let selfieObjectUrl = null;
           try {
             // Verification selfies are private. Download through the authenticated
             // Supabase client so the admin SELECT policy is applied to this request.
@@ -7743,10 +7742,21 @@ async function loadAdminVerificationRequests() {
               .download(request.selfie_path);
 
             if (selfieDownloadError) throw selfieDownloadError;
-            if (!selfieBlob || !String(selfieBlob.type || "").startsWith("image/")) {
-              throw new Error("The stored verification selfie is unavailable or is not a valid image.");
+            if (!selfieBlob || !selfieBlob.size) {
+              throw new Error("The stored verification selfie is empty or unavailable.");
             }
-            selfieObjectUrl = URL.createObjectURL(selfieBlob);
+
+            // Use a data URL instead of blob: URLs for compatibility with mobile
+            // browsers and embedded webviews that restrict object URLs.
+            const selfieDataUrl = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result);
+              reader.onerror = () => reject(new Error("Could not read the downloaded selfie image."));
+              reader.readAsDataURL(selfieBlob);
+            });
+            if (typeof selfieDataUrl !== "string" || !selfieDataUrl.startsWith("data:image/")) {
+              throw new Error("The stored verification file is not a supported image.");
+            }
 
 const overlay = document.createElement("div");
 overlay.setAttribute("role", "dialog");
@@ -7781,12 +7791,11 @@ selfieImage.onerror = () => {
   selfieImage.style.display = "none";
   selfieStatus.textContent = "The selfie file could not be displayed. Close this preview and try again.";
 };
-selfieImage.src = selfieObjectUrl;
+selfieImage.src = selfieDataUrl;
 
 const closePreview = () => {
   document.removeEventListener("keydown", handlePreviewKeydown);
   overlay.remove();
-  if (selfieObjectUrl) URL.revokeObjectURL(selfieObjectUrl);
 };
 
 const handlePreviewKeydown = event => {

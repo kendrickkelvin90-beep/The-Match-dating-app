@@ -132,7 +132,7 @@
   function renderStore(rows){
     const owned=new Map(rows.map(row=>[row.item_code,Number(row.quantity||0)]));
     document.getElementById("cwStoreItems").innerHTML=STORE_ITEMS.map(item=>{
-      const count=owned.get(item.code)||0;
+      const count=(owned.get(item.code)||0)*item.quantity;
       return '<article class="cw-card"><h3>'+item.name+'</h3><div class="cw-price">'+item.cost+' coins</div><p class="cw-muted">In your inventory: <strong>'+count+'</strong></p><button class="cw-button primary" data-cw-store-item="'+item.code+'">Buy '+item.name+'</button></article>';
     }).join("");
   }

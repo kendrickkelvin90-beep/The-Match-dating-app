@@ -20,14 +20,17 @@ let recipient=null;
 const status=m=>panel.querySelector("#mgStatus").textContent=m||"";
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 async function load(){
+ const {data:userData,error:userError}=await db.auth.getUser();
+ if(userError)throw userError;
+ const myId=userData?.user?.id;
+ if(!myId)throw new Error("Please sign in to view your gifts.");
  const [cat,gifts]=await Promise.all([
  db.from("gift_catalog").select("code,name,emoji,send_cost,redeem_coins").eq("active",true).order("sort_order"),
- db.from("member_gifts").select("id,sender_id,recipient_id,gift_code,send_cost,redeem_coins,message,created_at,redeemed_at,gift_catalog(name,emoji)").order("created_at",{ascending:false}).limit(60)
+ db.from("member_gifts").select("id,sender_id,recipient_id,gift_code,send_cost,redeem_coins,message,created_at,redeemed_at,gift_catalog(name,emoji)").eq("recipient_id",myId).order("created_at",{ascending:false}).limit(60)
  ]);
  if(cat.error)throw cat.error;if(gifts.error)throw gifts.error;
  panel.querySelector("#mgCatalog").innerHTML=(cat.data||[]).map(g=>`<article class="mg-card"><div class="emoji">${esc(g.emoji)}</div><strong>${esc(g.name)}</strong><p class="mg-muted">${g.send_cost} coins · recipient gets ${g.redeem_coins}</p><button data-gift="${esc(g.code)}">Send gift</button></article>`).join("")||"No gifts available.";
- const myId=window.currentUser?.id;
- panel.querySelector("#mgCollection").innerHTML=(gifts.data||[]).filter(g=>g.gift_catalog&&g.recipient_id===myId).map(g=>`<div class="mg-row"><strong>${esc(g.gift_catalog.emoji)} ${esc(g.gift_catalog.name)}</strong><div class="mg-muted">${new Date(g.created_at).toLocaleString()} · ${g.redeemed_at?"Redeemed":g.redeem_coins+" coins available"}</div>${g.message?`<div>${esc(g.message)}</div>`:""}${!g.redeemed_at&&g.redeem_coins>0?`<button data-redeem="${g.id}">Redeem ${g.redeem_coins} coins</button>`:""}</div>`).join("")||"Your gift collection is empty.";
+ panel.querySelector("#mgCollection").innerHTML=(gifts.data||[]).filter(g=>g.gift_catalog).map(g=>`<div class="mg-row"><strong>${esc(g.gift_catalog.emoji)} ${esc(g.gift_catalog.name)}</strong><div class="mg-muted">${new Date(g.created_at).toLocaleString()} · ${g.redeemed_at?"Redeemed":g.redeem_coins+" coins available"}</div>${g.message?`<div>${esc(g.message)}</div>`:""}${!g.redeemed_at&&g.redeem_coins>0?`<button data-redeem="${g.id}">Redeem ${g.redeem_coins} coins</button>`:""}</div>`).join("")||"Your gift collection is empty.";
 }
 window.openMatchGifts=async userId=>{recipient=userId||null;panel.classList.add("open");status("");try{await load();}catch(e){status(e.message||"Could not load gifts.");}};
 panel.querySelector("#mgClose").onclick=()=>panel.classList.remove("open");

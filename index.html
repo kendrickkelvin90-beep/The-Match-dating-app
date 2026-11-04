@@ -3603,7 +3603,6 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .btn {
 #chatPage #chatPageTitle {
   color:#f0dfbb!important;
 }
-#chatPage #chatOnlineStatus,
 #chatPage #chatPartnerLocation {
   color:#aaa49a!important;
 }
@@ -16628,8 +16627,8 @@ function refreshOutgoingVoiceCallPresence() {
   const title = online ? "Ringing…" : "Calling…";
   if ($("voiceCallTitle")) $("voiceCallTitle").textContent = title;
   if ($("voiceCallStatus")) $("voiceCallStatus").textContent = online
-    ? "The member is online. Waiting for them to answer."
-    : "The member is offline. Waiting for them to come online or return.";
+    ? "Calling them now. Waiting for them to answer."
+    : "Calling them now. They may respond when available.";
 }
 async function startVoiceCall(peerId) {
   if (!currentUser || !peerId || peerId !== activeChatUserId || activeVoiceCallId || incomingVoiceCall) return;
@@ -16643,8 +16642,8 @@ async function startVoiceCall(peerId) {
     startVoiceCallRingtone();
     const recipientOnline = isUserOnline(peerId);
     showVoiceCallModal(recipientOnline ? "Ringing…" : "Calling…", recipientOnline
-      ? "The member is online. Waiting for them to answer."
-      : "The member is offline. Waiting for them to come online or return.", [
+      ? "Calling them now. Waiting for them to answer."
+      : "Calling them now. They may respond when available.", [
       { label:"Cancel call", danger:true, handler:() => finishVoiceCall() }
     ]);
     beginVoiceCallPolling();

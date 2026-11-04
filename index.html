@@ -10139,7 +10139,7 @@ let people = (peopleData || []).map(p => {
       const { data: verificationProfiles, error: verificationError } =
         await db
           .from("profiles")
-          .select("id,is_verified,verification_level,gender_presentation")
+          .select("id,is_verified,verification_level,gender_presentation,city")
           .in("id", discoverIds);
 
       if (verificationError) throw verificationError;
@@ -10149,15 +10149,19 @@ let people = (peopleData || []).map(p => {
           profile.id,
           {
             is_verified: profile.is_verified,
-            verification_level: profile.verification_level
+            verification_level: profile.verification_level,
+            city: profile.city
           }
         ])
       );
 
-      people = people.map(person => ({
-        ...person,
-        ...(verificationById.get(person.id) || {})
-      }));
+      people = people.map(person => {
+        const enriched = { ...person, ...(verificationById.get(person.id) || {}) };
+        if (enriched._distance == null && enriched._approx_distance == null) {
+          enriched._approx_distance = approximateDiscoverCityDistanceKm(viewerCityForDistance, enriched.city);
+        }
+        return enriched;
+      });
       if(rolePreferences.length){
         people=people.filter(person=>Array.isArray(person.sexual_roles)&&person.sexual_roles.some(role=>rolePreferences.includes(role)));
       }
@@ -10237,7 +10241,7 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
       error: expandedVerificationError
     } = await db
       .from("profiles")
-      .select("id,is_verified,verification_level,gender_presentation")
+      .select("id,is_verified,verification_level,gender_presentation,city")
       .in("id", expandedIds);
 
     if (expandedVerificationError) {
@@ -10249,15 +10253,19 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
         profile.id,
         {
           is_verified: profile.is_verified,
-          verification_level: profile.verification_level
+          verification_level: profile.verification_level,
+            city: profile.city
         }
       ])
     );
 
-    people = people.map(person => ({
-      ...person,
-      ...(verificationById.get(person.id) || {})
-    }));
+    people = people.map(person => {
+      const enriched = { ...person, ...(verificationById.get(person.id) || {}) };
+      if (enriched._distance == null && enriched._approx_distance == null) {
+        enriched._approx_distance = approximateDiscoverCityDistanceKm(viewerCityForDistance, enriched.city);
+      }
+      return enriched;
+    });
     if(rolePreferences.length){
       people=people.filter(person=>Array.isArray(person.sexual_roles)&&person.sexual_roles.some(role=>rolePreferences.includes(role)));
     }

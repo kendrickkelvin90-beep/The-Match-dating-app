@@ -67,8 +67,8 @@
       <div class="cw-hero"><div class="cw-kicker">THE MATCH · COIN WALLET</div><h2>Your Match Coins</h2><div class="cw-balance" id="cwBalance">— coins</div><p class="cw-muted">Buy coins by bank transfer. Coins are added only after an administrator verifies your transfer.</p></div>
       <div class="cw-tabs"><button class="active" data-cw-tab="buy">Buy coins</button><button data-cw-tab="history">Wallet history</button><button data-cw-tab="plus">Match Plus</button><button data-cw-tab="store">Match Store</button></div>
       <div id="cwBuy" class="cw-panel"><h3>Choose a coin package</h3><div class="cw-grid" id="cwPackages"></div>
-        <div class="cw-card cw-panel" id="cwTransfer" hidden><h3 id="cwSelectedPackage">Bank transfer</h3><p class="cw-muted">Transfer the exact amount to the existing Match payment account.</p>
-          <div class="cw-row"><span>Network</span><strong>MTN MoMo</strong></div><div class="cw-row"><span>Account name</span><strong>JUSTICE TRUST UGOALA</strong></div><div class="cw-row"><span>Account number</span><strong>0896939533</strong></div>
+        <div class="cw-card cw-panel" id="cwTransfer" hidden><h3 id="cwSelectedPackage">Bank transfer</h3><p class="cw-muted">Transfer the exact amount shown below. Your coins are credited only after the administrator confirms receipt.</p>
+          <div class="cw-account"><div class="cw-row"><span>Network</span><strong>MTN MoMo</strong></div><div class="cw-row"><span>Account name</span><strong>JUSTICE TRUST UGOALA</strong></div><div class="cw-row"><span>Account number</span><strong id="cwAccountNumber">0896939533</strong></div><button type="button" class="cw-button" id="cwCopyAccount">Copy account number</button></div><p class="cw-muted" id="cwPaymentAmount"></p>
           <form id="cwPurchaseForm"><label for="cwSender">Sender name</label><input id="cwSender" maxlength="120" required autocomplete="name"><label for="cwReference">Transfer reference</label><input id="cwReference" maxlength="160" required><button class="cw-button primary" style="width:100%;margin-top:14px">Submit transfer for review</button></form>
         </div>
       </div>
@@ -112,7 +112,7 @@
   ].map(x=>'<article class="cw-card"><h3>'+x[0]+'</h3><div class="cw-price">'+x[1]+' coins</div><button class="cw-button" disabled>Coming after feature connection</button></article>').join("");
   page.addEventListener("click",async event=>{
     const packageButton=event.target.closest("[data-cw-package]");
-    if(packageButton){selected=PACKS.find(p=>p[0]===packageButton.dataset.cwPackage);document.getElementById("cwSelectedPackage").textContent=selected[2]+" · "+selected[3];document.getElementById("cwTransfer").hidden=false;status("Transfer the exact amount, then submit your sender name and reference.");}
+    if(packageButton){selected=PACKS.find(p=>p[0]===packageButton.dataset.cwPackage);document.getElementById("cwSelectedPackage").textContent=selected[2]+" · "+selected[3];document.getElementById("cwPaymentAmount").textContent="Please transfer exactly "+selected[3]+" for "+selected[2]+".";document.getElementById("cwTransfer").hidden=false;status("Transfer the exact amount, then submit your sender name and reference.");document.getElementById("cwTransfer").scrollIntoView({behavior:"smooth",block:"center"});}
     const tierButton=event.target.closest("[data-cw-tier]");
     if(tierButton){
       const tier=tierButton.dataset.cwTier;

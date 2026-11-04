@@ -16,7 +16,6 @@ declare
   v_balance integer;
   v_kind text;
   v_tier text;
-  v_days integer;
   v_description text;
   v_existing_amount integer;
   v_existing_type text;
@@ -32,7 +31,7 @@ begin
 
   if p_item_code in ('plus_30d','quarterly_90d','annual_365d') then
     v_kind := 'membership_debit';
-    select cost,tier,days into v_cost,v_tier,v_days
+    select cost,tier into v_cost,v_tier
     from (values
       ('plus_30d',300,'plus',30),
       ('quarterly_90d',800,'quarterly',90),
@@ -97,11 +96,6 @@ begin
   );
 
   if v_kind='membership_debit' then
-    select greatest(coalesce(expires_at,now()),now())
-    into v_days
-    from public.match_plus_memberships
-    where user_id=v_uid
-    for update;
     -- Keep the existing expiry when active; start from now when expired or absent.
     insert into public.match_plus_memberships(user_id,tier,started_at,expires_at)
     values(v_uid,v_tier,now(),now()+make_interval(days=>case p_item_code

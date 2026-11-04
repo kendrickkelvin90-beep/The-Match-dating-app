@@ -39,7 +39,9 @@ panel.addEventListener("click",async e=>{
   if(!recipient){status("Open a chat first to send a gift.");return;}
   const msg=prompt("Add a short message with your gift (optional):")||null;
   send.disabled=true;
-  const {error}=await db.rpc("send_member_gift",{p_recipient_id:recipient,p_gift_code:send.dataset.gift,p_message:msg});
+  const requestId=send.dataset.requestId||(window.crypto?.randomUUID?window.crypto.randomUUID():([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16)));
+  send.dataset.requestId=requestId;
+  const {error}=await db.rpc("send_member_gift",{p_recipient_id:recipient,p_gift_code:send.dataset.gift,p_message:msg,p_request_id:requestId});
   if(error)throw error;
   status("Gift sent successfully.");await load();
  }else if(redeem){

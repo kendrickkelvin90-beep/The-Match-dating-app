@@ -130,7 +130,7 @@ begin
   if v_admin is null or not exists(select 1 from public.app_admins a where a.user_id=v_admin) then
     raise exception 'Administrator access required';
   end if;
-  if p_decision not in ('approved','rejected') then raise exception 'Invalid review decision'; end if;
+  if p_decision is null or p_decision not in ('approved','rejected') then raise exception 'Invalid review decision'; end if;
   if p_decision='rejected' and length(trim(coalesce(p_reason,''))) < 3 then raise exception 'Enter a rejection reason'; end if;
   select * into v_req from public.coin_purchase_requests where id=p_request_id for update;
   if not found then raise exception 'Purchase request not found'; end if;

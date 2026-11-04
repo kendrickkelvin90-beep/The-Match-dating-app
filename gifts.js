@@ -42,11 +42,25 @@ panel.addEventListener("click",async e=>{
   if(!recipient){status("Open a chat first to send a gift.");return;}
   const msg=prompt("Add a short message with your gift (optional):")||null;
   send.disabled=true;
-  const requestId=send.dataset.requestId||(window.crypto?.randomUUID?window.crypto.randomUUID():([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16)));
-  send.dataset.requestId=requestId;
-  const {error}=await db.rpc("send_member_gift",{p_recipient_id:recipient,p_gift_code:send.dataset.gift,p_message:msg,p_request_id:requestId});
+  const {data:userData,error:userError}=await db.auth.getUser();
+  if(userError)throw userError;
+  const senderId=userData?.user?.id;
+  if(!senderId)throw new Error("Please sign in to send a gift.");
+  const giftCode=send.dataset.gift;
+  const storageKey="theMatch.pendingGiftRequest."+senderId+"."+recipient+"."+giftCode;
+  let requestId;
+  try{
+   requestId=window.localStorage.getItem(storageKey);
+   if(!requestId){requestId=window.crypto.randomUUID();window.localStorage.setItem(storageKey,requestId);}
+  }catch(storageError){
+   requestId=send.dataset.requestId||(send.dataset.requestId=window.crypto.randomUUID());
+  }
+  const {error}=await db.rpc("send_member_gift",{p_recipient_id:recipient,p_gift_code:giftCode,p_message:msg,p_request_id:requestId});
   if(error)throw error;
-  status("Gift sent successfully.");await load();
+  status("Gift sent successfully.");
+  await load();
+  try{window.localStorage.removeItem(storageKey);}catch(storageError){}
+  delete send.dataset.requestId;
  }else if(redeem){
   redeem.disabled=true;
   const {error}=await db.rpc("redeem_member_gift",{p_gift_id:redeem.dataset.redeem});

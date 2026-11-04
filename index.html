@@ -10842,6 +10842,59 @@ function normalizeProfileLocationForStateMatch(value) {
     .trim();
 }
 
+function showProfileLocationUpdateToast(oldLocation, newLocation) {
+  return new Promise(resolve => {
+    document.getElementById("profileLocationUpdateToast")?.remove();
+    const toast = document.createElement("section");
+    toast.id = "profileLocationUpdateToast";
+    toast.setAttribute("role", "dialog");
+    toast.setAttribute("aria-live", "polite");
+    toast.setAttribute("aria-label", "Profile location update");
+    toast.style.cssText =
+      "position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));" +
+      "z-index:6000;padding:16px;border:1px solid rgba(228,196,125,.65);" +
+      "border-radius:18px;background:#171313;color:#fff;" +
+      "box-shadow:0 10px 36px #000b;transform:translateY(140%);opacity:0;" +
+      "transition:transform .28s ease,opacity .28s ease;max-width:560px;margin:0 auto;";
+    const title = document.createElement("strong");
+    title.textContent = "Your location has changed 📍";
+    title.style.cssText = "display:block;font-size:15px;color:#e4c47d;margin-bottom:7px;";
+    const message = document.createElement("p");
+    message.textContent = "Your profile currently shows " + oldLocation +
+      ", but it looks like you're now in " + newLocation +
+      ". Would you like to update your profile location to " + newLocation + "?";
+    message.style.cssText = "font-size:13px;line-height:1.5;margin:0 0 13px;color:#f1e9e9;";
+    const actions = document.createElement("div");
+    actions.style.cssText = "display:flex;gap:9px;";
+    const keepButton = document.createElement("button");
+    keepButton.type = "button";
+    keepButton.textContent = "Keep current";
+    keepButton.style.cssText = "flex:1;padding:11px 8px;border:1px solid #705d50;border-radius:11px;background:transparent;color:#fff;font-weight:700;font-size:12px;";
+    const updateButton = document.createElement("button");
+    updateButton.type = "button";
+    updateButton.textContent = "Update location";
+    updateButton.style.cssText = "flex:1;padding:11px 8px;border:0;border-radius:11px;background:linear-gradient(100deg,#b98d43,#e4c47d);color:#171313;font-weight:800;font-size:12px;";
+    let settled = false;
+    const finish = value => {
+      if (settled) return;
+      settled = true;
+      toast.style.transform = "translateY(140%)";
+      toast.style.opacity = "0";
+      setTimeout(() => toast.remove(), 300);
+      resolve(value);
+    };
+    keepButton.addEventListener("click", () => finish(false));
+    updateButton.addEventListener("click", () => finish(true));
+    actions.append(keepButton, updateButton);
+    toast.append(title, message, actions);
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => {
+      toast.style.transform = "translateY(0)";
+      toast.style.opacity = "1";
+    });
+  });
+}
+
 async function offerProfileLocationUpdateFromGps(profileCity, detectedCity, detectedState) {
   if (!currentUser || !profileCity || !detectedState || profileLocationPromptInProgress) return;
   const oldLocation = String(profileCity).trim();
@@ -10861,12 +10914,7 @@ async function offerProfileLocationUpdateFromGps(profileCity, detectedCity, dete
 
   profileLocationPromptInProgress = true;
   try {
-    const shouldUpdate = window.confirm(
-      "It looks like you've moved to " + newLocation + ".\n\n" +
-      "Your public profile currently shows " + oldLocation + ". " +
-      "Would you like to update your profile location to " + newLocation + "?\n\n" +
-      "Choose Cancel to keep your current profile location."
-    );
+    const shouldUpdate = await showProfileLocationUpdateToast(oldLocation, newLocation);
     if (!shouldUpdate) {
       localStorage.setItem(dismissedKey, newNormalized);
       return;

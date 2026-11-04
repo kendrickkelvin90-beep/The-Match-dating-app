@@ -134,3 +134,35 @@ The live Match Supabase project was inspected using read-only catalog queries. N
 - The `admin_review_match_request` function has an internal admin check and anon execution is revoked. Its EXECUTE privilege remains available to all authenticated users, so a future hardening migration could revoke PUBLIC/anon and grant only authenticated explicitly; this is defense-in-depth, not a substitute for the internal check.
 - Broad table grants where RLS is relied upon should be tightened only after a dependency review. Do not apply production changes as part of this audit.
 - No production DDL, payment approval, membership mutation, or user-data modification was performed.
+
+
+## Membership payment lifecycle audit (2026-11-04)
+
+Reviewed the member submission UI, member request-history UI, admin payment queue, admin review RPC, and the live RPC definition. No payment was submitted or approved during this review.
+
+### Member submission
+- The member selects a plan, the client maps it to an amount, collects sender name and transfer reference, and inserts a `pending` row into `premium_payment_requests`.
+- RLS allows an authenticated member to insert only a request whose `user_id` is their own and whose status is `pending`.
+- The user-facing confirmation clearly says membership remains pending until admin review.
+- The Match Lite form currently submits ₦2,000 and its plan selector displays 30 days / ₦2,000. The payment amount is still supplied by the client, so the database constraint is essential; a future server-side request RPC should derive the amount from the plan instead of trusting browser input.
+- Member history reads only the signed-in member's own requests and displays plan, amount, pending/approved/rejected status. The selected fields do not currently include `admin_note`, so a rejection reason would not appear there even if one were stored.
+
+### Admin review
+- Admin dashboard loads pending requests only and displays plan, amount, member UUID, sender name, and transfer reference, with Approve and Reject actions.
+- The browser calls `admin_review_match_request`; the function checks `is_match_admin()` again server-side and only processes rows still in `pending` state. This protects against stale/double review attempts.
+- Approving `lite_monthly` creates or extends the member's Lite entitlement by 30 days and inserts an in-app notification stating that Lite is active and when it expires.
+- Approving other plan values creates/extends Premium membership and inserts an in-app Premium welcome notification.
+- The RPC returns no membership details to the browser; the admin dashboard refreshes after success.
+
+### Issues to resolve before calling the payment flow production-ready
+1. **Wrong rejection notification type:** when a membership payment is rejected, the RPC inserts a notification with type `verification_rejected` and title `Membership payment not approved`. This is semantically incorrect and can cause the rejection message to be missed or misclassified by notification routing. Use a dedicated type such as `membership_payment_rejected`.
+2. **No rejection reason workflow:** the admin UI exposes only Approve/Reject. It does not collect an admin note/reason, and the member request-history query does not select `admin_note`. Add a required concise reason on rejection, persist it atomically, and show it to the member.
+3. **No email on membership approval/rejection in the reviewed RPC path:** the SQL inserts in-app notifications only. The moderation edge function's Resend email pattern is not invoked by this membership review flow. If email is required, add a trusted server-side notification workflow with retries and no service-role key in the browser.
+4. **Client-calculated price:** browser-side amount is not authoritative. The existing amount constraint rejects values outside the allowed plan/amount pairs, but the stronger design is a server-side submit RPC that takes a plan and calculates its fixed price.
+5. **Premium pricing ambiguity:** the current branch's HTML lists weekly ₦4,000, monthly ₦8,000 and yearly ₦49,800. These are existing app values and are outside this Match Lite price change. Do not adjust any Premium prices without explicit instruction.
+
+### Safe next implementation sequence
+- Keep the current member form and approval flow unchanged while tests are prepared.
+- Create a separate test-only migration and UI patch for rejection reason + correct notification type, and a separate notification delivery design for email.
+- Test approved Lite, rejected Lite, duplicate review, invalid plan/amount, expired Lite, and member isolation on a disposable database before merging or applying anything to production.
+- Do not send email or change production rows as part of an audit.

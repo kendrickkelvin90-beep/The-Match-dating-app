@@ -13076,7 +13076,7 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
 });
   async function loadDiscoveryPreferences() {
   try {
-    const premium = await matchIsPremium();
+    const premium = await matchHasAdvancedFilters();
     const saved = JSON.parse(localStorage.getItem("theMatchDiscoveryPreferences") || "{}");
     const distance = $("discoveryDistance");
     distance.max = premium ? "200" : "50";

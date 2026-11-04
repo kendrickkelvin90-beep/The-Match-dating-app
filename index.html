@@ -12874,7 +12874,7 @@ async function matchIsPremium(userId = currentUser?.id) {
 
 async function matchPlusTier(userId = currentUser?.id) {
   if (!userId) return null;
-  const { data, error } = await db.rpc("match_plus_active_tier", { p_user_id: userId });
+  const { data, error } = await db.rpc("match_plus_active_tier");
   if (error) throw error;
   return data || null;
 }

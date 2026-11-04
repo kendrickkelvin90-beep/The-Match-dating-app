@@ -15,6 +15,5 @@ alter table public.notifications
     'premium_expired',
     'story_uploaded',
     'story_limit',
-    'membership_payment_rejected',
-    'email_delivery_test'
+    'membership_payment_rejected'
   ]));

@@ -6301,10 +6301,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
   <input id="chatMediaInput" type="file" accept="image/*,video/*" hidden>
     
 
-<label for="chatViewOnce" style="display:flex;align-items:center;gap:5px;color:#f3d28a;font-size:12px;white-space:nowrap;">
-  <input id="chatViewOnce" type="checkbox">
-  View Once
-</label>
+<!-- View Once is selected only in the media preview before sending. -->
 
   <textarea id="chatMessageInput" maxlength="2000"
     placeholder="Write a message..." rows="1"></textarea>
@@ -14840,6 +14837,8 @@ async function loadChatMessages(){
   }
 
     const chat = $("chatMessages");
+  const wasNearBottom =
+    chat.scrollHeight - chat.scrollTop - chat.clientHeight < 140;
   function insertBubbleInTimeOrder(bubble, createdAt) {
   const messageTime = new Date(createdAt).getTime();
   bubble.dataset.createdAt = createdAt;
@@ -14862,7 +14861,7 @@ async function loadChatMessages(){
     display:"flex",
     flexDirection:"column",
     gap:"4px",
-    maxHeight:"55vh",
+    maxHeight:"none",
     overflowY:"auto",
     padding:"12px",
     borderRadius:"12px",
@@ -15332,7 +15331,11 @@ for (const media of mediaRows || []) {
 
   insertBubbleInTimeOrder(bubble, media.created_at);
         }
-    chat.scrollTop = chat.scrollHeight;
+    // Keep the reader's position when polling. Only follow the newest message
+    // when they were already at the bottom (or when the conversation first loads).
+    if (typeof wasNearBottom !== "undefined" && wasNearBottom) {
+      chat.scrollTop = chat.scrollHeight;
+    }
     status("chatPageStatus","Conversation loaded.");
   } catch(e) {
     status("chatPageStatus","Could not load messages: "+friendly(e),true);
@@ -15385,7 +15388,7 @@ $("sendChatMessage").addEventListener("click", async () => {
 const button = $("sendChatMessage");
 const input = $("chatMessageInput");
 const fileInput = $("chatMediaInput");
-const viewOnceToggle = $("chatViewOnce");
+// View Once is configured only in the media preview.
 
 const body = input.value.trim();
 const file = fileInput?.files?.[0];
@@ -15432,7 +15435,7 @@ if (file.size > 25 * 1024 * 1024) {
 
 const senderId = currentUser.id;
 const receiverId = activeChatUserId;
-const viewOnce = Boolean(file && viewOnceToggle?.checked);
+const viewOnce = false;
 
 button.disabled = true;
 button.textContent = "➤"; // Keep the send arrow visible; never show a blocking “Sending…” label.
@@ -15470,15 +15473,23 @@ if (body) {
 }
 // Send an ordinary text message if one was entered.
 if (body) {
-  const { error } = await db.from("messages").insert({
-    sender_id: senderId,
-    receiver_id: receiverId,
-    body: body
-  });
+  const { data: savedMessage, error } = await db
+    .from("messages")
+    .insert({
+      sender_id: senderId,
+      receiver_id: receiverId,
+      body: body
+    })
+    .select("id,created_at")
+    .single();
 
   if (error) throw error;
   textMessageSaved = true;
-  if (optimisticBubble) {
+  if (optimisticBubble && savedMessage) {
+    // Give the optimistic bubble the real database identity immediately.
+    // The next refresh will update its receipt instead of rendering a duplicate.
+    optimisticBubble.dataset.messageId = savedMessage.id;
+    optimisticBubble.dataset.createdAt = savedMessage.created_at;
     const state = optimisticBubble.querySelector("small");
     if (state) state.textContent = "Sent";
     optimisticBubble.removeAttribute("data-optimistic-message");
@@ -15527,7 +15538,7 @@ input.value = "";
 input.style.height = "auto";
 
 if (fileInput) fileInput.value = "";
-if (viewOnceToggle) viewOnceToggle.checked = false;
+// No composer-level View Once toggle.
 
 await loadChatMessages();
 

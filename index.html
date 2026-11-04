@@ -6112,19 +6112,19 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
   <p class="premium-description">Select a plan to view payment account details.</p>
 
   <div class="premium-plans">
-    <button class="premium-plan" type="button" data-premium-plan="weekly">
+    <button class="premium-plan" type="button" data-premium-plan="lite_monthly">
       <div class="premium-plan-top">
-        <div><span class="premium-plan-name">Weekly</span><span class="premium-plan-note">A flexible start</span></div>
-        <div class="premium-price">₦4,000<span class="premium-period">7 days</span></div>
+        <div><span class="premium-plan-name">The Match Lite</span><span class="premium-plan-note">Unlimited swipes + see who likes you</span></div>
+        <div class="premium-price">₦1,000<span class="premium-period">30 days</span></div>
       </div>
-      <div class="premium-plan-cta"><span>Choose weekly</span><span>→</span></div>
+      <div class="premium-plan-cta"><span>Choose Lite</span><span>→</span></div>
     </button>
 
     <button class="premium-plan recommended" type="button" data-premium-plan="monthly">
       <span class="premium-tag">POPULAR CHOICE</span>
       <div class="premium-plan-top">
         <div><span class="premium-plan-name">Monthly</span><span class="premium-plan-note">A month to connect</span></div>
-        <div class="premium-price">₦8,000<span class="premium-period">30 days</span></div>
+        <div class="premium-price">₦5,000<span class="premium-period">30 days</span></div>
       </div>
       <div class="premium-plan-cta"><span>Choose monthly</span><span>→</span></div>
     </button>
@@ -6132,7 +6132,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     <button class="premium-plan" type="button" data-premium-plan="yearly">
       <div class="premium-plan-top">
         <div><span class="premium-plan-name">Yearly</span><span class="premium-plan-note">Long-term value</span></div>
-        <div class="premium-price">₦49,800<span class="premium-period">12 months</span></div>
+        <div class="premium-price">₦50,000<span class="premium-period">12 months</span></div>
       </div>
       <div class="premium-plan-cta"><span>Choose yearly</span><span>→</span></div>
     </button>
@@ -6143,16 +6143,16 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     <div class="premium-account-row"><span class="premium-account-label">Network</span><span class="premium-account-value">MTN MoMo</span></div>
     <div class="premium-account-row"><span class="premium-account-label">Account name</span><span class="premium-account-value">JUSTICE TRUST UGOALA</span></div>
     <div class="premium-account-row"><span class="premium-account-label">Account number</span><span class="premium-account-value">0896939533</span></div>
-    <p class="premium-note">Transfer the exact amount for your selected plan. Then enter the transfer name and reference below. Premium remains pending until an admin reviews and approves your payment.</p>
+    <p class="premium-note">Transfer the exact amount for your selected membership. Then enter the transfer name and reference below. Your membership remains pending until an admin reviews and approves your payment.</p>
   </div>
 
   <form id="premiumPaymentForm">
     <label for="premiumPlan">Selected plan</label>
     <select id="premiumPlan" required>
       <option value="">Choose a plan</option>
-      <option value="weekly">Weekly — ₦4,000</option>
-      <option value="monthly">Monthly — ₦8,000</option>
-      <option value="yearly">Yearly — ₦49,800</option>
+      <option value="monthly">Monthly Premium — ₦5,000</option>
+      <option value="yearly">Yearly Premium — ₦50,000</option>
+      <option value="lite_monthly">The Match Lite — 30 days · ₦1,000</option>
     </select>
 
     <p>Amount to transfer: <strong id="premiumAmount">Choose a plan above</strong></p>
@@ -7532,6 +7532,7 @@ function show(id, addToHistory = true) {
       }
     }, 30000);
   }
+  if (id === "discover" && currentUser) startMatchLitePromotionSchedule();
 
   panels.forEach(p => {
     const panel = $(p);
@@ -7832,7 +7833,7 @@ closeButton.focus();
 
 async function loadAdminPaymentRequests() {
   const list = $("adminPaymentsList");
-  list.textContent = "Loading Premium payment requests...";
+  list.textContent = "Loading membership payment requests...";
 
   try {
     const { data, error } = await db
@@ -7845,7 +7846,7 @@ async function loadAdminPaymentRequests() {
     list.replaceChildren();
 
     if (!data || data.length === 0) {
-      list.textContent = "No pending Premium payments.";
+      list.textContent = "No pending membership payments.";
       return;
     }
 
@@ -7855,8 +7856,8 @@ async function loadAdminPaymentRequests() {
 
       const title = document.createElement("h4");
       title.textContent =
-        (request.plan === "monthly" ? "Monthly" : "Yearly") +
-        " Premium · ₦" +
+        (request.plan === "lite_monthly" ? "The Match Lite · 30 days" : (request.plan === "monthly" ? "Monthly" : "Yearly") + " Premium") +
+        " · ₦" +
         Number(request.amount_ngn).toLocaleString("en-NG");
 
       const details = document.createElement("p");
@@ -7881,7 +7882,7 @@ async function loadAdminPaymentRequests() {
       list.appendChild(card);
     });
   } catch (error) {
-    list.textContent = "Could not load Premium payments: " + friendly(error);
+    list.textContent = "Could not load membership payments: " + friendly(error);
   }
 }
 
@@ -9684,6 +9685,38 @@ function showFeaturePromoSequence() {
 
   // Premium membership is checked before its card is shown; referral and event cards remain available to everyone.
   displayNext();
+}
+
+// Lite offer: one centered popup after 10 minutes of active Discover use,
+// a second 24 hours after dismissal, and a final reminder 3 days later.
+function startMatchLitePromotionSchedule() {
+  if (window.matchLitePromoTimer || !currentUser) return;
+  const userId=currentUser.id, key="matchLitePromo_"+userId;
+  const read=()=>{try{return JSON.parse(localStorage.getItem(key)||"{}");}catch(_){return {};}};
+  const write=v=>localStorage.setItem(key,JSON.stringify(v));
+  const tick=async()=>{
+    if(!currentUser||currentUser.id!==userId||document.visibilityState!=="visible"||currentPage!=="discover")return;
+    try{if(await matchIsPremium(userId)||await matchIsLite(userId)){clearInterval(window.matchLitePromoTimer);window.matchLitePromoTimer=null;return;}}
+    catch(e){console.warn("Lite offer eligibility check failed:",e);return;}
+    const state=read(); state.activeMs=(state.activeMs||0)+15000;
+    let stage=0;
+    if((!state.firstShownAt||(!state.firstDismissedAt&&Date.now()-state.firstShownAt>1800000))&&state.activeMs>=600000)stage=1;
+    else if(state.firstDismissedAt&&!state.secondShownAt&&Date.now()>=state.secondDueAt)stage=2;
+    else if(state.secondDismissedAt&&!state.thirdShownAt&&Date.now()>=state.thirdDueAt)stage=3;
+    if(!stage||document.getElementById("matchLitePromoLayer")||window.matchFeaturePromoRunning){write(state);return;}
+    state[["","firstShownAt","secondShownAt","thirdShownAt"][stage]]=Date.now();write(state);
+    const layer=document.createElement("div");layer.id="matchLitePromoLayer";
+    layer.style.cssText="position:fixed;inset:0;z-index:6100;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.48)";
+    const card=document.createElement("div");card.style.cssText="position:relative;width:min(100%,410px);padding:26px 24px;border:1px solid #c6a15a;border-radius:22px;background:linear-gradient(145deg,#1b1915,#090909);color:#f7f2e8;box-shadow:0 20px 65px rgba(0,0,0,.5);text-align:center";
+    const close=document.createElement("button");close.type="button";close.textContent="×";close.setAttribute("aria-label","Close offer");close.style.cssText="position:absolute;right:12px;top:10px;border:0;background:transparent;color:#f2dfbd;font-size:28px";
+    const title=document.createElement("h3");title.textContent=stage===1?"Meet The Match Lite":stage===2?"Your Lite membership is waiting":"Ready for more freedom on The Match?";title.style.cssText="color:#f2d49a;margin:8px 24px 12px;font-size:23px";
+    const body=document.createElement("p");body.textContent="Enjoy unlimited swipes and see who likes you for 30 days — just ₦1,000. Lite does not include Premium-only messaging to non-matches, Nearby, Rewind or Boost.";body.style.cssText="color:#e3dccf;line-height:1.6;font-size:14px";
+    const action=document.createElement("button");action.type="button";action.textContent="Get The Match Lite · ₦1,000";action.style.cssText="margin-top:10px;padding:12px 18px;border-radius:999px;border:1px solid #c6a15a;background:#c6a15a;color:#17120a;font-weight:800";
+    const dismiss=()=>{if(stage===1){state.firstDismissedAt=Date.now();state.secondDueAt=Date.now()+86400000;}if(stage===2){state.secondDismissedAt=Date.now();state.thirdDueAt=Date.now()+259200000;}if(stage===3)state.thirdDismissedAt=Date.now();write(state);layer.remove();};
+    close.onclick=dismiss;action.onclick=()=>{dismiss();show("premium");const select=$("premiumPlan");if(select){select.value="lite_monthly";select.dispatchEvent(new Event("change",{bubbles:true}));}};
+    card.append(close,title,body,action);layer.appendChild(card);document.body.appendChild(layer);
+  };
+  window.matchLitePromoTimer=setInterval(tick,15000);
 }
 
 async function enforceVerificationGracePeriod(user) {
@@ -12819,6 +12852,17 @@ async function matchIsPremium(userId = currentUser?.id) {
   return !!data?.premium_until && new Date(data.premium_until).getTime() > Date.now();
 }
 
+async function matchIsLite(userId = currentUser?.id) {
+  if (!userId) return false;
+  const { data, error } = await db.from("lite_memberships")
+    .select("lite_until").eq("user_id", userId).maybeSingle();
+  if (error) throw error;
+  return !!data?.lite_until && new Date(data.lite_until).getTime() > Date.now();
+}
+async function matchHasUnlimitedSwipes(userId = currentUser?.id) {
+  return (await matchIsPremium(userId)) || (await matchIsLite(userId));
+}
+
 function lagosDayStartIso() {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit"
@@ -12834,11 +12878,11 @@ async function refreshDailyLikeCounter() {
   const target = $("dailyLikesStatus");
   if (!target) return;
   try {
-    if (await matchIsPremium()) {
+    if (await matchHasUnlimitedSwipes()) {
       currentDiscoverIsPremium = true;
       currentDailySwipesUsed = 0;
       target.style.display = "";
-      target.textContent = "Unlimited swipes · Premium";
+      target.textContent = (await matchIsPremium()) ? "Unlimited swipes · Premium" : "Unlimited swipes · The Match Lite";
       return;
     }
     const { data: count, error } = await db.rpc("get_my_daily_swipe_count");
@@ -13187,8 +13231,12 @@ async function loadLikesPage(){
 
     const isPremium=!!membership &&
       new Date(membership.premium_until).getTime()>Date.now();
+    const {data:liteMembership,error:liteError}=await db
+      .from("lite_memberships").select("lite_until").eq("user_id",currentUser.id).maybeSingle();
+    if(liteError)throw liteError;
+    const isLite=!!liteMembership?.lite_until && new Date(liteMembership.lite_until).getTime()>Date.now();
 
-    if(!isPremium){
+    if(!isPremium && !isLite){
       const {data:count,error:countError}=await db
   .rpc("get_my_incoming_like_count");
 
@@ -13202,10 +13250,10 @@ if(countError)throw countError;
       const lockTitle=document.createElement("h3");
       lockTitle.textContent=(count||0)===1 ? "Someone likes you" : (count||0)+" people like you";
       const lockMessage=document.createElement("p");
-      lockMessage.textContent="Unlock your incoming likes and see full profile photos with The Match Premium.";
+      lockMessage.textContent="Unlock your incoming likes and see full profile photos with The Match Lite or Premium.";
       const upgradeButton=document.createElement("button");
       upgradeButton.type="button";
-      upgradeButton.textContent="Unlock my likes  →";
+      upgradeButton.textContent="Explore membership  →";
       upgradeButton.onclick=()=>show("premium");
       lockedCard.append(lockIcon,lockTitle,lockMessage,upgradeButton);
       receivedList.appendChild(lockedCard);
@@ -15946,9 +15994,9 @@ $("backFromPremium").onclick=()=>show("profile");
 
 
 const premiumPlanPrices = {
-  weekly: 4000,
-  monthly: 8000,
-  yearly: 49800
+  monthly: 5000,
+  yearly: 50000,
+  lite_monthly: 1000
 };
 
 $("premiumPlan").onchange = () => {
@@ -16013,7 +16061,7 @@ $("premiumPaymentForm").addEventListener("submit", async (e) => {
 
     status(
       "premiumStatus",
-      "Request submitted successfully! Your payment is pending admin review. Premium is not active yet."
+      plan === "lite_monthly" ? "Request submitted! Your The Match Lite membership will activate after admin approval." : "Request submitted successfully! Your payment is pending admin review. Premium is not active yet."
     );
 
     $("premiumPaymentForm").reset();
@@ -16060,7 +16108,7 @@ $("refreshPremiumRequests").onclick=async()=>{
 
             const plan=document.createElement("h4");
       plan.textContent =
-        request.plan === "weekly" ? "Weekly Premium" :
+        request.plan === "lite_monthly" ? "The Match Lite · 30 days" :
         request.plan === "monthly" ? "Monthly Premium" :
         "Yearly Premium";
 
@@ -16091,6 +16139,7 @@ $("refreshPremiumRequests").onclick=async()=>{
 };
  
   async function logout(){
+if(window.matchLitePromoTimer){clearInterval(window.matchLitePromoTimer);window.matchLitePromoTimer=null;}
 let r=await db.auth.signOut();
 if(r.error){alert(friendly(r.error));return;}
 currentUser=null;approxLocation=null;show("welcome");

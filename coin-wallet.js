@@ -18,34 +18,47 @@
   const money = value => "₦" + Number(value || 0).toLocaleString("en-NG");
   const style = document.createElement("style");
   style.textContent = `
-    #coinWalletPage{color:#f7f2e7;padding:18px 0 110px}
-    #coinWalletPage .cw-shell{max-width:760px;margin:auto}
-    #coinWalletPage .cw-hero{padding:22px;border:1px solid #68532d;border-radius:22px;background:linear-gradient(130deg,#282013,#101010)}
-    #coinWalletPage .cw-kicker{color:#d9b76d;font-size:10px;font-weight:800;letter-spacing:2px}
-    #coinWalletPage h2{margin:6px 0;color:#f7e6bf}
-    #coinWalletPage .cw-balance{font-size:38px;font-weight:850;color:#e7c77f}
-    #coinWalletPage .cw-tabs{display:flex;gap:8px;overflow:auto;margin:16px 0}
-    #coinWalletPage .cw-tabs button,#coinWalletPage .cw-button{border:1px solid #6a542c;border-radius:12px;padding:11px 14px;background:#17140e;color:#e7c77f;font-weight:700}
-    #coinWalletPage .cw-tabs button.active,#coinWalletPage .cw-button.primary{background:linear-gradient(120deg,#e5c47b,#b58a42);color:#17120a}
-    #coinWalletPage .cw-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-    #coinWalletPage .cw-card{padding:15px;border:1px solid #34302a;border-radius:15px;background:#111214}
-    #coinWalletPage .cw-card h3{margin:0 0 7px;color:#f4e5c5}
-    #coinWalletPage .cw-muted{color:#aaa49a;font-size:12px;line-height:1.5}
-    #coinWalletPage .cw-price{font-size:21px;font-weight:800;color:#e7c77f;margin:8px 0}
+    #coinWalletPage{color:#f5f2ed;padding:18px 0 110px;background:radial-gradient(ellipse at 12% 0%,rgba(70,150,143,.13),transparent 45%)}
+    #coinWalletPage .cw-shell{max-width:760px;margin:auto;padding:0 14px}
+    #coinWalletPage .cw-hero{position:relative;overflow:hidden;padding:24px;border:1px solid rgba(221,190,125,.48);border-radius:26px;background:radial-gradient(circle at 88% 18%,rgba(79,169,157,.27),transparent 32%),linear-gradient(135deg,#102a30 0%,#172b2b 42%,#191813 100%);box-shadow:0 16px 38px rgba(0,0,0,.28)}
+    #coinWalletPage .cw-hero:after{content:"✦";position:absolute;right:22px;top:34px;font-size:68px;color:rgba(226,199,143,.22);text-shadow:0 0 26px rgba(111,211,194,.25);pointer-events:none}
+    #coinWalletPage .cw-kicker{color:#d9bd83;font-size:10px;font-weight:850;letter-spacing:2.3px}
+    #coinWalletPage h2{margin:8px 0;color:#fff0d0;font-size:27px}
+    #coinWalletPage .cw-balance{font-size:42px;font-weight:900;letter-spacing:-1px;color:#e8ca8a;text-shadow:0 4px 18px rgba(232,202,138,.15)}
+    #coinWalletPage .cw-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:18px 0}
+    #coinWalletPage .cw-tabs button,#coinWalletPage .cw-button{border:1px solid rgba(213,184,125,.42);border-radius:14px;padding:12px 10px;background:linear-gradient(145deg,#182e30,#151817);color:#e8d4a7;font-weight:750;transition:transform .18s,border-color .18s,filter .18s}
+    #coinWalletPage .cw-tabs button{font-size:12px;min-height:54px}
+    #coinWalletPage .cw-tabs button.active,#coinWalletPage .cw-button.primary{background:linear-gradient(120deg,#f0d89d,#c69a52);border-color:#f0d89d;color:#1c211d;box-shadow:0 7px 18px rgba(198,154,82,.2)}
+    #coinWalletPage .cw-button:active{transform:scale(.98)}
+    #coinWalletPage .cw-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    #coinWalletPage .cw-card{position:relative;padding:17px;border:1px solid rgba(102,164,154,.28);border-radius:18px;background:linear-gradient(145deg,#172729,#151918 70%);box-shadow:0 8px 22px rgba(0,0,0,.16)}
+    #coinWalletPage .cw-card h3{margin:0 0 7px;color:#f4e8d0}
+    #coinWalletPage .cw-card .cw-button{margin-top:12px;width:100%}
+    #coinWalletPage .cw-muted{color:#b9b9ae;font-size:12px;line-height:1.6}
+    #coinWalletPage .cw-price{font-size:24px;font-weight:900;color:#e7c77f;margin:9px 0}
+    #coinWalletPage .cw-panel>h3{color:#e8d3a3}
     #coinWalletPage label{display:block;margin:12px 0 5px;color:#d7c9aa;font-size:12px}
-    #coinWalletPage input,#coinWalletPage select,#coinWalletPage textarea{width:100%;box-sizing:border-box;padding:12px;border:1px solid #49402e;border-radius:10px;background:#090909;color:#fff}
+    #coinWalletPage input,#coinWalletPage select,#coinWalletPage textarea{width:100%;box-sizing:border-box;padding:12px;border:1px solid #52615a;border-radius:11px;background:#0c1718;color:#fff}
     #coinWalletPage .cw-panel{margin-top:16px}
-    #coinWalletPage .cw-row{padding:12px 0;border-bottom:1px solid #302b22;display:flex;justify-content:space-between;gap:10px}
-    #coinWalletPage .cw-status{min-height:22px;color:#e7c77f;font-size:12px}
-    #coinWalletPage .cw-admin-card{padding:14px;margin:10px 0;border:1px solid #4b402a;border-radius:14px;background:#111}
+    #coinWalletPage .cw-row{padding:12px 0;border-bottom:1px solid rgba(213,184,125,.18);display:flex;justify-content:space-between;gap:10px}
+    #coinWalletPage .cw-status{min-height:24px;color:#e8ca8a;font-size:12px;padding:8px 2px}
+    #coinWalletPage .cw-admin-card{padding:14px;margin:10px 0;border:1px solid #4b665d;border-radius:14px;background:#142323}
     #coinWalletPage .cw-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
     #coinWalletPage .cw-actions button{flex:1}
-    @media(max-width:480px){#coinWalletPage .cw-grid{grid-template-columns:1fr}#coinWalletPage .cw-balance{font-size:32px}}
-    body.light-theme #coinWalletPage{color:#2e281e}
-    body.light-theme #coinWalletPage .cw-card{background:#fff;border-color:#ded5c4}
+    #coinWalletPage .cw-account{padding:13px;border:1px dashed rgba(231,199,127,.5);border-radius:13px;background:rgba(8,20,21,.5);margin:12px 0}
+    #coinWalletPage .cw-account strong{color:#f0d89d;letter-spacing:.4px}
+    #coinWalletPage .cw-package-featured{border-color:#d7b66f;box-shadow:0 0 0 1px rgba(215,182,111,.15),0 10px 25px rgba(0,0,0,.2)}
+    #coinWalletPage .cw-package-tag{display:inline-block;padding:4px 8px;border-radius:99px;background:rgba(101,190,173,.16);color:#8cdbcb;font-size:10px;font-weight:800;margin-bottom:8px}
+    @media(max-width:480px){#coinWalletPage .cw-grid{grid-template-columns:1fr}#coinWalletPage .cw-balance{font-size:36px}#coinWalletPage .cw-hero{padding:21px}#coinWalletPage .cw-tabs{gap:5px}#coinWalletPage .cw-tabs button{font-size:11px;padding:9px 5px}}
+    body.light-theme #coinWalletPage{color:#2e281e;background:#f7f5ef}
+    body.light-theme #coinWalletPage .cw-hero{background:linear-gradient(130deg,#e3f0eb,#fff7e7);color:#2e281e}
+    body.light-theme #coinWalletPage .cw-hero h2{color:#263c39}
+    body.light-theme #coinWalletPage .cw-card{background:#fff;border-color:#d8d1bf}
     body.light-theme #coinWalletPage .cw-card h3{color:#30291f}
+    body.light-theme #coinWalletPage .cw-muted{color:#68665f}
     body.light-theme #coinWalletPage input,body.light-theme #coinWalletPage select,body.light-theme #coinWalletPage textarea{background:#fff;color:#241f18}
-  `;
+    body.light-theme #coinWalletPage .cw-account{background:#f5f1e7}
+  `;;
   document.head.appendChild(style);
   const page = document.createElement("section");
   page.id = "coinWalletPage"; page.className = "panel hidden";
@@ -54,8 +67,8 @@
       <div class="cw-hero"><div class="cw-kicker">THE MATCH · COIN WALLET</div><h2>Your Match Coins</h2><div class="cw-balance" id="cwBalance">— coins</div><p class="cw-muted">Buy coins by bank transfer. Coins are added only after an administrator verifies your transfer.</p></div>
       <div class="cw-tabs"><button class="active" data-cw-tab="buy">Buy coins</button><button data-cw-tab="history">Wallet history</button><button data-cw-tab="plus">Match Plus</button><button data-cw-tab="store">Match Store</button></div>
       <div id="cwBuy" class="cw-panel"><h3>Choose a coin package</h3><div class="cw-grid" id="cwPackages"></div>
-        <div class="cw-card cw-panel" id="cwTransfer" hidden><h3 id="cwSelectedPackage">Bank transfer</h3><p class="cw-muted">Transfer the exact amount to the existing Match payment account.</p>
-          <div class="cw-row"><span>Network</span><strong>MTN MoMo</strong></div><div class="cw-row"><span>Account name</span><strong>JUSTICE TRUST UGOALA</strong></div><div class="cw-row"><span>Account number</span><strong>0896939533</strong></div>
+        <div class="cw-card cw-panel" id="cwTransfer" hidden><h3 id="cwSelectedPackage">Bank transfer</h3><p class="cw-muted">Transfer the exact amount shown below. Your coins are credited only after the administrator confirms receipt.</p>
+          <div class="cw-account"><div class="cw-row"><span>Network</span><strong>MTN MoMo</strong></div><div class="cw-row"><span>Account name</span><strong>JUSTICE TRUST UGOALA</strong></div><div class="cw-row"><span>Account number</span><strong id="cwAccountNumber">0896939533</strong></div><button type="button" class="cw-button" id="cwCopyAccount">Copy account number</button></div><p class="cw-muted" id="cwPaymentAmount"></p>
           <form id="cwPurchaseForm"><label for="cwSender">Sender name</label><input id="cwSender" maxlength="120" required autocomplete="name"><label for="cwReference">Transfer reference</label><input id="cwReference" maxlength="160" required><button class="cw-button primary" style="width:100%;margin-top:14px">Submit transfer for review</button></form>
         </div>
       </div>
@@ -93,13 +106,13 @@
     document.getElementById("cwLedger").innerHTML=ledger.data?.length?ledger.data.map(x=>'<div class="cw-row"><span><strong>'+esc(x.description)+'</strong><br><small class="cw-muted">'+esc(new Date(x.created_at).toLocaleString())+'</small></span><strong style="color:'+(x.amount>0?'#62c78c':'#d58c8c')+'">'+(x.amount>0?'+':'')+x.amount+' coins</strong></div>').join(""):'No wallet transactions yet.';
     document.getElementById("cwRequests").innerHTML=requests.data?.length?requests.data.map(x=>'<div class="cw-row"><span>'+x.coins+' coins · '+money(x.amount_ngn)+'<br><small class="cw-muted">'+esc(x.admin_note||'Submitted '+new Date(x.created_at).toLocaleString())+'</small></span><strong>'+esc(x.status)+'</strong></div>').join(""):'No coin purchase requests yet.';
   }
-  document.getElementById("cwPackages").innerHTML=PACKS.map(p=>'<article class="cw-card"><h3>'+p[1]+'</h3><div class="cw-price">'+p[2]+'</div><strong>'+p[3]+'</strong><button class="cw-button primary" style="width:100%;margin-top:12px" data-cw-package="'+p[0]+'">Select package</button></article>').join("");
+  document.getElementById("cwPackages").innerHTML=PACKS.map((p,i)=>'<article class="cw-card '+(i===1?'cw-package-featured':'')+'">'+(i===1?'<span class="cw-package-tag">MOST POPULAR</span>':'')+'<h3>'+p[1]+'</h3><div class="cw-price">'+p[2]+'</div><strong>'+p[3]+'</strong><button class="cw-button primary" data-cw-package="'+p[0]+'">Choose package</button></article>').join("");
   document.getElementById("cwStoreItems").innerHTML=[
     ["Profile Boost · 30 minutes","40"],["3 Profile Boosts","100"],["1 Super Like","10"],["5 Super Likes","45"],["10 Extra Likes","30"],["30 Extra Likes","75"],["Priority Visibility · 7 days","100"],["Priority Visibility · 30 days","250"],["Special Profile Badge","100"],["Animated Profile Effect","150"]
   ].map(x=>'<article class="cw-card"><h3>'+x[0]+'</h3><div class="cw-price">'+x[1]+' coins</div><button class="cw-button" disabled>Coming after feature connection</button></article>').join("");
   page.addEventListener("click",async event=>{
     const packageButton=event.target.closest("[data-cw-package]");
-    if(packageButton){selected=PACKS.find(p=>p[0]===packageButton.dataset.cwPackage);document.getElementById("cwSelectedPackage").textContent=selected[2]+" · "+selected[3];document.getElementById("cwTransfer").hidden=false;status("Transfer the exact amount, then submit your sender name and reference.");}
+    if(packageButton){selected=PACKS.find(p=>p[0]===packageButton.dataset.cwPackage);document.getElementById("cwSelectedPackage").textContent=selected[2]+" · "+selected[3];document.getElementById("cwPaymentAmount").textContent="Please transfer exactly "+selected[3]+" for "+selected[2]+".";document.getElementById("cwTransfer").hidden=false;status("Transfer the exact amount, then submit your sender name and reference.");document.getElementById("cwTransfer").scrollIntoView({behavior:"smooth",block:"center"});}
     const tierButton=event.target.closest("[data-cw-tier]");
     if(tierButton){
       const tier=tierButton.dataset.cwTier;
@@ -125,7 +138,7 @@
   document.querySelector("#adminPanel .admin-shell")?.appendChild(adminSection);
   async function loadAdminQueue(){
     const target=document.getElementById("cwAdminQueue");if(!target)return;target.textContent="Checking administrator access…";
-    try{const {data:ok,error:authError}=await client.rpc("is_match_admin");if(authError||ok!==true)throw new Error("Administrator access required.");
+    try{const {data:ok,error:authError}=await client.rpc("coin_is_admin");if(authError||ok!==true)throw new Error("Administrator access required.");
       const {data,error}=await client.from("coin_purchase_requests").select("id,user_id,package_code,coins,amount_ngn,sender_name,transfer_reference,created_at").eq("status","pending").order("created_at",{ascending:true});
       if(error)throw error;if(!data?.length){target.textContent="No pending coin transfers.";return;}
       target.replaceChildren();
@@ -134,17 +147,14 @@
   }
   async function review(id,decision,reason,button){button.disabled=true;try{const {error}=await client.rpc("coin_admin_review_purchase",{p_request_id:id,p_decision:decision,p_reason:reason});if(error)throw error;await loadAdminQueue();}catch(e){alert(e.message||"Review failed.");button.disabled=false;}}
   document.getElementById("cwAdminRefresh")?.addEventListener("click",loadAdminQueue);
-  const originalShow=window.show;
+  document.getElementById("cwCopyAccount")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText("0896939533");status("Account number copied.");}catch(e){status("Please copy the account number manually.");}});
   document.addEventListener("click",async event=>{
     const navButton=event.target.closest('#bottomNavigation [data-page="coinWalletPage"]');if(!navButton)return;
     event.preventDefault();event.stopImmediatePropagation();
-    document.querySelectorAll("section.panel").forEach(el=>el.classList.add("hidden"));page.classList.remove("hidden");
-    document.querySelectorAll("#bottomNavigation button").forEach(b=>b.classList.toggle("active",b===navButton));
-    document.querySelector(".hero")?.classList.add("hidden");
+    if(typeof window.show==="function")window.show("coinWalletPage");
     try{await refresh();status("");}catch(e){status(e.message||"Wallet unavailable.");}
-    window.scrollTo(0,0);
   },true);
-  document.getElementById("cwBack").addEventListener("click",()=>{page.classList.add("hidden");if(originalShow)originalShow("discover");});
+  document.getElementById("cwBack").addEventListener("click",()=>{if(typeof window.show==="function")window.show("discover");});
   document.getElementById("openAdminDashboardBtn")?.addEventListener("click",()=>setTimeout(loadAdminQueue,500));
   document.getElementById("adminRefreshBtn")?.addEventListener("click",()=>setTimeout(loadAdminQueue,500));
   document.getElementById("adminOpenCoinWalletBtn")?.addEventListener("click",loadAdminQueue);

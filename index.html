@@ -7229,7 +7229,7 @@ async function startOnlinePresence(user) {
 
   
 
-const panels=["welcome","onboarding","auth","reset","profile","verificationPage","discover","nearbyPage","eventsPage","premium","matches","matchCelebrationPage","memberProfilePage","chatPage","messages","callHistoryPage","likes","blockedMembers","settings","discoveryPreferencesPage","adminPanel","referralsPage","notificationsPage"];
+const panels=["welcome","onboarding","auth","reset","profile","verificationPage","discover","nearbyPage","eventsPage","premium","matches","matchCelebrationPage","memberProfilePage","chatPage","messages","callHistoryPage","likes","blockedMembers","settings","discoveryPreferencesPage","adminPanel","referralsPage","notificationsPage","coinWalletPage"];
 
 
 
@@ -7535,7 +7535,9 @@ function show(id, addToHistory = true) {
     ["welcome", "onboarding", "auth", "reset"].includes(id)
   );
 
-  const bottomPage = id === "nearbyPage"
+  const bottomPage = id === "coinWalletPage"
+    ? "coinWalletPage"
+    : id === "nearbyPage"
     ? "nearbyPage"
     : id === "matches"
       ? "matches"

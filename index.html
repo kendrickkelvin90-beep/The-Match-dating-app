@@ -7567,6 +7567,7 @@ async function leaveChatPage() {
     activeConversationNode.classList.add("hidden");
   }
   activeChatUserId = null;
+  window.activeChatUserId = null;
 }
 
 async function goBackInApp() {
@@ -13432,6 +13433,7 @@ if(countError)throw countError;
 
           try {
             activeChatUserId = id;
+            window.activeChatUserId = id;
 
             show("chatPage");
             status("chatPageStatus", "Opening conversation...");
@@ -15434,6 +15436,7 @@ const viewOnce = Boolean(file && viewOnceToggle?.checked);
 button.disabled = true;
 button.textContent = "➤"; // Keep the send arrow visible; never show a blocking “Sending…” label.
 let optimisticBubble = null;
+let textMessageSaved = false;
 
 try {
 const { data: allowed, error: blockError } = await db.rpc(
@@ -15473,6 +15476,7 @@ if (body) {
   });
 
   if (error) throw error;
+  textMessageSaved = true;
   if (optimisticBubble) {
     const state = optimisticBubble.querySelector("small");
     if (state) state.textContent = "Sent";
@@ -15537,7 +15541,7 @@ status(
 
 } catch (error) {
 console.error("Chat send failed:", error);
-if (typeof optimisticBubble !== "undefined" && optimisticBubble?.isConnected) {
+if (!textMessageSaved && optimisticBubble?.isConnected) {
   const state = optimisticBubble.querySelector("small");
   if (state) state.textContent = "Not sent — please try again";
   optimisticBubble.style.border = "1px solid #b65b5b";

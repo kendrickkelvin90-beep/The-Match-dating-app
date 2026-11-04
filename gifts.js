@@ -99,7 +99,7 @@ adminPanel.querySelector("#mgaClose").onclick=()=>adminPanel.classList.remove("o
 adminPanel.querySelector("#mgaForm").addEventListener("submit",async ev=>{
  ev.preventDefault();const f=new FormData(ev.currentTarget);
  const args={p_code:String(f.get("code")).trim().toLowerCase(),p_name:String(f.get("name")).trim(),p_emoji:String(f.get("emoji")).trim(),p_send_cost:Number(f.get("cost")),p_redeem_coins:Number(f.get("redeem")),p_sort_order:Number(f.get("sort")||0)};
- try{const {error}=await db.rpc("admin_save_gift",args);if(error)throw error;mgaStatus("Gift saved.");ev.currentTarget.reset();await loadGiftAdmin();}catch(e){mgaStatus(e.message||"Could not save gift.");}
+ try{const {error}=await db.rpc("admin_save_gift",args);if(error)throw error;mgaStatus("Gift saved.");ev.currentTarget.reset();ev.currentTarget.elements.code.readOnly=false;await loadGiftAdmin();}catch(e){mgaStatus(e.message||"Could not save gift.");}
 });
 adminPanel.addEventListener("click",async ev=>{
  const edit=ev.target.closest("[data-editgift]"),toggle=ev.target.closest("[data-togglegift]");

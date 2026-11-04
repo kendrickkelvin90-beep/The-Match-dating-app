@@ -124,7 +124,32 @@ select public.test_assert(not has_function_privilege('authenticated','public.coi
 select public.test_assert(has_function_privilege('authenticated','public.coin_buy_membership(text,text)','EXECUTE'),'authenticated role cannot execute coin_buy_membership');
 
 
--- Step 10: exercise the actual gift RLS policies as authenticated members.
+-- Step 10: individual store purchases debit once and credit the matching inventory.
+select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+select public.coin_buy_store_item('super_like_5','store:super-like-5:test-0001');
+select public.coin_buy_store_item('super_like_5','store:super-like-5:test-0001');
+select public.test_assert((select balance=645 from public.coin_wallets where user_id='11111111-1111-4111-8111-111111111111'),'super-like retry charged more than once');
+select public.test_assert((select quantity=5 from public.coin_store_inventory where user_id='11111111-1111-4111-8111-111111111111' and item_code='super_like_5'),'five Super Likes were not added to inventory');
+select public.test_assert((select count(*)=1 from public.coin_store_purchases where user_id='11111111-1111-4111-8111-111111111111' and item_code='super_like_5'),'super-like retry created multiple purchase records');
+select public.coin_buy_store_item('extra_likes_10','store:extra-likes-10:test-0001');
+select public.test_assert((select balance=615 from public.coin_wallets where user_id='11111111-1111-4111-8111-111111111111'),'Extra Likes purchase did not deduct 30 coins');
+select public.test_assert((select quantity=10 from public.coin_store_inventory where user_id='11111111-1111-4111-8111-111111111111' and item_code='extra_likes_10'),'ten Extra Likes were not added to inventory');
+select public.test_expect_error(
+  $cmd$select public.coin_buy_store_item('extra_likes_30','store:extra-likes-30:insufficient')$cmd$,
+  'Not enough coins'
+);
+select public.test_assert((select balance=615 from public.coin_wallets where user_id='11111111-1111-4111-8111-111111111111'),'insufficient store purchase changed wallet');
+select public.test_expect_error(
+  $cmd$select public.coin_buy_store_item('profile_boost_24h','store:unsupported:item-0001')$cmd$,
+  'not available for purchase'
+);
+select public.test_assert(
+  has_function_privilege('authenticated','public.coin_buy_store_item(text,text)','EXECUTE')
+  and not has_function_privilege('anon','public.coin_buy_store_item(text,text)','EXECUTE'),
+  'store purchase RPC grants are incorrect'
+);
+
+-- Step 11: exercise the actual gift RLS policies as authenticated members.
 -- The disposable database uses auth.uid() backed by the same JWT-sub setting
 -- Supabase exposes to Postgres, but does not use any production credentials.
 set role authenticated;

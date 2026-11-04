@@ -10842,14 +10842,19 @@ function normalizeProfileLocationForStateMatch(value) {
     .trim();
 }
 
-async function offerProfileLocationUpdateFromGps(profileCity, detectedState) {
+async function offerProfileLocationUpdateFromGps(profileCity, detectedCity, detectedState) {
   if (!currentUser || !profileCity || !detectedState || profileLocationPromptInProgress) return;
   const oldLocation = String(profileCity).trim();
   const newLocation = String(detectedState).trim();
   const oldNormalized = normalizeProfileLocationForStateMatch(oldLocation);
   const newNormalized = normalizeProfileLocationForStateMatch(newLocation);
+  const cityNormalized = normalizeProfileLocationForStateMatch(detectedCity);
+  // A profile city such as Ibadan should remain unchanged when GPS correctly
+  // identifies Ibadan/Oyo. Only offer a change when the detected state differs.
   if (!oldNormalized || !newNormalized || oldNormalized === newNormalized ||
-      oldNormalized.includes(newNormalized) || newNormalized.includes(oldNormalized)) return;
+      oldNormalized.includes(newNormalized) || newNormalized.includes(oldNormalized) ||
+      (cityNormalized && (oldNormalized === cityNormalized ||
+        oldNormalized.includes(cityNormalized) || cityNormalized.includes(oldNormalized)))) return;
 
   const dismissedKey = "theMatchDismissedProfileLocation:" + currentUser.id;
   if (localStorage.getItem(dismissedKey) === newNormalized) return;
@@ -10942,7 +10947,7 @@ async function refreshNearbyCurrentLocation() {
     // GPS remains private operational data. Change the public profile city only
     // after the member explicitly accepts a detected state change.
     if (currentState) {
-      await offerProfileLocationUpdateFromGps(profile.city, currentState);
+      await offerProfileLocationUpdateFromGps(profile.city, currentCity, currentState);
     }
 
     // Keep the private Nearby and Discover coordinates synchronized from the

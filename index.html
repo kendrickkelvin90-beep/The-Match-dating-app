@@ -10832,6 +10832,58 @@ if(matchError)throw matchError;
 
 
 
+let profileLocationPromptInProgress = false;
+
+function normalizeProfileLocationForStateMatch(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\\bstate\\b/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+async function offerProfileLocationUpdateFromGps(profileCity, detectedState) {
+  if (!currentUser || !profileCity || !detectedState || profileLocationPromptInProgress) return;
+  const oldLocation = String(profileCity).trim();
+  const newLocation = String(detectedState).trim();
+  const oldNormalized = normalizeProfileLocationForStateMatch(oldLocation);
+  const newNormalized = normalizeProfileLocationForStateMatch(newLocation);
+  if (!oldNormalized || !newNormalized || oldNormalized === newNormalized ||
+      oldNormalized.includes(newNormalized) || newNormalized.includes(oldNormalized)) return;
+
+  const dismissedKey = "theMatchDismissedProfileLocation:" + currentUser.id;
+  if (localStorage.getItem(dismissedKey) === newNormalized) return;
+
+  profileLocationPromptInProgress = true;
+  try {
+    const shouldUpdate = window.confirm(
+      "It looks like you've moved to " + newLocation + ".\\n\\n" +
+      "Your public profile currently shows " + oldLocation + ". " +
+      "Would you like to update your profile location to " + newLocation + "?\\n\\n" +
+      "Choose Cancel to keep your current profile location."
+    );
+    if (!shouldUpdate) {
+      localStorage.setItem(dismissedKey, newNormalized);
+      return;
+    }
+
+    const { error } = await db.from("profiles")
+      .update({ city: newLocation })
+      .eq("id", currentUser.id);
+    if (error) throw error;
+
+    const cityInput = $("city");
+    if (cityInput && document.activeElement !== cityInput) cityInput.value = newLocation;
+    localStorage.removeItem(dismissedKey);
+    status("profileStatus", "Your profile location has been updated to " + newLocation + ".");
+  } catch (error) {
+    console.error("Could not update public profile location:", error);
+    status("profileStatus", "We detected your new area, but couldn't update your profile location. Please try again from Edit Profile.", true);
+  } finally {
+    profileLocationPromptInProgress = false;
+  }
+}
+
 async function refreshNearbyCurrentLocation() {
   if (!currentUser || !navigator.geolocation) {
     return { ok: false, reason: "unsupported" };
@@ -10840,7 +10892,7 @@ async function refreshNearbyCurrentLocation() {
   try {
     const { data: profile, error: profileError } = await db
       .from("profiles")
-      .select("location_sharing")
+      .select("location_sharing,city")
       .eq("id", currentUser.id)
       .maybeSingle();
 
@@ -10885,6 +10937,12 @@ async function refreshNearbyCurrentLocation() {
     } else if (locationData) {
       currentCity = locationData.city || null;
       currentState = locationData.state || null;
+    }
+
+    // GPS remains private operational data. Change the public profile city only
+    // after the member explicitly accepts a detected state change.
+    if (currentState) {
+      await offerProfileLocationUpdateFromGps(profile.city, currentState);
     }
 
     // Keep the private Nearby and Discover coordinates synchronized from the

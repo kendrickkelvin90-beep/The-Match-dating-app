@@ -149,9 +149,9 @@
         }
         const {data,error}=await client.rpc("coin_buy_membership",{p_tier:tier,p_idempotency_key:requestKey});
         if(error)throw error;
+        await refresh();
         try{if(requestKeyStorage)window.localStorage.removeItem(requestKeyStorage);}catch(storageError){}
         delete tierButton.dataset.pendingRequestKey;
-        await refresh();
         status(labels[tier]+" activated successfully. Your wallet balance is "+Number(data||0).toLocaleString("en-NG")+" coins.");
       }catch(e){status((e.message||"Could not activate membership.")+" If the request may have completed, retry using the same button; the request reference will be reused.");}
       finally{tierButton.disabled=false;}

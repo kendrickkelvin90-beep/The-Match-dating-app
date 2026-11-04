@@ -82,18 +82,6 @@ giftStyle.textContent=`/* Romantic Premium chat and gifting palette */
 #matchGiftPanel .mg-row{padding:12px 0;border-bottom:1px solid #443a27}
 `;
 document.head.appendChild(giftStyle);
-#matchGiftPanel{position:fixed;inset:0;z-index:12000;background:#050505f5;display:none;overflow:auto;padding:calc(22px + env(safe-area-inset-top)) 16px 30px;color:#fff}
-#matchGiftPanel.open{display:block}
-#matchGiftPanel .mg-shell{max-width:620px;margin:auto}
-#matchGiftPanel h2{color:#e7c77f}
-#matchGiftPanel .mg-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-#matchGiftPanel .mg-card{padding:14px;border:1px solid #665333;border-radius:15px;background:#171511}
-#matchGiftPanel button{border:1px solid #8e7444;border-radius:11px;padding:10px;background:#272116;color:#f5d995}
-#matchGiftPanel .mg-card .emoji{font-size:30px}
-#matchGiftPanel .mg-muted{color:#c3b99f;font-size:12px}
-#matchGiftPanel .mg-row{padding:12px 0;border-bottom:1px solid #443a27}
-`;
-document.head.appendChild(giftStyle);
 const panel=document.createElement("section");panel.id="matchGiftPanel";panel.innerHTML=`<div class="mg-shell"><button id="mgClose">← Back</button><h2>Virtual Gifts</h2><p class="mg-muted">Send a gift using your coins. Keep gifts in your collection or redeem them for 80% of their sending value.</p><h3>Choose a gift</h3><div class="mg-grid" id="mgCatalog">Loading gifts…</div><h3>Your gift collection</h3><div id="mgCollection">Loading collection…</div><p id="mgStatus" role="status"></p></div>`;document.body.appendChild(panel);
 const giftMessageDialog=document.createElement("div");
 giftMessageDialog.id="matchGiftMessageDialog";

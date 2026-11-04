@@ -1,7 +1,12 @@
 (() => {
   "use strict";
-  const db = window.db;
-  if (!db) { console.error("Coin wallet could not find the Supabase client."); return; }
+  // The main app exposes Supabase as a top-level lexical `const db`, not window.client.
+  // Classic scripts share the global lexical environment, so reuse that same client.
+  if (typeof db === "undefined" || !db) {
+    console.error("Coin wallet could not find the app Supabase client.");
+    return;
+  }
+  const client = db;
   const PACKS = [
     ["starter_50","Starter","50 coins","₦1,000"],
     ["popular_120","Popular","120 coins","₦2,000"],
@@ -74,15 +79,15 @@
     ["buy","history","plus","store"].forEach(k=>{document.getElementById("cw"+k[0].toUpperCase()+k.slice(1)).hidden=k!==name;});
     page.querySelectorAll("[data-cw-tab]").forEach(b=>b.classList.toggle("active",b.dataset.cwTab===name));
   };
-  const getUser = async () => { const {data,error}=await db.auth.getUser();if(error)throw error;if(!data.user)throw new Error("Please sign in to use your coin wallet.");return data.user; };
+  const getUser = async () => { const {data,error}=await client.auth.getUser();if(error)throw error;if(!data.user)throw new Error("Please sign in to use your coin wallet.");return data.user; };
   async function refresh(){
     const user=await getUser();
-    const {data:wallet,error}=await db.from("coin_wallets").select("balance").eq("user_id",user.id).maybeSingle();
+    const {data:wallet,error}=await client.from("coin_wallets").select("balance").eq("user_id",user.id).maybeSingle();
     if(error)throw error;
     document.getElementById("cwBalance").textContent=(wallet?.balance||0).toLocaleString("en-NG")+" coins";
     const [ledger,requests]=await Promise.all([
-      db.from("coin_ledger").select("amount,entry_type,description,created_at,balance_after").eq("user_id",user.id).order("created_at",{ascending:false}).limit(40),
-      db.from("coin_purchase_requests").select("id,coins,amount_ngn,status,admin_note,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(20)
+      client.from("coin_ledger").select("amount,entry_type,description,created_at,balance_after").eq("user_id",user.id).order("created_at",{ascending:false}).limit(40),
+      client.from("coin_purchase_requests").select("id,coins,amount_ngn,status,admin_note,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(20)
     ]);
     if(ledger.error)throw ledger.error;if(requests.error)throw requests.error;
     document.getElementById("cwLedger").innerHTML=ledger.data?.length?ledger.data.map(x=>'<div class="cw-row"><span><strong>'+esc(x.description)+'</strong><br><small class="cw-muted">'+esc(new Date(x.created_at).toLocaleString())+'</small></span><strong style="color:'+(x.amount>0?'#62c78c':'#d58c8c')+'">'+(x.amount>0?'+':'')+x.amount+' coins</strong></div>').join(""):'No wallet transactions yet.';
@@ -102,7 +107,7 @@
       if(!window.confirm("Use coins from your wallet to activate "+labels[tier]+"?"))return;
       tierButton.disabled=true;status("Activating "+labels[tier]+"…");
       try{
-        const {data,error}=await db.rpc("coin_buy_membership",{p_tier:tier,p_idempotency_key:"membership:"+tier+":"+crypto.randomUUID()});
+        const {data,error}=await client.rpc("coin_buy_membership",{p_tier:tier,p_idempotency_key:"membership:"+tier+":"+crypto.randomUUID()});
         if(error)throw error;
         await refresh();
         status(labels[tier]+" activated successfully. Your wallet balance is "+Number(data||0).toLocaleString("en-NG")+" coins.");
@@ -113,21 +118,21 @@
   });
   document.getElementById("cwPurchaseForm").addEventListener("submit",async event=>{
     event.preventDefault();const button=event.submitter;button.disabled=true;status("Submitting your transfer for admin review…");
-    try{await getUser();const {data,error}=await db.rpc("coin_submit_purchase",{p_package_code:selected?.[0],p_sender_name:document.getElementById("cwSender").value.trim(),p_transfer_reference:document.getElementById("cwReference").value.trim()});if(error)throw error;document.getElementById("cwPurchaseForm").reset();document.getElementById("cwTransfer").hidden=true;selected=null;status("Your request has been submitted. Coins will appear after an administrator verifies your transfer.");await refresh();}
+    try{await getUser();const {data,error}=await client.rpc("coin_submit_purchase",{p_package_code:selected?.[0],p_sender_name:document.getElementById("cwSender").value.trim(),p_transfer_reference:document.getElementById("cwReference").value.trim()});if(error)throw error;document.getElementById("cwPurchaseForm").reset();document.getElementById("cwTransfer").hidden=true;selected=null;status("Your request has been submitted. Coins will appear after an administrator verifies your transfer.");await refresh();}
     catch(e){status(e.message||"Could not submit your request.");}finally{button.disabled=false;}
   });
   const adminSection=document.createElement("section");adminSection.className="admin-feature-section";adminSection.innerHTML='<div class="admin-section-heading admin-queue-heading"><div><p class="admin-eyebrow">COIN WALLET</p><h3>Pending coin transfers</h3></div><button type="button" id="cwAdminRefresh" class="admin-refresh-button">↻ Refresh</button></div><div id="cwAdminQueue" class="admin-queue-list">Open the admin dashboard to load requests.</div>';
   document.querySelector("#adminPanel .admin-shell")?.appendChild(adminSection);
   async function loadAdminQueue(){
     const target=document.getElementById("cwAdminQueue");if(!target)return;target.textContent="Checking administrator access…";
-    try{const {data:ok,error:authError}=await db.rpc("is_match_admin");if(authError||ok!==true)throw new Error("Administrator access required.");
-      const {data,error}=await db.from("coin_purchase_requests").select("id,user_id,package_code,coins,amount_ngn,sender_name,transfer_reference,created_at").eq("status","pending").order("created_at",{ascending:true});
+    try{const {data:ok,error:authError}=await client.rpc("is_match_admin");if(authError||ok!==true)throw new Error("Administrator access required.");
+      const {data,error}=await client.from("coin_purchase_requests").select("id,user_id,package_code,coins,amount_ngn,sender_name,transfer_reference,created_at").eq("status","pending").order("created_at",{ascending:true});
       if(error)throw error;if(!data?.length){target.textContent="No pending coin transfers.";return;}
       target.replaceChildren();
       data.forEach(request=>{const card=document.createElement("article");card.className="cw-admin-card";const title=document.createElement("strong");title.textContent=request.coins+" coins · "+money(request.amount_ngn);const detail=document.createElement("p");detail.className="cw-muted";detail.textContent="Member: "+request.user_id+" · Sender: "+request.sender_name+" · Ref: "+request.transfer_reference+" · "+new Date(request.created_at).toLocaleString();const actions=document.createElement("div");actions.className="cw-actions";const approve=document.createElement("button");approve.className="cw-button primary";approve.textContent="Approve & credit";const reject=document.createElement("button");reject.className="cw-button";reject.textContent="Reject";approve.onclick=()=>review(request.id,"approved",null,approve);reject.onclick=()=>{const reason=window.prompt("Enter the reason for rejecting this transfer:");if(reason)review(request.id,"rejected",reason,reject);};actions.append(approve,reject);card.append(title,detail,actions);target.append(card);});
     }catch(e){target.textContent=e.message||"Could not load coin requests.";}
   }
-  async function review(id,decision,reason,button){button.disabled=true;try{const {error}=await db.rpc("coin_admin_review_purchase",{p_request_id:id,p_decision:decision,p_reason:reason});if(error)throw error;await loadAdminQueue();}catch(e){alert(e.message||"Review failed.");button.disabled=false;}}
+  async function review(id,decision,reason,button){button.disabled=true;try{const {error}=await client.rpc("coin_admin_review_purchase",{p_request_id:id,p_decision:decision,p_reason:reason});if(error)throw error;await loadAdminQueue();}catch(e){alert(e.message||"Review failed.");button.disabled=false;}}
   document.getElementById("cwAdminRefresh")?.addEventListener("click",loadAdminQueue);
   const originalShow=window.show;
   document.addEventListener("click",async event=>{

@@ -6153,7 +6153,6 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
       <option value="monthly">Monthly Premium — ₦5,000</option>
       <option value="yearly">Yearly Premium — ₦50,000</option>
       <option value="lite_monthly">The Match Lite — 30 days · ₦1,000</option>
-      <option value="lite_monthly">The Match Lite — 30 days · ₦1,000</option>
     </select>
 
     <p>Amount to transfer: <strong id="premiumAmount">Choose a plan above</strong></p>
@@ -16165,6 +16164,7 @@ $("refreshPremiumRequests").onclick=async()=>{
 };
  
   async function logout(){
+if (window.matchLitePromoTimer) { clearInterval(window.matchLitePromoTimer); window.matchLitePromoTimer = null; }
 let r=await db.auth.signOut();
 if(r.error){alert(friendly(r.error));return;}
 currentUser=null;approxLocation=null;show("welcome");

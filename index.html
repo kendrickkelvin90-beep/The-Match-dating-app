@@ -10154,10 +10154,8 @@ async function loadNearby(){
 
   try{
     const viewerPremium = await matchIsPremium();
-    const canRewind = await matchCanRewind();
-    const canBoost = await matchCanBoost();
-    $("rewindSwipeBtn").textContent = canRewind ? "↶ Rewind" : "↶ Rewind 🔒";
-    $("profileBoostBtn").textContent = canBoost ? "✦ Boost my profile" : "✦ Boost my profile 🔒";
+    $("rewindSwipeBtn").textContent = viewerPremium ? "↶ Rewind" : "↶ Rewind 🔒";
+    $("profileBoostBtn").textContent = viewerPremium ? "✦ Boost my profile" : "✦ Boost my profile 🔒";
     const greeting = $("greeting");
     greeting?.querySelector(".own-premium-badge")?.remove();
     if (viewerPremium && greeting) {
@@ -11248,7 +11246,10 @@ async function loadPremiumNearby(){
   $("nearbyMapPanel")?.classList.remove("hidden");
   status("nearbyMembersStatus","Checking your location settings...");
   try{
-    nearbyViewerIsPremium=await matchHasNearbyAccess();
+    const {data:membership,error:premiumError}=await db.from("premium_memberships")
+      .select("premium_until").eq("user_id",currentUser.id).maybeSingle();
+    if(premiumError)throw premiumError;
+    nearbyViewerIsPremium=!!membership&&!!membership.premium_until&&new Date(membership.premium_until).getTime()>Date.now();
     $("nearbyCardsViewBtn")?.classList.remove("hidden");
     $("nearbyCardsViewBtn").textContent = nearbyViewerIsPremium ? "Cards" : "Cards 🔒";
     setNearbyView("map");
@@ -12872,27 +12873,6 @@ async function matchIsPremium(userId = currentUser?.id) {
   return !!data?.premium_until && new Date(data.premium_until).getTime() > Date.now();
 }
 
-async function matchPlusTier(userId = currentUser?.id) {
-  if (!userId) return null;
-  const { data, error } = await db.rpc("match_plus_active_tier");
-  if (error) throw error;
-  return data || null;
-}
-async function matchHasNearbyAccess(userId = currentUser?.id) {
-  return (await matchIsPremium(userId)) || !!(await matchPlusTier(userId));
-}
-async function matchCanRewind(userId = currentUser?.id) {
-  return (await matchIsPremium(userId)) || !!(await matchPlusTier(userId));
-}
-async function matchCanBoost(userId = currentUser?.id) {
-  const tier = await matchPlusTier(userId);
-  return (await matchIsPremium(userId)) || tier === "quarterly" || tier === "annual";
-}
-async function matchHasAdvancedFilters(userId = currentUser?.id) {
-  // Advanced Discovery filters remain Premium-only until the Match tier filters
-  // are fully implemented; do not unlock controls that do not work yet.
-  return await matchIsPremium(userId);
-}
 async function matchIsLite(userId = currentUser?.id) {
   if (!userId) return false;
   const { data, error } = await db.from("lite_memberships")
@@ -12901,8 +12881,7 @@ async function matchIsLite(userId = currentUser?.id) {
   return !!data?.lite_until && new Date(data.lite_until).getTime() > Date.now();
 }
 async function matchHasUnlimitedSwipes(userId = currentUser?.id) {
-  const tier = await matchPlusTier(userId);
-  return (await matchIsPremium(userId)) || (await matchIsLite(userId)) || tier === "quarterly" || tier === "annual";
+  return (await matchIsPremium(userId)) || (await matchIsLite(userId));
 }
 
 function lagosDayStartIso() {
@@ -12924,11 +12903,7 @@ async function refreshDailyLikeCounter() {
       currentDiscoverIsPremium = true;
       currentDailySwipesUsed = 0;
       target.style.display = "";
-      const [isPremium, isLite, tier] = await Promise.all([matchIsPremium(), matchIsLite(), matchPlusTier()]);
-      target.textContent = isPremium ? "Unlimited swipes · Premium"
-        : isLite ? "Unlimited swipes · The Match Lite"
-        : tier === "annual" ? "Unlimited swipes · Match Annual"
-        : "Unlimited swipes · Match Quarterly";
+      target.textContent = (await matchIsPremium()) ? "Unlimited swipes · Premium" : "Unlimited swipes · The Match Lite";
       return;
     }
     const { data: count, error } = await db.rpc("get_my_daily_swipe_count");
@@ -12962,7 +12937,7 @@ document.addEventListener("click", event => {
 $("rewindSwipeBtn")?.addEventListener("click", async () => {
   const button = $("rewindSwipeBtn");
   try {
-    if (!await matchCanRewind()) { document.querySelector('#bottomNavigation [data-page="coinWalletPage"]')?.click(); return; }
+    if (!await matchIsPremium()) { show("premium"); return; }
     button.disabled = true;
     const { data, error } = await db.rpc("rewind_my_last_swipe");
     if (error) throw error;
@@ -12979,7 +12954,7 @@ $("rewindSwipeBtn")?.addEventListener("click", async () => {
 $("profileBoostBtn")?.addEventListener("click", async () => {
   const button = $("profileBoostBtn");
   try {
-    if (!await matchCanBoost()) { document.querySelector('#bottomNavigation [data-page="coinWalletPage"]')?.click(); return; }
+    if (!await matchIsPremium()) { show("premium"); return; }
     button.disabled = true;
     const { data, error } = await db.rpc("activate_my_profile_boost");
     if (error) throw error;
@@ -13004,7 +12979,7 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
   $("discoveryDistanceValue").textContent = event.target.value + " km";
 });
   $("saveDiscoveryPreferences").addEventListener("click", async () => {
-  const premium = await matchHasAdvancedFilters();
+  const premium = await matchIsPremium();
   const minAge = Number($("discoveryAgeMin").value);
   const maxAge = Number($("discoveryAgeMax").value);
 
@@ -18838,7 +18813,6 @@ body.light-theme #eventsPage .events-featured-meta strong {
 /* Keep the admin control centre fully hidden outside its own view. */
 #adminPanel.hidden{display:none!important}
 </style>
-<script src="/coin-wallet.js"></script>
 </body>
 </html>
 

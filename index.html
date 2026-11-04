@@ -6049,17 +6049,30 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
 #voiceCallModal.voice-call-screen #voiceCallTitle { font-size:clamp(25px,6vw,32px)!important; }
 #voiceCallModal.voice-call-screen #voiceCallStatus { color:#c8c0b4!important; }
 #voiceCallModal.voice-call-screen #voiceCallActions { width:100%!important; display:flex!important; justify-content:center!important; gap:14px!important; flex-wrap:wrap!important; margin-top:36px!important; }
+
+    #premium .premium-plans{display:none!important}
+    #premium .premium-legacy-status{padding:14px 16px;margin:16px 0;border:1px solid rgba(198,161,91,.42);border-radius:15px;background:linear-gradient(135deg,rgba(16,42,48,.72),rgba(26,23,17,.85));color:#ead6a7;line-height:1.55}
+    #premium .premium-coin-memberships{display:grid;gap:12px;margin:16px 0 22px}
+    #premium .premium-coin-card{padding:18px;border:1px solid rgba(198,161,91,.3);border-radius:17px;background:linear-gradient(145deg,#172729,#111412);color:#f5f0e6}
+    #premium .premium-coin-card-featured{border-color:#d8b66e;box-shadow:0 0 0 1px rgba(216,182,110,.14)}
+    #premium .premium-coin-card-top{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+    #premium .premium-coin-card-top strong{color:#e8ca8a;font-size:20px}
+    #premium .premium-coin-card p{color:#bcb7ad;line-height:1.6;font-size:13px}
+    #premium .premium-coin-card button{width:100%;margin-top:8px}
+    body.light-theme #premium .premium-coin-card{background:linear-gradient(145deg,#eef5f1,#fff8e9);color:#2d2a24}
+    body.light-theme #premium .premium-coin-card p{color:#68645c}
+    body.light-theme #premium .premium-legacy-status{background:#f3f0e6;color:#463a25}
 </style>
 
   <div class="premium-hero">
     <div class="premium-eyebrow">THE MATCH · MEMBERSHIP</div>
     <h3>A more intentional way to connect.</h3>
     <p>Discover more possibilities, see who's interested, and make more of your dating experience.</p>
-    <p class="premium-description" style="margin:10px 0 0">Premium is a separate bank-transfer membership. Match Plus memberships are purchased with coins in the Coins tab; both membership systems remain available and have different benefits.</p>
+    <p class="premium-description" style="margin:10px 0 0">Existing bank-transfer Premium memberships are being honoured until their paid expiry dates. All new Match Plus, Quarterly and Annual memberships are purchased with Match Coins.</p>
   </div>
 
-  <h3>Premium benefits</h3>
-  <p class="premium-description">Thoughtful extras for your dating experience.</p>
+  <h3>Premium-level benefits · Quarterly & Annual</h3>
+  <p class="premium-description">These higher coin tiers unlock the core Premium experience. Match Plus is a focused lower-cost tier with its own clearly listed benefits.</p>
 
   <div class="premium-benefits">
     <div class="premium-benefit">
@@ -6075,14 +6088,6 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
       <div><strong>More Stories</strong><span>Upload more Stories beyond the free daily allowance.</span></div>
     </div>
     <div class="premium-benefit">
-      <div class="premium-icon">✉</div>
-      <div><strong>Premium messaging</strong><span>Access additional messaging features available to Premium members.</span></div>
-    </div>
-    <div class="premium-benefit">
-      <div class="premium-icon">✓</div>
-      <div><strong>Read receipts</strong><span>See message-read information where supported.</span></div>
-    </div>
-    <div class="premium-benefit">
       <div class="premium-icon">↶</div>
       <div><strong>Swipe Rewind</strong><span>Undo your most recent Like or Pass when you change your mind.</span></div>
     </div>
@@ -6091,16 +6096,12 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
       <div><strong>Profile Boost</strong><span>Put your profile ahead of other eligible profiles in Discover for 30 minutes.</span></div>
     </div>
     <div class="premium-benefit">
-      <div class="premium-icon">♛</div>
-      <div><strong>Premium badge</strong><span>Show a gold Premium badge while your subscription is active.</span></div>
-    </div>
-    <div class="premium-benefit">
       <div class="premium-icon">⚙</div>
       <div><strong>Advanced Discovery controls</strong><span>Unlock expanded distance and age ranges, verified and recently active filters, and additional role preferences.</span></div>
     </div>
     <div class="premium-benefit">
       <div class="premium-icon">♥</div>
-      <div><strong>Unlimited swipes</strong><span>Like or Pass up to 20 profiles per day as a Free member; Premium includes unlimited swipes.</span></div>
+      <div><strong>Unlimited swipes</strong><span>Free and Match Plus keep the daily swipe limit. Match Quarterly and Annual include unlimited swipes.</span></div>
     </div>
     <div class="premium-benefit">
       <div class="premium-icon">✧</div>
@@ -6108,53 +6109,46 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     </div>
   </div>
 
-  <h3>Choose your membership</h3>
-  <p class="premium-description">Select a plan to view payment account details.</p>
-
-  <div class="premium-plans">
-    <button class="premium-plan" type="button" data-premium-plan="weekly">
-      <div class="premium-plan-top">
-        <div><span class="premium-plan-name">Weekly</span><span class="premium-plan-note">A flexible start</span></div>
-        <div class="premium-price">₦4,000<span class="premium-period">7 days</span></div>
-      </div>
-      <div class="premium-plan-cta"><span>Choose weekly</span><span>→</span></div>
-    </button>
-
-    <button class="premium-plan recommended" type="button" data-premium-plan="monthly">
-      <span class="premium-tag">POPULAR CHOICE</span>
-      <div class="premium-plan-top">
-        <div><span class="premium-plan-name">Monthly</span><span class="premium-plan-note">A month to connect</span></div>
-        <div class="premium-price">₦8,000<span class="premium-period">30 days</span></div>
-      </div>
-      <div class="premium-plan-cta"><span>Choose monthly</span><span>→</span></div>
-    </button>
-
-    <button class="premium-plan" type="button" data-premium-plan="yearly">
-      <div class="premium-plan-top">
-        <div><span class="premium-plan-name">Yearly</span><span class="premium-plan-note">Long-term value</span></div>
-        <div class="premium-price">₦49,800<span class="premium-period">12 months</span></div>
-      </div>
-      <div class="premium-plan-cta"><span>Choose yearly</span><span>→</span></div>
-    </button>
-
+  <div class="premium-legacy-status" id="premiumLegacyStatus" role="status" aria-live="polite">
+    Checking your current membership…
   </div>
 
+  <h3>Choose a coin membership</h3>
+  <p class="premium-description">All new Match memberships are purchased with Match Coins. Choose the level that fits you, then activate it securely from your Coin Wallet.</p>
+
+  <div class="premium-coin-memberships">
+    <article class="premium-coin-card">
+      <div class="premium-coin-card-top"><span class="premium-plan-name">Match Plus</span><strong>300 coins</strong></div>
+      <p>30 days · Premium Nearby, up to 3 Rewinds daily and up to 3 Stories daily.</p>
+      <button type="button" class="btn secondary" data-open-coin-tier="plus">Choose Match Plus</button>
+    </article>
+    <article class="premium-coin-card premium-coin-card-featured">
+      <span class="premium-tag">MOST POPULAR</span>
+      <div class="premium-coin-card-top"><span class="premium-plan-name">Match Quarterly</span><strong>800 coins</strong></div>
+      <p>90 days · Premium core benefits, unlimited swipes, incoming likes, advanced filters, Nearby, unlimited Stories, 10 Rewinds daily and one 30-minute Boost every 7 days.</p>
+      <button type="button" class="btn primary" data-open-coin-tier="quarterly">Choose Match Quarterly</button>
+    </article>
+    <article class="premium-coin-card">
+      <div class="premium-coin-card-top"><span class="premium-plan-name">Match Annual</span><strong>2,800 coins</strong></div>
+      <p>365 days · All Premium benefits, unlimited Rewinds, one 30-minute Boost every 24 hours and a 50-coin bonus every 30 days while active, credited by the Match admin.</p>
+      <button type="button" class="btn secondary" data-open-coin-tier="annual">Choose Match Annual</button>
+    </article>
+  </div>
+  <p class="premium-description">Existing paid Premium members keep their current benefits until their already-paid expiry date. No paid time is removed.</p>
+
   <div class="premium-account" id="premiumAccountDetails">
-    <h3>Payment account details</h3>
+    <h3>Match Lite payment account</h3>
     <div class="premium-account-row"><span class="premium-account-label">Network</span><span class="premium-account-value">MTN MoMo</span></div>
     <div class="premium-account-row"><span class="premium-account-label">Account name</span><span class="premium-account-value">JUSTICE TRUST UGOALA</span></div>
     <div class="premium-account-row"><span class="premium-account-label">Account number</span><span class="premium-account-value">0896939533</span></div>
-    <p class="premium-note" id="premiumPaymentNote">Transfer the exact amount for your selected Premium plan. Then enter the transfer name and reference below. Premium remains pending until an admin reviews and approves your payment.</p>
+    <p class="premium-note" id="premiumPaymentNote">This bank-transfer form is only for the separate Match Lite offer. New Match Plus, Quarterly and Annual memberships are paid with coins.</p>
   </div>
 
   <form id="premiumPaymentForm">
     <label for="premiumPlan">Selected plan</label>
     <select id="premiumPlan" required>
       <option value="">Choose a plan</option>
-      <option value="weekly">Weekly — ₦4,000</option>
-      <option value="monthly">Monthly — ₦8,000</option>
-      <option value="yearly">Yearly — ₦49,800</option>
-      <option value="lite_monthly" hidden>The Match Lite — 30 days · ₦1,000</option>
+      <option value="lite_monthly">The Match Lite — 30 days · ₦1,000</option>
     </select>
 
     <p>Amount to transfer: <strong id="premiumAmount">Choose a plan above</strong></p>
@@ -9730,7 +9724,7 @@ function startMatchLitePromotionSchedule() {
   const write=v=>localStorage.setItem(key,JSON.stringify(v));
   const tick=async(forceStage=0)=>{
     if(!currentUser||currentUser.id!==userId||document.visibilityState!=="visible"||currentPage!=="discover")return;
-    try{if(await matchIsPremium(userId)||await matchIsLite(userId)){clearInterval(window.matchLitePromoTimer);window.matchLitePromoTimer=null;return;}}
+    try{const tier=await matchPlusTier(userId);if(await matchIsPremium(userId)||await matchIsLite(userId)||tier==="quarterly"||tier==="annual"){clearInterval(window.matchLitePromoTimer);window.matchLitePromoTimer=null;return;}}
     catch(e){console.warn("Lite offer eligibility check failed:",e);return;}
     const state=read(); state.activeMs=(state.activeMs||0)+15000;
     let stage=0;
@@ -10158,7 +10152,7 @@ async function loadNearby(){
   status("discoverStatus","Finding members...");
 
   try{
-    const viewerPremium = await matchIsPremium();
+    const viewerPremium = await matchHasAdvancedFilters();
     const canRewind = await matchCanRewind();
     const canBoost = await matchCanBoost();
     $("rewindSwipeBtn").textContent = canRewind ? "↶ Rewind" : "↶ Rewind 🔒";
@@ -12925,8 +12919,8 @@ async function matchCanBoost(userId = currentUser?.id) {
   return (await matchIsPremium(userId)) || tier === "quarterly" || tier === "annual";
 }
 async function matchHasAdvancedFilters(userId = currentUser?.id) {
-  // Advanced Discovery filters remain Premium-only until their tier support is implemented.
-  return await matchIsPremium(userId);
+  const tier = await matchPlusTier(userId);
+  return (await matchIsPremium(userId)) || tier === "quarterly" || tier === "annual";
 }
 
 async function matchIsLite(userId = currentUser?.id) {
@@ -13040,7 +13034,7 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
   $("discoveryDistanceValue").textContent = event.target.value + " km";
 });
   $("saveDiscoveryPreferences").addEventListener("click", async () => {
-  const premium = await matchIsPremium();
+  const premium = await matchHasAdvancedFilters();
   const minAge = Number($("discoveryAgeMin").value);
   const maxAge = Number($("discoveryAgeMax").value);
 
@@ -13082,7 +13076,7 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
 });
   async function loadDiscoveryPreferences() {
   try {
-    const premium = await matchIsPremium();
+    const premium = await matchHasAdvancedFilters();
     const saved = JSON.parse(localStorage.getItem("theMatchDiscoveryPreferences") || "{}");
     const distance = $("discoveryDistance");
     distance.max = premium ? "200" : "50";
@@ -13169,8 +13163,9 @@ $("settingsPrivacyProfile").onclick=()=>{
 show("profile");
 };
 
-$("settingsPremium").onclick=()=>{
+$("settingsPremium").onclick=async()=>{
 show("premium");
+await refreshPremiumTransitionStatus();
 };
 
 $("settingsPaymentStatus").onclick=async()=>{
@@ -13319,7 +13314,8 @@ async function loadLikesPage(){
     if(liteError)throw liteError;
     const isLite=!!liteMembership?.lite_until && new Date(liteMembership.lite_until).getTime()>Date.now();
 
-    if(!isPremium && !isLite){
+    const coinTier=await matchPlusTier();
+    if(!isPremium && !isLite && coinTier!=="quarterly" && coinTier!=="annual"){
       const {data:count,error:countError}=await db
   .rpc("get_my_incoming_like_count");
 
@@ -13333,7 +13329,7 @@ if(countError)throw countError;
       const lockTitle=document.createElement("h3");
       lockTitle.textContent=(count||0)===1 ? "Someone likes you" : (count||0)+" people like you";
       const lockMessage=document.createElement("p");
-      lockMessage.textContent="Unlock your incoming likes and see full profile photos with The Match Lite or Premium.";
+      lockMessage.textContent="Unlock your incoming likes and see full profile photos with Match Lite, Match Quarterly or Match Annual.";
       const upgradeButton=document.createElement("button");
       upgradeButton.type="button";
       upgradeButton.textContent="Explore membership  →";
@@ -16062,19 +16058,50 @@ btn.disabled=false;
   $("editProfile").onclick = () => show("profile");
   }
   
-$("openPremium").onclick=()=>show("premium");
+$("openPremium").onclick=async()=>{show("premium");await refreshPremiumTransitionStatus();};
 $("backFromPremium").onclick=()=>show("profile");
 
 
 
 
 
-const premiumPlanPrices = {
-  weekly: 4000,
-  monthly: 8000,
-  yearly: 49800,
-  lite_monthly: 1000
-};
+async function refreshPremiumTransitionStatus(){
+  const target=$("premiumLegacyStatus");
+  if(!target||!currentUser)return;
+  target.textContent="Checking your current membership…";
+  try{
+    const [{data:legacy,error:legacyError},{data:coinTier,error:coinError}]=await Promise.all([
+      db.from("premium_memberships").select("premium_until").eq("user_id",currentUser.id).maybeSingle(),
+      db.from("match_plus_memberships").select("tier,expires_at").eq("user_id",currentUser.id).maybeSingle()
+    ]);
+    if(legacyError)throw legacyError;
+    if(coinError)throw coinError;
+    const now=Date.now();
+    const legacyUntil=legacy?.premium_until?new Date(legacy.premium_until):null;
+    const coinUntil=coinTier?.expires_at?new Date(coinTier.expires_at):null;
+    const dateOptions={day:"numeric",month:"long",year:"numeric",hour:"numeric",minute:"2-digit",timeZone:"Africa/Lagos"};
+    if(legacyUntil&&legacyUntil.getTime()>now){
+      target.textContent="Your existing Premium is protected until "+legacyUntil.toLocaleString("en-NG",dateOptions)+". All benefits already paid for remain active until then.";
+    }else if(coinUntil&&coinUntil.getTime()>now){
+      const labels={plus:"Match Plus",quarterly:"Match Quarterly",annual:"Match Annual"};
+      target.textContent="Your active membership: "+(labels[coinTier.tier]||"Match membership")+" · expires "+coinUntil.toLocaleString("en-NG",dateOptions)+".";
+    }else{
+      target.textContent="You have no active paid membership. Choose Match Plus, Quarterly or Annual and pay with coins from your wallet.";
+    }
+  }catch(error){
+    console.warn("Membership status could not be loaded:",error);
+    target.textContent="Your existing membership benefits are not changed. Refresh to check your current expiry.";
+  }
+}
+
+document.addEventListener("click",event=>{
+  const button=event.target.closest("[data-open-coin-tier]");
+  if(!button)return;
+  event.preventDefault();
+  if(typeof window.openCoinMemberships==="function")window.openCoinMemberships(button.dataset.openCoinTier);
+  else document.querySelector('#bottomNavigation [data-page="coinWalletPage"]')?.click();
+});
+const premiumPlanPrices = { lite_monthly: 1000 };
 
 $("premiumPlan").onchange = () => {
   const plan = $("premiumPlan").value;
@@ -16111,6 +16138,7 @@ $("premiumPaymentForm").addEventListener("submit", async (e) => {
   }
 
     const plan = $("premiumPlan").value;
+  if(plan!=="lite_monthly"){status("premiumStatus","New Match memberships are purchased with coins. Open your Coin Wallet to continue.",true);return;}
   const amount = premiumPlanPrices[plan] || 0;
   const sender = $("premiumSender").value.trim();
   const reference = $("premiumReference").value.trim();

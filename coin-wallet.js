@@ -92,6 +92,15 @@
     ["buy","history","plus","store"].forEach(k=>{document.getElementById("cw"+k[0].toUpperCase()+k.slice(1)).hidden=k!==name;});
     page.querySelectorAll("[data-cw-tab]").forEach(b=>b.classList.toggle("active",b.dataset.cwTab===name));
   };
+  window.openCoinMemberships = async tier => {
+    if(typeof window.show==="function")window.show("coinWalletPage");
+    setTab("plus");
+    try{await refresh();status("");}catch(error){status(error.message||"Wallet unavailable.");}
+    if(tier){
+      const button=page.querySelector('[data-cw-tier="'+tier+'"]');
+      button?.scrollIntoView({behavior:"smooth",block:"center"});
+    }
+  };
   const getUser = async () => { const {data,error}=await client.auth.getUser();if(error)throw error;if(!data.user)throw new Error("Please sign in to use your coin wallet.");return data.user; };
   async function refresh(){
     const user=await getUser();

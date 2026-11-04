@@ -26,6 +26,16 @@ $$;
 revoke all on function public.is_match_lite(uuid) from public;
 grant execute on function public.is_match_lite(uuid) to authenticated;
 
+alter table public.notifications
+  drop constraint if exists notifications_type_check;
+alter table public.notifications
+  add constraint notifications_type_check
+  check (type = any (array[
+    'verification_approved','verification_rejected','verification_reminder',
+    'verification_grace_expired','like','message','premium_welcome','premium_expired',
+    'story_uploaded','story_limit','lite_welcome'
+  ]::text[]));
+
 alter table public.premium_payment_requests
   drop constraint if exists premium_payment_requests_plan_check;
 alter table public.premium_payment_requests

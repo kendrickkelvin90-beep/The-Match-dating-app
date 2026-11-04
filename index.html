@@ -15433,6 +15433,7 @@ const viewOnce = Boolean(file && viewOnceToggle?.checked);
 
 button.disabled = true;
 button.textContent = "➤"; // Keep the send arrow visible; never show a blocking “Sending…” label.
+let optimisticBubble = null;
 
 try {
 const { data: allowed, error: blockError } = await db.rpc(
@@ -15448,7 +15449,7 @@ if (allowed !== true) {
 
 // Render text optimistically so the sender sees it immediately after the
 // existing interaction permission check. The database remains authoritative.
-let optimisticBubble = null;
+optimisticBubble = null;
 if (body) {
   optimisticBubble = document.createElement("div");
   optimisticBubble.className = "chat-bubble sent";

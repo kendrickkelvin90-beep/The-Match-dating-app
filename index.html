@@ -7728,16 +7728,14 @@ async function loadAdminVerificationRequests() {
               throw new Error("The stored verification selfie is empty or unavailable.");
             }
 
-            // Use a data URL instead of blob: URLs for compatibility with mobile
-            // browsers and embedded webviews that restrict object URLs.
-            const selfieDataUrl = await new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(reader.result);
-              reader.onerror = () => reject(new Error("Could not read the downloaded selfie image."));
-              reader.readAsDataURL(selfieBlob);
-            });
-            if (typeof selfieDataUrl !== "string" || !selfieDataUrl.startsWith("data:image/")) {
-              throw new Error("The stored verification file is not a supported image.");
+            // Keep the bucket private and issue a short-lived URL only after the
+            // authenticated admin download has succeeded.
+            const { data: signedSelfie, error: signedSelfieError } = await db.storage
+              .from("verification-selfies")
+              .createSignedUrl(request.selfie_path, 300);
+            if (signedSelfieError) throw signedSelfieError;
+            if (!signedSelfie?.signedUrl) {
+              throw new Error("Could not create a temporary secure selfie link.");
             }
 
 const overlay = document.createElement("div");
@@ -7769,11 +7767,22 @@ selfieImage.style.cssText =
   "display:block;max-width:100%;max-height:85vh;" +
   "object-fit:contain;border-radius:12px;background:#171717;";
 selfieImage.onload = () => selfieStatus.remove();
+const openSelfieLink = document.createElement("a");
+openSelfieLink.href = signedSelfie.signedUrl;
+openSelfieLink.target = "_blank";
+openSelfieLink.rel = "noopener noreferrer";
+openSelfieLink.textContent = "Open selfie in a new tab";
+openSelfieLink.style.cssText =
+  "display:inline-block;margin:12px auto;padding:12px 18px;" +
+  "border-radius:12px;background:#d8b56b;color:#17130b;" +
+  "font-weight:700;text-decoration:none;";
+openSelfieLink.style.display = "none";
 selfieImage.onerror = () => {
   selfieImage.style.display = "none";
-  selfieStatus.textContent = "The selfie file could not be displayed. Close this preview and try again.";
+  selfieStatus.textContent = "The image could not be previewed inside this window. You can still open the securely stored selfie separately.";
+  openSelfieLink.style.display = "inline-block";
 };
-selfieImage.src = selfieDataUrl;
+selfieImage.src = signedSelfie.signedUrl;
 
 const closePreview = () => {
   document.removeEventListener("keydown", handlePreviewKeydown);
@@ -7789,7 +7798,7 @@ overlay.addEventListener("click", event => {
   if (event.target === overlay) closePreview();
 });
 
-overlay.append(closeButton, selfieStatus, selfieImage);
+overlay.append(closeButton, selfieStatus, selfieImage, openSelfieLink);
 document.body.appendChild(overlay);
 document.addEventListener("keydown", handlePreviewKeydown);
 closeButton.focus();

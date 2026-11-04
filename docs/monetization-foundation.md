@@ -1,0 +1,168 @@
+# The Match monetization foundation
+
+## Delivery approach
+- Work only on `test/monetization-foundation-2026-11-04` until Kelvin approves testing.
+- Do not merge or deploy without explicit approval.
+- Keep login, signup, Discover, Nearby, chat, verification, existing admin controls, Match Lite and production Premium entitlements protected during the transition.
+- The current interactive design preview is `previews/match-plus-store-preview.html`. It is standalone and uses only in-memory UI state; it is not connected to member data, wallet services or payments.
+
+## Proposed coin package pricing — awaiting Kelvin's final approval
+| Package | Coins | Price |
+|---|---:|---:|
+| Starter | 50 | ₦1,000 |
+| Popular | 120 | ₦2,000 |
+| Value | 260 | ₦4,000 |
+| Premium Bundle | 700 | ₦10,000 |
+| Ultimate Bundle | 1,500 | ₦20,000 |
+
+## Proposed Match Plus membership prices — awaiting Kelvin's final approval
+| Tier | Duration | Coin cost | Proposed Naira reference price |
+|---|---:|---:|---:|
+| Match Plus | 30 days | 300 | ₦5,999 |
+| Match Quarterly | 90 days | 800 | ₦15,999 |
+| Match Annual | 365 days | 2,800 | ₦49,999 |
+
+Match Annual also receives 50 bonus coins every 30 days while the annual membership remains active. Rewards must be issued idempotently, recorded in the ledger, and not duplicated by retries. Unclaimed/missed rewards are not retroactively paid unless a future policy explicitly says otherwise.
+
+The Naira amounts are planning references only, not a final approved checkout price list. The actual checkout design must clearly distinguish purchasing coin packs from spending coins on membership, so the user is never charged twice for the same membership.
+
+## Proposed individual Match Store prices — awaiting Kelvin's final approval
+| Item | Coin cost |
+|---|---:|
+| Profile Boost (24 hours) | 40 |
+| 3 Profile Boosts | 100 |
+| 1 Super Like | 10 |
+| 5 Super Likes | 45 |
+| 10 Extra Likes | 30 |
+| 30 Extra Likes | 75 |
+| Priority Visibility (7 days) | 100 |
+| Priority Visibility (30 days) | 250 |
+| Special Profile Badge | 100 |
+| Animated Profile Effect | 150 |
+
+Official identity-verification badges must never be sold or imitated by decorative badges. Avoid charging a member twice for a benefit already included in their active Match Plus tier.
+
+## Draft tier benefit allocation — requires comparison and approval before live fulfilment
+The current Premium page in `index.html` (around lines 6060-6106 at the time of inspection) lists these benefits:
+- See who likes you.
+- Premium Nearby.
+- Premium messaging.
+- Read receipts.
+- Swipe Rewind.
+- Profile Boost (30 minutes).
+- Premium badge.
+- Advanced Discovery controls (expanded distance and age ranges, verified/recently-active filters, additional role preferences).
+- Unlimited swipes (the current copy says free members can Like or Pass up to 20 profiles per day).
+- Exclusive access to Premium features.
+
+Draft allocation shown in the preview (not approved and not connected to live entitlements):
+- Match Plus (30 days): see who likes you; Premium Nearby cards; expanded age/distance controls; verified and recently-active filters; 3 daily Rewinds; 3 Stories per day; Match Plus badge.
+- Match Quarterly (90 days): everything in Match Plus; unlimited daily Likes; all advanced Discovery filters; 10 daily Rewinds; unlimited Stories; read receipts; priority profile visibility; one Profile Boost every 7 days; Quarterly badge.
+- Match Annual (365 days): every Match Plus and Quarterly benefit; Incognito browsing; unlimited Rewinds; all Premium messaging benefits; one Profile Boost every 24 hours; Annual gold badge; future Annual-member benefits; 50 bonus coins every 30 days while active.
+
+This is a product proposal, not a verified parity map. Before connecting these entitlements, inspect the full existing Premium page, actual feature gates, story limits, messaging behavior, swipe logic, filter controls, Nearby distance rules and any other current Premium-only benefits. Do not remove or downgrade any current paid entitlement by assumption. The final tier matrix must be explicitly confirmed.
+
+## Existing Premium implementation facts — read-only source inspection
+- The Premium page currently describes: See who likes you, Premium Nearby, more Stories, Premium messaging, read receipts, Swipe Rewind, a 30-minute Profile Boost, a Premium badge, Advanced Discovery controls, unlimited swipes, and exclusive Premium access.
+- The current swipe-limit migration sets Free members to 20 combined Likes and Passes per Lagos calendar day; active Premium and Match Lite members bypass that cap. This is enforced in database triggers, not only by the UI.
+- The current rewind RPC and Profile Boost RPC require an active `premium_memberships` row. The boost RPC creates a 30-minute boost and has a 24-hour activation cooldown. Do not silently change these rules when adding coin purchases.
+- The Match Lite migration is a separate 30-day entitlement and grants unlimited swipes plus access to received Likes. It must remain distinct from full Premium.
+- One historical migration in the branch currently constrains weekly Premium payment requests to ₦4,000. This is a code observation, not permission to change any Premium price. Kelvin has explicitly instructed that existing Premium prices remain untouched; verify the live source and obtain explicit direction before any Premium pricing edit.
+
+## Membership and admin authorization audit — source-only review
+- The frontend defines separate membership checks for Premium and Match Lite. Unlimited swipes are granted when either is active; the UI does not treat Match Lite as full Premium.
+- The received-Likes screen separately checks both memberships. Premium Nearby, Story replies, Story upload allowances and Premium messaging have Premium-specific checks in the frontend. The backend policies/RPCs must remain the final authority; a client-side check alone is not secure.
+- The Discover swipe cap is also enforced by database triggers, which is important because hiding/disabling the Like button in the browser is not sufficient protection.
+- The admin dashboard first calls the `is_match_admin` RPC, and the moderation Edge Function independently verifies the caller with that RPC before using the service-role client. This is the right general pattern: the browser must never decide that someone is an admin.
+- The `admin_review_match_request` routine is SECURITY DEFINER and checks `is_match_admin()` internally. In the migration inspected, it does not explicitly revoke EXECUTE from PUBLIC/anon or grant it only to authenticated. The internal admin check is an important safeguard, but explicit least-privilege grants should be added in a separately reviewed migration.
+- The definition and underlying source of truth for `is_match_admin()` were not located in the currently inspected migration set. Before adding wallet admin controls, verify that it uses a server-controlled admin table/claim and cannot be influenced by profile fields or client-supplied metadata.
+- Existing frontend membership reads query the member's own Premium/Lite row. Confirm the production RLS policies restrict these reads to the row owner and admins before reusing the pattern for wallet balances or transaction history.
+- No wallet UI, coin balance, or coin ledger is connected in this branch. A future wallet must use server-side atomic RPCs, enforce owner/admin authorization in the database, and never trust a balance or item price supplied by the browser.
+
+## Existing production database findings (read-only inspection)
+- Existing tables include `profile_boosts`, `referral_codes`, `referrals`, and `referral_rewards`.
+- Existing referral tables currently expose member-owned read policies; do not recreate these tables.
+- `profile_boosts` exists but its RLS, grants, and current consumers must be reviewed before connecting UI.
+- No wallet or coin-ledger table was present in the public table inventory.
+- Existing Premium tables `premium_memberships` and `premium_payment_requests` are separate and must not be modified as part of the preview milestone.
+- The production project contains live member data. Do not run DDL or alter production entitlements for this work.
+- The other existing Supabase project was inspected read-only. It has a separate `users` table with integer IDs and wallet/top-up/social-service order tables, unlike The Match's Supabase Auth UUID-based schema. It is not a safe drop-in Match development database and must not be repurposed without a separate explicit review.
+
+## Safe implementation sequence
+1. Finish the product and tier-benefit matrix using the current Premium code and confirm it with Kelvin.
+2. Obtain an isolated Supabase development database. A Supabase branch was previously quoted at **$0.01344/hour**. Do not create it or incur that recurring cost without explicit approval. The second existing Supabase project has a different schema and appears to serve another app; do not use it as a Match dev database.
+3. Inspect the isolated database schema, RLS, grants, admin authorization, existing referral and boost semantics, and app navigation.
+4. Design an append-only transaction ledger and wallet model. Never let a browser client directly set its own coin balance.
+5. Implement server-side atomic credit/debit operations with idempotency keys, ownership checks, audit metadata and safe reversals.
+6. Keep payment pending until a verified provider event or admin confirmation. Never credit coins from a screenshot alone.
+7. Connect wallet, coin store, Match Plus tiers and transaction history to authenticated server-side operations.
+8. Implement annual 50-coin rewards with a unique period key so scheduled retries cannot double-credit.
+9. Add admin review, controlled coin adjustments and a complete audit trail.
+10. Test as anonymous, ordinary member and admin; test duplicate payment callbacks, retries, concurrent spends, insufficient balances, refunds/reversals, membership expiry/upgrades, annual rewards and unauthorized reads/writes.
+11. Run Supabase security/performance advisors and regression checks for login, signup, chat, Discover, Nearby, profile verification, Premium transition and Match Lite.
+12. Ask Kelvin to test the branch. Do not merge or deploy without explicit approval.
+
+## Explicit non-goals for the current preview milestone
+- No live payment collection.
+- No live coin crediting or spending.
+- No production database changes.
+- No changes to existing Premium plans, payment requests or member entitlements; all coin and Match Plus prices remain proposals until Kelvin confirms them.
+- No changes to login/signup, Discover, Nearby, chat, verification or Match Lite.
+- No merge to `main` and no deployment.
+
+
+## Production authorization audit — read-only database verification (2026-11-04)
+
+The live Match Supabase project was inspected using read-only catalog queries. No production data or schema was changed.
+
+### Admin identity and RPC execution
+- `public.is_match_admin()` is a stable SECURITY DEFINER SQL function with an empty search_path. It returns true only when the caller's `auth.uid()` exists in `public.app_admins`. This is a server-side table check, not a client-editable profile flag.
+- `app_admins` has RLS enabled. Its only observed policy allows authenticated users to select their own row; authenticated users have SELECT only, with no INSERT/UPDATE/DELETE privilege. Anonymous SELECT is not granted.
+- `admin_review_match_request(text, uuid, text)` is SECURITY DEFINER, uses an empty search_path, and checks `is_match_admin()` internally before processing. Runtime privilege inspection found EXECUTE granted to authenticated and service_role, but not anon. The function is therefore callable by authenticated users, but its internal admin check is the authorization gate.
+- `activate_my_profile_boost()`, `is_match_admin()`, and `is_match_premium(uuid)` were also found not executable by anon; authenticated execution is granted.
+
+### Membership/payment row policies
+- RLS is enabled on `premium_memberships`, `lite_memberships`, `premium_payment_requests`, `app_admins`, and `profile_boosts`.
+- `lite_memberships`: authenticated SELECT only, constrained to `auth.uid() = user_id`; no authenticated INSERT/UPDATE/DELETE table privileges; no anon SELECT.
+- `premium_memberships`: observed policies allow members to SELECT only their own row and admins to review/manage rows via `is_match_admin()`. Table-level grants to anon/authenticated are broader than ideal, but RLS denies anon access and limits authenticated row actions to the applicable policies. Recommend tightening grants to least privilege in a separately reviewed migration, after confirming all frontend and RPC dependencies.
+- `premium_payment_requests`: members can INSERT their own pending request and SELECT their own requests; admins can SELECT and UPDATE requests via `is_match_admin()`. Authenticated users do not have DELETE or UPDATE table privileges. Anon SELECT is not granted.
+- `profile_boosts`: RLS is enabled and direct table privileges are not granted to anon or authenticated; use the existing controlled RPC path rather than exposing direct table writes.
+- `referral_codes`, `referral_rewards`, and `referrals`: RLS policies observed for authenticated owner/participant SELECT. Their table-level anon grants are broader than necessary, although no anon-targeted row policies were observed. Recommend a separate least-privilege review before any changes.
+
+### Current assessment and next work
+- The admin identity source and the membership/payment row policies are directionally sound; no evidence from these checks suggests ordinary authenticated members can directly approve payments or write membership rows.
+- The `admin_review_match_request` function has an internal admin check and anon execution is revoked. Its EXECUTE privilege remains available to all authenticated users, so a future hardening migration could revoke PUBLIC/anon and grant only authenticated explicitly; this is defense-in-depth, not a substitute for the internal check.
+- Broad table grants where RLS is relied upon should be tightened only after a dependency review. Do not apply production changes as part of this audit.
+- No production DDL, payment approval, membership mutation, or user-data modification was performed.
+
+
+## Membership payment lifecycle audit (2026-11-04)
+
+Reviewed the member submission UI, member request-history UI, admin payment queue, admin review RPC, and the live RPC definition. No payment was submitted or approved during this review.
+
+### Member submission
+- The member selects a plan, the client maps it to an amount, collects sender name and transfer reference, and inserts a `pending` row into `premium_payment_requests`.
+- RLS allows an authenticated member to insert only a request whose `user_id` is their own and whose status is `pending`.
+- The user-facing confirmation clearly says membership remains pending until admin review.
+- The Match Lite form currently submits ₦2,000 and its plan selector displays 30 days / ₦2,000. The payment amount is still supplied by the client, so the database constraint is essential; a future server-side request RPC should derive the amount from the plan instead of trusting browser input.
+- Member history reads only the signed-in member's own requests and displays plan, amount, pending/approved/rejected status. The selected fields do not currently include `admin_note`, so a rejection reason would not appear there even if one were stored.
+
+### Admin review
+- Admin dashboard loads pending requests only and displays plan, amount, member UUID, sender name, and transfer reference, with Approve and Reject actions.
+- The browser calls `admin_review_match_request`; the function checks `is_match_admin()` again server-side and only processes rows still in `pending` state. This protects against stale/double review attempts.
+- Approving `lite_monthly` creates or extends the member's Lite entitlement by 30 days and inserts an in-app notification stating that Lite is active and when it expires.
+- Approving other plan values creates/extends Premium membership and inserts an in-app Premium welcome notification.
+- The RPC returns no membership details to the browser; the admin dashboard refreshes after success.
+
+### Issues to resolve before calling the payment flow production-ready
+1. **Wrong rejection notification type:** when a membership payment is rejected, the RPC inserts a notification with type `verification_rejected` and title `Membership payment not approved`. This is semantically incorrect and can cause the rejection message to be missed or misclassified by notification routing. Use a dedicated type such as `membership_payment_rejected`.
+2. **No rejection reason workflow:** the admin UI exposes only Approve/Reject. It does not collect an admin note/reason, and the member request-history query does not select `admin_note`. Add a required concise reason on rejection, persist it atomically, and show it to the member.
+3. **No email on membership approval/rejection in the reviewed RPC path:** the SQL inserts in-app notifications only. The moderation edge function's Resend email pattern is not invoked by this membership review flow. If email is required, add a trusted server-side notification workflow with retries and no service-role key in the browser.
+4. **Client-calculated price:** browser-side amount is not authoritative. The existing amount constraint rejects values outside the allowed plan/amount pairs, but the stronger design is a server-side submit RPC that takes a plan and calculates its fixed price.
+5. **Premium pricing ambiguity:** the current branch's HTML lists weekly ₦4,000, monthly ₦8,000 and yearly ₦49,800. These are existing app values and are outside this Match Lite price change. Do not adjust any Premium prices without explicit instruction.
+
+### Safe next implementation sequence
+- Keep the current member form and approval flow unchanged while tests are prepared.
+- Create a separate test-only migration and UI patch for rejection reason + correct notification type, and a separate notification delivery design for email.
+- Test approved Lite, rejected Lite, duplicate review, invalid plan/amount, expired Lite, and member isolation on a disposable database before merging or applying anything to production.
+- Do not send email or change production rows as part of an audit.

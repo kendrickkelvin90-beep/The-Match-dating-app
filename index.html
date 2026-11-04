@@ -6153,7 +6153,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
       <option value="weekly">Weekly — ₦4,000</option>
       <option value="monthly">Monthly — ₦8,000</option>
       <option value="yearly">Yearly — ₦49,800</option>
-      <option value="lite_monthly" hidden>The Match Lite — 30 days · ₦1,000</option>
+      <option value="lite_monthly" hidden>The Match Lite — 30 days · ₦2,000</option>
     </select>
 
     <p>Amount to transfer: <strong id="premiumAmount">Choose a plan above</strong></p>
@@ -8232,6 +8232,21 @@ async function reviewMatchAdminRequest(table, id, decision) {
     return;
   }
 
+  let adminNote = null;
+  if (table === "premium_payment_requests" && decision === "rejected") {
+    adminNote = await matchPrompt(
+      "Please enter the reason for rejecting this membership payment. The member will see this explanation in their payment history and notification.",
+      "",
+      { title: "Reason for rejection", placeholder: "Explain what needs to be corrected...", multiline: true, maxLength: 1000, confirmText: "Continue" }
+    );
+    if (adminNote === null) return;
+    adminNote = adminNote.trim();
+    if (!adminNote) {
+      status("adminStatus", "A rejection reason is required.", true);
+      return;
+    }
+  }
+
   if (!await matchConfirm("Are you sure you want to " + decision + " this request?")) {
     return;
   }
@@ -8242,7 +8257,8 @@ async function reviewMatchAdminRequest(table, id, decision) {
     const { error } = await db.rpc("admin_review_match_request", {
       p_table: table,
       p_id: id,
-      p_decision: decision
+      p_decision: decision,
+      p_admin_note: adminNote
     });
 
     if (error) throw error;
@@ -15996,7 +16012,7 @@ const premiumPlanPrices = {
   weekly: 4000,
   monthly: 8000,
   yearly: 49800,
-  lite_monthly: 1000
+  lite_monthly: 2000
 };
 
 $("premiumPlan").onchange = () => {
@@ -16008,7 +16024,7 @@ $("premiumPlan").onchange = () => {
   const paymentNote = $("premiumPaymentNote");
   if (paymentNote) {
     paymentNote.textContent = plan === "lite_monthly"
-      ? "The Match Lite payment: transfer exactly ₦1,000 to the account above. Then enter the name used for the transfer and your transfer reference below. Your 30-day Lite membership activates only after an admin approves your payment."
+      ? "The Match Lite payment: transfer exactly ₦2,000 to the account above. Then enter the name used for the transfer and your transfer reference below. Your 30-day Lite membership activates only after an admin approves your payment."
       : "Transfer the exact amount for your selected Premium plan. Then enter the transfer name and reference below. Premium remains pending until an admin reviews and approves your payment.";
   }
 };

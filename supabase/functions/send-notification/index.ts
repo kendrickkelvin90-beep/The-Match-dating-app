@@ -123,7 +123,10 @@ Deno.serve(async (req: Request) => {
 
   // Database Webhooks send the project secret in the apikey header.
   const expectedKey = getSupabaseSecretKey();
-  const suppliedKey = req.headers.get("apikey");
+  const apiKeyHeader = req.headers.get("apikey") ?? "";
+  const authorization = req.headers.get("Authorization") ?? "";
+  const bearerKey = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
+  const suppliedKey = apiKeyHeader || bearerKey;
   if (!expectedKey || !suppliedKey || suppliedKey !== expectedKey) {
     return reply({ error: "Unauthorized webhook." }, 401);
   }

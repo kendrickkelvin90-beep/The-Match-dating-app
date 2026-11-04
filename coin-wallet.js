@@ -56,9 +56,9 @@
       </div>
       <div id="cwHistory" class="cw-panel" hidden><h3>Wallet activity</h3><div id="cwLedger" class="cw-card">Loading wallet history…</div><h3 style="margin-top:20px">Coin transfer requests</h3><div id="cwRequests" class="cw-card">Loading requests…</div></div>
       <div id="cwPlus" class="cw-panel" hidden><h3>Match Plus memberships</h3><p class="cw-muted">Spend coins from your wallet. Membership benefits activate only through the Match Plus entitlement system.</p><div class="cw-grid">
-        <article class="cw-card"><h3>Match Plus</h3><div class="cw-price">300 coins</div><p class="cw-muted">30 days · See who likes you, Premium Nearby cards, expanded age and distance controls, verified and recently active filters, 3 daily Rewinds, 3 Stories per day and Match Plus badge.</p><button class="cw-button primary" data-cw-tier="plus">Activate with 300 coins</button></article>
-        <article class="cw-card"><h3>Match Quarterly</h3><div class="cw-price">800 coins</div><p class="cw-muted">90 days · Match Plus benefits, unlimited daily Likes, advanced Discovery filters, 10 daily Rewinds, unlimited Stories, read receipts, priority visibility and one boost every 7 days.</p><button class="cw-button primary" data-cw-tier="quarterly">Activate with 800 coins</button></article>
-        <article class="cw-card"><h3>Match Annual</h3><div class="cw-price">2,800 coins</div><p class="cw-muted">365 days · All Match Plus and Quarterly benefits, Incognito browsing, unlimited Rewinds, Premium messaging benefits, one boost every 24 hours, Annual gold badge and 50 bonus coins every 30 days while active.</p><button class="cw-button primary" data-cw-tier="annual">Activate with 2,800 coins</button></article>
+        <article class="cw-card"><h3>Match Plus</h3><div class="cw-price">300 coins</div><p class="cw-muted">30 days · Access Premium Nearby, up to 3 Rewinds per day and up to 3 Stories per Lagos calendar day.</p><button class="cw-button primary" data-cw-tier="plus">Activate with 300 coins</button></article>
+        <article class="cw-card"><h3>Match Quarterly</h3><div class="cw-price">800 coins</div><p class="cw-muted">90 days · Match Plus benefits, unlimited Likes, up to 10 Rewinds per day, unlimited Stories and one Profile Boost every 7 days.</p><button class="cw-button primary" data-cw-tier="quarterly">Activate with 800 coins</button></article>
+        <article class="cw-card"><h3>Match Annual</h3><div class="cw-price">2,800 coins</div><p class="cw-muted">365 days · Quarterly benefits, unlimited Rewinds and one Profile Boost every 24 hours. Includes a 50-coin reward every 30 days while active, granted by an administrator.</p><button class="cw-button primary" data-cw-tier="annual">Activate with 2,800 coins</button></article>
       </div></div>
       <div id="cwStore" class="cw-panel" hidden><h3>Individual Match Store</h3><div class="cw-grid" id="cwStoreItems"></div><p class="cw-muted">Store purchases remain unavailable until each benefit is connected to its real feature gate. This prevents coins being deducted for an item that has not yet been delivered.</p></div>
       <p id="cwStatus" class="cw-status" role="status" aria-live="polite"></p><button id="cwBack" class="cw-button">← Back</button>
@@ -143,7 +143,7 @@
   document.getElementById("openAdminDashboardBtn")?.addEventListener("click",()=>setTimeout(loadAdminQueue,500));
   document.getElementById("adminRefreshBtn")?.addEventListener("click",()=>setTimeout(loadAdminQueue,500));
   document.getElementById("adminOpenCoinWalletBtn")?.addEventListener("click",loadAdminQueue);
-  document.getElementById("cwAdminRefresh")?.addEventListener("click",loadAdminQueue);
+
   document.getElementById("adminPanel")?.addEventListener("transitionend",loadAdminQueue);
   page.querySelector('[data-cw-tab="plus"]')?.addEventListener("click",()=>setTab("plus"));
   page.querySelector('[data-cw-tab="store"]')?.addEventListener("click",()=>setTab("store"));

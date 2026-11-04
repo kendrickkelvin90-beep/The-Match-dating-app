@@ -138,7 +138,7 @@
   document.querySelector("#adminPanel .admin-shell")?.appendChild(adminSection);
   async function loadAdminQueue(){
     const target=document.getElementById("cwAdminQueue");if(!target)return;target.textContent="Checking administrator access…";
-    try{const {data:ok,error:authError}=await client.rpc("is_match_admin");if(authError||ok!==true)throw new Error("Administrator access required.");
+    try{const {data:ok,error:authError}=await client.rpc("coin_is_admin");if(authError||ok!==true)throw new Error("Administrator access required.");
       const {data,error}=await client.from("coin_purchase_requests").select("id,user_id,package_code,coins,amount_ngn,sender_name,transfer_reference,created_at").eq("status","pending").order("created_at",{ascending:true});
       if(error)throw error;if(!data?.length){target.textContent="No pending coin transfers.";return;}
       target.replaceChildren();
@@ -147,17 +147,14 @@
   }
   async function review(id,decision,reason,button){button.disabled=true;try{const {error}=await client.rpc("coin_admin_review_purchase",{p_request_id:id,p_decision:decision,p_reason:reason});if(error)throw error;await loadAdminQueue();}catch(e){alert(e.message||"Review failed.");button.disabled=false;}}
   document.getElementById("cwAdminRefresh")?.addEventListener("click",loadAdminQueue);
-  const originalShow=window.show;
+  document.getElementById("cwCopyAccount")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText("0896939533");status("Account number copied.");}catch(e){status("Please copy the account number manually.");}});
   document.addEventListener("click",async event=>{
     const navButton=event.target.closest('#bottomNavigation [data-page="coinWalletPage"]');if(!navButton)return;
     event.preventDefault();event.stopImmediatePropagation();
-    document.querySelectorAll("section.panel").forEach(el=>el.classList.add("hidden"));page.classList.remove("hidden");
-    document.querySelectorAll("#bottomNavigation button").forEach(b=>b.classList.toggle("active",b===navButton));
-    document.querySelector(".hero")?.classList.add("hidden");
+    if(typeof window.show==="function")window.show("coinWalletPage");
     try{await refresh();status("");}catch(e){status(e.message||"Wallet unavailable.");}
-    window.scrollTo(0,0);
   },true);
-  document.getElementById("cwBack").addEventListener("click",()=>{page.classList.add("hidden");if(originalShow)originalShow("discover");});
+  document.getElementById("cwBack").addEventListener("click",()=>{if(typeof window.show==="function")window.show("discover");});
   document.getElementById("openAdminDashboardBtn")?.addEventListener("click",()=>setTimeout(loadAdminQueue,500));
   document.getElementById("adminRefreshBtn")?.addEventListener("click",()=>setTimeout(loadAdminQueue,500));
   document.getElementById("adminOpenCoinWalletBtn")?.addEventListener("click",loadAdminQueue);

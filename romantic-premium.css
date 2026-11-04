@@ -4,3 +4,159 @@
 #chatPage #chatMessages .chat-bubble{overflow-wrap:anywhere}
 #chatPage #chatComposer button:focus-visible,#matchGiftPanel button:focus-visible,#matchGiftMessageDialog button:focus-visible{outline:3px solid rgba(166,70,91,.35);outline-offset:2px}
 #matchGiftMessageDialog textarea{font-size:16px}
+
+
+/* Chat polish v2: responsive composer, readable history and theme-aware surfaces. */
+#chatPage{
+  display:flex!important;
+  flex-direction:column!important;
+  width:100%!important;
+  max-width:none!important;
+  padding:82px 12px calc(12px + env(safe-area-inset-bottom))!important;
+  overflow:hidden!important;
+}
+#chatPage #chatPageContent,
+#chatPage #activeConversation{
+  display:flex!important;
+  flex:1 1 auto!important;
+  min-height:0!important;
+  width:100%!important;
+  flex-direction:column!important;
+}
+#chatPage #chatMessages{
+  display:flex!important;
+  flex:1 1 0!important;
+  min-height:180px!important;
+  max-height:none!important;
+  width:100%!important;
+  align-self:stretch!important;
+  flex-direction:column!important;
+  gap:4px!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain;
+  padding:14px 10px!important;
+  border-radius:22px!important;
+  scrollbar-width:thin;
+}
+#chatPage #chatMessages .chat-bubble{
+  flex:0 0 auto!important;
+  width:fit-content!important;
+  max-width:min(78%, 520px)!important;
+  min-width:0!important;
+  padding:11px 14px!important;
+  margin:5px 0!important;
+  line-height:1.45!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+}
+#chatPage #chatComposer{
+  display:flex!important;
+  flex:0 0 auto!important;
+  align-items:center!important;
+  gap:7px!important;
+  width:100%!important;
+  min-height:62px!important;
+  padding:8px 9px!important;
+  margin:10px 0 8px!important;
+  border-radius:25px!important;
+}
+#chatPage #chatComposer label[for="chatViewOnce"],
+#chatPage #chatViewOnce{display:none!important}
+#chatPage #chatComposer #chatEmojiToggle{
+  flex:0 0 34px!important;
+  width:34px!important;height:38px!important;
+  padding:0!important;
+  font-size:21px!important;
+}
+#chatPage #chatComposer #chatMediaButton,
+#chatPage #chatComposer #openChatGifts{
+  flex:0 0 38px!important;
+  width:38px!important;height:38px!important;
+  min-width:38px!important;
+  padding:0!important;
+  font-size:20px!important;
+}
+#chatPage #chatComposer #chatMessageInput{
+  display:block!important;
+  flex:1 1 0!important;
+  width:0!important;
+  min-width:40px!important;
+  min-height:42px!important;
+  max-height:112px!important;
+  height:auto!important;
+  margin:0!important;
+  padding:10px 5px!important;
+  border:0!important;
+  border-radius:12px!important;
+  resize:none!important;
+  overflow-y:auto!important;
+  font-size:16px!important;
+  line-height:1.4!important;
+}
+#chatPage #chatComposer #sendChatMessage{
+  display:inline-flex!important;
+  flex:0 0 44px!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:44px!important;min-width:44px!important;
+  height:44px!important;min-height:44px!important;
+  padding:0!important;margin:0!important;
+  border-radius:50%!important;
+  font-size:23px!important;
+}
+#chatPage #chatPageStatus{
+  flex:0 0 auto!important;
+  min-height:0!important;
+  margin:3px 0!important;
+  font-size:11px!important;
+}
+#chatPage #backFromChatPage{display:none!important}
+/* Dark theme */
+body:not(.light-theme) #chatPage{
+  background:#050505!important;color:#f5f5f5!important;
+}
+body:not(.light-theme) #chatPage #chatMessages{
+  background:#101012!important;border:1px solid #29292d!important;
+}
+body:not(.light-theme) #chatPage #chatMessages .chat-bubble.sent{
+  background:#34212b!important;color:#fff!important;border-color:#67404f!important;
+}
+body:not(.light-theme) #chatPage #chatMessages .chat-bubble.received{
+  background:#1d1d20!important;color:#f4f1f3!important;border-color:#38383d!important;
+}
+body:not(.light-theme) #chatPage #chatComposer{
+  background:#171719!important;border:1px solid #38383d!important;
+}
+body:not(.light-theme) #chatPage #chatComposer #chatMessageInput{
+  color:#fff!important;background:transparent!important;
+}
+body:not(.light-theme) #chatPage #chatComposer #chatMessageInput::placeholder{color:#a3a0a5!important}
+/* Light theme */
+body.light-theme #chatPage{
+  background:#fff!important;color:#30232a!important;
+}
+body.light-theme #chatPage #chatMessages{
+  background:#fff!important;border:1px solid #eadfe3!important;
+}
+body.light-theme #chatPage #chatMessages .chat-bubble.sent{
+  background:#f7e2e8!important;color:#542638!important;border-color:#edcbd6!important;
+}
+body.light-theme #chatPage #chatMessages .chat-bubble.received{
+  background:#f7f7f8!important;color:#302a2d!important;border-color:#e8e5e7!important;
+}
+body.light-theme #chatPage #chatComposer{
+  background:#fff!important;border:1px solid #e5dce0!important;
+}
+body.light-theme #chatPage #chatComposer #chatMessageInput{
+  color:#30232a!important;background:transparent!important;
+}
+body.light-theme #chatPage #chatComposer #chatMessageInput::placeholder{color:#95878c!important}
+@media(max-width:390px){
+  #chatPage{padding-left:9px!important;padding-right:9px!important}
+  #chatPage #chatComposer{gap:4px!important;padding:7px!important}
+  #chatPage #chatComposer #chatEmojiToggle{flex-basis:30px!important;width:30px!important}
+  #chatPage #chatComposer #chatMediaButton,
+  #chatPage #chatComposer #openChatGifts{flex-basis:34px!important;width:34px!important;min-width:34px!important;height:36px!important}
+  #chatPage #chatComposer #sendChatMessage{flex-basis:42px!important;width:42px!important;min-width:42px!important;height:42px!important}
+  #chatPage #chatMessages .chat-bubble{max-width:84%!important}
+}

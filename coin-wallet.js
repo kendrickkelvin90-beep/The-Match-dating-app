@@ -127,14 +127,33 @@
       const tier=tierButton.dataset.cwTier;
       const labels={plus:"Match Plus",quarterly:"Match Quarterly",annual:"Match Annual"};
       const costs={plus:300,quarterly:800,annual:2800};
-      if(!(await window.matchConfirm("This will deduct "+costs[tier].toLocaleString("en-NG")+" coins from your wallet and activate "+labels[tier]+". Continue?","Activate "+labels[tier])))return;
-      tierButton.disabled=true;status("Activating "+labels[tier]+"…");
+      tierButton.disabled=true;
+      let confirmed=false;
+      try{confirmed=await window.matchConfirm("This will deduct "+costs[tier].toLocaleString("en-NG")+" coins from your wallet and activate "+labels[tier]+". Continue?","Activate "+labels[tier]);}
+      catch(e){status(e.message||"Could not open confirmation.");}
+      if(!confirmed){tierButton.disabled=false;return;}
+      status("Activating "+labels[tier]+"…");
+      let requestKeyStorage=null;
       try{
-        const {data,error}=await client.rpc("coin_buy_membership",{p_tier:tier,p_idempotency_key:"membership:"+tier+":"+crypto.randomUUID()});
+        const user=await getUser();
+        requestKeyStorage="theMatch.coinMembershipRequest."+user.id+"."+tier;
+        let requestKey;
+        try{
+          requestKey=window.localStorage.getItem(requestKeyStorage);
+          if(!requestKey){
+            requestKey="membership:"+tier+":"+crypto.randomUUID();
+            window.localStorage.setItem(requestKeyStorage,requestKey);
+          }
+        }catch(storageError){
+          requestKey=tierButton.dataset.pendingRequestKey||(tierButton.dataset.pendingRequestKey="membership:"+tier+":"+crypto.randomUUID());
+        }
+        const {data,error}=await client.rpc("coin_buy_membership",{p_tier:tier,p_idempotency_key:requestKey});
         if(error)throw error;
+        try{if(requestKeyStorage)window.localStorage.removeItem(requestKeyStorage);}catch(storageError){}
+        delete tierButton.dataset.pendingRequestKey;
         await refresh();
         status(labels[tier]+" activated successfully. Your wallet balance is "+Number(data||0).toLocaleString("en-NG")+" coins.");
-      }catch(e){status(e.message||"Could not activate membership.");}
+      }catch(e){status((e.message||"Could not activate membership.")+" If the request may have completed, retry using the same button; the request reference will be reused.");}
       finally{tierButton.disabled=false;}
     }
     const tab=event.target.closest("[data-cw-tab]");if(tab){setTab(tab.dataset.cwTab);if(tab.dataset.cwTab==="history")refresh().catch(e=>status(e.message));}

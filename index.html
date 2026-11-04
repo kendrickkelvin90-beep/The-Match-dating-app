@@ -10152,7 +10152,7 @@ async function loadNearby(){
   status("discoverStatus","Finding members...");
 
   try{
-    const viewerPremium = await matchIsPremium();
+    const viewerPremium = await matchHasAdvancedFilters();
     const canRewind = await matchCanRewind();
     const canBoost = await matchCanBoost();
     $("rewindSwipeBtn").textContent = canRewind ? "↶ Rewind" : "↶ Rewind 🔒";
@@ -13034,7 +13034,7 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
   $("discoveryDistanceValue").textContent = event.target.value + " km";
 });
   $("saveDiscoveryPreferences").addEventListener("click", async () => {
-  const premium = await matchIsPremium();
+  const premium = await matchHasAdvancedFilters();
   const minAge = Number($("discoveryAgeMin").value);
   const maxAge = Number($("discoveryAgeMax").value);
 

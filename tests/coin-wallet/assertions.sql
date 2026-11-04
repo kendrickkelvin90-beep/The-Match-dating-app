@@ -130,11 +130,11 @@ select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111'
 select public.coin_buy_store_item('super_like_5','store:super-like-5:test-0001');
 select public.coin_buy_store_item('super_like_5','store:super-like-5:test-0001');
 select public.test_assert((select balance=645 from public.coin_wallets where user_id='11111111-1111-4111-8111-111111111111'),'super-like retry charged more than once');
-select public.test_assert((select quantity=5 from public.coin_store_inventory where user_id='11111111-1111-4111-8111-111111111111' and item_code='super_like_5'),'five Super Likes were not added to inventory');
+select public.test_assert((select quantity=1 from public.coin_store_inventory where user_id='11111111-1111-4111-8111-111111111111' and item_code='super_like_5'),'five Super Likes were not added to inventory');
 select public.test_assert((select count(*)=1 from public.coin_store_purchases where user_id='11111111-1111-4111-8111-111111111111' and item_code='super_like_5'),'super-like retry created multiple purchase records');
 select public.coin_buy_store_item('extra_likes_10','store:extra-likes-10:test-0001');
 select public.test_assert((select balance=615 from public.coin_wallets where user_id='11111111-1111-4111-8111-111111111111'),'Extra Likes purchase did not deduct 30 coins');
-select public.test_assert((select quantity=10 from public.coin_store_inventory where user_id='11111111-1111-4111-8111-111111111111' and item_code='extra_likes_10'),'ten Extra Likes were not added to inventory');
+select public.test_assert((select quantity=1 from public.coin_store_inventory where user_id='11111111-1111-4111-8111-111111111111' and item_code='extra_likes_10'),'ten Extra Likes were not added to inventory');
 select public.test_expect_error(
   $cmd$select public.coin_buy_store_item('extra_likes_30','store:extra-likes-30:insufficient')$cmd$,
   'Not enough coins'

@@ -139,10 +139,6 @@ Deno.serve(async (req: Request) => {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
       return reply({ ignored: true, reason: "Missing or invalid recipient." });
     }
-    if (notification?.is_read === true) {
-      return reply({ ignored: true, reason: "Notification is already read." });
-    }
-
     const title = String(notification?.title ?? "New activity on The Match").slice(0, 120);
     const body = String(notification?.body ?? "You have a new notification.").slice(0, 500);
     const notificationId = String(notification?.id ?? "");

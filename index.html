@@ -6241,12 +6241,6 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
 <div style="flex:1;min-width:0;">
   <div id="chatPageTitle" style="font-size:16px;font-weight:bold;color:white;overflow-wrap:anywhere;">Member</div>
 
-  <div id="chatOnlineRow" style="display:flex;align-items:center;gap:6px;margin-top:4px;">
-    <span id="chatOnlineDot" aria-hidden="true"
-      style="width:7px;height:7px;border-radius:50%;background:#777;display:inline-block;"></span>
-    <span id="chatOnlineStatus" style="font-size:12px;color:#aaa;">Offline</span>
-  </div>
-
   <div id="chatPartnerLocation"
     style="font-size:12px;color:#bbb;margin-top:3px;">Loading location…</div>
 </div>
@@ -7206,17 +7200,6 @@ async function startOnlinePresence(user) {
 
     if (activeChatUserId) updateChatOnlineStatus(activeChatUserId);
 
-    document.querySelectorAll("[data-discover-online-user]").forEach(badge => {
-      const userId = badge.dataset.discoverOnlineUser;
-      const online = isUserOnline(userId);
-      const dot = badge.querySelector("[data-online-dot]");
-      const label = badge.querySelector("[data-online-label]");
-      if (dot) dot.style.background = online ? "#52e39a" : "#777";
-      if (label) {
-        label.textContent = online ? "Online" : "Offline";
-        label.style.color = online ? "#b9ffd8" : "#ddd";
-      }
-    });
   };
 
   onlinePresenceChannel
@@ -10458,23 +10441,6 @@ const photoFallback=document.createElement("div");
 photoFallback.textContent=(p.display_name||"M").trim().charAt(0).toUpperCase();
 photoFallback.style.cssText="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:76px;font-weight:800;letter-spacing:-2px;color:#ffd4e3;text-shadow:0 0 35px rgba(255,65,125,.45);z-index:0;";
 photoBox.appendChild(photoFallback);
-
-const onlineBadge = document.createElement("div");
-onlineBadge.dataset.discoverOnlineUser = p.id;
-onlineBadge.style.cssText = "position:absolute;top:12px;left:12px;z-index:3;display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:20px;background:#07120ddd;border:1px solid #52e39a66;color:#b9ffd8;font-size:12px;font-weight:700;";
-
-const onlineDot = document.createElement("span");
-onlineDot.dataset.onlineDot = "true";
-onlineDot.style.cssText = "width:7px;height:7px;border-radius:50%;display:inline-block;background:#777;";
-
-const onlineLabel = document.createElement("span");
-onlineLabel.dataset.onlineLabel = "true";
-onlineLabel.textContent = isUserOnline(p.id) ? "Online" : "Offline";
-onlineDot.style.background = isUserOnline(p.id) ? "#52e39a" : "#777";
-onlineLabel.style.color = isUserOnline(p.id) ? "#b9ffd8" : "#ddd";
-
-onlineBadge.append(onlineDot, onlineLabel);
-photoBox.appendChild(onlineBadge);
 
 // A discreet "NEW HERE" label helps members notice recently joined people.
 // Use the account's actual profile creation timestamp; show it for the first 7 days.
@@ -14585,13 +14551,6 @@ async function openChat(userId, userName){
 $("chatMessages").replaceChildren();
     activeChatUserId = userId;
     
-$("chatOnlineStatus").textContent = "Checking status...";
-$("chatOnlineStatus").style.color = "#aaa";
-$("chatOnlineDot").style.background = "#777";
-
-updateChatOnlineStatus(userId);
-
-
     // MATCH_LIVEKIT_CALL_UI_V1: voice-only controls, kept inside the chat header.
     ensureVoiceCallUI();
     $("chatPageTitle").textContent = userName || "Conversation";

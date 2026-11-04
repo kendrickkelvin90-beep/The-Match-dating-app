@@ -70,10 +70,11 @@ This is a product proposal, not a verified parity map. Before connecting these e
 - No wallet or coin-ledger table was present in the public table inventory.
 - Existing Premium tables `premium_memberships` and `premium_payment_requests` are separate and must not be modified as part of the preview milestone.
 - The production project contains live member data. Do not run DDL or alter production entitlements for this work.
+- The other existing Supabase project was inspected read-only. It has a separate `users` table with integer IDs and wallet/top-up/social-service order tables, unlike The Match's Supabase Auth UUID-based schema. It is not a safe drop-in Match development database and must not be repurposed without a separate explicit review.
 
 ## Safe implementation sequence
 1. Finish the product and tier-benefit matrix using the current Premium code and confirm it with Kelvin.
-2. Obtain an isolated Supabase development database. A Supabase branch was previously quoted at **$0.01344/hour**. Do not create it or incur that recurring cost without explicit approval. The second existing Supabase project must not be assumed to be a dev environment until its purpose and live connections are verified.
+2. Obtain an isolated Supabase development database. A Supabase branch was previously quoted at **$0.01344/hour**. Do not create it or incur that recurring cost without explicit approval. The second existing Supabase project has a different schema and appears to serve another app; do not use it as a Match dev database.
 3. Inspect the isolated database schema, RLS, grants, admin authorization, existing referral and boost semantics, and app navigation.
 4. Design an append-only transaction ledger and wallet model. Never let a browser client directly set its own coin balance.
 5. Implement server-side atomic credit/debit operations with idempotency keys, ownership checks, audit metadata and safe reversals.

@@ -6143,16 +6143,16 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     <div class="premium-account-row"><span class="premium-account-label">Network</span><span class="premium-account-value">MTN MoMo</span></div>
     <div class="premium-account-row"><span class="premium-account-label">Account name</span><span class="premium-account-value">JUSTICE TRUST UGOALA</span></div>
     <div class="premium-account-row"><span class="premium-account-label">Account number</span><span class="premium-account-value">0896939533</span></div>
-    <p class="premium-note">Transfer the exact amount for your selected plan. Then enter the transfer name and reference below. Premium remains pending until an admin reviews and approves your payment.</p>
+    <p class="premium-note">Transfer the exact amount for your selected membership. Then enter the transfer name and reference below. Your membership remains pending until an admin reviews and approves your payment.</p>
   </div>
 
   <form id="premiumPaymentForm">
     <label for="premiumPlan">Selected plan</label>
     <select id="premiumPlan" required>
       <option value="">Choose a plan</option>
-      <option value="weekly">Weekly — ₦4,000</option>
-      <option value="monthly">Monthly — ₦8,000</option>
-      <option value="yearly">Yearly — ₦49,800</option>
+      <option value="monthly">Monthly Premium — ₦5,000</option>
+      <option value="yearly">Yearly Premium — ₦50,000</option>
+      <option value="lite_monthly">The Match Lite — 30 days · ₦1,000</option>
       <option value="lite_monthly">The Match Lite — 30 days · ₦1,000</option>
     </select>
 
@@ -7836,7 +7836,7 @@ closeButton.focus();
 
 async function loadAdminPaymentRequests() {
   const list = $("adminPaymentsList");
-  list.textContent = "Loading Premium payment requests...";
+  list.textContent = "Loading membership payment requests...";
 
   try {
     const { data, error } = await db
@@ -7849,7 +7849,7 @@ async function loadAdminPaymentRequests() {
     list.replaceChildren();
 
     if (!data || data.length === 0) {
-      list.textContent = "No pending Premium payments.";
+      list.textContent = "No pending membership payments.";
       return;
     }
 
@@ -7885,7 +7885,7 @@ async function loadAdminPaymentRequests() {
       list.appendChild(card);
     });
   } catch (error) {
-    list.textContent = "Could not load Premium payments: " + friendly(error);
+    list.textContent = "Could not load membership payments: " + friendly(error);
   }
 }
 
@@ -9711,7 +9711,7 @@ function startMatchLitePromotionSchedule() {
     state.activeMs += 15000;
     write(state);
     let stage = 0;
-    if (!state.firstShownAt && state.activeMs >= 10 * 60 * 1000) stage = 1;
+    if ((!state.firstShownAt || (!state.firstDismissedAt && Date.now() - state.firstShownAt > 30*60*1000)) && state.activeMs >= 10 * 60 * 1000) stage = 1;
     else if (state.firstDismissedAt && !state.secondShownAt && Date.now() >= state.secondDueAt) stage = 2;
     else if (state.secondDismissedAt && !state.thirdShownAt && Date.now() >= state.thirdDueAt) stage = 3;
     if (!stage || document.getElementById("matchLitePromoLayer") || window.matchFeaturePromoRunning) return;
@@ -12908,10 +12908,10 @@ async function refreshDailyLikeCounter() {
   const target = $("dailyLikesStatus");
   if (!target) return;
   try {
-    if (await matchIsPremium()) {
+    if (await matchHasUnlimitedSwipes()) {
       currentDiscoverIsPremium = true;
       currentDailySwipesUsed = 0;
-      target.textContent = "Unlimited swipes · Premium";
+      target.textContent = (await matchIsPremium()) ? "Unlimited swipes · Premium" : "Unlimited swipes · The Match Lite";
       return;
     }
     const { data: count, error } = await db.rpc("get_my_daily_swipe_count");
@@ -16019,9 +16019,8 @@ $("backFromPremium").onclick=()=>show("profile");
 
 
 const premiumPlanPrices = {
-  weekly: 4000,
-  monthly: 8000,
-  yearly: 49800,
+  monthly: 5000,
+  yearly: 50000,
   lite_monthly: 1000
 };
 

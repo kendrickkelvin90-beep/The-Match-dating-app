@@ -10,26 +10,26 @@ create table if not exists public.match_plus_daily_usage (
 alter table public.match_plus_daily_usage enable row level security;
 revoke all on public.match_plus_daily_usage from anon, authenticated;
 
-create or replace function public.match_plus_active_tier(p_user_id uuid default auth.uid())
+create or replace function public.match_plus_active_tier()
 returns text
 language sql stable security definer set search_path = ''
 as $$
   select case when m.expires_at > now() then m.tier else null end
   from public.match_plus_memberships m
-  where m.user_id = p_user_id
+  where m.user_id = (select auth.uid())
 $$;
-revoke all on function public.match_plus_active_tier(uuid) from public, anon;
+revoke all on function public.match_plus_active_tier() from public, anon;
 grant execute on function public.match_plus_active_tier(uuid) to authenticated;
 
-create or replace function public.match_has_unlimited_swipes(p_user_id uuid default auth.uid())
+create or replace function public.match_has_unlimited_swipes()
 returns boolean
 language sql stable security definer set search_path = ''
 as $$
-  select exists(select 1 from public.premium_memberships pm where pm.user_id=p_user_id and pm.premium_until>now())
-    or exists(select 1 from public.lite_memberships lm where lm.user_id=p_user_id and lm.lite_until>now())
-    or public.match_plus_active_tier(p_user_id) in ('quarterly','annual')
+  select exists(select 1 from public.premium_memberships pm where pm.user_id=(select auth.uid()) and pm.premium_until>now())
+    or exists(select 1 from public.lite_memberships lm where lm.user_id=(select auth.uid()) and lm.lite_until>now())
+    or public.match_plus_active_tier() in ('quarterly','annual')
 $$;
-revoke all on function public.match_has_unlimited_swipes(uuid) from public, anon;
+revoke all on function public.match_has_unlimited_swipes() from public, anon;
 grant execute on function public.match_has_unlimited_swipes(uuid) to authenticated;
 
 -- Preserve the current Free / Premium / Lite swipe behavior; Quarterly and Annual
@@ -44,7 +44,7 @@ begin
   if auth.uid() is null or auth.uid() <> new.liker_id then
     raise exception 'You can only send likes as yourself.';
   end if;
-  if public.match_has_unlimited_swipes(new.liker_id) then return new; end if;
+  if public.match_has_unlimited_swipes() then return new; end if;
   select count(*)::integer into likes_today
   from public.likes l
   where l.liker_id=new.liker_id
@@ -72,7 +72,7 @@ as $$
   where auth.uid() is not null
     and (
       exists(select 1 from public.premium_memberships pm where pm.user_id=auth.uid() and pm.premium_until>now())
-      or public.match_plus_active_tier(auth.uid()) in ('plus','quarterly','annual')
+      or public.match_plus_active_tier() in ('plus','quarterly','annual')
     )
     and p.id<>auth.uid() and p.location_sharing is true and other_loc.discovery_sharing is true
     and exists(select 1 from public.profiles viewer where viewer.id=auth.uid() and viewer.location_sharing is true)
@@ -104,7 +104,7 @@ begin
   if exists(select 1 from public.premium_memberships pm where pm.user_id=v_user and pm.premium_until>now()) then
     v_limit:=null;
   else
-    v_tier:=public.match_plus_active_tier(v_user);
+    v_tier:=public.match_plus_active_tier();
     v_limit:=case v_tier when 'plus' then 3 when 'quarterly' then 10 when 'annual' then null else 0 end;
   end if;
   if v_limit=0 then raise exception 'MEMBERSHIP_REQUIRED: Rewind is included with Match Plus and above or Premium.'; end if;
@@ -196,7 +196,7 @@ begin
     raise exception 'You can only publish Stories as yourself.';
   end if;
   if exists(select 1 from public.premium_memberships pm where pm.user_id=new.user_id and pm.premium_until>now())
-     or public.match_plus_active_tier(new.user_id) in ('quarterly','annual') then
+     or public.match_plus_active_tier() in ('quarterly','annual') then
     return new;
   end if;
   v_tier:=public.match_plus_active_tier(new.user_id);

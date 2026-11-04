@@ -2,8 +2,7 @@
 "use strict";
 if (typeof db === "undefined" || !db) return;
 const giftStyle=document.createElement("style");
-giftStyle.textContent=`
-/* Romantic Premium chat and gifting palette */
+giftStyle.textContent=`/* Romantic Premium chat and gifting palette */
 #chatPage{background:#fff5ef!important;color:#4b1724!important;padding:82px 12px calc(12px + env(safe-area-inset-bottom))!important}
 #chatPage :is(h2,h3,p){color:#4b1724}
 #chatPage #chatHeader{background:linear-gradient(115deg,#65162d,#8f2944)!important;border:0!important;box-shadow:0 5px 20px rgba(91,19,41,.16)}
@@ -70,6 +69,17 @@ giftStyle.textContent=`
 #matchGiftAdmin input{background:#fffaf7!important;border-color:#e7cfc5!important;color:#4d2730!important}
 #matchGiftAdmin .mga-status{background:#f8e8e4!important;color:#78263d!important}
 @media(max-width:380px){#chatPage #chatComposer{gap:5px;padding:7px}#chatPage #chatComposer label[for=chatViewOnce]{font-size:10px!important}#matchGiftMessageDialog .gmd-card{padding:22px 16px 17px}#matchGiftMessageDialog h2{font-size:20px}}
+ 
+#matchGiftPanel{position:fixed;inset:0;z-index:12000;background:#050505f5;display:none;overflow:auto;padding:calc(22px + env(safe-area-inset-top)) 16px 30px;color:#fff}
+#matchGiftPanel.open{display:block}
+#matchGiftPanel .mg-shell{max-width:620px;margin:auto}
+#matchGiftPanel h2{color:#e7c77f}
+#matchGiftPanel .mg-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#matchGiftPanel .mg-card{padding:14px;border:1px solid #665333;border-radius:15px;background:#171511}
+#matchGiftPanel button{border:1px solid #8e7444;border-radius:11px;padding:10px;background:#272116;color:#f5d995}
+#matchGiftPanel .mg-card .emoji{font-size:30px}
+#matchGiftPanel .mg-muted{color:#c3b99f;font-size:12px}
+#matchGiftPanel .mg-row{padding:12px 0;border-bottom:1px solid #443a27}
 `;
 document.head.appendChild(giftStyle);
 #matchGiftPanel{position:fixed;inset:0;z-index:12000;background:#050505f5;display:none;overflow:auto;padding:calc(22px + env(safe-area-inset-top)) 16px 30px;color:#fff}

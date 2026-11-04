@@ -5553,20 +5553,20 @@ body.light-theme #matchFeaturePromoClose {
 
 <div class="member-card">
   <h2>My Role 🏳️‍🌈</h2>
-  <p class="small">Select all that describe you.</p>
-  <label><input type="checkbox" name="sexualRole" value="Top"> Top</label>
-  <label><input type="checkbox" name="sexualRole" value="Bottom"> Bottom</label>
-  <label><input type="checkbox" name="sexualRole" value="Versatile"> Versatile (Vers)</label>
-  <label><input type="checkbox" name="sexualRole" value="Vers Top"> Vers Top</label>
-  <label><input type="checkbox" name="sexualRole" value="Vers Bottom"> Vers Bottom</label>
-  <label><input type="checkbox" name="sexualRole" value="Side"> Side</label>
-  <label><input type="checkbox" name="sexualRole" value="Dominant Top"> Dominant Top</label>
-  <label><input type="checkbox" name="sexualRole" value="Dominant Bottom"> Dominant Bottom</label>
-  <label><input type="checkbox" name="sexualRole" value="Submissive Top"> Submissive Top</label>
-  <label><input type="checkbox" name="sexualRole" value="Submissive Bottom"> Submissive Bottom</label>
-  <label><input type="checkbox" name="sexualRole" value="Switch"> Switch</label>
-  <label><input type="checkbox" name="sexualRole" value="Exploring"> Exploring / Not sure</label>
-  <label><input type="checkbox" name="sexualRole" value="Prefer not to say"> Prefer not to say</label>
+  <p class="small">Choose one role that best describes you. You can select only one.</p>
+  <label><input type="radio" name="sexualRole" value="Top" required> Top</label>
+  <label><input type="radio" name="sexualRole" value="Bottom"> Bottom</label>
+  <label><input type="radio" name="sexualRole" value="Versatile"> Versatile (Vers)</label>
+  <label><input type="radio" name="sexualRole" value="Vers Top"> Vers Top</label>
+  <label><input type="radio" name="sexualRole" value="Vers Bottom"> Vers Bottom</label>
+  <label><input type="radio" name="sexualRole" value="Side"> Side</label>
+  <label><input type="radio" name="sexualRole" value="Dominant Top"> Dominant Top</label>
+  <label><input type="radio" name="sexualRole" value="Dominant Bottom"> Dominant Bottom</label>
+  <label><input type="radio" name="sexualRole" value="Submissive Top"> Submissive Top</label>
+  <label><input type="radio" name="sexualRole" value="Submissive Bottom"> Submissive Bottom</label>
+  <label><input type="radio" name="sexualRole" value="Switch"> Switch</label>
+  <label><input type="radio" name="sexualRole" value="Exploring"> Exploring / Not sure</label>
+  <label><input type="radio" name="sexualRole" value="Prefer not to say"> Prefer not to say</label>
 </div>
 
 <div class="member-card" id="genderPresentationSection">
@@ -9965,7 +9965,7 @@ $("gender").value=p.gender_identity||"";
 $("interest").value=p.interested_in||"";
   
 document.querySelectorAll('input[name="sexualRole"]').forEach(el=>{
-  el.checked=Array.isArray(p.sexual_roles)&&p.sexual_roles.includes(el.value);
+  el.checked=Array.isArray(p.sexual_roles)&&p.sexual_roles[0]===el.value;
 });
 document.querySelectorAll('input[name="genderPresentation"]').forEach(el=>{
   el.checked=Array.isArray(p.gender_presentation)&&p.gender_presentation.includes(el.value);
@@ -10058,7 +10058,7 @@ if(profileBioHasPhoneNumber($("bio").value)) {
   throw Error("For your safety, phone numbers are not allowed in profile details. Please remove the number and save again.");
 }
 
-if(!document.querySelector('input[name="sexualRole"]:checked'))throw Error("Please select at least one role.");
+if(!document.querySelector('input[name="sexualRole"]:checked'))throw Error("Please select one role before saving your profile.");
 let p={
 id:currentUser.id,
 display_name:$("displayName").value.trim(),
@@ -10066,7 +10066,7 @@ age:age,
 gender_identity:$("gender").value,
 interested_in:$("interest").value,
   
-sexual_roles:Array.from(document.querySelectorAll('input[name="sexualRole"]:checked')).map(el=>el.value),
+sexual_roles:[document.querySelector('input[name="sexualRole"]:checked').value],
 gender_presentation:Array.from(document.querySelectorAll('input[name="genderPresentation"]:checked')).map(el=>el.value),
 
 city:$("city").value.trim(),
@@ -10228,7 +10228,7 @@ let people = (peopleData || []).map(p => {
         return enriched;
       });
       if(rolePreferences.length){
-        people=people.filter(person=>Array.isArray(person.sexual_roles)&&person.sexual_roles.some(role=>rolePreferences.includes(role)));
+        people=people.filter(person=>Array.isArray(person.sexual_roles)&&rolePreferences.includes(person.sexual_roles[0]));
       }
     }
     if (showMe !== "everyone") {
@@ -10333,7 +10333,7 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
       return enriched;
     });
     if(rolePreferences.length){
-      people=people.filter(person=>Array.isArray(person.sexual_roles)&&person.sexual_roles.some(role=>rolePreferences.includes(role)));
+      people=people.filter(person=>Array.isArray(person.sexual_roles)&&rolePreferences.includes(person.sexual_roles[0]));
     }
   }
   if (showMe !== "everyone") {
@@ -10617,7 +10617,7 @@ detailsPanel.appendChild(details);
 if (Array.isArray(p.sexual_roles) && p.sexual_roles.length) {
   const roles = document.createElement("p");
   roles.className = "small";
-  roles.textContent = "🏳️‍🌈 Role: " + p.sexual_roles.join(", ");
+  roles.textContent = "🏳️‍🌈 Role: " + p.sexual_roles[0];
   roles.style.cssText = "font-size:14px;margin:8px 0;";
   detailsPanel.appendChild(roles);
 }
@@ -13719,7 +13719,7 @@ photo.onclick = () => {
     addProfileDetail(
       "Identity / role",
       Array.isArray(p.sexual_roles) && p.sexual_roles.length
-        ? p.sexual_roles.join(", ")
+        ? p.sexual_roles[0]
         : "Not listed"
     );
     addProfileDetail("About this member",sanitizeProfileBio(p.bio) || "No description added yet.");

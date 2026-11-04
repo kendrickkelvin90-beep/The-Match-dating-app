@@ -117,7 +117,7 @@
     if(tierButton){
       const tier=tierButton.dataset.cwTier;
       const labels={plus:"Match Plus",quarterly:"Match Quarterly",annual:"Match Annual"};
-      if(!(await matchConfirm("Use coins from your wallet to activate "+labels[tier]+"?","Activate "+labels[tier])))return;
+      if(!(await window.matchConfirm("Use coins from your wallet to activate "+labels[tier]+"?","Activate "+labels[tier])))return;
       tierButton.disabled=true;status("Activating "+labels[tier]+"…");
       try{
         const {data,error}=await client.rpc("coin_buy_membership",{p_tier:tier,p_idempotency_key:"membership:"+tier+":"+crypto.randomUUID()});

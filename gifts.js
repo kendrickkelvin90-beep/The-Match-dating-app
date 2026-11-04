@@ -2,7 +2,74 @@
 "use strict";
 if (typeof db === "undefined" || !db) return;
 const giftStyle=document.createElement("style");
-giftStyle.textContent=`
+giftStyle.textContent=`/* Romantic Premium chat and gifting palette */
+#chatPage{background:#fff5ef!important;color:#4b1724!important;padding:82px 12px calc(12px + env(safe-area-inset-bottom))!important}
+#chatPage :is(h2,h3,p){color:#4b1724}
+#chatPage #chatHeader{background:linear-gradient(115deg,#65162d,#8f2944)!important;border:0!important;box-shadow:0 5px 20px rgba(91,19,41,.16)}
+#chatPage #chatHeader :is(button,span,strong){color:#fff!important}
+#chatPage #chatPartnerAvatar{border:2px solid #f2c7b9!important}
+#chatPage #chatPageTitle{color:#fff!important;font-weight:750!important}
+#chatPage #chatPartnerLocation{color:#f7dce0!important}
+#chatPage #chatMessages{background:linear-gradient(180deg,#fff8f3,#f9e9e1)!important;border:1px solid #f0d6cb!important;border-radius:22px!important;scrollbar-color:#c58b91 transparent}
+#chatPage #chatMessages .chat-bubble{border:1px solid #efd8cf!important;border-radius:18px!important;box-shadow:0 3px 10px rgba(105,45,54,.055)!important;color:#40232a!important}
+#chatPage #chatMessages .chat-bubble.received{background:#fffdfb!important;color:#40232a!important;border-color:#eadbd3!important}
+#chatPage #chatMessages .chat-bubble.sent{background:#f8d9d5!important;color:#581b2b!important;border-color:#edc0bd!important}
+#chatPage #chatMessages .chat-bubble small{color:#916c70!important}
+#chatPage #chatMessages .chat-bubble small span{color:#8b2944!important}
+#chatPage #chatComposer{background:rgba(255,251,247,.97)!important;border:1px solid #e9cfc4!important;border-radius:30px!important;box-shadow:0 8px 24px rgba(100,40,53,.09)!important}
+#chatPage #chatComposer #chatMessageInput{color:#48232d!important}
+#chatPage #chatMessageInput::placeholder{color:#9b7c7d!important}
+#chatPage #chatEmojiToggle{color:#9a2947!important}
+#chatPage #chatMediaButton,#chatPage #openChatGifts{background:#fff0e9!important;color:#9b2444!important;border:1px solid #e8bdb3!important}
+#chatPage #chatComposer #sendChatMessage{background:linear-gradient(145deg,#b83253,#79182f)!important;color:#fff!important;box-shadow:0 4px 12px rgba(121,24,47,.2)!important}
+#chatPage #chatViewOnce{accent-color:#982844}
+#chatPage #chatComposer label[for=chatViewOnce]{color:#6b3b45!important}
+#chatPage #chatPageStatus{color:#8d6b6d!important}
+#matchGiftPanel{background:rgba(75,20,37,.35)!important;backdrop-filter:blur(12px);color:#4b1724!important;padding:calc(18px + env(safe-area-inset-top)) 14px 28px!important}
+#matchGiftPanel .mg-shell{max-width:640px;margin:12px auto;background:linear-gradient(145deg,#fffdf9,#fff0e8);border:1px solid #edcfc3;border-radius:26px;padding:22px;box-shadow:0 24px 70px rgba(75,20,37,.2)}
+#matchGiftPanel h2{color:#741d35!important;font-size:27px;letter-spacing:-.6px}
+#matchGiftPanel h3{color:#542331!important;margin-top:24px}
+#matchGiftPanel .mg-muted{color:#8c6b70!important}
+#matchGiftPanel .mg-grid{gap:12px}
+#matchGiftPanel .mg-card{background:#fffaf6!important;border:1px solid #efd8ce!important;border-radius:19px!important;padding:16px;box-shadow:0 5px 16px rgba(100,40,53,.05)}
+#matchGiftPanel .mg-card .emoji{font-size:36px;margin-bottom:7px}
+#matchGiftPanel .mg-card strong{color:#572433}
+#matchGiftPanel button{background:#8f2340!important;color:#fff!important;border:0!important;border-radius:13px!important;font-weight:700;padding:11px 15px}
+#matchGiftPanel #mgClose{background:#f7e5dc!important;color:#79243b!important;border:1px solid #e8c9bd!important}
+#matchGiftPanel .mg-row{border-color:#efd8ce!important;color:#542331}
+#matchGiftMessageDialog{position:fixed;inset:0;z-index:14000;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(64,18,34,.58);backdrop-filter:blur(8px)}
+#matchGiftMessageDialog.open{display:flex}
+#matchGiftMessageDialog .gmd-card{position:relative;width:min(100%,470px);padding:25px 22px 22px;border:1px solid #e7bfb1;border-radius:28px;background:linear-gradient(145deg,#fffdf9,#ffede5);box-shadow:0 25px 80px rgba(55,13,27,.3);text-align:center;color:#4d1d2a}
+#matchGiftMessageDialog .gmd-brand{display:flex;align-items:center;justify-content:center;gap:9px;color:#641a30}
+#matchGiftMessageDialog .gmd-brand strong{display:block;font-size:20px}
+#matchGiftMessageDialog .gmd-brand small{display:block;font-size:9px;letter-spacing:1px;font-weight:800}
+#matchGiftMessageDialog .gmd-heart{font-size:38px;color:#b72d50}
+#matchGiftMessageDialog .gmd-close{position:absolute;right:0;top:0;width:36px;height:36px;border:1px solid #e8c9bd;border-radius:50%;background:#fff6f0;color:#6e2538;font-size:24px}
+#matchGiftMessageDialog .gmd-art{font-size:62px;margin:18px 0 8px;filter:drop-shadow(0 8px 10px rgba(125,35,54,.13))}
+#matchGiftMessageDialog h2{margin:0;color:#761d37;font-size:23px;letter-spacing:-.5px}
+#matchGiftMessageDialog p{margin:9px 0 18px;color:#86656b;line-height:1.5;font-size:14px}
+#matchGiftMessageDialog textarea{display:block;width:100%;min-height:104px;box-sizing:border-box;resize:vertical;padding:14px;border:1px solid #e6c5b9;border-radius:17px;background:#fffaf7;color:#4d2730;font:inherit;outline:none}
+#matchGiftMessageDialog textarea:focus{border-color:#b65b70;box-shadow:0 0 0 3px rgba(182,91,112,.12)}
+#matchGiftMessageDialog textarea::placeholder{color:#a78b8c}
+#matchGiftMessageDialog .gmd-count{text-align:right;color:#98777b;font-size:11px;margin:6px 3px 16px}
+#matchGiftMessageDialog .gmd-actions{display:flex;gap:10px}
+#matchGiftMessageDialog .gmd-actions button{flex:1;min-height:48px;border-radius:15px;font-weight:750}
+#matchGiftMessageDialog .gmd-cancel{background:#fff8f3;border:1px solid #dcb5a7;color:#68243a}
+#matchGiftMessageDialog .gmd-send{border:0;background:linear-gradient(110deg,#b52d50,#77172f);color:#fff;box-shadow:0 6px 15px rgba(119,23,47,.18)}
+#matchGiftAdmin{background:rgba(76,19,37,.4)!important;backdrop-filter:blur(9px);color:#542331!important}
+#matchGiftAdmin .mga-shell{background:linear-gradient(145deg,#fffdf9,#fff1e9)!important;border:1px solid #edcfc3!important;border-radius:25px!important;color:#542331!important}
+#matchGiftAdmin .mga-eyebrow{color:#a24a5e!important}
+#matchGiftAdmin h2,#matchGiftAdmin h3,#matchGiftAdmin .mga-item strong{color:#642238!important}
+#matchGiftAdmin .mga-muted{color:#927176!important}
+#matchGiftAdmin .mga-top{border-color:#f0d9cf!important}
+#matchGiftAdmin .mga-item{background:#fffaf7!important;border-color:#efd9d0!important;box-shadow:0 4px 14px rgba(100,40,53,.05)!important}
+#matchGiftAdmin button{background:#f7e5dc!important;color:#78263d!important}
+#matchGiftAdmin .mga-primary{background:linear-gradient(110deg,#b52d50,#77172f)!important;color:#fff!important}
+#matchGiftAdmin #mgaClose{background:#f5e7e0!important;color:#74283e!important}
+#matchGiftAdmin input{background:#fffaf7!important;border-color:#e7cfc5!important;color:#4d2730!important}
+#matchGiftAdmin .mga-status{background:#f8e8e4!important;color:#78263d!important}
+@media(max-width:380px){#chatPage #chatComposer{gap:5px;padding:7px}#chatPage #chatComposer label[for=chatViewOnce]{font-size:10px!important}#matchGiftMessageDialog .gmd-card{padding:22px 16px 17px}#matchGiftMessageDialog h2{font-size:20px}}
+ 
 #matchGiftPanel{position:fixed;inset:0;z-index:12000;background:#050505f5;display:none;overflow:auto;padding:calc(22px + env(safe-area-inset-top)) 16px 30px;color:#fff}
 #matchGiftPanel.open{display:block}
 #matchGiftPanel .mg-shell{max-width:620px;margin:auto}
@@ -16,6 +83,23 @@ giftStyle.textContent=`
 `;
 document.head.appendChild(giftStyle);
 const panel=document.createElement("section");panel.id="matchGiftPanel";panel.innerHTML=`<div class="mg-shell"><button id="mgClose">← Back</button><h2>Virtual Gifts</h2><p class="mg-muted">Send a gift using your coins. Keep gifts in your collection or redeem them for 80% of their sending value.</p><h3>Choose a gift</h3><div class="mg-grid" id="mgCatalog">Loading gifts…</div><h3>Your gift collection</h3><div id="mgCollection">Loading collection…</div><p id="mgStatus" role="status"></p></div>`;document.body.appendChild(panel);
+const giftMessageDialog=document.createElement("div");
+giftMessageDialog.id="matchGiftMessageDialog";
+giftMessageDialog.innerHTML=`<div class="gmd-card" role="dialog" aria-modal="true" aria-labelledby="gmdTitle"><div class="gmd-brand"><span class="gmd-heart">♡</span><span><strong>The Match</strong><small>BY BEYOND THE BINARY MEDIA</small></span><button type="button" class="gmd-close" aria-label="Close">×</button></div><div class="gmd-art" aria-hidden="true">🎁</div><h2 id="gmdTitle">Add a Message to Your Gift</h2><p>Send a short and sweet message with your gift (optional).</p><textarea maxlength="160" placeholder="Type your message here…"></textarea><div class="gmd-count">0 / 160</div><div class="gmd-actions"><button type="button" class="gmd-cancel">Cancel</button><button type="button" class="gmd-send">🎁 &nbsp; Send Gift</button></div></div>`;
+document.body.appendChild(giftMessageDialog);
+function askGiftMessage(){
+ return new Promise(resolve=>{
+  const input=giftMessageDialog.querySelector("textarea"),count=giftMessageDialog.querySelector(".gmd-count");
+  const finish=value=>{giftMessageDialog.classList.remove("open");input.value="";count.textContent="0 / 160";resolve(value);};
+  input.oninput=()=>count.textContent=input.value.length+" / 160";
+  giftMessageDialog.querySelector(".gmd-cancel").onclick=()=>finish(false);
+  giftMessageDialog.querySelector(".gmd-close").onclick=()=>finish(false);
+  giftMessageDialog.querySelector(".gmd-send").onclick=()=>finish(input.value.trim()||null);
+  giftMessageDialog.onclick=e=>{if(e.target===giftMessageDialog)finish(false);};
+  giftMessageDialog.classList.add("open");
+  setTimeout(()=>input.focus(),60);
+ });
+}
 let recipient=null;
 const status=m=>panel.querySelector("#mgStatus").textContent=m||"";
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -40,7 +124,8 @@ panel.addEventListener("click",async e=>{
  try{
  if(send){
   if(!recipient){status("Open a chat first to send a gift.");return;}
-  const msg=prompt("Add a short message with your gift (optional):")||null;
+  const msg=await askGiftMessage();
+  if(msg===false)return;
   send.disabled=true;
   const {data:userData,error:userError}=await db.auth.getUser();
   if(userError)throw userError;

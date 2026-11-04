@@ -1,0 +1,6 @@
+/* The Match — Romantic Premium chat theme. Scoped to chat and gift UI only. */
+:root{--match-cream:#fff5ef;--match-burgundy:#79182f;--match-rose:#f8d9d5;--match-muted:#916c70}
+@media(prefers-reduced-motion:no-preference){#chatPage #chatComposer,#matchGiftPanel .mg-card,#matchGiftMessageDialog .gmd-card{transition:box-shadow .18s ease,transform .18s ease}}
+#chatPage #chatMessages .chat-bubble{overflow-wrap:anywhere}
+#chatPage #chatComposer button:focus-visible,#matchGiftPanel button:focus-visible,#matchGiftMessageDialog button:focus-visible{outline:3px solid rgba(166,70,91,.35);outline-offset:2px}
+#matchGiftMessageDialog textarea{font-size:16px}

@@ -85,3 +85,35 @@ begin
 end $$;
 revoke all on function public.redeem_member_gift(uuid) from public,anon;
 grant execute on function public.redeem_member_gift(uuid) to authenticated;
+
+
+-- Admin-only gift catalogue management. Every write is re-authorized in PostgreSQL.
+create or replace function public.admin_save_gift(
+ p_code text,p_name text,p_emoji text,p_send_cost integer,p_redeem_coins integer,p_sort_order integer default 0
+) returns void language plpgsql security definer set search_path='' as $$
+begin
+ if not public.is_match_admin() then raise exception 'Admin access required.'; end if;
+ if p_code !~ '^[a-z0-9_]{2,32}$' or length(btrim(p_name)) not between 2 and 60
+   or length(btrim(p_emoji)) not between 1 and 12
+   or p_send_cost not between 1 and 100000
+   or p_redeem_coins not between 0 and p_send_cost
+   or p_sort_order not between 0 and 1000 then
+   raise exception 'Please check the gift details and coin values.';
+ end if;
+ insert into public.gift_catalog(code,name,emoji,send_cost,redeem_coins,sort_order,active)
+ values(p_code,btrim(p_name),btrim(p_emoji),p_send_cost,p_redeem_coins,p_sort_order,true)
+ on conflict(code) do update set name=excluded.name,emoji=excluded.emoji,
+ send_cost=excluded.send_cost,redeem_coins=excluded.redeem_coins,sort_order=excluded.sort_order;
+end $$;
+revoke all on function public.admin_save_gift(text,text,text,integer,integer,integer) from public,anon;
+grant execute on function public.admin_save_gift(text,text,text,integer,integer,integer) to authenticated;
+
+create or replace function public.admin_set_gift_active(p_code text,p_active boolean)
+returns void language plpgsql security definer set search_path='' as $$
+begin
+ if not public.is_match_admin() then raise exception 'Admin access required.'; end if;
+ update public.gift_catalog set active=p_active where code=p_code;
+ if not found then raise exception 'Gift not found.'; end if;
+end $$;
+revoke all on function public.admin_set_gift_active(text,boolean) from public,anon;
+grant execute on function public.admin_set_gift_active(text,boolean) to authenticated;

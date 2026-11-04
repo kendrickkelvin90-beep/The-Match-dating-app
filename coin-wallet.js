@@ -117,7 +117,8 @@
     if(tierButton){
       const tier=tierButton.dataset.cwTier;
       const labels={plus:"Match Plus",quarterly:"Match Quarterly",annual:"Match Annual"};
-      if(!window.confirm("Use coins from your wallet to activate "+labels[tier]+"?"))return;
+      const costs={plus:300,quarterly:800,annual:2800};
+      if(!(await window.matchConfirm("This will deduct "+costs[tier].toLocaleString("en-NG")+" coins from your wallet and activate "+labels[tier]+". Continue?","Activate "+labels[tier])))return;
       tierButton.disabled=true;status("Activating "+labels[tier]+"…");
       try{
         const {data,error}=await client.rpc("coin_buy_membership",{p_tier:tier,p_idempotency_key:"membership:"+tier+":"+crypto.randomUUID()});
@@ -135,7 +136,10 @@
     catch(e){status(e.message||"Could not submit your request.");}finally{button.disabled=false;}
   });
   const adminSection=document.createElement("section");adminSection.className="admin-feature-section";adminSection.innerHTML='<div class="admin-section-heading admin-queue-heading"><div><p class="admin-eyebrow">COIN WALLET</p><h3>Pending coin transfers</h3></div><button type="button" id="cwAdminRefresh" class="admin-refresh-button">↻ Refresh</button></div><div id="cwAdminQueue" class="admin-queue-list">Open the admin dashboard to load requests.</div>';
-  document.querySelector("#adminPanel .admin-shell")?.appendChild(adminSection);
+  const adminShell=document.querySelector("#adminPanel .admin-shell");
+  const adminWelcome=adminShell?.querySelector(".admin-welcome-strip");
+  if(adminWelcome) adminWelcome.insertAdjacentElement("afterend",adminSection);
+  else adminShell?.prepend(adminSection);
   async function loadAdminQueue(){
     const target=document.getElementById("cwAdminQueue");if(!target)return;target.textContent="Checking administrator access…";
     try{const {data:ok,error:authError}=await client.rpc("coin_is_admin");if(authError||ok!==true)throw new Error("Administrator access required.");
@@ -160,6 +164,7 @@
   document.getElementById("adminOpenCoinWalletBtn")?.addEventListener("click",loadAdminQueue);
 
   document.getElementById("adminPanel")?.addEventListener("transitionend",loadAdminQueue);
+  window.addEventListener("match:admin-opened",loadAdminQueue);
   page.querySelector('[data-cw-tab="plus"]')?.addEventListener("click",()=>setTab("plus"));
   page.querySelector('[data-cw-tab="store"]')?.addEventListener("click",()=>setTab("store"));
   document.getElementById("adminPanel")?.querySelector(".admin-shell")?.addEventListener("click",event=>{if(event.target.closest("#adminRefreshBtn"))loadAdminQueue();});

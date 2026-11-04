@@ -90,7 +90,7 @@
   }
   document.getElementById("cwPackages").innerHTML=PACKS.map(p=>'<article class="cw-card"><h3>'+p[1]+'</h3><div class="cw-price">'+p[2]+'</div><strong>'+p[3]+'</strong><button class="cw-button primary" style="width:100%;margin-top:12px" data-cw-package="'+p[0]+'">Select package</button></article>').join("");
   document.getElementById("cwStoreItems").innerHTML=[
-    ["Profile Boost · 24 hours","40"],["3 Profile Boosts","100"],["1 Super Like","10"],["5 Super Likes","45"],["10 Extra Likes","30"],["30 Extra Likes","75"],["Priority Visibility · 7 days","100"],["Priority Visibility · 30 days","250"],["Special Profile Badge","100"],["Animated Profile Effect","150"]
+    ["Profile Boost · 30 minutes","40"],["3 Profile Boosts","100"],["1 Super Like","10"],["5 Super Likes","45"],["10 Extra Likes","30"],["30 Extra Likes","75"],["Priority Visibility · 7 days","100"],["Priority Visibility · 30 days","250"],["Special Profile Badge","100"],["Animated Profile Effect","150"]
   ].map(x=>'<article class="cw-card"><h3>'+x[0]+'</h3><div class="cw-price">'+x[1]+' coins</div><button class="cw-button" disabled>Coming after feature connection</button></article>').join("");
   page.addEventListener("click",async event=>{
     const packageButton=event.target.closest("[data-cw-package]");

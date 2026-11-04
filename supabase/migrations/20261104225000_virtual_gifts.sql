@@ -52,28 +52,53 @@ create policy gift_catalog_gift_participant_read on public.gift_catalog for sele
 );
 create policy member_gifts_participant_read on public.member_gifts for select to authenticated using(auth.uid()=sender_id or auth.uid()=recipient_id);
 
-create or replace function public.send_member_gift(p_recipient_id uuid,p_gift_code text,p_message text default null)
-returns uuid language plpgsql security definer set search_path='' as $$
-declare v_sender uuid:=auth.uid(); v_gift public.gift_catalog%rowtype; v_balance integer; v_id uuid;
+alter table public.member_gifts add column if not exists request_id uuid;
+create unique index if not exists member_gifts_sender_request_uidx
+ on public.member_gifts(sender_id,request_id) where request_id is not null;
+
+drop function if exists public.send_member_gift(uuid,text,text);
+create or replace function public.send_member_gift(
+ p_recipient_id uuid,p_gift_code text,p_message text default null,p_request_id uuid default null
+)
+returns uuid language plpgsql security definer set search_path='' as $
+declare
+ v_sender uuid:=auth.uid();
+ v_gift public.gift_catalog%rowtype;
+ v_balance integer;
+ v_id uuid;
 begin
  if v_sender is null then raise exception 'Please sign in.'; end if;
+ if p_request_id is null then raise exception 'Please retry sending this gift.'; end if;
  if p_recipient_id is null or p_recipient_id=v_sender then raise exception 'Choose another member.'; end if;
  if not public.can_interact_with_member(p_recipient_id) then raise exception 'This conversation is unavailable.'; end if;
+ if p_message is not null and char_length(p_message)>160 then raise exception 'Gift message is too long.'; end if;
+
+ select id into v_id from public.member_gifts
+ where sender_id=v_sender and request_id=p_request_id;
+ if found then return v_id; end if;
+
  select * into v_gift from public.gift_catalog where code=p_gift_code and active for share;
  if not found then raise exception 'This gift is unavailable.'; end if;
- if p_message is not null and char_length(p_message)>160 then raise exception 'Gift message is too long.'; end if;
  insert into public.coin_wallets(user_id,balance) values(v_sender,0) on conflict(user_id) do nothing;
  select balance into v_balance from public.coin_wallets where user_id=v_sender for update;
+
+ -- Recheck after taking the wallet lock so simultaneous retries cannot charge twice.
+ select id into v_id from public.member_gifts
+ where sender_id=v_sender and request_id=p_request_id;
+ if found then return v_id; end if;
+
  if v_balance < v_gift.send_cost then raise exception 'Not enough coins in your wallet.'; end if;
- update public.coin_wallets set balance=balance-v_gift.send_cost,updated_at=now() where user_id=v_sender returning balance into v_balance;
- insert into public.member_gifts(sender_id,recipient_id,gift_code,send_cost,redeem_coins,message)
- values(v_sender,p_recipient_id,v_gift.code,v_gift.send_cost,v_gift.redeem_coins,nullif(btrim(p_message),'')) returning id into v_id;
+ update public.coin_wallets set balance=balance-v_gift.send_cost,updated_at=now()
+ where user_id=v_sender returning balance into v_balance;
+ insert into public.member_gifts(sender_id,recipient_id,gift_code,send_cost,redeem_coins,message,request_id)
+ values(v_sender,p_recipient_id,v_gift.code,v_gift.send_cost,v_gift.redeem_coins,nullif(btrim(p_message),''),p_request_id)
+ returning id into v_id;
  insert into public.coin_ledger(user_id,amount,balance_after,entry_type,reference_id,idempotency_key,description)
  values(v_sender,-v_gift.send_cost,v_balance,'gift_send',v_id,'gift-send:'||v_id,'Sent '||v_gift.name);
  return v_id;
-end $$;
-revoke all on function public.send_member_gift(uuid,text,text) from public,anon;
-grant execute on function public.send_member_gift(uuid,text,text) to authenticated;
+end $;
+revoke all on function public.send_member_gift(uuid,text,text,uuid) from public,anon;
+grant execute on function public.send_member_gift(uuid,text,text,uuid) to authenticated;
 
 create or replace function public.redeem_member_gift(p_gift_id uuid)
 returns integer language plpgsql security definer set search_path='' as $$

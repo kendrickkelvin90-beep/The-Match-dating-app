@@ -10837,7 +10837,7 @@ let profileLocationPromptInProgress = false;
 function normalizeProfileLocationForStateMatch(value) {
   return String(value || "")
     .toLowerCase()
-    .replace(/\\bstate\\b/g, "")
+    .replace(/\bstate\b/g, "")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
 }
@@ -10857,9 +10857,9 @@ async function offerProfileLocationUpdateFromGps(profileCity, detectedState) {
   profileLocationPromptInProgress = true;
   try {
     const shouldUpdate = window.confirm(
-      "It looks like you've moved to " + newLocation + ".\\n\\n" +
+      "It looks like you've moved to " + newLocation + ".\n\n" +
       "Your public profile currently shows " + oldLocation + ". " +
-      "Would you like to update your profile location to " + newLocation + "?\\n\\n" +
+      "Would you like to update your profile location to " + newLocation + "?\n\n" +
       "Choose Cancel to keep your current profile location."
     );
     if (!shouldUpdate) {

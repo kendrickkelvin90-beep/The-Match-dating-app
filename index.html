@@ -12889,7 +12889,9 @@ async function matchCanBoost(userId = currentUser?.id) {
   return (await matchIsPremium(userId)) || tier === "quarterly" || tier === "annual";
 }
 async function matchHasAdvancedFilters(userId = currentUser?.id) {
-  return (await matchIsPremium(userId)) || !!(await matchPlusTier(userId));
+  // Advanced Discovery filters remain Premium-only until the Match tier filters
+  // are fully implemented; do not unlock controls that do not work yet.
+  return await matchIsPremium(userId);
 }
 async function matchIsLite(userId = currentUser?.id) {
   if (!userId) return false;
@@ -12899,7 +12901,8 @@ async function matchIsLite(userId = currentUser?.id) {
   return !!data?.lite_until && new Date(data.lite_until).getTime() > Date.now();
 }
 async function matchHasUnlimitedSwipes(userId = currentUser?.id) {
-  return (await matchIsPremium(userId)) || (await matchIsLite(userId));
+  const tier = await matchPlusTier(userId);
+  return (await matchIsPremium(userId)) || (await matchIsLite(userId)) || tier === "quarterly" || tier === "annual";
 }
 
 function lagosDayStartIso() {
@@ -12921,7 +12924,11 @@ async function refreshDailyLikeCounter() {
       currentDiscoverIsPremium = true;
       currentDailySwipesUsed = 0;
       target.style.display = "";
-      target.textContent = (await matchIsPremium()) ? "Unlimited swipes · Premium" : "Unlimited swipes · The Match Lite";
+      const [isPremium, isLite, tier] = await Promise.all([matchIsPremium(), matchIsLite(), matchPlusTier()]);
+      target.textContent = isPremium ? "Unlimited swipes · Premium"
+        : isLite ? "Unlimited swipes · The Match Lite"
+        : tier === "annual" ? "Unlimited swipes · Match Annual"
+        : "Unlimited swipes · Match Quarterly";
       return;
     }
     const { data: count, error } = await db.rpc("get_my_daily_swipe_count");

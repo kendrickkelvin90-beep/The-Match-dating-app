@@ -10153,7 +10153,7 @@ let people = (peopleData || []).map(p => {
       const { data: verificationProfiles, error: verificationError } =
         await db
           .from("profiles")
-          .select("id,is_verified,verification_level,gender_presentation,city")
+          .select("id,is_verified,verification_level,gender_presentation,city,created_at")
           .in("id", discoverIds);
 
       if (verificationError) throw verificationError;
@@ -10164,7 +10164,8 @@ let people = (peopleData || []).map(p => {
           {
             is_verified: profile.is_verified,
             verification_level: profile.verification_level,
-            city: profile.city
+            city: profile.city,
+            created_at: profile.created_at
           }
         ])
       );
@@ -10255,7 +10256,7 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
       error: expandedVerificationError
     } = await db
       .from("profiles")
-      .select("id,is_verified,verification_level,gender_presentation,city")
+      .select("id,is_verified,verification_level,gender_presentation,city,created_at")
       .in("id", expandedIds);
 
     if (expandedVerificationError) {
@@ -10268,7 +10269,8 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
         {
           is_verified: profile.is_verified,
           verification_level: profile.verification_level,
-            city: profile.city
+            city: profile.city,
+          created_at: profile.created_at
         }
       ])
     );
@@ -10403,6 +10405,20 @@ onlineLabel.style.color = isUserOnline(p.id) ? "#b9ffd8" : "#ddd";
 
 onlineBadge.append(onlineDot, onlineLabel);
 photoBox.appendChild(onlineBadge);
+
+// A discreet "NEW HERE" label helps members notice recently joined people.
+// Use the account's actual profile creation timestamp; show it for the first 7 days.
+const memberJoinedAt = p.created_at ? new Date(p.created_at).getTime() : NaN;
+const isNewHere = Number.isFinite(memberJoinedAt) &&
+  memberJoinedAt <= Date.now() + 5 * 60 * 1000 &&
+  memberJoinedAt >= Date.now() - 7 * 24 * 60 * 60 * 1000;
+if (isNewHere) {
+  const newMemberBadge = document.createElement("div");
+  newMemberBadge.textContent = "NEW HERE";
+  newMemberBadge.setAttribute("aria-label", "New member");
+  newMemberBadge.style.cssText = "position:absolute;top:58px;left:12px;z-index:4;padding:5px 9px;border-radius:999px;background:rgba(18,15,10,.88);border:1px solid rgba(222,187,112,.82);color:#f0d18b;font-size:9px;font-weight:850;letter-spacing:1px;line-height:1.2;box-shadow:0 3px 12px rgba(0,0,0,.24);";
+  photoBox.appendChild(newMemberBadge);
+}
 
 
 

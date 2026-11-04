@@ -57,6 +57,7 @@ function addChatGiftButton(){
  b.onclick=()=>window.openMatchGifts(window.activeChatUserId||null);
  composer.insertBefore(b,composer.querySelector("#sendChatMessage"));
 }
+addChatGiftButton();
 new MutationObserver(addChatGiftButton).observe(document.body,{childList:true,subtree:true});
 document.addEventListener("DOMContentLoaded",addChatGiftButton);
 })();

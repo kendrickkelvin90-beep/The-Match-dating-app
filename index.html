@@ -6112,19 +6112,19 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
   <p class="premium-description">Select a plan to view payment account details.</p>
 
   <div class="premium-plans">
-    <button class="premium-plan" type="button" data-premium-plan="lite_monthly">
+    <button class="premium-plan" type="button" data-premium-plan="weekly">
       <div class="premium-plan-top">
-        <div><span class="premium-plan-name">The Match Lite</span><span class="premium-plan-note">Unlimited swipes + see who likes you</span></div>
-        <div class="premium-price">₦1,000<span class="premium-period">30 days</span></div>
+        <div><span class="premium-plan-name">Weekly</span><span class="premium-plan-note">A flexible start</span></div>
+        <div class="premium-price">₦4,000<span class="premium-period">7 days</span></div>
       </div>
-      <div class="premium-plan-cta"><span>Choose Lite</span><span>→</span></div>
+      <div class="premium-plan-cta"><span>Choose weekly</span><span>→</span></div>
     </button>
 
     <button class="premium-plan recommended" type="button" data-premium-plan="monthly">
       <span class="premium-tag">POPULAR CHOICE</span>
       <div class="premium-plan-top">
         <div><span class="premium-plan-name">Monthly</span><span class="premium-plan-note">A month to connect</span></div>
-        <div class="premium-price">₦5,000<span class="premium-period">30 days</span></div>
+        <div class="premium-price">₦8,000<span class="premium-period">30 days</span></div>
       </div>
       <div class="premium-plan-cta"><span>Choose monthly</span><span>→</span></div>
     </button>
@@ -6132,9 +6132,17 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     <button class="premium-plan" type="button" data-premium-plan="yearly">
       <div class="premium-plan-top">
         <div><span class="premium-plan-name">Yearly</span><span class="premium-plan-note">Long-term value</span></div>
-        <div class="premium-price">₦50,000<span class="premium-period">12 months</span></div>
+        <div class="premium-price">₦49,800<span class="premium-period">12 months</span></div>
       </div>
       <div class="premium-plan-cta"><span>Choose yearly</span><span>→</span></div>
+    </button>
+
+    <button class="premium-plan" type="button" data-premium-plan="lite_monthly">
+      <div class="premium-plan-top">
+        <div><span class="premium-plan-name">The Match Lite</span><span class="premium-plan-note">Unlimited swipes + see who likes you</span></div>
+        <div class="premium-price">₦1,000<span class="premium-period">30 days</span></div>
+      </div>
+      <div class="premium-plan-cta"><span>Choose Lite</span><span>→</span></div>
     </button>
   </div>
 
@@ -6150,8 +6158,9 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     <label for="premiumPlan">Selected plan</label>
     <select id="premiumPlan" required>
       <option value="">Choose a plan</option>
-      <option value="monthly">Monthly Premium — ₦5,000</option>
-      <option value="yearly">Yearly Premium — ₦50,000</option>
+      <option value="weekly">Weekly — ₦4,000</option>
+      <option value="monthly">Monthly — ₦8,000</option>
+      <option value="yearly">Yearly — ₦49,800</option>
       <option value="lite_monthly">The Match Lite — 30 days · ₦1,000</option>
     </select>
 
@@ -9710,10 +9719,10 @@ function startMatchLitePromotionSchedule() {
     const card=document.createElement("div");card.style.cssText="position:relative;width:min(100%,410px);padding:26px 24px;border:1px solid #c6a15a;border-radius:22px;background:linear-gradient(145deg,#1b1915,#090909);color:#f7f2e8;box-shadow:0 20px 65px rgba(0,0,0,.5);text-align:center";
     const close=document.createElement("button");close.type="button";close.textContent="×";close.setAttribute("aria-label","Close offer");close.style.cssText="position:absolute;right:12px;top:10px;border:0;background:transparent;color:#f2dfbd;font-size:28px";
     const title=document.createElement("h3");title.textContent=stage===1?"Meet The Match Lite":stage===2?"Your Lite membership is waiting":"Ready for more freedom on The Match?";title.style.cssText="color:#f2d49a;margin:8px 24px 12px;font-size:23px";
-    const body=document.createElement("p");body.textContent="Enjoy unlimited swipes and see who likes you for 30 days — just ₦1,000. Lite does not include Premium-only messaging to non-matches, Nearby, Rewind or Boost.";body.style.cssText="color:#e3dccf;line-height:1.6;font-size:14px";
-    const action=document.createElement("button");action.type="button";action.textContent="Get The Match Lite · ₦1,000";action.style.cssText="margin-top:10px;padding:12px 18px;border-radius:999px;border:1px solid #c6a15a;background:#c6a15a;color:#17120a;font-weight:800";
+    const body=document.createElement("p");body.textContent="Get unlimited swipes and see who likes you for 30 days for just ₦1,000. Tap below to view the payment account details, transfer ₦1,000 and submit your transfer information. Your Lite access starts only after an admin approves your payment. Lite does not include Premium-only messaging to non-matches, Nearby, Rewind or Boost.";body.style.cssText="color:#e3dccf;line-height:1.6;font-size:14px";
+    const action=document.createElement("button");action.type="button";action.textContent="Pay ₦1,000 for The Match Lite";action.style.cssText="margin-top:10px;padding:12px 18px;border-radius:999px;border:1px solid #c6a15a;background:#c6a15a;color:#17120a;font-weight:800";
     const dismiss=()=>{if(stage===1){state.firstDismissedAt=Date.now();state.secondDueAt=Date.now()+86400000;}if(stage===2){state.secondDismissedAt=Date.now();state.thirdDueAt=Date.now()+259200000;}if(stage===3)state.thirdDismissedAt=Date.now();write(state);layer.remove();};
-    close.onclick=dismiss;action.onclick=()=>{dismiss();show("premium");const select=$("premiumPlan");if(select){select.value="lite_monthly";select.dispatchEvent(new Event("change",{bubbles:true}));}};
+    close.onclick=dismiss;action.onclick=()=>{dismiss();show("premium");const select=$("premiumPlan");if(select){select.value="lite_monthly";select.dispatchEvent(new Event("change",{bubbles:true}));}setTimeout(()=>{$("premiumAccountDetails")?.scrollIntoView({behavior:"smooth",block:"start"});},150);};
     card.append(close,title,body,action);layer.appendChild(card);document.body.appendChild(layer);
   };
   window.matchLitePromoTimer=setInterval(tick,15000);
@@ -15994,8 +16003,9 @@ $("backFromPremium").onclick=()=>show("profile");
 
 
 const premiumPlanPrices = {
-  monthly: 5000,
-  yearly: 50000,
+  weekly: 4000,
+  monthly: 8000,
+  yearly: 49800,
   lite_monthly: 1000
 };
 

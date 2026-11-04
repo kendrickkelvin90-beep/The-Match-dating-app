@@ -19,7 +19,7 @@ as $$
   where m.user_id = (select auth.uid())
 $$;
 revoke all on function public.match_plus_active_tier() from public, anon;
-grant execute on function public.match_plus_active_tier(uuid) to authenticated;
+grant execute on function public.match_plus_active_tier() to authenticated;
 
 create or replace function public.match_has_unlimited_swipes()
 returns boolean
@@ -30,7 +30,7 @@ as $$
     or public.match_plus_active_tier() in ('quarterly','annual')
 $$;
 revoke all on function public.match_has_unlimited_swipes() from public, anon;
-grant execute on function public.match_has_unlimited_swipes(uuid) to authenticated;
+grant execute on function public.match_has_unlimited_swipes() to authenticated;
 
 -- Preserve the current Free / Premium / Lite swipe behavior; Quarterly and Annual
 -- join the existing unlimited-swipe entitlement. Match Plus remains on the free cap.
@@ -148,7 +148,7 @@ begin
   if exists(select 1 from public.premium_memberships pm where pm.user_id=v_user and pm.premium_until>now()) then
     v_cooldown:=interval '24 hours';
   else
-    v_tier:=public.match_plus_active_tier(v_user);
+    v_tier:=public.match_plus_active_tier();
     v_cooldown:=case v_tier when 'quarterly' then interval '7 days' when 'annual' then interval '24 hours' else null end;
   end if;
   if v_cooldown is null then raise exception 'MEMBERSHIP_REQUIRED: Profile Boost is included with Match Quarterly/Annual or Premium.'; end if;
@@ -168,11 +168,18 @@ grant execute on function public.activate_my_profile_boost() to authenticated;
 create or replace function public.coin_buy_membership(p_tier text,p_idempotency_key text)
 returns integer language plpgsql security definer set search_path = ''
 as $$
-declare v_code text;
+declare v_code text; v_current_tier text; v_current_expiry timestamptz; v_new_rank integer; v_current_rank integer;
 begin
   v_code:=case p_tier when 'plus' then 'plus_30d' when 'quarterly' then 'quarterly_90d'
     when 'annual' then 'annual_365d' else null end;
   if v_code is null then raise exception 'Invalid Match membership tier'; end if;
+  select tier,expires_at into v_current_tier,v_current_expiry
+    from public.match_plus_memberships where user_id=auth.uid() for update;
+  v_new_rank:=case p_tier when 'plus' then 1 when 'quarterly' then 2 else 3 end;
+  v_current_rank:=case v_current_tier when 'plus' then 1 when 'quarterly' then 2 when 'annual' then 3 else 0 end;
+  if v_current_expiry>now() and v_current_rank>v_new_rank then
+    raise exception 'Your current Match Plus tier is higher. Wait until it expires or choose an upgrade.';
+  end if;
   return public.coin_spend(v_code,1,p_idempotency_key);
 end;
 $$;
@@ -199,7 +206,7 @@ begin
      or public.match_plus_active_tier() in ('quarterly','annual') then
     return new;
   end if;
-  v_tier:=public.match_plus_active_tier(new.user_id);
+  v_tier:=public.match_plus_active_tier();
   if v_tier='plus' then
     insert into public.match_plus_daily_usage(user_id,usage_day,stories_created)
     values(new.user_id,v_day,1)

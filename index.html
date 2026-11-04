@@ -9107,7 +9107,7 @@ function resolveDiscoverCityCoordinates(value){
   const keys=Object.keys(DISCOVER_CITY_COORDINATES).sort((a,b)=>b.length-a.length);
   for(const key of keys){
     if((" "+whole+" ").includes(" "+key+" ")) return DISCOVER_CITY_COORDINATES[key];
-    if(new RegExp("(^| )"+escaped+"( |$)").test(whole)) return DISCOVER_CITY_COORDINATES[key];
+
   }
   return null;
 }

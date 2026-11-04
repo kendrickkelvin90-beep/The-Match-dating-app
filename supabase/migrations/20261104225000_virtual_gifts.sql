@@ -118,7 +118,8 @@ end $$;
 revoke all on function public.admin_set_gift_active(text,boolean) from public,anon;
 grant execute on function public.admin_set_gift_active(text,boolean) to authenticated;
 
-create or replace function public.admin_gift_activity(p_limit integer default 100)
+drop function if exists public.admin_gift_activity(integer);
+create function public.admin_gift_activity(p_limit integer default 100)
 returns table(gift_id uuid,sender_id uuid,recipient_id uuid,gift_code text,send_cost integer,redeem_coins integer,created_at timestamptz,redeemed_at timestamptz)
 language plpgsql stable security definer set search_path='' as $$
 begin

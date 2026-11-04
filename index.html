@@ -6055,6 +6055,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     <div class="premium-eyebrow">THE MATCH · MEMBERSHIP</div>
     <h3>A more intentional way to connect.</h3>
     <p>Discover more possibilities, see who's interested, and make more of your dating experience.</p>
+    <p class="premium-description" style="margin:10px 0 0">Premium is a separate bank-transfer membership. Match Plus memberships are purchased with coins in the Coins tab; both membership systems remain available and have different benefits.</p>
   </div>
 
   <h3>Premium benefits</h3>
@@ -6950,6 +6951,7 @@ function matchDialog(options = {}) {
   const result = matchDialogQueue.then(task, task); matchDialogQueue = result.then(() => undefined, () => undefined); return result;
 }
 function matchConfirm(message, title = "Please confirm") { return matchDialog({ type: "confirm", title, message, confirmText: "Continue" }); }
+window.matchConfirm = matchConfirm;
 function matchPrompt(message, defaultValue = "", options = {}) {
   return matchDialog({ type: "prompt", title: options.title || "A quick question", message, defaultValue,
     placeholder: options.placeholder || "Type your response...", multiline: Boolean(options.multiline),

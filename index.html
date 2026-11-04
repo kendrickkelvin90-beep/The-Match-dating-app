@@ -10106,9 +10106,14 @@ async function loadNearby(){
     const preferredLocation = (savedPreferences.location || "").trim();
     // Discover is intentionally wide-ranging by default. A Premium member's
     // explicitly selected distance remains respected; Nearby stays separate at 50 km.
-    const maxDistance = viewerPremium && Number(savedPreferences.distance) > 0
-      ? Math.min(Number(savedPreferences.distance), 20050)
-      : 20050;
+    // When a member selects a city/area, that regional selection is the
+    // Discover boundary. Do not additionally clip it around the member's
+    // current GPS point (which could hide the very city they selected).
+    const maxDistance = preferredLocation
+      ? 20050
+      : viewerPremium && Number(savedPreferences.distance) > 0
+        ? Math.min(Number(savedPreferences.distance), 20050)
+        : 20050;
     const minAge = viewerPremium ? (Number(savedPreferences.minAge) || 18) : 18;
     const maxAge = viewerPremium
       ? Math.min(Number(savedPreferences.maxAge) || 79, 99)

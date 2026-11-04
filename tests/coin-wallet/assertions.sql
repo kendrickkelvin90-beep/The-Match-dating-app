@@ -134,8 +134,8 @@ select public.test_assert(
   'sender cannot read their own sent gift'
 );
 select public.test_assert(
-  (select count(*)=0 from public.member_gifts where recipient_id='22222222-2222-4222-8222-222222222222'),
-  'sender can read a gift addressed to another member'
+  (select count(*)=1 from public.member_gifts where recipient_id='22222222-2222-4222-8222-222222222222' and sender_id='11111111-1111-4111-8111-111111111111'),
+  'sender cannot read the gift they sent to the recipient'
 );
 select public.test_assert(
   (select count(*)=1 from public.gift_catalog where code='rose'),

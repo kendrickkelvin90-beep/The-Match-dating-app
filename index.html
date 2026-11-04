@@ -4172,7 +4172,7 @@ body.light-theme .discovery-tabs { background:rgba(255,255,255,.97); }
 body.light-theme .discovery-tabs button { background:#fff; color:#5e5548; }
 body.light-theme .discovery-tabs button.active { background:linear-gradient(135deg,#e5c77f,#b68c46); color:#17120a; }
 
-.match-dialog-backdrop{position:fixed;inset:0;z-index:200000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.78);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+.match-dialog-backdrop{position:fixed;inset:0;z-index:200500;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.78);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
 .match-dialog-card{width:min(100%,440px);max-height:min(82dvh,680px);overflow:auto;padding:25px 22px 20px;border:1px solid rgba(208,170,99,.62);border-radius:22px;background:linear-gradient(155deg,#1d1a16,#090909 72%);color:#f7f2e8;box-shadow:0 24px 80px rgba(0,0,0,.72),0 0 0 1px rgba(208,170,99,.08);animation:matchDialogIn .18s ease-out}
 @keyframes matchDialogIn{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
 .match-dialog-brand{margin-bottom:10px;color:#d0aa63;font-size:10px;font-weight:800;letter-spacing:3px}
@@ -5981,7 +5981,7 @@ body.light-theme #matchFeaturePromoClose {
 
 /* Full-screen voice calling experience */
 #voiceCallModal.voice-call-screen {
-  position:fixed!important; inset:0!important; z-index:20000!important;
+  position:fixed!important; inset:0!important; z-index:20050!important;
   display:flex; align-items:center; justify-content:center;
   box-sizing:border-box; width:100%; min-height:100vh; min-height:100dvh;
   padding:calc(env(safe-area-inset-top) + 24px) 22px calc(env(safe-area-inset-bottom) + 24px);
@@ -9137,7 +9137,7 @@ approxLocation=null;
 discoveryLocationEnabled=false;
 $("locationButton").textContent="📍 Turn on nearby discovery";
 status("profileStatus",err.code===1?"Permission denied. You can still save your profile without location.":"Could not get location. Check your phone settings and try again.",true);
-},{enableHighAccuracy:true,timeout:20000,maximumAge:0});
+},{enableHighAccuracy:true,timeout:20050,maximumAge:0});
 };
 
 
@@ -10103,9 +10103,11 @@ async function loadNearby(){
       lookingFor: allSavedPreferences.lookingFor || ""
     };
     const preferredLocation = viewerPremium ? (savedPreferences.location || "").trim() : "";
-    const maxDistance = viewerPremium
-      ? Math.min(Number(savedPreferences.distance) || 50, 200)
-      : 50;
+    // Discover is intentionally wide-ranging by default. A Premium member's
+    // explicitly selected distance remains respected; Nearby stays separate at 50 km.
+    const maxDistance = viewerPremium && Number(savedPreferences.distance) > 0
+      ? Math.min(Number(savedPreferences.distance), 20050)
+      : 20050;
     const minAge = viewerPremium ? (Number(savedPreferences.minAge) || 18) : 18;
     const maxAge = viewerPremium
       ? Math.min(Number(savedPreferences.maxAge) || 79, 99)
@@ -10117,7 +10119,10 @@ async function loadNearby(){
       : [];
 
     
-    const { data: peopleData, error } = await db.rpc(
+    // Refresh the shared device location before querying Discover. If permission is
+// unavailable, the secure RPC may still use the last fresh saved location.
+await refreshNearbyCurrentLocation();
+const { data: peopleData, error } = await db.rpc(
   "discover_profiles_secure",
   {
     p_max_distance_km: maxDistance,
@@ -10818,66 +10823,68 @@ async function refreshNearbyCurrentLocation() {
       .maybeSingle();
 
     if (profileError) throw profileError;
-
     if (!profile?.location_sharing) {
       return { ok: false, reason: "sharing_disabled" };
     }
 
     if (navigator.permissions?.query) {
-      const permission = await navigator.permissions.query({
-        name: "geolocation"
-      });
-
+      const permission = await navigator.permissions.query({ name: "geolocation" });
       if (permission.state === "denied") {
-  return { ok: false, reason: "permission" };
+        return { ok: false, reason: "permission" };
       }
     }
 
     const position = await new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(
-        resolve,
-        reject,
-        {
-          enableHighAccuracy: true,
-          timeout: 20000,
-          maximumAge: 0
-        }
-      );
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: 20050,
+        maximumAge: 0
+      });
     });
 
-    const latitude = position.coords.latitude;
-    const longitude = position.coords.longitude;
+    const latitude = Number(position.coords.latitude);
+    const longitude = Number(position.coords.longitude);
+    const accuracy = Number(position.coords.accuracy);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+        latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180 ||
+        !Number.isFinite(accuracy) || accuracy > 5000) {
+      return { ok: false, reason: "gps_error" };
+    }
+
     let currentCity = null;
     let currentState = null;
-
     const { data: locationData, error: locationError } =
       await db.functions.invoke("nearby-reverse-geocode", {
         body: { latitude, longitude }
       });
 
     if (locationError) {
-      console.warn("Nearby reverse geocoding failed:", locationError);
+      console.warn("Location reverse geocoding failed:", locationError);
     } else if (locationData) {
       currentCity = locationData.city || null;
       currentState = locationData.state || null;
     }
 
-    const { error: saveError } = await db.rpc(
-      "save_my_nearby_location",
-      {
-        p_lat: latitude,
-        p_lon: longitude,
-        p_city: currentCity,
-        p_state: currentState
-      }
-    );
+    // Keep the private Nearby and Discover coordinates synchronized from the
+    // same consented device fix. The RPCs write only the signed-in member's row.
+    const { error: nearbySaveError } = await db.rpc("save_my_nearby_location", {
+      p_lat: latitude,
+      p_lon: longitude,
+      p_city: currentCity,
+      p_state: currentState
+    });
+    if (nearbySaveError) throw nearbySaveError;
 
-    if (saveError) throw saveError;
+    const { error: discoverSaveError } = await db.rpc("save_my_discovery_location", {
+      p_lat: latitude,
+      p_lon: longitude,
+      p_enabled: true
+    });
+    if (discoverSaveError) throw discoverSaveError;
 
-    return { ok: true, latitude, longitude };
+    return { ok: true, latitude, longitude, accuracy };
   } catch (error) {
-    console.warn("Nearby GPS refresh failed:", error);
-
+    console.warn("Current device location refresh failed:", error);
     return {
       ok: false,
       reason: error?.code === 1 ? "permission" : "gps_error"

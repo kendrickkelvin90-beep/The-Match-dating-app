@@ -7734,18 +7734,20 @@ async function loadAdminVerificationRequests() {
           viewSelfie.disabled = true;
           viewSelfie.textContent = "Opening selfie...";
 
+          let selfieObjectUrl = null;
           try {
-            const { data: signedData, error: signedError } =
-              await db.storage
-                .from("verification-selfies")
-                .createSignedUrl(request.selfie_path, 300);
+            // Verification selfies are private. Download through the authenticated
+            // Supabase client so the admin SELECT policy is applied to this request.
+            const { data: selfieBlob, error: selfieDownloadError } = await db.storage
+              .from("verification-selfies")
+              .download(request.selfie_path);
 
-            if (signedError) throw signedError;
-            if (!signedData?.signedUrl) {
-              throw new Error("Could not create a secure selfie link.");
+            if (selfieDownloadError) throw selfieDownloadError;
+            if (!selfieBlob || !String(selfieBlob.type || "").startsWith("image/")) {
+              throw new Error("The stored verification selfie is unavailable or is not a valid image.");
             }
+            selfieObjectUrl = URL.createObjectURL(selfieBlob);
 
-            
 const overlay = document.createElement("div");
 overlay.setAttribute("role", "dialog");
 overlay.setAttribute("aria-modal", "true");
@@ -7766,16 +7768,25 @@ closeButton.style.cssText =
   "border:1px solid #555;background:#222;color:#fff;" +
   "font-size:30px;line-height:1;cursor:pointer;";
 
+const selfieStatus = document.createElement("p");
+selfieStatus.textContent = "Loading verification selfie...";
+selfieStatus.style.cssText = "color:#f2e6ca;text-align:center;font-size:14px;margin:12px;";
 const selfieImage = document.createElement("img");
-selfieImage.src = signedData.signedUrl;
 selfieImage.alt = "Member verification selfie";
 selfieImage.style.cssText =
   "display:block;max-width:100%;max-height:85vh;" +
-  "object-fit:contain;border-radius:12px;";
+  "object-fit:contain;border-radius:12px;background:#171717;";
+selfieImage.onload = () => selfieStatus.remove();
+selfieImage.onerror = () => {
+  selfieImage.style.display = "none";
+  selfieStatus.textContent = "The selfie file could not be displayed. Close this preview and try again.";
+};
+selfieImage.src = selfieObjectUrl;
 
 const closePreview = () => {
   document.removeEventListener("keydown", handlePreviewKeydown);
   overlay.remove();
+  if (selfieObjectUrl) URL.revokeObjectURL(selfieObjectUrl);
 };
 
 const handlePreviewKeydown = event => {
@@ -7787,7 +7798,7 @@ overlay.addEventListener("click", event => {
   if (event.target === overlay) closePreview();
 });
 
-overlay.append(closeButton, selfieImage);
+overlay.append(closeButton, selfieStatus, selfieImage);
 document.body.appendChild(overlay);
 document.addEventListener("keydown", handlePreviewKeydown);
 closeButton.focus();

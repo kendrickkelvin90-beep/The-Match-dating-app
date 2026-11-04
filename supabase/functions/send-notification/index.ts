@@ -5,7 +5,8 @@ const ONESIGNAL_API_URL = "https://api.onesignal.com/notifications";
 const RESEND_API_URL = "https://api.resend.com/emails";
 const APP_URL = "https://match.beyondthebinarymedia.online/";
 const EMAIL_FROM = "The Match <noreply@beyondthebinarymedia.online>";
-const MEMBERSHIP_EMAIL_TYPES = new Set([
+const ACCOUNT_EMAIL_TYPES = new Set([
+  "verification_rejected",
   "premium_welcome",
   "membership_payment_rejected",
 ]);
@@ -183,7 +184,7 @@ Deno.serve(async (req: Request) => {
       failures.push("push");
     }
 
-    if (MEMBERSHIP_EMAIL_TYPES.has(type)) {
+    if (ACCOUNT_EMAIL_TYPES.has(type)) {
       try {
         await sendMembershipEmail(userId, notificationId, type, title, body, expectedKey);
       } catch (error) {
@@ -197,7 +198,7 @@ Deno.serve(async (req: Request) => {
     if (failures.length) {
       return reply({ error: "One or more notification channels failed.", failed_channels: failures }, 502);
     }
-    return reply({ success: true, push: Boolean(oneSignalKey), email: MEMBERSHIP_EMAIL_TYPES.has(type) });
+    return reply({ success: true, push: Boolean(oneSignalKey), email: ACCOUNT_EMAIL_TYPES.has(type) });
   } catch (error) {
     console.error("Notification webhook failed:", error);
     return reply({ error: "Could not process notification event." }, 500);

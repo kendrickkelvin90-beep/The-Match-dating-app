@@ -21,7 +21,11 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "select set_config('request.jwt.claim
 P3=$!
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "select set_config('request.jwt.claim.sub','$U7',false); select public.coin_buy_membership('annual','membership:annual:concurrent-tier-annual-0001');" >/tmp/coin-tier-annual.log 2>&1 &
 P4=$!
-if wait "$P3"; then :; else :; fi
+if wait "$P3"; then
+  :
+else
+  grep -q "Your current Match Plus tier is higher" /tmp/coin-tier-plus.log
+fi
 wait "$P4"
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "select public.test_assert((select tier='annual' from public.match_plus_memberships where user_id='$U7'),'concurrent membership purchases downgraded Annual'); select public.test_assert((select balance in (1900,2200) from public.coin_wallets where user_id='$U7'),'concurrent membership purchases deducted an unexpected amount');"
 

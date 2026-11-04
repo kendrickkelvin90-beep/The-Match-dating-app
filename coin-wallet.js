@@ -11,7 +11,13 @@
     {code:"super_like_1",name:"1 Super Like",cost:10,quantity:1},
     {code:"super_like_5",name:"5 Super Likes",cost:45,quantity:5},
     {code:"extra_likes_10",name:"10 Extra Likes",cost:30,quantity:10},
-    {code:"extra_likes_30",name:"30 Extra Likes",cost:75,quantity:30}
+    {code:"extra_likes_30",name:"30 Extra Likes",cost:75,quantity:30},
+    {code:"profile_boost_24h",name:"Profile Boost · 24 hours",cost:40,quantity:1},
+    {code:"profile_boost_3",name:"3 Profile Boosts",cost:100,quantity:3},
+    {code:"priority_7d",name:"Priority Visibility · 7 days",cost:100,quantity:1},
+    {code:"priority_30d",name:"Priority Visibility · 30 days",cost:250,quantity:1},
+    {code:"decorative_badge",name:"Special Profile Badge",cost:100,quantity:1},
+    {code:"animated_effect",name:"Animated Profile Effect",cost:150,quantity:1}
   ];
   const PACKS = [
     ["starter_50","Starter","50 coins","₦1,000"],

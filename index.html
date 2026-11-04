@@ -6100,7 +6100,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     </div>
     <div class="premium-benefit">
       <div class="premium-icon">♥</div>
-      <div><strong>Unlimited swipes</strong><span>Like or Pass up to 10 profiles per day as a Free member; Premium includes unlimited swipes.</span></div>
+      <div><strong>Unlimited swipes</strong><span>Like or Pass up to 20 profiles per day as a Free member; Premium includes unlimited swipes.</span></div>
     </div>
     <div class="premium-benefit">
       <div class="premium-icon">✧</div>
@@ -12837,6 +12837,7 @@ async function refreshDailyLikeCounter() {
     if (await matchIsPremium()) {
       currentDiscoverIsPremium = true;
       currentDailySwipesUsed = 0;
+      target.style.display = "";
       target.textContent = "Unlimited swipes · Premium";
       return;
     }
@@ -12845,10 +12846,14 @@ async function refreshDailyLikeCounter() {
     const used = Math.min(Number(count || 0), 20);
     currentDiscoverIsPremium = false;
     currentDailySwipesUsed = used;
-    target.textContent = used >= 20 ? "Daily swipes used · Resets at midnight" : (20-used) + " of 20 swipes remaining today";
+    // Keep the daily limit entirely behind the scenes for Free members.
+    target.textContent = "";
+    target.style.display = "none";
   } catch (error) {
     console.warn("Daily like counter failed:", error);
-    target.textContent = "Daily swipes: 10";
+    currentDiscoverIsPremium = false;
+    target.textContent = "";
+    target.style.display = "none";
   }
 }
 

@@ -10096,13 +10096,14 @@ async function loadNearby(){
     }
     await refreshDailyLikeCounter();
     const allSavedPreferences = JSON.parse(localStorage.getItem("theMatchDiscoveryPreferences") || "{}");
-    // Free members keep basic gender/connection choices, while advanced filters
-    // (city, custom age range, distance, roles and activity filters) are Premium-only.
+    // City/area discovery is available to every member. Other advanced filters
+    // remain Premium-only.
     const savedPreferences = viewerPremium ? allSavedPreferences : {
+      location: allSavedPreferences.location || "",
       showMe: allSavedPreferences.showMe || "everyone",
       lookingFor: allSavedPreferences.lookingFor || ""
     };
-    const preferredLocation = viewerPremium ? (savedPreferences.location || "").trim() : "";
+    const preferredLocation = (savedPreferences.location || "").trim();
     // Discover is intentionally wide-ranging by default. A Premium member's
     // explicitly selected distance remains respected; Nearby stays separate at 50 km.
     const maxDistance = viewerPremium && Number(savedPreferences.distance) > 0
@@ -12869,22 +12870,21 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
     });
 
     document.querySelectorAll('input[name="discoveryRolePreference"]').forEach(el=>{
-      const advanced = !["Top","Bottom","Versatile"].includes(el.value);
       const label = el.closest("label");
-      el.disabled = !premium && advanced;
-      label?.classList.toggle("premium-locked-preference", !premium && advanced);
+      el.disabled = !premium;
+      label?.classList.toggle("premium-locked-preference", !premium);
       let tag = label?.querySelector(".premium-lock-tag");
-      if (!premium && advanced && !tag) {
+      if (!premium && !tag) {
         tag = document.createElement("small");
         tag.className = "premium-lock-tag";
-        tag.textContent = " 🔒";
+        tag.textContent = " 🔒 Premium";
         label?.appendChild(tag);
       } else if (premium && tag) tag.remove();
-      el.checked = Array.isArray(saved.rolePreferences) && saved.rolePreferences.includes(el.value) && (premium || !advanced);
+      el.checked = premium && Array.isArray(saved.rolePreferences) && saved.rolePreferences.includes(el.value);
     });
     $("discoveryPreferencesStatus").textContent = premium
       ? "Premium discovery controls are unlocked."
-      : "Free access includes basic preferences. Upgrade to unlock advanced filters.";
+      : "City discovery is available to everyone. Role preferences and advanced filters are locked for Free members.";
   } catch (error) {
     console.error("Could not load discovery preferences:", error);
     status("discoveryPreferencesStatus","Could not load preferences. Please try again.",true);

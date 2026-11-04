@@ -117,3 +117,14 @@ begin
 end $$;
 revoke all on function public.admin_set_gift_active(text,boolean) from public,anon;
 grant execute on function public.admin_set_gift_active(text,boolean) to authenticated;
+
+create or replace function public.admin_gift_activity(p_limit integer default 100)
+returns table(gift_id uuid,sender_id uuid,recipient_id uuid,gift_code text,send_cost integer,redeem_coins integer,created_at timestamptz,redeemed_at timestamptz)
+language plpgsql stable security definer set search_path='' as $$
+begin
+ if not public.is_match_admin() then raise exception 'Admin access required.'; end if;
+ return query select g.id,g.sender_id,g.recipient_id,g.gift_code,g.send_cost,g.redeem_coins,g.created_at,g.redeemed_at
+ from public.member_gifts g order by g.created_at desc limit greatest(1,least(coalesce(p_limit,100),200));
+end $$;
+revoke all on function public.admin_gift_activity(integer) from public,anon;
+grant execute on function public.admin_gift_activity(integer) to authenticated;

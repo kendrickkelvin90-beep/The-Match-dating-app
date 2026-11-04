@@ -8232,6 +8232,21 @@ async function reviewMatchAdminRequest(table, id, decision) {
     return;
   }
 
+  let adminNote = null;
+  if (table === "premium_payment_requests" && decision === "rejected") {
+    adminNote = await matchPrompt(
+      "Please enter the reason for rejecting this membership payment. The member will see this explanation in their payment history and notification.",
+      "",
+      { title: "Reason for rejection", placeholder: "Explain what needs to be corrected...", multiline: true, maxLength: 1000, confirmText: "Continue" }
+    );
+    if (adminNote === null) return;
+    adminNote = adminNote.trim();
+    if (!adminNote) {
+      status("adminStatus", "A rejection reason is required.", true);
+      return;
+    }
+  }
+
   if (!await matchConfirm("Are you sure you want to " + decision + " this request?")) {
     return;
   }
@@ -8242,7 +8257,8 @@ async function reviewMatchAdminRequest(table, id, decision) {
     const { error } = await db.rpc("admin_review_match_request", {
       p_table: table,
       p_id: id,
-      p_decision: decision
+      p_decision: decision,
+      p_admin_note: adminNote
     });
 
     if (error) throw error;

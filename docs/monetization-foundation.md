@@ -16,7 +16,7 @@
 | Ultimate Bundle | 1,500 | ₦20,000 |
 
 ## Proposed Match Plus membership prices — awaiting Kelvin's final approval
-| Tier | Duration | Coin cost | Agreed Naira reference price |
+| Tier | Duration | Coin cost | Proposed Naira reference price |
 |---|---:|---:|---:|
 | Match Plus | 30 days | 300 | ₦5,999 |
 | Match Quarterly | 90 days | 800 | ₦15,999 |

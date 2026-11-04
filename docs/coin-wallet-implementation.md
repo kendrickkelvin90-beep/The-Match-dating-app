@@ -30,6 +30,17 @@
 - Existing Rewind is also explicitly Premium-only and calls `rewind_my_last_swipe()`; the current swipe-limit bypass is shared by Premium and Match Lite. Match Plus tier benefits therefore need deliberate server-side entitlement checks rather than changing Premium/Lite checks globally.
 - The existing database exposes `is_match_admin()` for the admin queue; the coin migration adds a separate `coin_is_admin()` helper. Both are admin-gated, but the deployed function behavior and grants still need test coverage.
 
+## Tier feature-gate integration staged on this branch
+- Added a second migration defining a current-member-only Match Plus tier helper and server-side unlimited-swipe entitlement for Quarterly/Annual, while preserving existing Premium and Match Lite unlimited swipes.
+- Connected the secure Nearby RPC to active Match Plus tiers without exposing precise coordinates or changing the 50 km cap.
+- Connected server-side Rewind allowances: Plus 3/day, Quarterly 10/day, Annual unlimited; Premium remains unlimited. Usage counters are keyed to the Lagos calendar day.
+- Connected Profile Boost eligibility: Quarterly once every 7 days, Annual once every 24 hours, Premium retains its existing 24-hour cooldown; boosts remain 30 minutes.
+- Added server-side Story creation limits: Plus 3 per Lagos day; Quarterly/Annual/Premium unlimited; Free/Lite retain one active Story. This must be regression-tested against current Story creation UX.
+- Enabled Match Plus membership checkout through a dedicated authenticated RPC. Active higher tiers cannot be downgraded by buying a lower tier.
+- Updated Discover and Nearby controls to recognize the relevant Match Plus entitlements without treating Match Plus as Premium globally.
+- Store item purchases remain disabled; no inventory debit can happen before real item delivery is connected.
+- Annual 50-coin reward remains a manual admin-only grant; no recurring schedule is configured.
+
 ## Required next validation
 1. Apply the migration only to a disposable Match development database and check all RLS/grants and function execution privileges.
 2. Test member isolation, duplicate transfer references, pending/review state transitions, duplicate approvals, concurrent wallet spends, insufficient balance and idempotency.

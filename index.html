@@ -7865,7 +7865,7 @@ async function loadAdminPaymentRequests() {
 
       const title = document.createElement("h4");
       title.textContent =
-        (request.plan === "lite_monthly" ? "The Match Lite · 30 days" : (request.plan === "monthly" ? "Monthly" : "Yearly") + " Premium") +
+        (request.plan === "lite_monthly" ? "The Match Lite · 30 days" : (request.plan === "weekly" ? "Weekly" : request.plan === "monthly" ? "Monthly" : "Yearly") + " Premium") +
         " · ₦" +
         Number(request.amount_ngn).toLocaleString("en-NG");
 
@@ -16119,6 +16119,7 @@ $("refreshPremiumRequests").onclick=async()=>{
             const plan=document.createElement("h4");
       plan.textContent =
         request.plan === "lite_monthly" ? "The Match Lite · 30 days" :
+        request.plan === "weekly" ? "Weekly Premium" :
         request.plan === "monthly" ? "Monthly Premium" :
         "Yearly Premium";
 

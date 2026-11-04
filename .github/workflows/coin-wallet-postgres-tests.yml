@@ -1,9 +1,6 @@
 name: Coin wallet PostgreSQL integration tests
 
 on:
-  push:
-    branches:
-      - test/gifts-and-instant-chat
   pull_request:
     branches:
       - main

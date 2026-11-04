@@ -7,7 +7,7 @@
 - Match Quarterly: 90 days / 800 coins.
 - Match Annual: 365 days / 2,800 coins.
 - Active Match Annual members receive 50 bonus coins every 30 days.
-- Match Store prices: 40 coins for one 24-hour boost; 100 for three boosts; 10 for one Super Like; 45 for five; 30 for 10 Extra Likes; 75 for 30 Extra Likes; 100 for 7-day Priority Visibility; 250 for 30-day Priority Visibility; 100 for a decorative profile badge; 150 for an animated profile effect.
+- Match Store prices: 40 coins for one 30-minute boost; 100 for three boosts; 10 for one Super Like; 45 for five; 30 for 10 Extra Likes; 75 for 30 Extra Likes; 100 for 7-day Priority Visibility; 250 for 30-day Priority Visibility; 100 for a decorative profile badge; 150 for an animated profile effect.
 - Match Plus/Quarterly/Annual benefit allocation follows the previously reviewed tier outline in the app's wallet UI. Annual includes all lower-tier benefits plus its additional annual benefits.
 - Existing Premium pricing and Match Lite are out of scope and must remain unchanged.
 
@@ -24,6 +24,11 @@
 - Coin purchase rejection/approval notifications are in-app notifications. Coin-specific email delivery has not been connected.
 - The bank account shown is reused from the existing Premium transfer flow. Verify the account details in the production app before public release.
 - No production DDL, payment approval, wallet credit, or membership mutation was performed.
+
+## Existing feature-gate findings
+- The current Discover boost action calls `activate_my_profile_boost()` and is explicitly Premium-only; the existing boost window is 30 minutes. The coin Store label now reflects 30 minutes, not 24 hours. Coin-purchased boosts need a separate server-side fulfillment path and must not bypass Premium authorization by calling the existing RPC unsafely.
+- Existing Rewind is also explicitly Premium-only and calls `rewind_my_last_swipe()`; the current swipe-limit bypass is shared by Premium and Match Lite. Match Plus tier benefits therefore need deliberate server-side entitlement checks rather than changing Premium/Lite checks globally.
+- The existing database exposes `is_match_admin()` for the admin queue; the coin migration adds a separate `coin_is_admin()` helper. Both are admin-gated, but the deployed function behavior and grants still need test coverage.
 
 ## Required next validation
 1. Apply the migration only to a disposable Match development database and check all RLS/grants and function execution privileges.

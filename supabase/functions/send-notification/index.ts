@@ -9,7 +9,6 @@ const ACCOUNT_EMAIL_TYPES = new Set([
   "verification_rejected",
   "premium_welcome",
   "membership_payment_rejected",
-  "email_delivery_test",
 ]);
 
 function reply(body: Record<string, unknown>, status = 200) {

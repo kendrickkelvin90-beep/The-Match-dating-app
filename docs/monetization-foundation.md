@@ -69,6 +69,16 @@ This is a product proposal, not a verified parity map. Before connecting these e
 - The Match Lite migration is a separate 30-day entitlement and grants unlimited swipes plus access to received Likes. It must remain distinct from full Premium.
 - One historical migration in the branch currently constrains weekly Premium payment requests to ₦4,000. This is a code observation, not permission to change any Premium price. Kelvin has explicitly instructed that existing Premium prices remain untouched; verify the live source and obtain explicit direction before any Premium pricing edit.
 
+## Membership and admin authorization audit — source-only review
+- The frontend defines separate membership checks for Premium and Match Lite. Unlimited swipes are granted when either is active; the UI does not treat Match Lite as full Premium.
+- The received-Likes screen separately checks both memberships. Premium Nearby, Story replies, Story upload allowances and Premium messaging have Premium-specific checks in the frontend. The backend policies/RPCs must remain the final authority; a client-side check alone is not secure.
+- The Discover swipe cap is also enforced by database triggers, which is important because hiding/disabling the Like button in the browser is not sufficient protection.
+- The admin dashboard first calls the `is_match_admin` RPC, and the moderation Edge Function independently verifies the caller with that RPC before using the service-role client. This is the right general pattern: the browser must never decide that someone is an admin.
+- The `admin_review_match_request` routine is SECURITY DEFINER and checks `is_match_admin()` internally. In the migration inspected, it does not explicitly revoke EXECUTE from PUBLIC/anon or grant it only to authenticated. The internal admin check is an important safeguard, but explicit least-privilege grants should be added in a separately reviewed migration.
+- The definition and underlying source of truth for `is_match_admin()` were not located in the currently inspected migration set. Before adding wallet admin controls, verify that it uses a server-controlled admin table/claim and cannot be influenced by profile fields or client-supplied metadata.
+- Existing frontend membership reads query the member's own Premium/Lite row. Confirm the production RLS policies restrict these reads to the row owner and admins before reusing the pattern for wallet balances or transaction history.
+- No wallet UI, coin balance, or coin ledger is connected in this branch. A future wallet must use server-side atomic RPCs, enforce owner/admin authorization in the database, and never trust a balance or item price supplied by the browser.
+
 ## Existing production database findings (read-only inspection)
 - Existing tables include `profile_boosts`, `referral_codes`, `referrals`, and `referral_rewards`.
 - Existing referral tables currently expose member-owned read policies; do not recreate these tables.

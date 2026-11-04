@@ -2,36 +2,93 @@
 
 ## Delivery approach
 - Work only on `test/monetization-foundation-2026-11-04` until Kelvin approves testing.
-- Keep the existing Premium plans and Match Lite offer unchanged.
-- Do not change login, signup, Discover, Nearby, chat, profile verification, or existing admin controls as part of the first milestone.
-- Build distinct, uncluttered Wallet, Store, and Transaction History pages/sections. Keep the member-facing experience friendly and accessible in dark and light themes.
-- The current visual preview is `previews/match-store-preview.html`. It is intentionally standalone and uses only in-memory UI state; it does not connect to member data or payment services.
+- Do not merge or deploy without explicit approval.
+- Keep login, signup, Discover, Nearby, chat, verification, existing admin controls, Match Lite and production Premium entitlements protected during the transition.
+- The current interactive design preview is `previews/match-plus-store-preview.html`. It is standalone and uses only in-memory UI state; it is not connected to member data, wallet services or payments.
 
-## Existing database findings (read-only inspection of production)
+## Confirmed coin package pricing
+| Package | Coins | Price |
+|---|---:|---:|
+| Starter | 50 | ₦1,000 |
+| Popular | 120 | ₦2,000 |
+| Value | 260 | ₦4,000 |
+| Premium Bundle | 700 | ₦10,000 |
+| Ultimate Bundle | 1,500 | ₦20,000 |
+
+## Confirmed Match Plus membership prices
+| Tier | Duration | Coin cost | Agreed Naira reference price |
+|---|---:|---:|---:|
+| Match Plus | 30 days | 300 | ₦5,999 |
+| Match Quarterly | 90 days | 800 | ₦15,999 |
+| Match Annual | 365 days | 2,800 | ₦49,999 |
+
+Match Annual also receives 50 bonus coins every 30 days while the annual membership remains active. Rewards must be issued idempotently, recorded in the ledger, and not duplicated by retries. Unclaimed/missed rewards are not retroactively paid unless a future policy explicitly says otherwise.
+
+The Naira amounts are the agreed reference prices for the membership tiers. The actual checkout design must clearly distinguish purchasing coin packs from spending coins on membership, so the user is never charged twice for the same membership.
+
+## Confirmed individual Match Store prices
+| Item | Coin cost |
+|---|---:|
+| Profile Boost (24 hours) | 40 |
+| 3 Profile Boosts | 100 |
+| 1 Super Like | 10 |
+| 5 Super Likes | 45 |
+| 10 Extra Likes | 30 |
+| 30 Extra Likes | 75 |
+| Priority Visibility (7 days) | 100 |
+| Priority Visibility (30 days) | 250 |
+| Special Profile Badge | 100 |
+| Animated Profile Effect | 150 |
+
+Official identity-verification badges must never be sold or imitated by decorative badges. Avoid charging a member twice for a benefit already included in their active Match Plus tier.
+
+## Draft tier benefit allocation — requires comparison and approval before live fulfilment
+The current Premium page in `index.html` (lines 6060-6106 at the time of inspection) lists:
+- See who likes you.
+- Premium Nearby.
+- An additional benefit card whose title/detail needs full inspection.
+- Premium messaging.
+- Read receipts.
+- Swipe Rewind.
+- Profile Boost (30 minutes).
+- Premium badge.
+- Advanced Discovery controls (expanded distance and age ranges, verified/recently-active filters, additional role preferences).
+- Unlimited swipes (the current copy says free members can Like or Pass up to 20 profiles per day).
+- Exclusive access to Premium features.
+
+Draft allocation shown in the preview:
+- Match Plus (30 days): see who likes you; Premium Nearby cards; expanded age/distance controls; verified and recently-active filters; 3 daily Rewinds; 3 Stories per day; Match Plus badge.
+- Match Quarterly (90 days): everything in Match Plus; unlimited daily Likes; all advanced Discovery filters; 10 daily Rewinds; unlimited Stories; read receipts; priority profile visibility; one Profile Boost every 7 days; Quarterly badge.
+- Match Annual (365 days): every Match Plus and Quarterly benefit; Incognito browsing; unlimited Rewinds; all Premium messaging benefits; one Profile Boost every 24 hours; Annual gold badge; future Annual-member benefits; 50 bonus coins every 30 days while active.
+
+This is a product proposal, not a verified parity map. Before connecting these entitlements, inspect the full existing Premium page, actual feature gates, story limits, messaging behavior, swipe logic, filter controls, Nearby distance rules and any other current Premium-only benefits. Do not remove or downgrade any current paid entitlement by assumption. The final tier matrix must be explicitly confirmed.
+
+## Existing production database findings (read-only inspection)
 - Existing tables include `profile_boosts`, `referral_codes`, `referrals`, and `referral_rewards`.
 - Existing referral tables currently expose member-owned read policies; do not recreate these tables.
-- `profile_boosts` exists but the inspected policy list did not show a policy for it. Review its RLS, grants, and current consumers before connecting any UI.
+- `profile_boosts` exists but its RLS, grants, and current consumers must be reviewed before connecting UI.
 - No wallet or coin-ledger table was present in the public table inventory.
-- Existing Premium tables are separate and must not be modified for this project.
+- Existing Premium tables `premium_memberships` and `premium_payment_requests` are separate and must not be modified as part of the preview milestone.
+- The production project contains live member data. Do not run DDL or alter production entitlements for this work.
 
 ## Safe implementation sequence
-1. Obtain an isolated Supabase development database. The Supabase branch tool quoted **$0.01344/hour** for a database branch in the current organization. Do not create it until the owner explicitly approves this recurring cost.
-2. Inspect the existing database schema, RLS, grants, admin authorization function, and app navigation in the isolated environment.
-3. Design an append-only transaction ledger and wallet balance model. Never let a browser client directly set its own coin balance.
-4. Implement server-side, atomic credit/debit operations with idempotency keys, ownership checks, and audit metadata. Purchases remain pending until a verified payment event/admin confirmation.
-5. Connect the Wallet, Store, and History screens to authenticated RPCs; show no paid benefit until the corresponding transaction is confirmed.
-6. Reuse existing boost/referral foundations only after validating their semantics and access controls.
-7. Add admin review views and reconciliation tools after member flows pass.
-8. Test RLS as anonymous, ordinary member, and admin; test duplicate payment callbacks, retries, concurrent spends, insufficient balances, refunds/reversals, and unauthorized reads/writes.
-9. Run Supabase security/performance advisors and regression checks for login, signup, chat, Discover, Nearby, Premium and Match Lite.
-10. Ask Kelvin to test the branch. Do not merge or deploy without approval.
+1. Finish the product and tier-benefit matrix using the current Premium code and confirm it with Kelvin.
+2. Obtain an isolated Supabase development database. A Supabase branch was previously quoted at **$0.01344/hour**. Do not create it or incur that recurring cost without explicit approval. The second existing Supabase project must not be assumed to be a dev environment until its purpose and live connections are verified.
+3. Inspect the isolated database schema, RLS, grants, admin authorization, existing referral and boost semantics, and app navigation.
+4. Design an append-only transaction ledger and wallet model. Never let a browser client directly set its own coin balance.
+5. Implement server-side atomic credit/debit operations with idempotency keys, ownership checks, audit metadata and safe reversals.
+6. Keep payment pending until a verified provider event or admin confirmation. Never credit coins from a screenshot alone.
+7. Connect wallet, coin store, Match Plus tiers and transaction history to authenticated server-side operations.
+8. Implement annual 50-coin rewards with a unique period key so scheduled retries cannot double-credit.
+9. Add admin review, controlled coin adjustments and a complete audit trail.
+10. Test as anonymous, ordinary member and admin; test duplicate payment callbacks, retries, concurrent spends, insufficient balances, refunds/reversals, membership expiry/upgrades, annual rewards and unauthorized reads/writes.
+11. Run Supabase security/performance advisors and regression checks for login, signup, chat, Discover, Nearby, profile verification, Premium transition and Match Lite.
+12. Ask Kelvin to test the branch. Do not merge or deploy without explicit approval.
 
-## Preview pricing
-The amounts in the HTML preview are illustrative only and are not approved prices. Confirm pricing, payment provider, fulfilment rules, refund policy, and applicable legal requirements before enabling purchases.
-
-## Explicit non-goals for milestone one
+## Explicit non-goals for the current preview milestone
 - No live payment collection.
 - No live coin crediting or spending.
 - No production database changes.
-- No changes to existing Premium pricing or entitlements.
-- No merge to `main`.
+- No changes to existing Premium plans, payment requests or member entitlements.
+- No changes to login/signup, Discover, Nearby, chat, verification or Match Lite.
+- No merge to `main` and no deployment.

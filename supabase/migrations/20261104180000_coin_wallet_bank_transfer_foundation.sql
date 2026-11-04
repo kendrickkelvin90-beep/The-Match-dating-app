@@ -100,18 +100,23 @@ create or replace function public.coin_submit_purchase(
 ) returns uuid
 language plpgsql security definer set search_path = ''
 as $$
-declare v_uid uuid := auth.uid(); v_coins integer; v_amount integer; v_id uuid;
+declare v_uid uuid := auth.uid(); v_coins integer; v_amount integer; v_id uuid; v_pending integer;
 begin
   if v_uid is null then raise exception 'Sign in to continue'; end if;
   if length(trim(coalesce(p_sender_name,''))) not between 2 and 120 then raise exception 'Enter the sender name'; end if;
   if length(trim(coalesce(p_transfer_reference,''))) not between 3 and 160 then raise exception 'Enter the transfer reference'; end if;
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(v_uid::text, 3));
+  select count(*)::integer into v_pending
+    from public.coin_purchase_requests
+    where user_id=v_uid and status='pending';
+  if v_pending >= 3 then raise exception 'You already have 3 coin transfer requests awaiting review. Please wait for an administrator to review them.'; end if;
   select coins, amount into v_coins, v_amount from (values
     ('starter_50',50,1000),('popular_120',120,2000),('value_260',260,4000),
     ('bundle_700',700,10000),('ultimate_1500',1500,20000)
   ) as packs(code,coins,amount) where code=p_package_code;
   if v_coins is null then raise exception 'Invalid coin package'; end if;
   insert into public.coin_purchase_requests(user_id,package_code,coins,amount_ngn,sender_name,transfer_reference)
-  values(v_uid,p_package_code,v_coins,v_amount,trim(p_sender_name),trim(p_transfer_reference))
+  values(v_uid,p_package_code,v_coins,v_amount,trim(p_sender_name),upper(trim(p_transfer_reference)))
   returning id into v_id;
   insert into public.coin_wallets(user_id) values(v_uid) on conflict(user_id) do nothing;
   return v_id;

@@ -180,3 +180,44 @@ revoke all on function public.coin_buy_membership(text,text) from public, anon;
 grant execute on function public.coin_buy_membership(text,text) to authenticated;
 
 comment on table public.match_plus_daily_usage is 'Lagos-day usage counters for Match Plus tier allowances.';
+
+
+-- Story publishing allowances: Free / Lite retain one active Story at a time;
+-- Match Plus gets three per Lagos calendar day; Quarterly / Annual / Premium are unlimited.
+create or replace function public.enforce_match_story_entitlement()
+returns trigger language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_tier text;
+  v_day date := (now() at time zone 'Africa/Lagos')::date;
+  v_used integer;
+begin
+  if auth.uid() is null or auth.uid() <> new.user_id then
+    raise exception 'You can only publish Stories as yourself.';
+  end if;
+  if exists(select 1 from public.premium_memberships pm where pm.user_id=new.user_id and pm.premium_until>now())
+     or public.match_plus_active_tier(new.user_id) in ('quarterly','annual') then
+    return new;
+  end if;
+  v_tier:=public.match_plus_active_tier(new.user_id);
+  if v_tier='plus' then
+    insert into public.match_plus_daily_usage(user_id,usage_day,stories_created)
+    values(new.user_id,v_day,1)
+    on conflict(user_id,usage_day) do update
+      set stories_created=public.match_plus_daily_usage.stories_created+1
+      where public.match_plus_daily_usage.stories_created<3
+    returning stories_created into v_used;
+    if v_used is null then raise exception 'STORY_DAILY_LIMIT: Match Plus includes up to 3 Stories each day.'; end if;
+    return new;
+  end if;
+  if exists(select 1 from public.stories s where s.user_id=new.user_id and s.expires_at>now()) then
+    raise exception 'STORY_LIMIT: Free members can have one active Story at a time. Upgrade to Match Plus for more.';
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists enforce_match_story_entitlement on public.stories;
+create trigger enforce_match_story_entitlement
+before insert on public.stories
+for each row execute function public.enforce_match_story_entitlement();
+revoke all on function public.enforce_match_story_entitlement() from public, anon, authenticated;

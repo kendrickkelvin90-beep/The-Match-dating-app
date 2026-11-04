@@ -7567,6 +7567,7 @@ async function leaveChatPage() {
     activeConversationNode.classList.add("hidden");
   }
   activeChatUserId = null;
+  window.activeChatUserId = null;
 }
 
 async function goBackInApp() {
@@ -13432,6 +13433,7 @@ if(countError)throw countError;
 
           try {
             activeChatUserId = id;
+            window.activeChatUserId = id;
 
             show("chatPage");
             status("chatPageStatus", "Opening conversation...");
@@ -14631,6 +14633,7 @@ async function openChat(userId, userName){
     status("messagesStatus","Opening conversation...");
 $("chatMessages").replaceChildren();
     activeChatUserId = userId;
+    window.activeChatUserId = userId;
     
     // MATCH_LIVEKIT_CALL_UI_V1: voice-only controls, kept inside the chat header.
     ensureVoiceCallUI();
@@ -15431,7 +15434,9 @@ const receiverId = activeChatUserId;
 const viewOnce = Boolean(file && viewOnceToggle?.checked);
 
 button.disabled = true;
-button.textContent = "Sending...";
+button.textContent = "➤"; // Keep the send arrow visible; never show a blocking “Sending…” label.
+let optimisticBubble = null;
+let textMessageSaved = false;
 
 try {
 const { data: allowed, error: blockError } = await db.rpc(
@@ -15445,6 +15450,23 @@ if (allowed !== true) {
   throw new Error("This conversation is unavailable.");
 }
 
+// Render text optimistically so the sender sees it immediately after the
+// existing interaction permission check. The database remains authoritative.
+optimisticBubble = null;
+if (body) {
+  optimisticBubble = document.createElement("div");
+  optimisticBubble.className = "chat-bubble sent";
+  optimisticBubble.dataset.optimisticMessage = "true";
+  optimisticBubble.style.cssText = "align-self:flex-end;max-width:84%;padding:11px 14px;margin:6px 0;border-radius:16px;background:#29272c;color:#fff;overflow-wrap:anywhere;";
+  const optimisticText = document.createElement("span");
+  optimisticText.textContent = body;
+  const optimisticState = document.createElement("small");
+  optimisticState.textContent = "Sending…";
+  optimisticState.style.cssText = "display:block;margin-top:5px;text-align:right;color:#aaa;font-size:11px;";
+  optimisticBubble.append(optimisticText, optimisticState);
+  $("chatMessages").appendChild(optimisticBubble);
+  $("chatMessages").scrollTop = $("chatMessages").scrollHeight;
+}
 // Send an ordinary text message if one was entered.
 if (body) {
   const { error } = await db.from("messages").insert({
@@ -15454,6 +15476,12 @@ if (body) {
   });
 
   if (error) throw error;
+  textMessageSaved = true;
+  if (optimisticBubble) {
+    const state = optimisticBubble.querySelector("small");
+    if (state) state.textContent = "Sent";
+    optimisticBubble.removeAttribute("data-optimistic-message");
+  }
 }
 
 // Upload an attachment to the private chat-media bucket.
@@ -15513,6 +15541,11 @@ status(
 
 } catch (error) {
 console.error("Chat send failed:", error);
+if (!textMessageSaved && optimisticBubble?.isConnected) {
+  const state = optimisticBubble.querySelector("small");
+  if (state) state.textContent = "Not sent — please try again";
+  optimisticBubble.style.border = "1px solid #b65b5b";
+}
 
 status(
   "chatPageStatus",
@@ -18903,6 +18936,7 @@ body.light-theme #eventsPage .events-featured-meta strong {
 #adminPanel.hidden{display:none!important}
 </style>
 <script src="/coin-wallet.js"></script>
+<script src="/gifts.js"></script>
 </body>
 </html>
 

@@ -1,0 +1,58 @@
+name: Coin wallet PostgreSQL integration tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "coin-wallet.js"
+      - "gifts.js"
+      - "index.html"
+      - "supabase/migrations/**"
+      - "tests/coin-wallet/**"
+      - ".github/workflows/coin-wallet-postgres-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  postgres-integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: match_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d match_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/match_test
+    steps:
+      - name: Check out test branch
+        uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+      - name: Create disposable auth and app fixture
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/coin-wallet/setup.sql
+      - name: Apply wallet foundation to disposable database
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261104210236_coin_wallet_bank_transfer_foundation.sql
+      - name: Apply gift migration to disposable database
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261104225000_virtual_gifts.sql
+      - name: Apply wallet hardening migration to disposable database
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261104231000_harden_coin_idempotency_and_membership_locks.sql
+      - name: Run wallet, membership, gifts, and admin assertions
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/coin-wallet/assertions.sql
+      - name: Configure concurrency probes
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/coin-wallet/concurrency-setup.sql
+      - name: Run concurrent transaction tests
+        run: bash tests/coin-wallet/concurrency.sh

@@ -9055,6 +9055,69 @@ function distanceLabel(km){
 return km<1?Math.max(50,Math.round(km*1000/50)*50)+" m away":km.toFixed(1)+" km away";
 }
 
+// City-centre coordinates are used only as a labelled estimate when GPS distance
+// is unavailable. They are never saved as, or substituted for, member GPS data.
+const DISCOVER_CITY_COORDINATES = {
+  "abuja":[9.0765,7.3986],"fct":[9.0765,7.3986],"federal capital territory":[9.0765,7.3986],
+  "lagos":[6.5244,3.3792],"ikeja":[6.6018,3.3515],"lekki":[6.4698,3.5852],"ajah":[6.4698,3.5852],
+  "abeokuta":[7.1475,3.3619],"ogun":[7.1475,3.3619],"ogun state":[7.1475,3.3619],
+  "sagamu":[6.8485,3.6460],"ijebu ode":[6.8194,3.9173],"ota":[6.6886,3.2320],
+  "ifo":[6.8140,3.1950],"mowe":[6.8020,3.4360],"obafemi":[6.9500,3.5000],
+  "obafemi owode":[6.9500,3.5000],"owode":[6.9500,3.5000],
+  "ibadan":[7.3775,3.9470],"oyo":[7.8500,3.9333],"osogbo":[7.7827,4.5418],
+  "ilorin":[8.4966,4.5421],"lokoja":[7.8023,6.7333],"akure":[7.2571,5.2058],
+  "ado ekiti":[7.6233,5.2209],"benin city":[6.3350,5.6037],"asaba":[6.1980,6.7330],
+  "warri":[5.5167,5.7500],"port harcourt":[4.8156,7.0498],"yenagoa":[4.9267,6.2676],
+  "uyo":[5.0377,7.9128],"calabar":[4.9757,8.3417],"owerri":[5.4891,7.0176],
+  "umuahia":[5.5249,7.4946],"aba":[5.1066,7.3667],"enugu":[6.4584,7.5464],
+  "awka":[6.2101,7.0741],"onitsha":[6.1498,6.7857],"abakaliki":[6.3249,8.1137],
+  "makurdi":[7.7322,8.5391],"lafia":[8.4939,8.5153],"jos":[9.8965,8.8583],
+  "bauchi":[10.3103,9.8439],"gombe":[10.2897,11.1673],"yola":[9.2035,12.4954],
+  "maiduguri":[11.8311,13.1510],"damaturu":[11.7469,11.9608],"potiskum":[11.7091,11.0817],
+  "kano":[12.0022,8.5920],"katsina":[12.9908,7.6018],"daura":[13.0329,8.3235],
+  "sokoto":[13.0059,5.2476],"gusau":[12.1704,6.6641],"kebbi":[12.4539,4.1975],
+  "birnin kebbi":[12.4539,4.1975],"minna":[9.6139,6.5569],"kontagora":[10.3999,5.4695],
+  "kaduna":[10.5105,7.4165],"zaria":[11.0855,7.7199],"jalingo":[8.8937,11.3596],
+  "damaturu":[11.7469,11.9608],"dutse":[11.7562,9.3380],"kafanchan":[9.5813,8.2926],
+  "ondo":[7.0932,4.8353],"oyo state":[7.3775,3.9470],"cross river":[4.9757,8.3417],
+  "akwa ibom":[5.0377,7.9128],"rivers":[4.8156,7.0498],"delta":[6.1980,6.7330],
+  "imo":[5.4891,7.0176],"anambra":[6.2101,7.0741],"ebonyi":[6.3249,8.1137],
+  "abia":[5.5249,7.4946],"bayelsa":[4.9267,6.2676],"edo":[6.3350,5.6037],
+  "ekiti":[7.6233,5.2209],"osun":[7.7827,4.5418],"kwara":[8.4966,4.5421],
+  "kogi":[7.8023,6.7333],"nasarawa":[8.4939,8.5153],"plateau":[9.8965,8.8583],
+  "adamawa":[9.2035,12.4954],"borno":[11.8311,13.1510],"yobe":[11.7469,11.9608],
+  "taraba":[8.8937,11.3596],"benue":[7.7322,8.5391],"niger":[9.6139,6.5569],
+  "kano state":[12.0022,8.5920],"kaduna state":[10.5105,7.4165],"sokoto state":[13.0059,5.2476],
+  "katsina state":[12.9908,7.6018],"zamfara":[12.1704,6.6641],"kebbi state":[12.4539,4.1975],
+  "jigawa":[11.7562,9.3380],"gombe state":[10.2897,11.1673],"bauchi state":[10.3103,9.8439],
+  "borno state":[11.8311,13.1510],"yobe state":[11.7469,11.9608],"adamawa state":[9.2035,12.4954],
+  "taraba state":[8.8937,11.3596]
+};
+function resolveDiscoverCityCoordinates(value){
+  if(!value || typeof value!=="string") return null;
+  const normalize=s=>s.normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .toLowerCase().replace(/\b(state| nigeria)\b/g,"").replace(/[^a-z0-9 ]/g," ")
+    .replace(/\s+/g," ").trim();
+  const parts=value.split(/[,|]/).map(normalize).filter(Boolean);
+  for(const part of parts){
+    if(DISCOVER_CITY_COORDINATES[part]) return DISCOVER_CITY_COORDINATES[part];
+  }
+  const whole=normalize(value);
+  if(DISCOVER_CITY_COORDINATES[whole]) return DISCOVER_CITY_COORDINATES[whole];
+  const keys=Object.keys(DISCOVER_CITY_COORDINATES).sort((a,b)=>b.length-a.length);
+  for(const key of keys){
+    if((" "+whole+" ").includes(" "+key+" ")) return DISCOVER_CITY_COORDINATES[key];
+
+  }
+  return null;
+}
+function approximateDiscoverCityDistanceKm(fromCity,toCity){
+  const from=resolveDiscoverCityCoordinates(fromCity);
+  const to=resolveDiscoverCityCoordinates(toCity);
+  if(!from || !to) return null;
+  return kmBetween(from[0],from[1],to[0],to[1]);
+}
+
 $("locationButton").onclick=()=>{
 if(!navigator.geolocation){
 status("profileStatus","Location is not supported by this browser. You can still save your profile.");return;
@@ -10066,11 +10129,18 @@ async function loadNearby(){
 
 if (error) throw error;
 
-let people = (peopleData || []).map(p => ({
-  ...p,
-  _distance:
-    p.distance_km == null ? null : Number(p.distance_km)
-}));
+const viewerCityForDistance = ($("city")?.value || "").trim();
+let people = (peopleData || []).map(p => {
+  const gpsDistance = p.distance_km == null ? null : Number(p.distance_km);
+  const cityDistance = gpsDistance == null
+    ? approximateDiscoverCityDistanceKm(viewerCityForDistance, p.city)
+    : null;
+  return {
+    ...p,
+    _distance: gpsDistance,
+    _approx_distance: cityDistance
+  };
+});
     
     const discoverIds = people.map(p => p.id);
 
@@ -10078,7 +10148,7 @@ let people = (peopleData || []).map(p => ({
       const { data: verificationProfiles, error: verificationError } =
         await db
           .from("profiles")
-          .select("id,is_verified,verification_level,gender_presentation")
+          .select("id,is_verified,verification_level,gender_presentation,city")
           .in("id", discoverIds);
 
       if (verificationError) throw verificationError;
@@ -10088,15 +10158,19 @@ let people = (peopleData || []).map(p => ({
           profile.id,
           {
             is_verified: profile.is_verified,
-            verification_level: profile.verification_level
+            verification_level: profile.verification_level,
+            city: profile.city
           }
         ])
       );
 
-      people = people.map(person => ({
-        ...person,
-        ...(verificationById.get(person.id) || {})
-      }));
+      people = people.map(person => {
+        const enriched = { ...person, ...(verificationById.get(person.id) || {}) };
+        if (enriched._distance == null && enriched._approx_distance == null) {
+          enriched._approx_distance = approximateDiscoverCityDistanceKm(viewerCityForDistance, enriched.city);
+        }
+        return enriched;
+      });
       if(rolePreferences.length){
         people=people.filter(person=>Array.isArray(person.sexual_roles)&&person.sexual_roles.some(role=>rolePreferences.includes(role)));
       }
@@ -10156,11 +10230,17 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
 
   if (expandedError) throw expandedError;
 
-  people = (expandedData || []).map(p => ({
-    ...p,
-    _distance:
-      p.distance_km == null ? null : Number(p.distance_km)
-  }));
+  people = (expandedData || []).map(p => {
+    const gpsDistance = p.distance_km == null ? null : Number(p.distance_km);
+    const cityDistance = gpsDistance == null
+      ? approximateDiscoverCityDistanceKm(viewerCityForDistance, p.city)
+      : null;
+    return {
+      ...p,
+      _distance: gpsDistance,
+      _approx_distance: cityDistance
+    };
+  });
 
   const expandedIds = people.map(p => p.id);
 
@@ -10170,7 +10250,7 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
       error: expandedVerificationError
     } = await db
       .from("profiles")
-      .select("id,is_verified,verification_level,gender_presentation")
+      .select("id,is_verified,verification_level,gender_presentation,city")
       .in("id", expandedIds);
 
     if (expandedVerificationError) {
@@ -10182,15 +10262,19 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
         profile.id,
         {
           is_verified: profile.is_verified,
-          verification_level: profile.verification_level
+          verification_level: profile.verification_level,
+            city: profile.city
         }
       ])
     );
 
-    people = people.map(person => ({
-      ...person,
-      ...(verificationById.get(person.id) || {})
-    }));
+    people = people.map(person => {
+      const enriched = { ...person, ...(verificationById.get(person.id) || {}) };
+      if (enriched._distance == null && enriched._approx_distance == null) {
+        enriched._approx_distance = approximateDiscoverCityDistanceKm(viewerCityForDistance, enriched.city);
+      }
+      return enriched;
+    });
     if(rolePreferences.length){
       people=people.filter(person=>Array.isArray(person.sexual_roles)&&person.sexual_roles.some(role=>rolePreferences.includes(role)));
     }
@@ -10426,7 +10510,11 @@ infoOverlay.appendChild(name);
 
 const distance=document.createElement("div");
 distance.className="distance";
-distance.textContent=p._distance==null?"Distance unavailable":distanceLabel(p._distance);
+distance.textContent=p._distance!=null
+  ? distanceLabel(p._distance)
+  : p._approx_distance!=null
+    ? "Approx. "+distanceLabel(p._approx_distance)
+    : "Location unavailable";
 distance.style.cssText="font-size:14px;color:#e4c783;margin:0 0 10px;font-weight:750;text-shadow:0 2px 12px #000;";
 infoOverlay.appendChild(distance);
 

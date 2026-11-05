@@ -6252,10 +6252,10 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
   </button>
   </div>
   <div id="memberProfileDetails"></div>
-  <section id="discoverFirstMessageBox" class="member-card hidden" aria-label="First message from Discover" style="margin:14px 0;padding:16px;border:1px solid rgba(214,180,110,.45);border-radius:18px;background:linear-gradient(145deg,rgba(214,180,110,.10),rgba(20,20,20,.96));">
+  <section id="discoverFirstMessageBox" class="member-card hidden" aria-label="First message from Discover" style="margin:14px 0;padding:16px;border:1px solid rgba(214,180,110,.45);border-radius:18px;background:var(--tm-surface,linear-gradient(145deg,rgba(214,180,110,.10),rgba(20,20,20,.96)));">
     <h3 style="margin:0 0 6px;color:#e8c77f;">✉ Send a first message</h3>
     <p id="discoverFirstMessageHint" class="small" style="margin:0 0 12px;">Use one Boost Profile message ticket to start a conversation.</p>
-    <textarea id="discoverFirstMessageInput" rows="3" maxlength="2000" placeholder="Write a friendly introduction..." style="width:100%;box-sizing:border-box;min-height:94px;padding:13px;border:1px solid #806a43;border-radius:13px;background:#111;color:#fff;resize:vertical;"></textarea>
+    <textarea id="discoverFirstMessageInput" rows="3" maxlength="2000" placeholder="Write a friendly introduction..." style="width:100%;box-sizing:border-box;min-height:94px;padding:13px;border:1px solid var(--tm-border-strong,#806a43);border-radius:13px;background:var(--tm-surface-raised,#111);color:var(--tm-text,#fff);resize:vertical;"></textarea>
     <button id="discoverFirstMessageSend" class="btn primary" type="button" style="width:100%;margin-top:10px;">Send first message · 1 ticket</button>
     <button id="discoverFirstMessageActivate" class="btn secondary" type="button" style="width:100%;margin-top:9px;display:none;">✦ Activate another Boost Profile</button>
   </section>
@@ -13778,6 +13778,7 @@ $("refreshLikes").onclick=loadLikesPage;
 $("backFromMatches").onclick=()=>show("discover");
 $("backFromMessages").onclick=()=>show("matches");
  let selectedMemberId = null;
+let memberProfileOpenedFromDiscover = false;
 
 async function loadDiscoverFirstMessageBox(memberId) {
   const box = $("discoverFirstMessageBox");
@@ -13904,16 +13905,20 @@ async function loadDiscoverFirstMessageBox(memberId) {
       if (/NO_BOOST_MESSAGE_TICKETS/i.test(message)) {
         hint.textContent = "You've used all your first-message tickets. Activate another purchased Boost Profile to message someone new.";
         input.disabled = true;
+        send.disabled = true;
+        send.textContent = "No message tickets available";
         activate.style.display = "";
+      } else {
+        send.disabled = false;
+        send.textContent = "Send first message · 1 ticket";
       }
       status("memberProfileStatus", "Could not send your first message: " + friendly(error), true);
-      send.disabled = false;
-      send.textContent = "Send first message · 1 ticket";
     }
   };
 }
 
 async function openMemberProfile(memberId){
+  memberProfileOpenedFromDiscover = currentPage === "discover";
   selectedMemberId = memberId;
   show("memberProfilePage");
   $("memberProfileDetails").replaceChildren();
@@ -14098,7 +14103,11 @@ photo.onclick = () => {
     );
     addProfileDetail("About this member",sanitizeProfileBio(p.bio) || "No description added yet.");
 
-    await loadDiscoverFirstMessageBox(memberId);
+    if (memberProfileOpenedFromDiscover) {
+      await loadDiscoverFirstMessageBox(memberId);
+    } else {
+      $("discoverFirstMessageBox")?.classList.add("hidden");
+    }
     status("memberProfileStatus","");
   }catch(e){
     status("memberProfileStatus","Could not load profile: "+friendly(e),true);

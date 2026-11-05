@@ -9976,6 +9976,22 @@ let fallback=(email.split("@")[0]||"Member")
 .replace(/[._-]+/g," ")
 .replace(/\b\w/g,ch=>ch.toUpperCase());
 $("greeting").textContent="Welcome, "+fallback+"! ❤️";
+// Show the signed-in member's own active Special Profile Badge on My Profile.
+// This is display-only: it never purchases, consumes, or changes inventory.
+const { data: ownActiveBadgeRows, error: ownActiveBadgeError } = await db.rpc(
+  "get_active_profile_badge_ids",
+  { p_user_ids: [user.id] }
+);
+if (ownActiveBadgeError) {
+  console.warn("Your Special Profile Badge status could not be loaded:", ownActiveBadgeError);
+} else if ((ownActiveBadgeRows || []).some(row => row.user_id === user.id)) {
+  const ownSpecialBadge = document.createElement("span");
+  ownSpecialBadge.className = "tm-special-profile-badge";
+  ownSpecialBadge.textContent = " ✦ SPECIAL";
+  ownSpecialBadge.title = "Your active Special Profile Badge";
+  ownSpecialBadge.setAttribute("aria-label", "Your active Special Profile Badge");
+  $("greeting").appendChild(ownSpecialBadge);
+}
 show("profile", false);
   setTimeout(showReferralToast, 1200);
 $("bottomNavigation").querySelector('[data-page="discover"]').classList.add("active");

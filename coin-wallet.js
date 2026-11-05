@@ -120,14 +120,18 @@
     const {data:wallet,error}=await client.from("coin_wallets").select("balance").eq("user_id",user.id).maybeSingle();
     if(error)throw error;
     document.getElementById("cwBalance").textContent=(wallet?.balance||0).toLocaleString("en-NG")+" coins";
-    const [ledger,requests,inventory,activeBadge]=await Promise.all([
+    const [ledger,requests,inventory]=await Promise.all([
       client.from("coin_ledger").select("amount,entry_type,description,created_at,balance_after").eq("user_id",user.id).order("created_at",{ascending:false}).limit(40),
       client.from("coin_purchase_requests").select("id,coins,amount_ngn,status,admin_note,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(20),
-      client.from("coin_store_inventory").select("item_code,quantity").eq("user_id",user.id),
-      client.rpc("get_active_profile_badge_ids",{p_user_ids:[user.id]})
+      client.from("coin_store_inventory").select("item_code,quantity").eq("user_id",user.id)
     ]);
-    if(ledger.error)throw ledger.error;if(requests.error)throw requests.error;if(inventory.error)throw inventory.error;if(activeBadge.error)throw activeBadge.error;
-    const badgeIsActive=(activeBadge.data||[]).some(row=>row.user_id===user.id);
+    if(ledger.error)throw ledger.error;if(requests.error)throw requests.error;if(inventory.error)throw inventory.error;
+    // Badge activation is an optional enhancement. If its production migration has
+    // not been applied yet, keep the wallet and individual store usable.
+    let badgeIsActive=false;
+    const activeBadge=await client.rpc("get_active_profile_badge_ids",{p_user_ids:[user.id]});
+    if(!activeBadge.error) badgeIsActive=(activeBadge.data||[]).some(row=>row.user_id===user.id);
+    else console.warn("Profile badge status is unavailable; coin store remains usable.",activeBadge.error);
     renderStore(inventory.data||[],badgeIsActive);
     document.getElementById("cwLedger").innerHTML=ledger.data?.length?ledger.data.map(x=>'<div class="cw-row"><span><strong>'+esc(x.description)+'</strong><br><small class="cw-muted">'+esc(new Date(x.created_at).toLocaleString())+'</small></span><strong style="color:'+(x.amount>0?'#62c78c':'#d58c8c')+'">'+(x.amount>0?'+':'')+x.amount+' coins</strong></div>').join(""):'No wallet transactions yet.';
     document.getElementById("cwRequests").innerHTML=requests.data?.length?requests.data.map(x=>'<div class="cw-row"><span>'+x.coins+' coins · '+money(x.amount_ngn)+'<br><small class="cw-muted">'+esc(x.admin_note||'Submitted '+new Date(x.created_at).toLocaleString())+'</small></span><strong>'+esc(x.status)+'</strong></div>').join(""):'No coin purchase requests yet.';

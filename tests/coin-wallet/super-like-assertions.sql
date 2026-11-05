@@ -4,6 +4,9 @@ select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111'
 insert into public.coin_wallets(user_id,balance)
 values('11111111-1111-4111-8111-111111111111',0)
 on conflict(user_id) do nothing;
+update public.coin_store_inventory set quantity=0
+where user_id='11111111-1111-4111-8111-111111111111'
+  and item_code in ('super_like_1','super_like_5');
 insert into public.coin_store_inventory(user_id,item_code,quantity)
 values('11111111-1111-4111-8111-111111111111','super_like_1',1)
 on conflict(user_id,item_code) do update set quantity=excluded.quantity;
@@ -44,6 +47,9 @@ $$;
 -- Verify the larger Super Like pack is consumable and mutual likes are detected.
 insert into public.likes(liker_id,liked_id)
 values('11111111-1111-4111-8111-111111111111','33333333-3333-4333-8333-333333333333');
+update public.coin_store_inventory set quantity=0
+where user_id='33333333-3333-4333-8333-333333333333'
+  and item_code in ('super_like_1','super_like_5');
 insert into public.coin_store_inventory(user_id,item_code,quantity)
 values('33333333-3333-4333-8333-333333333333','super_like_5',2)
 on conflict(user_id,item_code) do update set quantity=excluded.quantity;

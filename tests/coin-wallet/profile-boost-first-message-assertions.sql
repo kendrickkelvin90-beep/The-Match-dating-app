@@ -85,6 +85,19 @@ select public.test_assert(
   'both participants can continue the conversation for free after the first-message ticket is used'
 );
 
+-- A member without a mutual match or a Boost-funded conversation cannot
+-- inject a message into an unrelated member's inbox.
+set role authenticated;
+select set_config('request.jwt.claim.sub','55555555-5555-4555-8555-555555555555',false);
+select public.test_expect_error(
+  $insert into public.messages(sender_id,receiver_id,body)
+    values('55555555-5555-4555-8555-555555555555',
+           '33333333-3333-4333-8333-333333333333',
+           'Unauthorized cold message')$,
+  'row-level security'
+);
+reset role;
+
 -- A three-boost pack yields three separate first-message tickets when all
 -- three purchased activations are activated.
 set role authenticated;

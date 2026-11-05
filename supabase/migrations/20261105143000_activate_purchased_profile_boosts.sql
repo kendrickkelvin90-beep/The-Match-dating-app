@@ -37,7 +37,7 @@ begin
 
     -- Convert the pack into two remaining single-use 24-hour boosts.
     insert into public.coin_store_inventory(user_id,item_code,quantity,updated_at)
-    values(v_uid,'profile_boost_24h',2,v_now)
+    values(v_uid,'profile_boost_24h',3,v_now)
     on conflict(user_id,item_code) do update
       set quantity = public.coin_store_inventory.quantity + excluded.quantity,
           updated_at = excluded.updated_at;

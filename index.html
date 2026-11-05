@@ -4506,6 +4506,10 @@ textarea.match-dialog-input{min-height:112px;resize:vertical}
   OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
       appId: "c5deb192-536d-4498-ba4b-b973d50d5ba6",
+      // Share the app's root-scope worker so OneSignal and the PWA
+      // never replace each other's service-worker registration.
+      serviceWorkerPath: "/service-worker.js",
+      serviceWorkerParam: { scope: "/" },
     });
   });
 </script>

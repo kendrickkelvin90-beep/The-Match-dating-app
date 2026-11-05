@@ -9405,7 +9405,11 @@ function showMatchNotification(title, body, type) {
         body: type === "like"
           ? "Someone likes you on The Match!"
           : body,
-        tag: "the-match-" + type
+        // Use The Match's own brand icon instead of Chrome's generic fallback.
+        icon: window.location.origin + "/icons/file_00000000194481f48390cd96271ae5c9.png",
+        badge: window.location.origin + "/icons/file_00000000194481f48390cd96271ae5c9.png",
+        tag: "the-match-" + type,
+        renotify: true
       });
     } catch (error) {
       console.warn("Notification unavailable:", error);

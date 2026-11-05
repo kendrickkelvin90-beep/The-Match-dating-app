@@ -122,10 +122,10 @@ select public.test_assert(
 set role authenticated;
 select set_config('request.jwt.claim.sub','55555555-5555-4555-8555-555555555555',false);
 select public.test_expect_error(
-  $insert into public.messages(sender_id,receiver_id,body)
+  $stmt$insert into public.messages(sender_id,receiver_id,body)
     values('55555555-5555-4555-8555-555555555555',
            '33333333-3333-4333-8333-333333333333',
-           'Unauthorized cold message')$,
+           'Unauthorized cold message')$stmt$,
   'row-level security'
 );
 reset role;

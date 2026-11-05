@@ -1,7 +1,7 @@
 -- Purchased Profile Boost first-message ticket and free continuation tests.
 insert into public.coin_store_inventory(user_id,item_code,quantity)
 values
- ('55555555-5555-4555-8555-555555555555','profile_boost_24h',1),
+ ('55555555-5555-4555-8555-555555555555','profile_boost_24h',2),
  ('66666666-6666-4666-8666-666666666666','profile_boost_3',1)
 on conflict(user_id,item_code) do update set quantity=excluded.quantity;
 
@@ -42,21 +42,53 @@ begin
     'idempotent retry does not create a duplicate message');
 end
 $first_message$;
+-- A second purchased activation adds another ticket. A failed delivery
+-- (foreign-key rejection for a deleted/nonexistent target) must roll it back.
+do $second_ticket$
+declare v_result jsonb;
+begin
+  v_result := public.activate_my_purchased_profile_boost('profile_boost_24h');
+  perform public.test_assert((v_result->>'remaining_message_tickets')::integer=1,
+    'second purchased activation grants a second message ticket');
+end
+$second_ticket$;
 select public.test_expect_error(
-  $$select public.send_discover_first_message(
+  $select public.send_discover_first_message(
+    'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    'This should fail delivery',
+    'boost-first-message-555-fail'
+  )$,
+  'foreign key'
+);
+select public.test_assert(
+  (select count(*)=1 from public.profile_boost_message_tickets
+   where user_id='55555555-5555-4555-8555-555555555555'
+     and used_at is null and expires_at > now()),
+  'a failed message delivery does not consume its ticket'
+);
+select public.test_assert(
+  (public.send_discover_first_message(
     '33333333-3333-4333-8333-333333333333',
     'A second new conversation',
     'boost-first-message-555-002'
-  )$$,
-  'NO_BOOST_MESSAGE_TICKETS'
+  )->>'sent')::boolean,
+  'a second purchased ticket can start a second conversation'
 );
 select public.test_expect_error(
-  $$select public.send_discover_first_message(
-    '22222222-2222-4222-8222-222222222222',
-    'Another first message',
+  $select public.send_discover_first_message(
+    '44444444-4444-4444-8444-444444444444',
+    'A third new conversation without a ticket',
     'boost-first-message-555-003'
-  )$$,
-  'already used a first-message ticket'
+  )$,
+  'NO_BOOST_MESSAGE_TICKETS'
+);
+select public.test_assert(
+  (public.send_discover_first_message(
+    '22222222-2222-4222-8222-222222222222',
+    'Retry to the same person',
+    'boost-first-message-555-004'
+  )->>'already_sent')::boolean,
+  'a second ticket is not consumed to contact the same person again'
 );
 reset role;
 

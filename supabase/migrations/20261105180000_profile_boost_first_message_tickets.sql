@@ -119,6 +119,7 @@ grant execute on function public.activate_my_purchased_profile_boost(text) to au
 
 -- Permit the two participants to continue chatting after the boost-funded
 -- first message, even if they have not mutually liked each other.
+alter table public.messages enable row level security;
 drop policy if exists messages_boost_initiated_conversation_insert on public.messages;
 create policy messages_boost_initiated_conversation_insert
   on public.messages

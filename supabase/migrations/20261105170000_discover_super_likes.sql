@@ -92,6 +92,14 @@ begin
   insert into public.super_likes(sender_id, recipient_id, idempotency_key)
   values(v_uid, p_target_user_id, p_idempotency_key);
 
+  insert into public.notifications(user_id, type, title, body)
+  values(
+    p_target_user_id,
+    'like',
+    'You received a Super Like',
+    'Someone sent you a Super Like. Open The Match to see who it was.'
+  );
+
   select coalesce(sum(i.quantity),0)::integer into v_remaining
   from public.coin_store_inventory i
   where i.user_id = v_uid and i.item_code in ('super_like_1','super_like_5');

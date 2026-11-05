@@ -53,11 +53,11 @@ begin
 end
 $second_ticket$;
 select public.test_expect_error(
-  $select public.send_discover_first_message(
+  $stmt$select public.send_discover_first_message(
     'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
     'This should fail delivery',
     'boost-first-message-555-fail'
-  )$,
+  )$stmt$,
   'foreign key'
 );
 select public.test_assert(
@@ -75,11 +75,11 @@ select public.test_assert(
   'a second purchased ticket can start a second conversation'
 );
 select public.test_expect_error(
-  $select public.send_discover_first_message(
+  $stmt$select public.send_discover_first_message(
     '44444444-4444-4444-8444-444444444444',
     'A third new conversation without a ticket',
     'boost-first-message-555-003'
-  )$,
+  )$stmt$,
   'NO_BOOST_MESSAGE_TICKETS'
 );
 select public.test_assert(

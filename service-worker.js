@@ -1,5 +1,8 @@
 
-const CACHE_NAME = "the-match-shell-v2";
+// One root-scope service worker must handle both PWA caching and OneSignal push.
+importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
+
+const CACHE_NAME = "the-match-shell-v3";
 const APP_SHELL = ["/", "/index.html", "/manifest.webmanifest", "/icons/icon.svg"];
 
 self.addEventListener("install", (event) => {

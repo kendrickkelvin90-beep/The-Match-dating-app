@@ -10481,6 +10481,7 @@ if(discoverPanel){
 }
 const card=document.createElement("div");
 card.className="member-card discover-option3-card";
+card.dataset.memberId = p.id;
 card.style.cssText="position:relative;display:block;width:calc(100% + 24px);max-width:none;height:clamp(440px,calc(100svh - 340px),680px);min-height:440px;max-height:680px;box-sizing:border-box;margin:0 0 0 -12px;padding:0;border:0;border-radius:0;background:#080808;box-shadow:none;touch-action:pan-y;overflow:hidden;will-change:transform,opacity;animation:discoverCardEnter 260ms cubic-bezier(.2,.75,.25,1) both;";
 
 
@@ -10635,8 +10636,9 @@ if (p.is_verified || p.verification_level === "basic" ||
 if (p.is_premium) {
   const premiumBadge = document.createElement("span");
   premiumBadge.className = "tm-premium-profile-badge";
-  premiumBadge.textContent = " PREMIUM";
-  premiumBadge.style.cssText = "display:inline-block;margin-left:7px;padding:4px 8px;border-radius:999px;background:linear-gradient(135deg,#e2c17d,#a77b32);color:#17130b;font-size:10px;font-weight:900;letter-spacing:.7px;vertical-align:middle;";
+  premiumBadge.textContent = "♛";
+  premiumBadge.setAttribute("aria-label", "Premium member");
+  premiumBadge.style.cssText = "display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;margin-left:7px;border-radius:50%;background:linear-gradient(135deg,#f6dfaa,#bd8b39);color:#241a08;font-size:18px;font-weight:900;vertical-align:middle;box-shadow:0 2px 10px rgba(226,193,125,.35);";
   premiumBadge.title = "Active Premium member";
   name.appendChild(premiumBadge);
 }
@@ -10645,7 +10647,9 @@ if(p.age){const age=document.createElement("span");age.textContent=" · "+p.age;
 if (p.has_special_badge) {
   const specialBadge = document.createElement("span");
   specialBadge.className = "tm-special-profile-badge";
-  specialBadge.textContent = " SPECIAL";
+  specialBadge.textContent = "✦";
+  specialBadge.setAttribute("aria-label", "Special profile badge");
+  specialBadge.style.cssText = "display:inline-flex;align-items:center;justify-content:center;width:25px;height:25px;margin-left:7px;border-radius:50%;background:linear-gradient(135deg,#d9f5ef,#5eb8a8);color:#123b36;font-size:17px;font-weight:900;vertical-align:middle;box-shadow:0 2px 10px rgba(94,184,168,.3);";
   specialBadge.title = "Special Profile Badge";
   specialBadge.setAttribute("aria-label", "Special Profile Badge");
   name.appendChild(specialBadge);
@@ -10791,6 +10795,14 @@ like.textContent="♥";
 like.setAttribute("aria-label","Like this profile");
 like.title="Like";
 like.style.cssText="flex:1;min-height:54px;border-radius:18px;border:1px solid #ff6b9d;background:linear-gradient(135deg,#ff397b,#d91659);color:#fff;font-size:16px;font-weight:800;box-shadow:0 5px 18px #ff397b35;";
+const superLike=document.createElement("button");
+superLike.type="button";
+superLike.className="discover-super-like";
+superLike.innerHTML='<span aria-hidden="true">✦</span>';
+superLike.setAttribute("aria-label","Send a Super Like");
+superLike.title="Super Like · Uses one from your Coin Store inventory";
+superLike.style.cssText="flex:1;min-height:54px;max-width:74px;border-radius:19px;border:1px solid rgba(255,224,145,.95);background:radial-gradient(circle at 35% 20%,#fff5c8 0%,#e8bd59 38%,#a66b1c 100%);color:#241707;font-size:31px;font-weight:900;line-height:1;box-shadow:0 5px 20px rgba(230,183,77,.38),inset 0 1px 0 rgba(255,255,255,.65);text-shadow:0 1px 1px rgba(255,255,255,.45);";
+
 if (!currentDiscoverIsPremium && currentDailySwipesUsed >= 20) {
   like.disabled = true;
   pass.disabled = true;
@@ -10908,8 +10920,47 @@ if(matchError)throw matchError;
   }
 };
 
+superLike.onclick=async()=>{
+  if(superLike.disabled)return;
+  superLike.disabled=true;
+  like.disabled=true;
+  pass.disabled=true;
+  const targetId=p.id;
+  const requestKey="discover-super-like:"+currentUser.id+":"+targetId+":"+crypto.randomUUID();
+  try{
+    const {data,error}=await db.rpc("send_super_like",{
+      p_target_user_id:targetId,
+      p_idempotency_key:requestKey
+    });
+    if(error)throw error;
+    status("discoverStatus",data?.matched
+      ?"It's a match! Your Super Like was sent. ❤️"
+      :"Super Like sent! They'll know you picked them. ✨");
+    if(data?.matched){
+      showMatchNotification?.("It's a Match!","A Super Like and your like are mutual.","match");
+    }
+    await refreshDailyLikeCounter();
+    await animateCardExit("right");
+    personIndex++;
+    await showPerson();
+  }catch(error){
+    const message=String(error?.message||error);
+    if(/NO_SUPER_LIKES/i.test(message)){
+      status("discoverStatus","You're out of Super Likes. Open your Coin Wallet and buy more from the Match Store.",true);
+      document.querySelector('#bottomNavigation [data-page="coinWalletPage"]')?.click();
+      setTimeout(()=>document.querySelector('#coinWalletPage [data-cw-tab="store"]')?.click(),350);
+    }else{
+      status("discoverStatus","Couldn't send your Super Like: "+friendly(error),true);
+    }
+    superLike.disabled=false;
+    like.disabled=false;
+    pass.disabled=false;
+  }
+};
 
-      actions.append(pass,like);
+
+
+      actions.append(pass,superLike,like);
       actions.style.cssText="display:flex;justify-content:center;align-items:center;gap:10px;margin:4px 0 0;padding:0;";
       infoOverlay.appendChild(actions);
       photoBox.appendChild(infoOverlay);
@@ -13787,15 +13838,18 @@ if (p.verification_level === "enhanced" ||
 if (memberHasSpecialBadge) {
   const specialBadge = document.createElement("span");
   specialBadge.className = "tm-special-profile-badge";
-  specialBadge.textContent = " SPECIAL";
+  specialBadge.textContent = "✦";
+  specialBadge.setAttribute("aria-label", "Special profile badge");
+  specialBadge.style.cssText = "display:inline-flex;align-items:center;justify-content:center;width:25px;height:25px;margin-left:7px;border-radius:50%;background:linear-gradient(135deg,#d9f5ef,#5eb8a8);color:#123b36;font-size:17px;font-weight:900;vertical-align:middle;box-shadow:0 2px 10px rgba(94,184,168,.3);";
   specialBadge.title = "Special Profile Badge";
   name.appendChild(specialBadge);
 }
 if (memberIsPremium) {
   const premiumBadge = document.createElement("span");
   premiumBadge.className = "tm-premium-profile-badge";
-  premiumBadge.textContent = " PREMIUM";
-  premiumBadge.style.cssText = "display:inline-block;margin-left:7px;padding:4px 8px;border-radius:999px;background:linear-gradient(135deg,#e2c17d,#a77b32);color:#17130b;font-size:10px;font-weight:900;letter-spacing:.7px;vertical-align:middle;";
+  premiumBadge.textContent = "♛";
+  premiumBadge.setAttribute("aria-label", "Premium member");
+  premiumBadge.style.cssText = "display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;margin-left:7px;border-radius:50%;background:linear-gradient(135deg,#f6dfaa,#bd8b39);color:#241a08;font-size:18px;font-weight:900;vertical-align:middle;box-shadow:0 2px 10px rgba(226,193,125,.35);";
   premiumBadge.title = "Active Premium member";
   name.appendChild(premiumBadge);
 }

@@ -6252,13 +6252,6 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
   </button>
   </div>
   <div id="memberProfileDetails"></div>
-  <section id="discoverFirstMessageBox" class="member-card hidden" aria-label="First message from Discover" style="margin:14px 0;padding:16px;border:1px solid rgba(214,180,110,.45);border-radius:18px;background:var(--tm-surface,linear-gradient(145deg,rgba(214,180,110,.10),rgba(20,20,20,.96)));">
-    <h3 style="margin:0 0 6px;color:#e8c77f;">✉ Send a first message</h3>
-    <p id="discoverFirstMessageHint" class="small" style="margin:0 0 12px;">Use one Boost Profile message ticket to start a conversation.</p>
-    <textarea id="discoverFirstMessageInput" rows="3" maxlength="2000" placeholder="Write a friendly introduction..." style="width:100%;box-sizing:border-box;min-height:94px;padding:13px;border:1px solid var(--tm-border-strong,#806a43);border-radius:13px;background:var(--tm-surface-raised,#111);color:var(--tm-text,#fff);resize:vertical;"></textarea>
-    <button id="discoverFirstMessageSend" class="btn primary" type="button" style="width:100%;margin-top:10px;">Send first message · 1 ticket</button>
-    <button id="discoverFirstMessageActivate" class="btn secondary" type="button" style="width:100%;margin-top:9px;display:none;">✦ Activate another Boost Profile</button>
-  </section>
   <p class="status" id="memberProfileStatus"></p>  <button class="btn primary" id="messageMemberButton" type="button">
     💬 Message
   </button>  <button class="btn secondary" id="blockMemberButton" type="button">
@@ -10687,7 +10680,7 @@ detailsToggle.style.cssText =
 
 const detailsPanel = document.createElement("div");
 detailsPanel.style.cssText =
-  "display:none;max-height:18svh;overflow-y:auto;padding:5px 10px 8px;margin:0 0 8px;border-radius:12px;background:rgba(8,8,8,.72);color:#f2eee5;backdrop-filter:blur(10px);";
+  "display:none;max-height:34svh;overflow-y:auto;padding:5px 10px 8px;margin:0 0 8px;border-radius:12px;background:rgba(8,8,8,.72);color:#f2eee5;backdrop-filter:blur(10px);";
 
 const details = document.createElement("p");
 details.className = "small";
@@ -10734,6 +10727,7 @@ detailsToggle.onclick = () => {
   detailsToggle.setAttribute("aria-expanded", String(!expanded));
 };
 
+appendDiscoverFirstMessageComposer(detailsPanel, p.id, p.display_name);
 infoOverlay.append(detailsToggle, detailsPanel);
 
 const actions = document.createElement("div");
@@ -13778,24 +13772,55 @@ $("refreshLikes").onclick=loadLikesPage;
 $("backFromMatches").onclick=()=>show("discover");
 $("backFromMessages").onclick=()=>show("matches");
  let selectedMemberId = null;
-let memberProfileOpenedFromDiscover = false;
 
-async function loadDiscoverFirstMessageBox(memberId) {
-  const box = $("discoverFirstMessageBox");
-  const input = $("discoverFirstMessageInput");
-  const send = $("discoverFirstMessageSend");
-  const hint = $("discoverFirstMessageHint");
-  const activate = $("discoverFirstMessageActivate");
-  if (!box || !input || !send || !hint || !activate || !currentUser || !memberId) return;
+function appendDiscoverFirstMessageComposer(detailsPanel, memberId, memberName) {
+  if (!detailsPanel || !currentUser || !memberId) return;
 
-  box.classList.remove("hidden");
-  input.value = "";
-  input.disabled = true;
-  send.disabled = true;
-  activate.style.display = "none";
+  const box = document.createElement("section");
+  box.className = "discover-first-message-box";
+  box.style.cssText = "margin:12px 0 5px;padding:13px;border:1px solid rgba(214,180,110,.48);border-radius:15px;background:rgba(12,11,10,.92);";
+  const heading = document.createElement("strong");
+  heading.textContent = "✉ Send a first message";
+  heading.style.cssText = "display:block;color:#e8c77f;font-size:14px;margin-bottom:6px;";
+  const hint = document.createElement("p");
+  hint.className = "small";
   hint.textContent = "Checking your Boost Profile message tickets...";
+  hint.style.cssText = "font-size:12px;line-height:1.5;margin:0 0 9px;color:#e9e1d1;";
+  const input = document.createElement("textarea");
+  input.rows = 2;
+  input.maxLength = 2000;
+  input.placeholder = "Write a friendly introduction...";
+  input.style.cssText = "width:100%;box-sizing:border-box;min-height:76px;padding:11px;border:1px solid #806a43;border-radius:11px;background:#111;color:#fff;resize:vertical;font:inherit;";
+  const send = document.createElement("button");
+  send.type = "button";
+  send.className = "btn primary";
+  send.textContent = "Send first message · 1 ticket";
+  send.style.cssText = "width:100%;margin-top:8px;min-height:42px;";
+  const activate = document.createElement("button");
+  activate.type = "button";
+  activate.className = "btn secondary";
+  activate.textContent = "✦ Activate another Boost Profile";
+  activate.style.cssText = "display:none;width:100%;margin-top:8px;min-height:42px;";
+  const continueChat = document.createElement("button");
+  continueChat.type = "button";
+  continueChat.className = "btn secondary";
+  continueChat.textContent = "💬 Continue in Chats";
+  continueChat.style.cssText = "display:none;width:100%;margin-top:8px;min-height:42px;";
+  box.append(heading,hint,input,send,activate,continueChat);
+  detailsPanel.appendChild(box);
 
-  try {
+  const openConversation = async () => {
+    show("messages");
+    await loadMyConversations();
+    await openChat(memberId, memberName || "Member");
+  };
+
+  const refreshTicketState = async () => {
+    input.disabled = true;
+    send.disabled = true;
+    send.style.display = "";
+    activate.style.display = "none";
+    continueChat.style.display = "none";
     const { data: tickets, error } = await db.from("profile_boost_message_tickets")
       .select("id,recipient_id,expires_at,used_at")
       .eq("user_id", currentUser.id)
@@ -13805,37 +13830,32 @@ async function loadDiscoverFirstMessageBox(memberId) {
     const alreadyMessaged = (tickets || []).some(ticket =>
       ticket.recipient_id === memberId && !!ticket.used_at
     );
-    const available = (tickets || []).filter(ticket => !ticket.used_at && new Date(ticket.expires_at).getTime() > Date.now()).length;
+    const available = (tickets || []).filter(ticket =>
+      !ticket.used_at && new Date(ticket.expires_at).getTime() > Date.now()
+    ).length;
 
     if (alreadyMessaged) {
       hint.textContent = "You've already used a first-message ticket for this member. Continue your conversation in Chats.";
       input.placeholder = "Your first message has already been sent.";
-      input.disabled = true;
       send.style.display = "none";
-      activate.style.display = "none";
+      continueChat.style.display = "";
       return;
     }
 
-    send.style.display = "";
-    input.disabled = available < 1;
-    send.disabled = available < 1;
     if (available > 0) {
       hint.textContent = available + " first-message ticket" + (available === 1 ? "" : "s") + " available. Sending successfully uses one ticket. Replies and the rest of this conversation are free.";
       input.placeholder = "Write a friendly introduction...";
+      input.disabled = false;
+      send.disabled = false;
       send.textContent = "Send first message · 1 ticket";
-      activate.style.display = "none";
     } else {
       hint.textContent = "You've used all your first-message tickets. Activate another purchased Boost Profile to get another first-message ticket and a fresh 24-hour visibility period.";
       input.placeholder = "Activate another Boost Profile to send a first message...";
-      activate.style.display = "";
+      send.disabled = true;
       send.textContent = "No message tickets available";
+      activate.style.display = "";
     }
-  } catch (error) {
-    hint.textContent = "Message tickets could not be checked: " + friendly(error);
-    input.disabled = true;
-    send.disabled = true;
-    activate.style.display = "none";
-  }
+  };
 
   activate.onclick = async () => {
     activate.disabled = true;
@@ -13859,13 +13879,12 @@ async function loadDiscoverFirstMessageBox(memberId) {
         return;
       }
 
-      const { data, error } = await db.rpc("activate_my_purchased_profile_boost", { p_item_code: itemCode });
+      const { error } = await db.rpc("activate_my_purchased_profile_boost", { p_item_code: itemCode });
       if (error) throw error;
-      await loadDiscoverFirstMessageBox(memberId);
-      await loadNearby();
-      status("memberProfileStatus", "Your 24-hour Profile Boost is active and one first-message ticket has been added.");
+      await refreshTicketState();
+      status("discoverStatus", "Your purchased 24-hour Profile Boost is active and one first-message ticket has been added.");
     } catch (error) {
-      status("memberProfileStatus", "Could not activate another Profile Boost: " + friendly(error), true);
+      hint.textContent = "Could not activate a Profile Boost: " + friendly(error);
     } finally {
       activate.disabled = false;
       activate.textContent = "✦ Activate another Boost Profile";
@@ -13875,15 +13894,10 @@ async function loadDiscoverFirstMessageBox(memberId) {
   send.onclick = async () => {
     const body = input.value.trim();
     if (!body) {
-      status("memberProfileStatus", "Write a message before sending.", true);
+      hint.textContent = "Write a message before sending.";
       input.focus();
       return;
     }
-    if (body.length > 2000) {
-      status("memberProfileStatus", "Messages can contain up to 2,000 characters.", true);
-      return;
-    }
-
     send.disabled = true;
     send.textContent = "Sending...";
     try {
@@ -13893,31 +13907,38 @@ async function loadDiscoverFirstMessageBox(memberId) {
         p_idempotency_key: "boost-first-message:" + crypto.randomUUID()
       });
       if (error) throw error;
-
-      const memberName = $("memberProfileName").textContent.replace(/ ❤️$/, "");
-      status("memberProfileStatus", "Your first message was sent. You can continue chatting for free.");
-      show("messages");
-      await loadMyConversations();
-      await openChat(memberId, memberName);
+      input.value = "";
+      await refreshTicketState();
+      status("discoverStatus", "Your first message to " + (memberName || "this member") + " was sent. You can continue chatting for free.");
+      await openConversation();
     } catch (error) {
       const message = String(error?.message || error);
       if (/NO_BOOST_MESSAGE_TICKETS/i.test(message)) {
-        hint.textContent = "You've used all your first-message tickets. Activate another purchased Boost Profile to message someone new.";
+        hint.textContent = "You've used all your first-message tickets. Activate another purchased Boost Profile to get another ticket and 24-hour visibility.";
         input.disabled = true;
         send.disabled = true;
         send.textContent = "No message tickets available";
         activate.style.display = "";
       } else {
+        hint.textContent = "Could not send your first message: " + friendly(error);
         send.disabled = false;
         send.textContent = "Send first message · 1 ticket";
       }
-      status("memberProfileStatus", "Could not send your first message: " + friendly(error), true);
     }
   };
+
+  continueChat.onclick = () => openConversation().catch(error => {
+    hint.textContent = "Could not open Chats: " + friendly(error);
+  });
+
+  refreshTicketState().catch(error => {
+    hint.textContent = "Message tickets could not be checked: " + friendly(error);
+    input.disabled = true;
+    send.disabled = true;
+  });
 }
 
 async function openMemberProfile(memberId){
-  memberProfileOpenedFromDiscover = currentPage === "discover";
   selectedMemberId = memberId;
   show("memberProfilePage");
   $("memberProfileDetails").replaceChildren();
@@ -14102,11 +14123,6 @@ photo.onclick = () => {
     );
     addProfileDetail("About this member",sanitizeProfileBio(p.bio) || "No description added yet.");
 
-    if (memberProfileOpenedFromDiscover) {
-      await loadDiscoverFirstMessageBox(memberId);
-    } else {
-      $("discoverFirstMessageBox")?.classList.add("hidden");
-    }
     status("memberProfileStatus","");
   }catch(e){
     status("memberProfileStatus","Could not load profile: "+friendly(e),true);

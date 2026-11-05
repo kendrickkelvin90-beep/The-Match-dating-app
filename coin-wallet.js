@@ -59,6 +59,7 @@
     #coinWalletPage .cw-actions button{flex:1}
     #coinWalletPage .cw-account{padding:13px;border:1px dashed rgba(231,199,127,.5);border-radius:13px;background:rgba(8,20,21,.5);margin:12px 0}
     #coinWalletPage .cw-account strong{color:#f0d89d;letter-spacing:.4px}
+    #coinWalletPage .cw-badge-state{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;padding:10px;border:1px solid rgba(231,199,127,.3);border-radius:12px;background:rgba(7,15,15,.38);color:#e8d4a7;font-size:12px}
     #coinWalletPage .cw-package-featured{border-color:#d7b66f;box-shadow:0 0 0 1px rgba(215,182,111,.15),0 10px 25px rgba(0,0,0,.2)}
     #coinWalletPage .cw-package-tag{display:inline-block;padding:4px 8px;border-radius:99px;background:rgba(101,190,173,.16);color:#8cdbcb;font-size:10px;font-weight:800;margin-bottom:8px}
     @media(max-width:480px){#coinWalletPage .cw-grid{grid-template-columns:1fr}#coinWalletPage .cw-balance{font-size:36px}#coinWalletPage .cw-hero{padding:21px}#coinWalletPage .cw-tabs{gap:5px}#coinWalletPage .cw-tabs button{font-size:11px;padding:9px 5px}}
@@ -119,25 +120,42 @@
     const {data:wallet,error}=await client.from("coin_wallets").select("balance").eq("user_id",user.id).maybeSingle();
     if(error)throw error;
     document.getElementById("cwBalance").textContent=(wallet?.balance||0).toLocaleString("en-NG")+" coins";
-    const [ledger,requests,inventory]=await Promise.all([
+    const [ledger,requests,inventory,activeBadge]=await Promise.all([
       client.from("coin_ledger").select("amount,entry_type,description,created_at,balance_after").eq("user_id",user.id).order("created_at",{ascending:false}).limit(40),
       client.from("coin_purchase_requests").select("id,coins,amount_ngn,status,admin_note,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(20),
-      client.from("coin_store_inventory").select("item_code,quantity").eq("user_id",user.id)
+      client.from("coin_store_inventory").select("item_code,quantity").eq("user_id",user.id),
+      client.rpc("get_active_profile_badge_ids",{p_user_ids:[user.id]})
     ]);
-    if(ledger.error)throw ledger.error;if(requests.error)throw requests.error;if(inventory.error)throw inventory.error;
-    renderStore(inventory.data||[]);
+    if(ledger.error)throw ledger.error;if(requests.error)throw requests.error;if(inventory.error)throw inventory.error;if(activeBadge.error)throw activeBadge.error;
+    const badgeIsActive=(activeBadge.data||[]).some(row=>row.user_id===user.id);
+    renderStore(inventory.data||[],badgeIsActive);
     document.getElementById("cwLedger").innerHTML=ledger.data?.length?ledger.data.map(x=>'<div class="cw-row"><span><strong>'+esc(x.description)+'</strong><br><small class="cw-muted">'+esc(new Date(x.created_at).toLocaleString())+'</small></span><strong style="color:'+(x.amount>0?'#62c78c':'#d58c8c')+'">'+(x.amount>0?'+':'')+x.amount+' coins</strong></div>').join(""):'No wallet transactions yet.';
     document.getElementById("cwRequests").innerHTML=requests.data?.length?requests.data.map(x=>'<div class="cw-row"><span>'+x.coins+' coins · '+money(x.amount_ngn)+'<br><small class="cw-muted">'+esc(x.admin_note||'Submitted '+new Date(x.created_at).toLocaleString())+'</small></span><strong>'+esc(x.status)+'</strong></div>').join(""):'No coin purchase requests yet.';
   }
-  function renderStore(rows){
+  function renderStore(rows,badgeIsActive){
     const owned=new Map(rows.map(row=>[row.item_code,Number(row.quantity||0)]));
     document.getElementById("cwStoreItems").innerHTML=STORE_ITEMS.map(item=>{
       const count=(owned.get(item.code)||0)*item.quantity;
-      return '<article class="cw-card"><h3>'+item.name+'</h3><div class="cw-price">'+item.cost+' coins</div><p class="cw-muted">In your inventory: <strong>'+count+'</strong></p><button class="cw-button primary" data-cw-store-item="'+item.code+'">Buy '+item.name+'</button></article>';
+      const badgeControl=item.code==="decorative_badge"&&count>0
+        ? '<div class="cw-badge-state"><span>'+(badgeIsActive?'✦ Badge is active on your profile':'Badge is not active')+'</span><button type="button" class="cw-button '+(badgeIsActive?'':'primary')+'" data-cw-badge-toggle="'+(badgeIsActive?'off':'on')+'">'+(badgeIsActive?'Deactivate':'Activate badge')+'</button></div>'
+        : '';
+      return '<article class="cw-card"><h3>'+item.name+'</h3><div class="cw-price">'+item.cost+' coins</div><p class="cw-muted">In your inventory: <strong>'+count+'</strong></p><button class="cw-button primary" data-cw-store-item="'+item.code+'">Buy '+item.name+'</button>'+badgeControl+'</article>';
     }).join("");
   }
   document.getElementById("cwPackages").innerHTML=PACKS.map((p,i)=>'<article class="cw-card '+(i===1?'cw-package-featured':'')+'">'+(i===1?'<span class="cw-package-tag">MOST POPULAR</span>':'')+'<h3>'+p[1]+'</h3><div class="cw-price">'+p[2]+'</div><strong>'+p[3]+'</strong><button class="cw-button primary" data-cw-package="'+p[0]+'">Choose package</button></article>').join("");
   page.addEventListener("click",async event=>{
+    const badgeToggle=event.target.closest("[data-cw-badge-toggle]");
+    if(badgeToggle){
+      badgeToggle.disabled=true;
+      const activate=badgeToggle.dataset.cwBadgeToggle==="on";
+      try{
+        const {error}=await client.rpc("set_my_profile_badge_active",{p_active:activate});
+        if(error)throw error;
+        await refresh();
+        status(activate?"Your Special Profile Badge is now active and visible on your profile, Discover and member profile views.":"Your Special Profile Badge has been deactivated.");
+      }catch(error){status(error.message||"Could not update your profile badge.");badgeToggle.disabled=false;}
+      return;
+    }
     const packageButton=event.target.closest("[data-cw-package]");
     if(packageButton){selected=PACKS.find(p=>p[0]===packageButton.dataset.cwPackage);document.getElementById("cwSelectedPackage").textContent=selected[2]+" · "+selected[3];document.getElementById("cwPaymentAmount").textContent="Please transfer exactly "+selected[3]+" for "+selected[2]+".";document.getElementById("cwTransfer").hidden=false;status("Transfer the exact amount, then submit your sender name and reference.");document.getElementById("cwTransfer").scrollIntoView({behavior:"smooth",block:"center"});}
     const storeButton=event.target.closest("[data-cw-store-item]");

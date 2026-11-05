@@ -4466,8 +4466,38 @@ textarea.match-dialog-input{min-height:112px;resize:vertical}
 }
 
 
-/* Member-owned Special Profile Badge — consistent across profile surfaces */
-.tm-special-profile-badge{display:inline-flex;align-items:center;vertical-align:middle;margin:3px 0 3px 7px;padding:4px 9px;border:1px solid rgba(236,203,126,.9);border-radius:999px;background:linear-gradient(135deg,#f4dfa8,#c79a4e);color:#251b0b!important;font-size:10px;font-weight:900;letter-spacing:.7px;line-height:1.2;text-shadow:none;box-shadow:0 2px 10px rgba(199,154,78,.22);white-space:nowrap}
+/* Distinct membership identities: Special medallion and Premium platinum crown. */
+.tm-special-profile-badge,
+.tm-premium-profile-badge{
+  display:inline-flex;align-items:center;gap:5px;vertical-align:middle;
+  margin:3px 0 3px 7px;padding:5px 10px 5px 7px;
+  border-radius:999px;font-size:10px;font-weight:900;letter-spacing:.75px;
+  line-height:1.2;text-shadow:none;white-space:nowrap;
+}
+.tm-special-profile-badge{
+  border:1px solid rgba(239,213,165,.88);
+  background:linear-gradient(135deg,#30233e,#21182e 65%,#46334e);
+  color:#f6e5bd!important;
+  box-shadow:0 2px 12px rgba(49,31,63,.35),inset 0 0 0 1px rgba(239,213,165,.12);
+}
+.tm-special-profile-badge::before{
+  content:"✦";display:inline-grid;place-items:center;width:19px;height:19px;
+  flex:0 0 19px;border:1px solid #e9c982;border-radius:50%;
+  background:radial-gradient(circle at 35% 25%,#f6e5bd,#bd965b 75%);
+  color:#30233e;font-size:12px;line-height:1;
+}
+.tm-premium-profile-badge{
+  border:1px solid rgba(222,235,242,.85);
+  background:linear-gradient(135deg,#23465a,#122d3e 62%,#31556a);
+  color:#f0f5f7!important;
+  box-shadow:0 2px 12px rgba(18,45,62,.35),inset 0 0 0 1px rgba(226,238,244,.1);
+}
+.tm-premium-profile-badge::before{
+  content:"♛";display:inline-grid;place-items:center;width:20px;height:19px;
+  flex:0 0 20px;border-radius:6px;
+  background:linear-gradient(135deg,#fff,#c9d8df);
+  color:#173448;font-size:15px;line-height:1;
+}
 
 </style>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
@@ -9987,7 +10017,7 @@ if (ownActiveBadgeError) {
 } else if ((ownActiveBadgeRows || []).some(row => row.user_id === user.id)) {
   const ownSpecialBadge = document.createElement("span");
   ownSpecialBadge.className = "tm-special-profile-badge";
-  ownSpecialBadge.textContent = " ✦ SPECIAL";
+  ownSpecialBadge.textContent = " SPECIAL";
   ownSpecialBadge.title = "Your active Special Profile Badge";
   ownSpecialBadge.setAttribute("aria-label", "Your active Special Profile Badge");
   $("greeting").appendChild(ownSpecialBadge);
@@ -10180,8 +10210,8 @@ async function loadNearby(){
     greeting?.querySelector(".own-premium-badge")?.remove();
     if (viewerPremium && greeting) {
       const ownBadge = document.createElement("span");
-      ownBadge.className = "own-premium-badge";
-      ownBadge.textContent = " ✦ PREMIUM";
+      ownBadge.className = "own-premium-badge tm-premium-profile-badge";
+      ownBadge.textContent = " PREMIUM";
       ownBadge.style.cssText = "display:inline-block;margin-left:7px;padding:4px 8px;border-radius:999px;background:linear-gradient(135deg,#e2c17d,#a77b32);color:#17130b;font-size:10px;font-weight:900;letter-spacing:.7px;";
       greeting.appendChild(ownBadge);
     }
@@ -10604,7 +10634,8 @@ if (p.is_verified || p.verification_level === "basic" ||
 
 if (p.is_premium) {
   const premiumBadge = document.createElement("span");
-  premiumBadge.textContent = " ✦ PREMIUM";
+  premiumBadge.className = "tm-premium-profile-badge";
+  premiumBadge.textContent = " PREMIUM";
   premiumBadge.style.cssText = "display:inline-block;margin-left:7px;padding:4px 8px;border-radius:999px;background:linear-gradient(135deg,#e2c17d,#a77b32);color:#17130b;font-size:10px;font-weight:900;letter-spacing:.7px;vertical-align:middle;";
   premiumBadge.title = "Active Premium member";
   name.appendChild(premiumBadge);
@@ -10614,7 +10645,7 @@ if(p.age){const age=document.createElement("span");age.textContent=" · "+p.age;
 if (p.has_special_badge) {
   const specialBadge = document.createElement("span");
   specialBadge.className = "tm-special-profile-badge";
-  specialBadge.textContent = " ✦ SPECIAL";
+  specialBadge.textContent = " SPECIAL";
   specialBadge.title = "Special Profile Badge";
   specialBadge.setAttribute("aria-label", "Special Profile Badge");
   name.appendChild(specialBadge);
@@ -11335,7 +11366,7 @@ async function loadPremiumNearby(){
     people.forEach(p=>{
       const card=document.createElement("div");card.className="member-card";
       const name=document.createElement("h3");name.appendChild(document.createTextNode(p.display_name||"The Match member"));
-      if(p.has_special_badge){const specialBadge=document.createElement("span");specialBadge.className="tm-special-profile-badge";specialBadge.textContent=" ✦ SPECIAL";specialBadge.title="Special Profile Badge";name.appendChild(specialBadge);}
+      if(p.has_special_badge){const specialBadge=document.createElement("span");specialBadge.className="tm-special-profile-badge";specialBadge.textContent=" SPECIAL";specialBadge.title="Special Profile Badge";name.appendChild(specialBadge);}
       if(p.is_verified||p.verification_level==="basic"||p.verification_level==="enhanced"){
         const tick=document.createElement("span");tick.textContent=" ✓";tick.style.color="#D4AF37";tick.title="Verified profile";name.appendChild(tick);
       }
@@ -13726,13 +13757,14 @@ if (p.verification_level === "enhanced" ||
 if (memberHasSpecialBadge) {
   const specialBadge = document.createElement("span");
   specialBadge.className = "tm-special-profile-badge";
-  specialBadge.textContent = " ✦ SPECIAL";
+  specialBadge.textContent = " SPECIAL";
   specialBadge.title = "Special Profile Badge";
   name.appendChild(specialBadge);
 }
 if (memberIsPremium) {
   const premiumBadge = document.createElement("span");
-  premiumBadge.textContent = " ✦ PREMIUM";
+  premiumBadge.className = "tm-premium-profile-badge";
+  premiumBadge.textContent = " PREMIUM";
   premiumBadge.style.cssText = "display:inline-block;margin-left:7px;padding:4px 8px;border-radius:999px;background:linear-gradient(135deg,#e2c17d,#a77b32);color:#17130b;font-size:10px;font-weight:900;letter-spacing:.7px;vertical-align:middle;";
   premiumBadge.title = "Active Premium member";
   name.appendChild(premiumBadge);

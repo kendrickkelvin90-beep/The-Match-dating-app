@@ -10937,7 +10937,7 @@ superLike.onclick=async()=>{
       ?"It's a match! Your Super Like was sent. ❤️"
       :"Super Like sent! They'll know you picked them. ✨");
     if(data?.matched){
-      showMatchNotification?.("It's a Match!","A Super Like and your like are mutual.","match");
+      showMatchNotification("It's a Match!","A Super Like and your like are mutual.","match");
     }
     await refreshDailyLikeCounter();
     await animateCardExit("right");

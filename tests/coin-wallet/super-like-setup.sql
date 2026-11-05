@@ -32,4 +32,4 @@ create policy messages_fixture_select_participants
 drop policy if exists messages_fixture_insert_sender on public.messages;
 create policy messages_fixture_insert_sender
   on public.messages for insert to authenticated
-  with check (sender_id=(select auth.uid()));
+  with check (false); -- Only the production mutual-match policy or the new Boost-ticket policy may authorize inserts.

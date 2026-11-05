@@ -11311,9 +11311,15 @@ async function loadPremiumNearby(){
       status("nearbyMembersStatus",mapCount?"The map is ready. No member cards are available yet.":"No nearby members are available yet.");
       return;
     }
+    const nearbyMemberIds=people.map(person=>person.id);
+    const {data:nearbyBadgeRows,error:nearbyBadgeError}=await db.rpc("get_active_profile_badge_ids",{p_user_ids:nearbyMemberIds});
+    if(nearbyBadgeError)throw nearbyBadgeError;
+    const nearbyBadgeIds=new Set((nearbyBadgeRows||[]).map(row=>row.user_id));
+    people=people.map(person=>({...person,has_special_badge:nearbyBadgeIds.has(person.id)}));
     people.forEach(p=>{
       const card=document.createElement("div");card.className="member-card";
       const name=document.createElement("h3");name.appendChild(document.createTextNode(p.display_name||"The Match member"));
+      if(p.has_special_badge){const specialBadge=document.createElement("span");specialBadge.className="tm-special-profile-badge";specialBadge.textContent=" ✦ SPECIAL";specialBadge.title="Special Profile Badge";name.appendChild(specialBadge);}
       if(p.is_verified||p.verification_level==="basic"||p.verification_level==="enhanced"){
         const tick=document.createElement("span");tick.textContent=" ✓";tick.style.color="#D4AF37";tick.title="Verified profile";name.appendChild(tick);
       }

@@ -135,11 +135,12 @@ select public.test_assert((select count(*)=1 from public.coin_store_purchases wh
 select public.coin_buy_store_item('extra_likes_10','store:extra-likes-10:test-0001');
 select public.test_assert((select balance=615 from public.coin_wallets where user_id='11111111-1111-4111-8111-111111111111'),'Extra Likes purchase did not deduct 30 coins');
 select public.test_assert((select quantity=1 from public.coin_store_inventory where user_id='11111111-1111-4111-8111-111111111111' and item_code='extra_likes_10'),'ten Extra Likes were not added to inventory');
+select set_config('request.jwt.claim.sub','77777777-7777-4777-8777-777777777777',false);
 select public.test_expect_error(
   $cmd$select public.coin_buy_store_item('extra_likes_30','store:extra-likes-30:insufficient')$cmd$,
   'Not enough coins'
 );
-select public.test_assert((select balance=615 from public.coin_wallets where user_id='11111111-1111-4111-8111-111111111111'),'insufficient store purchase changed wallet');
+select public.test_assert((select balance=615 from public.coin_wallets where user_id='11111111-1111-4111-8111-111111111111'),'store purchase test wallet balance changed unexpectedly');
 select public.test_expect_error(
   $cmd$select public.coin_buy_store_item('profile_boost_24h','store:unsupported:item-0001')$cmd$,
   'not available for purchase'

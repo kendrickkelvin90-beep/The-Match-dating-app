@@ -125,6 +125,7 @@ create policy messages_boost_initiated_conversation_insert
   for insert to authenticated
   with check (
     sender_id = (select auth.uid())
+    and public.can_interact_with_member(receiver_id)
     and exists (
       select 1
       from public.profile_boost_message_tickets t

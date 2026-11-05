@@ -10721,13 +10721,14 @@ if (p.bio) {
 detailsToggle.onclick = () => {
   const expanded = detailsPanel.style.display !== "none";
   detailsPanel.style.display = expanded ? "none" : "block";
+  if (!expanded) refreshFirstMessageTicketState?.();
   detailsToggle.textContent = expanded
     ? "⌄  View details"
     : "⌃  Hide details";
   detailsToggle.setAttribute("aria-expanded", String(!expanded));
 };
 
-appendDiscoverFirstMessageComposer(detailsPanel, p.id, p.display_name);
+const refreshFirstMessageTicketState = appendDiscoverFirstMessageComposer(detailsPanel, p.id, p.display_name);
 infoOverlay.append(detailsToggle, detailsPanel);
 
 const actions = document.createElement("div");
@@ -13931,7 +13932,7 @@ function appendDiscoverFirstMessageComposer(detailsPanel, memberId, memberName) 
     hint.textContent = "Could not open Chats: " + friendly(error);
   });
 
-  refreshTicketState().catch(error => {
+  return () => refreshTicketState().catch(error => {
     hint.textContent = "Message tickets could not be checked: " + friendly(error);
     input.disabled = true;
     send.disabled = true;

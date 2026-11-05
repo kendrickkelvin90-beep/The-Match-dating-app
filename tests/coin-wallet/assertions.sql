@@ -6,7 +6,8 @@ insert into public.coin_wallets(user_id,balance) values
  ('22222222-2222-4222-8222-222222222222',200),
  ('33333333-3333-4333-8333-333333333333',300),
  ('44444444-4444-4444-8444-444444444444',300),
- ('55555555-5555-4555-8555-555555555555',0)
+ ('55555555-5555-4555-8555-555555555555',0),
+ ('66666666-6666-4666-8666-666666666666',2000)
 on conflict(user_id) do update set balance=excluded.balance;
 
 insert into public.match_plus_memberships(user_id,tier,started_at,expires_at) values
@@ -124,7 +125,54 @@ select public.test_assert(not has_function_privilege('authenticated','public.coi
 select public.test_assert(has_function_privilege('authenticated','public.coin_buy_membership(text,text)','EXECUTE'),'authenticated role cannot execute coin_buy_membership');
 
 
--- Step 10: exercise the actual gift RLS policies as authenticated members.
+-- Step 10: individual store purchases debit once and credit the matching inventory.
+select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+select public.coin_buy_store_item('super_like_5','store:super-like-5:test-0001');
+select public.coin_buy_store_item('super_like_5','store:super-like-5:test-0001');
+select public.test_assert((select balance=645 from public.coin_wallets where user_id='11111111-1111-4111-8111-111111111111'),'super-like retry charged more than once');
+select public.test_assert((select quantity=1 from public.coin_store_inventory where user_id='11111111-1111-4111-8111-111111111111' and item_code='super_like_5'),'five Super Likes were not added to inventory');
+select public.test_assert((select count(*)=1 from public.coin_store_purchases where user_id='11111111-1111-4111-8111-111111111111' and item_code='super_like_5'),'super-like retry created multiple purchase records');
+select public.coin_buy_store_item('extra_likes_10','store:extra-likes-10:test-0001');
+select public.test_assert((select balance=615 from public.coin_wallets where user_id='11111111-1111-4111-8111-111111111111'),'Extra Likes purchase did not deduct 30 coins');
+select public.test_assert((select quantity=1 from public.coin_store_inventory where user_id='11111111-1111-4111-8111-111111111111' and item_code='extra_likes_10'),'ten Extra Likes were not added to inventory');
+select set_config('request.jwt.claim.sub','77777777-7777-4777-8777-777777777777',false);
+select public.test_expect_error(
+  $cmd$select public.coin_buy_store_item('extra_likes_30','store:extra-likes-30:insufficient')$cmd$,
+  'Not enough coins'
+);
+select public.test_assert((select balance=615 from public.coin_wallets where user_id='11111111-1111-4111-8111-111111111111'),'store purchase test wallet balance changed unexpectedly');
+-- Use the funded test member for the unsupported-item assertion so it reaches
+-- product validation instead of failing earlier on the wallet balance check.
+select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+select public.test_expect_error(
+  $cmd$select public.coin_buy_store_item('unsupported_item','store:unsupported:item-0001')$cmd$,
+  'not available for purchase'
+);
+select public.test_assert(
+  has_function_privilege('authenticated','public.coin_buy_store_item(text,text)','EXECUTE')
+  and not has_function_privilege('anon','public.coin_buy_store_item(text,text)','EXECUTE'),
+  'store purchase RPC grants are incorrect'
+);
+
+
+-- Step 10b: every remaining advertised store product can be bought individually.
+select set_config('request.jwt.claim.sub','66666666-6666-4666-8666-666666666666',false);
+select public.coin_buy_store_item('profile_boost_24h','store:boost24:test-0001');
+select public.coin_buy_store_item('profile_boost_3','store:boost3:test-0001');
+select public.coin_buy_store_item('priority_7d','store:priority7:test-0001');
+select public.coin_buy_store_item('priority_30d','store:priority30:test-0001');
+select public.coin_buy_store_item('decorative_badge','store:badge:test-0001');
+select public.coin_buy_store_item('animated_effect','store:effect:test-0001');
+select public.test_assert((select balance=1260 from public.coin_wallets where user_id='66666666-6666-4666-8666-666666666666'),'remaining store purchases deducted an incorrect amount');
+select public.test_assert((select count(*)=6 from public.coin_store_purchases where user_id='66666666-6666-4666-8666-666666666666'),'not all remaining store products created purchase records');
+select public.test_assert((select quantity=1 from public.coin_store_inventory where user_id='66666666-6666-4666-8666-666666666666' and item_code='profile_boost_24h'),'24-hour boost credit missing');
+select public.test_assert((select quantity=1 from public.coin_store_inventory where user_id='66666666-6666-4666-8666-666666666666' and item_code='profile_boost_3'),'three-boost pack missing');
+select public.test_assert((select quantity=1 from public.coin_store_inventory where user_id='66666666-6666-4666-8666-666666666666' and item_code='priority_7d'),'seven-day priority item missing');
+select public.test_assert((select quantity=1 from public.coin_store_inventory where user_id='66666666-6666-4666-8666-666666666666' and item_code='priority_30d'),'30-day priority item missing');
+select public.test_assert((select quantity=1 from public.coin_store_inventory where user_id='66666666-6666-4666-8666-666666666666' and item_code='decorative_badge'),'special badge item missing');
+select public.test_assert((select quantity=1 from public.coin_store_inventory where user_id='66666666-6666-4666-8666-666666666666' and item_code='animated_effect'),'animated effect item missing');
+
+-- Step 11: exercise the actual gift RLS policies as authenticated members.
 -- The disposable database uses auth.uid() backed by the same JWT-sub setting
 -- Supabase exposes to Postgres, but does not use any production credentials.
 set role authenticated;

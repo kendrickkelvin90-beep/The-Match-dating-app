@@ -7,6 +7,18 @@
     return;
   }
   const client = db;
+  const STORE_ITEMS = [
+    {code:"super_like_1",name:"1 Super Like",cost:10,quantity:1},
+    {code:"super_like_5",name:"5 Super Likes",cost:45,quantity:5},
+    {code:"extra_likes_10",name:"10 Extra Likes",cost:30,quantity:10},
+    {code:"extra_likes_30",name:"30 Extra Likes",cost:75,quantity:30},
+    {code:"profile_boost_24h",name:"Profile Boost · 24 hours",cost:40,quantity:1},
+    {code:"profile_boost_3",name:"3 Profile Boosts",cost:100,quantity:3},
+    {code:"priority_7d",name:"Priority Visibility · 7 days",cost:100,quantity:1},
+    {code:"priority_30d",name:"Priority Visibility · 30 days",cost:250,quantity:1},
+    {code:"decorative_badge",name:"Special Profile Badge",cost:100,quantity:1},
+    {code:"animated_effect",name:"Animated Profile Effect",cost:150,quantity:1}
+  ];
   const PACKS = [
     ["starter_50","Starter","50 coins","₦1,000"],
     ["popular_120","Popular","120 coins","₦2,000"],
@@ -78,7 +90,7 @@
         <article class="cw-card"><h3>Match Quarterly</h3><div class="cw-price">800 coins</div><p class="cw-muted">90 days · Match Plus benefits, unlimited Likes, up to 10 Rewinds per day, unlimited Stories and one Profile Boost every 7 days.</p><button class="cw-button primary" data-cw-tier="quarterly">Activate with 800 coins</button></article>
         <article class="cw-card"><h3>Match Annual</h3><div class="cw-price">2,800 coins</div><p class="cw-muted">365 days · Quarterly benefits, unlimited Rewinds and one Profile Boost every 24 hours. Includes a 50-coin reward every 30 days while active, granted by an administrator.</p><button class="cw-button primary" data-cw-tier="annual">Activate with 2,800 coins</button></article>
       </div></div>
-      <div id="cwStore" class="cw-panel" hidden><h3>Individual Match Store</h3><div class="cw-grid" id="cwStoreItems"></div><p class="cw-muted">Store purchases remain unavailable until each benefit is connected to its real feature gate. This prevents coins being deducted for an item that has not yet been delivered.</p></div>
+      <div id="cwStore" class="cw-panel" hidden><h3>Individual Match Store</h3><p class="cw-muted">Choose an item to buy it separately. Confirm each purchase before coins are deducted. Your purchased quantity is shown in your inventory below each item.</p><div class="cw-grid" id="cwStoreItems"></div></div>
       <p id="cwStatus" class="cw-status" role="status" aria-live="polite"></p><button id="cwBack" class="cw-button">← Back</button>
     </div>`;
   document.body.appendChild(page);
@@ -107,21 +119,65 @@
     const {data:wallet,error}=await client.from("coin_wallets").select("balance").eq("user_id",user.id).maybeSingle();
     if(error)throw error;
     document.getElementById("cwBalance").textContent=(wallet?.balance||0).toLocaleString("en-NG")+" coins";
-    const [ledger,requests]=await Promise.all([
+    const [ledger,requests,inventory]=await Promise.all([
       client.from("coin_ledger").select("amount,entry_type,description,created_at,balance_after").eq("user_id",user.id).order("created_at",{ascending:false}).limit(40),
-      client.from("coin_purchase_requests").select("id,coins,amount_ngn,status,admin_note,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(20)
+      client.from("coin_purchase_requests").select("id,coins,amount_ngn,status,admin_note,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(20),
+      client.from("coin_store_inventory").select("item_code,quantity").eq("user_id",user.id)
     ]);
-    if(ledger.error)throw ledger.error;if(requests.error)throw requests.error;
+    if(ledger.error)throw ledger.error;if(requests.error)throw requests.error;if(inventory.error)throw inventory.error;
+    renderStore(inventory.data||[]);
     document.getElementById("cwLedger").innerHTML=ledger.data?.length?ledger.data.map(x=>'<div class="cw-row"><span><strong>'+esc(x.description)+'</strong><br><small class="cw-muted">'+esc(new Date(x.created_at).toLocaleString())+'</small></span><strong style="color:'+(x.amount>0?'#62c78c':'#d58c8c')+'">'+(x.amount>0?'+':'')+x.amount+' coins</strong></div>').join(""):'No wallet transactions yet.';
     document.getElementById("cwRequests").innerHTML=requests.data?.length?requests.data.map(x=>'<div class="cw-row"><span>'+x.coins+' coins · '+money(x.amount_ngn)+'<br><small class="cw-muted">'+esc(x.admin_note||'Submitted '+new Date(x.created_at).toLocaleString())+'</small></span><strong>'+esc(x.status)+'</strong></div>').join(""):'No coin purchase requests yet.';
   }
+  function renderStore(rows){
+    const owned=new Map(rows.map(row=>[row.item_code,Number(row.quantity||0)]));
+    document.getElementById("cwStoreItems").innerHTML=STORE_ITEMS.map(item=>{
+      const count=(owned.get(item.code)||0)*item.quantity;
+      return '<article class="cw-card"><h3>'+item.name+'</h3><div class="cw-price">'+item.cost+' coins</div><p class="cw-muted">In your inventory: <strong>'+count+'</strong></p><button class="cw-button primary" data-cw-store-item="'+item.code+'">Buy '+item.name+'</button></article>';
+    }).join("");
+  }
   document.getElementById("cwPackages").innerHTML=PACKS.map((p,i)=>'<article class="cw-card '+(i===1?'cw-package-featured':'')+'">'+(i===1?'<span class="cw-package-tag">MOST POPULAR</span>':'')+'<h3>'+p[1]+'</h3><div class="cw-price">'+p[2]+'</div><strong>'+p[3]+'</strong><button class="cw-button primary" data-cw-package="'+p[0]+'">Choose package</button></article>').join("");
-  document.getElementById("cwStoreItems").innerHTML=[
-    ["Profile Boost · 30 minutes","40"],["3 Profile Boosts","100"],["1 Super Like","10"],["5 Super Likes","45"],["10 Extra Likes","30"],["30 Extra Likes","75"],["Priority Visibility · 7 days","100"],["Priority Visibility · 30 days","250"],["Special Profile Badge","100"],["Animated Profile Effect","150"]
-  ].map(x=>'<article class="cw-card"><h3>'+x[0]+'</h3><div class="cw-price">'+x[1]+' coins</div><button class="cw-button" disabled>Coming after feature connection</button></article>').join("");
   page.addEventListener("click",async event=>{
     const packageButton=event.target.closest("[data-cw-package]");
     if(packageButton){selected=PACKS.find(p=>p[0]===packageButton.dataset.cwPackage);document.getElementById("cwSelectedPackage").textContent=selected[2]+" · "+selected[3];document.getElementById("cwPaymentAmount").textContent="Please transfer exactly "+selected[3]+" for "+selected[2]+".";document.getElementById("cwTransfer").hidden=false;status("Transfer the exact amount, then submit your sender name and reference.");document.getElementById("cwTransfer").scrollIntoView({behavior:"smooth",block:"center"});}
+    const storeButton=event.target.closest("[data-cw-store-item]");
+    if(storeButton){
+      const item=STORE_ITEMS.find(entry=>entry.code===storeButton.dataset.cwStoreItem);
+      if(!item)return;
+      storeButton.disabled=true;
+      let confirmed=false;
+      try{
+        confirmed=await window.matchConfirm(
+          "Buy "+item.name+" for "+item.cost+" coins? The item will be added to your account inventory.",
+          "Confirm purchase"
+        );
+      }catch(e){status(e.message||"Could not open purchase confirmation.");}
+      if(!confirmed){storeButton.disabled=false;return;}
+      let requestKeyStorage=null;
+      try{
+        const user=await getUser();
+        requestKeyStorage="theMatch.coinStoreRequest."+user.id+"."+item.code;
+        let requestKey;
+        try{
+          requestKey=window.localStorage.getItem(requestKeyStorage);
+          if(!requestKey){
+            requestKey="store:"+item.code+":"+crypto.randomUUID();
+            window.localStorage.setItem(requestKeyStorage,requestKey);
+          }
+        }catch(storageError){
+          requestKey=storeButton.dataset.pendingRequestKey||(storeButton.dataset.pendingRequestKey="store:"+item.code+":"+crypto.randomUUID());
+        }
+        status("Purchasing "+item.name+"…");
+        const {data,error}=await client.rpc("coin_buy_store_item",{p_item_code:item.code,p_idempotency_key:requestKey});
+        if(error)throw error;
+        await refresh();
+        try{if(requestKeyStorage)window.localStorage.removeItem(requestKeyStorage);}catch(storageError){}
+        delete storeButton.dataset.pendingRequestKey;
+        status(item.name+" purchased successfully and added to your inventory. Wallet balance: "+Number(data||0).toLocaleString("en-NG")+" coins.");
+      }catch(e){
+        status((e.message||"Purchase could not be completed.")+" If the request may have completed, retry; the same purchase reference will be reused.");
+      }finally{storeButton.disabled=false;}
+    }
     const tierButton=event.target.closest("[data-cw-tier]");
     if(tierButton){
       const tier=tierButton.dataset.cwTier;

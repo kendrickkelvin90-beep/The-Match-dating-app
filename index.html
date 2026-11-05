@@ -19136,9 +19136,11 @@ body.light-theme #discover #profileList>.member-card .discover-profile-overlay{
 }
 #discover .discover-option3-overlay{
   position:absolute!important;left:0!important;right:0!important;bottom:0!important;z-index:6!important;
+  pointer-events:none!important;
   padding:110px 16px max(18px,env(safe-area-inset-bottom))!important;
   background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.12) 22%,rgba(0,0,0,.78) 65%,rgba(0,0,0,.97) 100%)!important;
 }
+#discover .discover-option3-overlay > *{pointer-events:auto!important}
 #discover .discover-option3-overlay h2{font-size:clamp(29px,7vw,38px)!important;font-weight:900!important;line-height:1.08!important}
 #discover .discover-option3-overlay .distance{font-size:15px!important;font-weight:850!important;margin-bottom:8px!important}
 #discover .discover-option3-overlay .discover-floating-actions{

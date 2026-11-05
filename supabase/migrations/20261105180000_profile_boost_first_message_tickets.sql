@@ -35,7 +35,7 @@ create policy profile_boost_message_tickets_owner_update
   using (user_id = (select auth.uid()))
   with check (user_id = (select auth.uid()));
 revoke all on public.profile_boost_message_tickets from anon, authenticated;
-grant select, update on public.profile_boost_message_tickets to authenticated;
+grant select on public.profile_boost_message_tickets to authenticated;
 
 -- Purchased boosts add one ticket each. Membership-based 30-minute boosts
 -- continue using their existing function and do not create paid message tickets.
@@ -137,16 +137,19 @@ create policy messages_boost_initiated_conversation_insert
     )
   );
 
--- SECURITY INVOKER: row-level security remains in force. The ticket is marked
--- as used before inserting the message, in the same transaction, so the
--- policy above authorizes the first message and a failure rolls everything back.
-create or replace function public.send_discover_first_message(
+-- Keep the privileged write helper in a non-exposed schema. The public RPC
+-- remains SECURITY INVOKER and delegates only after the helper validates auth.uid().
+create schema if not exists app_private;
+revoke all on schema app_private from public, anon;
+grant usage on schema app_private to authenticated;
+
+create or replace function app_private.send_discover_first_message(
   p_target_user_id uuid,
   p_body text,
   p_idempotency_key text
 ) returns jsonb
 language plpgsql
-security invoker
+security definer
 set search_path = ''
 as $$
 declare
@@ -228,6 +231,22 @@ begin
     'message_id',v_message_id,'remaining_tickets',v_remaining
   );
 end;
+$$;
+revoke all on function app_private.send_discover_first_message(uuid,text,text) from public, anon;
+grant execute on function app_private.send_discover_first_message(uuid,text,text) to authenticated;
+
+create or replace function public.send_discover_first_message(
+  p_target_user_id uuid,
+  p_body text,
+  p_idempotency_key text
+) returns jsonb
+language sql
+security invoker
+set search_path = ''
+as $$
+  select app_private.send_discover_first_message(
+    p_target_user_id,p_body,p_idempotency_key
+  );
 $$;
 revoke all on function public.send_discover_first_message(uuid,text,text) from public, anon;
 grant execute on function public.send_discover_first_message(uuid,text,text) to authenticated;

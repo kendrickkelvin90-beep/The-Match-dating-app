@@ -124,7 +124,7 @@ select set_config('request.jwt.claim.sub','55555555-5555-4555-8555-555555555555'
 select public.test_expect_error(
   $stmt$insert into public.messages(sender_id,receiver_id,body)
     values('55555555-5555-4555-8555-555555555555',
-           '33333333-3333-4333-8333-333333333333',
+           '44444444-4444-4444-8444-444444444444',
            'Unauthorized cold message')$stmt$,
   'row-level security'
 );

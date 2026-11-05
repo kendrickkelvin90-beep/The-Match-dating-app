@@ -163,8 +163,16 @@ Deno.serve(async (req: Request) => {
           include_aliases: { external_id: [userId] },
           headings: { en: title },
           contents: { en: body },
+          // Explicit web-push branding: Chrome uses this image for the notification icon.
+          chrome_web_icon: `https://match.beyondthebinarymedia.online/icons/file_00000000194481f48390cd96271ae5c9.png`,
+          // Android web-push uses the badge in the notification shade.
+          chrome_web_badge: `https://match.beyondthebinarymedia.online/icons/file_00000000194481f48390cd96271ae5c9.png`,
           url: APP_URL,
-          data: { notification_id: notificationId, type },
+          data: {
+            notification_id: notificationId,
+            type,
+            related_user_id: notification?.related_user_id ?? null,
+          },
           idempotency_key: notificationId || undefined,
         }),
       });

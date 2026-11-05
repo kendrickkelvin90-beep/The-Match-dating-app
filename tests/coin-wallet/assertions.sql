@@ -145,7 +145,7 @@ select public.test_assert((select balance=615 from public.coin_wallets where use
 -- product validation instead of failing earlier on the wallet balance check.
 select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
 select public.test_expect_error(
-  $cmd$select public.coin_buy_store_item('profile_boost_24h','store:unsupported:item-0001')$cmd$,
+  $cmd$select public.coin_buy_store_item('unsupported_item','store:unsupported:item-0001')$cmd$,
   'not available for purchase'
 );
 select public.test_assert(

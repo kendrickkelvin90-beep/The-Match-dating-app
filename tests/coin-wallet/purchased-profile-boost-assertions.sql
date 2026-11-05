@@ -7,7 +7,7 @@ on conflict(user_id,item_code) do update set quantity=excluded.quantity;
 
 set role authenticated;
 select set_config('request.jwt.claim.sub','77777777-7777-4777-8777-777777777777',false);
-do $
+do $boost_test$
 declare v_result jsonb;
 begin
   v_result := public.activate_my_purchased_profile_boost('profile_boost_24h');
@@ -15,7 +15,7 @@ begin
      or (v_result->>'ends_at')::timestamptz - (v_result->>'starts_at')::timestamptz <> interval '24 hours' then
     raise exception 'TEST ASSERTION FAILED: 24-hour boost was not activated for the full duration';
   end if;
-end $;
+end $boost_test$;
 select public.test_assert(
   (select quantity=0 from public.coin_store_inventory where user_id='77777777-7777-4777-8777-777777777777' and item_code='profile_boost_24h'),
   '24-hour boost inventory was not consumed exactly once'
@@ -26,7 +26,7 @@ select public.test_assert(
 );
 
 select set_config('request.jwt.claim.sub','88888888-8888-4888-8888-888888888888',false);
-do $
+do $boost_test$
 declare v_result jsonb;
 begin
   v_result := public.activate_my_purchased_profile_boost('profile_boost_3');
@@ -34,7 +34,7 @@ begin
      or (v_result->>'ends_at')::timestamptz - (v_result->>'starts_at')::timestamptz <> interval '24 hours' then
     raise exception 'TEST ASSERTION FAILED: 3-boost pack did not start one 24-hour boost';
   end if;
-end $;
+end $boost_test$;
 select public.test_assert(
   (select quantity=0 from public.coin_store_inventory where user_id='88888888-8888-4888-8888-888888888888' and item_code='profile_boost_3'),
   '3-boost pack was not consumed exactly once'

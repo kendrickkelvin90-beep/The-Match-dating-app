@@ -10017,7 +10017,7 @@ if (ownActiveBadgeError) {
 } else if ((ownActiveBadgeRows || []).some(row => row.user_id === user.id)) {
   const ownSpecialBadge = document.createElement("span");
   ownSpecialBadge.className = "tm-special-profile-badge";
-  ownSpecialBadge.textContent = " ✦ SPECIAL";
+  ownSpecialBadge.textContent = " SPECIAL";
   ownSpecialBadge.title = "Your active Special Profile Badge";
   ownSpecialBadge.setAttribute("aria-label", "Your active Special Profile Badge");
   $("greeting").appendChild(ownSpecialBadge);

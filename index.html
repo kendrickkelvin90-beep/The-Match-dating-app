@@ -4465,6 +4465,10 @@ textarea.match-dialog-input{min-height:112px;resize:vertical}
   }
 }
 
+
+/* Member-owned Special Profile Badge — consistent across profile surfaces */
+.tm-special-profile-badge{display:inline-flex;align-items:center;vertical-align:middle;margin:3px 0 3px 7px;padding:4px 9px;border:1px solid rgba(236,203,126,.9);border-radius:999px;background:linear-gradient(135deg,#f4dfa8,#c79a4e);color:#251b0b!important;font-size:10px;font-weight:900;letter-spacing:.7px;line-height:1.2;text-shadow:none;box-shadow:0 2px 10px rgba(199,154,78,.22);white-space:nowrap}
+
 </style>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
@@ -10388,6 +10392,10 @@ if (discoverMemberIds.length) {
   if (premiumRowsError) throw premiumRowsError;
   const premiumSet = new Set((premiumRows || []).map(row => row.user_id));
   people = people.map(person => ({ ...person, is_premium: premiumSet.has(person.id) }));
+  const { data: activeBadgeRows, error: activeBadgeError } = await db.rpc("get_active_profile_badge_ids", { p_user_ids: discoverMemberIds });
+  if (activeBadgeError) throw activeBadgeError;
+  const activeBadgeSet = new Set((activeBadgeRows || []).map(row => row.user_id));
+  people = people.map(person => ({ ...person, has_special_badge: activeBadgeSet.has(person.id) }));
   const { data: boostedRows, error: boostedError } = await db.rpc("get_active_discover_boost_ids");
   if (boostedError) throw boostedError;
   const boostedSet = new Set(boostedRows || []);
@@ -10587,6 +10595,14 @@ if (p.is_premium) {
 }
 name.style.cssText="font-size:clamp(25px,6vw,32px);font-weight:850;letter-spacing:-0.6px;line-height:1.12;margin:0 0 5px;color:#fff;overflow-wrap:anywhere;text-shadow:0 2px 14px #000;";
 if(p.age){const age=document.createElement("span");age.textContent=" · "+p.age;age.style.cssText="font-weight:500;";name.appendChild(age);}
+if (p.has_special_badge) {
+  const specialBadge = document.createElement("span");
+  specialBadge.className = "tm-special-profile-badge";
+  specialBadge.textContent = " ✦ SPECIAL";
+  specialBadge.title = "Special Profile Badge";
+  specialBadge.setAttribute("aria-label", "Special Profile Badge");
+  name.appendChild(specialBadge);
+}
 infoOverlay.appendChild(name);
 
 const distance=document.createElement("div");
@@ -13655,6 +13671,9 @@ async function openMemberProfile(memberId){
     const { data: premiumMemberRows, error: premiumMemberError } = await db.rpc("get_active_premium_member_ids", { p_user_ids: [memberId] });
     if (premiumMemberError) throw premiumMemberError;
     const memberIsPremium = (premiumMemberRows || []).some(row => row.user_id === memberId);
+    const { data: activeBadgeRows, error: activeBadgeError } = await db.rpc("get_active_profile_badge_ids", { p_user_ids: [memberId] });
+    if (activeBadgeError) throw activeBadgeError;
+    const memberHasSpecialBadge = (activeBadgeRows || []).some(row => row.user_id === memberId);
 
     const badge = document.createElement("span");
 badge.style.fontSize = "0.8em";
@@ -13681,6 +13700,13 @@ if (p.verification_level === "enhanced" ||
     p.verification_level === "basic" ||
     p.is_verified) {
   name.appendChild(badge);
+}
+if (memberHasSpecialBadge) {
+  const specialBadge = document.createElement("span");
+  specialBadge.className = "tm-special-profile-badge";
+  specialBadge.textContent = " ✦ SPECIAL";
+  specialBadge.title = "Special Profile Badge";
+  name.appendChild(specialBadge);
 }
 if (memberIsPremium) {
   const premiumBadge = document.createElement("span");

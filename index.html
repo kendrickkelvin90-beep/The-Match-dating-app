@@ -13799,14 +13799,13 @@ async function loadDiscoverFirstMessageBox(memberId) {
     const { data: tickets, error } = await db.from("profile_boost_message_tickets")
       .select("id,recipient_id,expires_at,used_at")
       .eq("user_id", currentUser.id)
-      .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: true });
     if (error) throw error;
 
     const alreadyMessaged = (tickets || []).some(ticket =>
       ticket.recipient_id === memberId && !!ticket.used_at
     );
-    const available = (tickets || []).filter(ticket => !ticket.used_at).length;
+    const available = (tickets || []).filter(ticket => !ticket.used_at && new Date(ticket.expires_at).getTime() > Date.now()).length;
 
     if (alreadyMessaged) {
       hint.textContent = "You've already used a first-message ticket for this member. Continue your conversation in Chats.";
@@ -13891,7 +13890,7 @@ async function loadDiscoverFirstMessageBox(memberId) {
       const { error } = await db.rpc("send_discover_first_message", {
         p_target_user_id: memberId,
         p_body: body,
-        p_idempotency_key: "boost-first-message:" + currentUser.id + ":" + memberId + ":" + crypto.randomUUID()
+        p_idempotency_key: "boost-first-message:" + crypto.randomUUID()
       });
       if (error) throw error;
 

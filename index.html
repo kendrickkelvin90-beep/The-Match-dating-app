@@ -10609,44 +10609,55 @@ if (isNewHere) {
           .catch(() => {});
       }
 
-      const previous=document.createElement("button");
-      previous.type="button";
-      previous.textContent="‹";
-      previous.style.cssText="position:absolute;left:8px;top:45%;font-size:30px;border:0;border-radius:50%;background:#0009;color:white;width:42px;height:42px;";
-      previous.onclick=()=>{
-        if(photoUrls.length){
-          photoIndex=(photoIndex-1+photoUrls.length)%photoUrls.length;
-          photo.src=photoUrls[photoIndex];
-          photoCount.textContent=(photoIndex+1)+" of "+photoUrls.length+" photos";
-        }
+      // Keep photo navigation in one place so taps and both arrows always
+      // update the same index and accessible photo counter.
+      const showPhotoAt = (nextIndex) => {
+        if (!photoUrls.length) return;
+        photoIndex = (nextIndex + photoUrls.length) % photoUrls.length;
+        photo.src = photoUrls[photoIndex];
+        photoCount.textContent =
+          (photoIndex + 1) + " of " + photoUrls.length + " photos";
       };
 
-      const nextPhoto=document.createElement("button");
-      nextPhoto.type="button";
-      nextPhoto.textContent="›";
-      nextPhoto.style.cssText="position:absolute;right:8px;top:45%;font-size:30px;border:0;border-radius:50%;background:#0009;color:white;width:42px;height:42px;";
-      nextPhoto.onclick=()=>{
-        if(photoUrls.length){
-          photoIndex=(photoIndex+1)%photoUrls.length;
-          photo.src=photoUrls[photoIndex];
-          photoCount.textContent=(photoIndex+1)+" / "+photoUrls.length;
-        }
-      };
-            photo.style.cursor = "pointer";
-      photo.onclick = (event) => {
-        event.stopPropagation();
-        if (photoUrls.length > 1) {
-          photoIndex = (photoIndex + 1) % photoUrls.length;
-          photo.src = photoUrls[photoIndex];
-          photoCount.textContent =
-            (photoIndex + 1) + " of " + photoUrls.length + " photos";
-        }
+      const createPhotoArrow = (direction, label, glyph) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = glyph;
+        button.setAttribute("aria-label", label);
+        button.disabled = photoUrls.length < 2;
+        button.style.cssText =
+          "position:absolute;top:45%;z-index:8;display:flex;align-items:center;" +
+          "justify-content:center;" +
+          (direction < 0 ? "left:10px;" : "right:10px;") +
+          "width:46px;height:46px;padding:0;border:1px solid rgba(255,255,255,.55);" +
+          "border-radius:50%;background:rgba(0,0,0,.78);color:#fff;" +
+          "font-size:32px;line-height:1;box-shadow:0 3px 14px rgba(0,0,0,.45);" +
+          "touch-action:manipulation;cursor:pointer;pointer-events:auto;" +
+          (photoUrls.length < 2 ? "opacity:.35;" : "");
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (photoUrls.length > 1) showPhotoAt(photoIndex + direction);
+        });
+        return button;
       };
 
-      photoBox.append(previous,nextPhoto);
+      const previous = createPhotoArrow(-1, "Previous photo", "‹");
+      const nextPhoto = createPhotoArrow(1, "Next photo", "›");
+
+      // The full photo area is a reliable tap target on touch screens.
+      // Overlay controls remain interactive and do not accidentally change photos.
+      photo.style.cursor = photoUrls.length > 1 ? "pointer" : "default";
+      photoBox.addEventListener("click", (event) => {
+        if (photoUrls.length < 2) return;
+        if (event.target.closest(".discover-option3-overlay, button, a, input, textarea, select, [role='button']")) return;
+        showPhotoAt(photoIndex + 1);
+      });
+
+      photoBox.append(previous, nextPhoto);
       const infoOverlay=document.createElement("div");
       infoOverlay.className="discover-profile-overlay discover-option3-overlay";
-      infoOverlay.style.cssText="position:absolute;left:0;right:0;bottom:0;z-index:6;padding:82px 16px 16px;background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.30) 18%,rgba(0,0,0,.88) 55%,#050505 100%);box-sizing:border-box;display:flex;flex-direction:column;gap:0;";
+      infoOverlay.style.cssText="position:absolute;left:0;right:0;bottom:0;z-index:6;padding:82px 16px 16px;background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.30) 18%,rgba(0,0,0,.88) 55%,#050505 100%);box-sizing:border-box;display:flex;flex-direction:column;gap:0;pointer-events:none;";
 
 const name=document.createElement("h2");
 name.appendChild(
@@ -19120,9 +19131,11 @@ body.light-theme #discover #profileList>.member-card .discover-profile-overlay{
 }
 #discover .discover-option3-overlay{
   position:absolute!important;left:0!important;right:0!important;bottom:0!important;z-index:6!important;
+  pointer-events:none!important;
   padding:110px 16px max(18px,env(safe-area-inset-bottom))!important;
   background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.12) 22%,rgba(0,0,0,.78) 65%,rgba(0,0,0,.97) 100%)!important;
 }
+#discover .discover-option3-overlay > *{pointer-events:auto!important}
 #discover .discover-option3-overlay h2{font-size:clamp(29px,7vw,38px)!important;font-weight:900!important;line-height:1.08!important}
 #discover .discover-option3-overlay .distance{font-size:15px!important;font-weight:850!important;margin-bottom:8px!important}
 #discover .discover-option3-overlay .discover-floating-actions{

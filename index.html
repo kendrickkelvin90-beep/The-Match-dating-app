@@ -10211,8 +10211,10 @@ async function loadNearby(){
     if (viewerPremium && greeting) {
       const ownBadge = document.createElement("span");
       ownBadge.className = "own-premium-badge tm-premium-profile-badge";
-      ownBadge.textContent = " PREMIUM";
-      ownBadge.style.cssText = "display:inline-block;margin-left:7px;padding:4px 8px;border-radius:999px;background:linear-gradient(135deg,#e2c17d,#a77b32);color:#17130b;font-size:10px;font-weight:900;letter-spacing:.7px;";
+      ownBadge.textContent = "👑";
+      ownBadge.setAttribute("aria-label", "Premium member");
+      ownBadge.title = "Active Premium member";
+      ownBadge.style.cssText = "display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;margin-left:7px;border-radius:50%;background:linear-gradient(135deg,#f6dfaa,#bd8b39);color:#241a08;font-size:17px;font-weight:900;box-shadow:0 2px 10px rgba(226,193,125,.35);";
       greeting.appendChild(ownBadge);
     }
     await refreshDailyLikeCounter();
@@ -10481,6 +10483,7 @@ if(discoverPanel){
 }
 const card=document.createElement("div");
 card.className="member-card discover-option3-card";
+card.dataset.memberId = p.id;
 card.style.cssText="position:relative;display:block;width:calc(100% + 24px);max-width:none;height:clamp(440px,calc(100svh - 340px),680px);min-height:440px;max-height:680px;box-sizing:border-box;margin:0 0 0 -12px;padding:0;border:0;border-radius:0;background:#080808;box-shadow:none;touch-action:pan-y;overflow:hidden;will-change:transform,opacity;animation:discoverCardEnter 260ms cubic-bezier(.2,.75,.25,1) both;";
 
 
@@ -10635,8 +10638,9 @@ if (p.is_verified || p.verification_level === "basic" ||
 if (p.is_premium) {
   const premiumBadge = document.createElement("span");
   premiumBadge.className = "tm-premium-profile-badge";
-  premiumBadge.textContent = " PREMIUM";
-  premiumBadge.style.cssText = "display:inline-block;margin-left:7px;padding:4px 8px;border-radius:999px;background:linear-gradient(135deg,#e2c17d,#a77b32);color:#17130b;font-size:10px;font-weight:900;letter-spacing:.7px;vertical-align:middle;";
+  premiumBadge.textContent = "👑";
+  premiumBadge.setAttribute("aria-label", "Premium member");
+  premiumBadge.style.cssText = "display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;margin-left:7px;border-radius:50%;background:linear-gradient(135deg,#f6dfaa,#bd8b39);color:#241a08;font-size:18px;font-weight:900;vertical-align:middle;box-shadow:0 2px 10px rgba(226,193,125,.35);";
   premiumBadge.title = "Active Premium member";
   name.appendChild(premiumBadge);
 }
@@ -10645,7 +10649,9 @@ if(p.age){const age=document.createElement("span");age.textContent=" · "+p.age;
 if (p.has_special_badge) {
   const specialBadge = document.createElement("span");
   specialBadge.className = "tm-special-profile-badge";
-  specialBadge.textContent = " SPECIAL";
+  specialBadge.textContent = "✦";
+  specialBadge.setAttribute("aria-label", "Special profile badge");
+  specialBadge.style.cssText = "display:inline-flex;align-items:center;justify-content:center;width:25px;height:25px;margin-left:7px;border-radius:50%;background:linear-gradient(135deg,#d9f5ef,#5eb8a8);color:#123b36;font-size:17px;font-weight:900;vertical-align:middle;box-shadow:0 2px 10px rgba(94,184,168,.3);";
   specialBadge.title = "Special Profile Badge";
   specialBadge.setAttribute("aria-label", "Special Profile Badge");
   name.appendChild(specialBadge);
@@ -10674,7 +10680,7 @@ detailsToggle.style.cssText =
 
 const detailsPanel = document.createElement("div");
 detailsPanel.style.cssText =
-  "display:none;max-height:18svh;overflow-y:auto;padding:5px 10px 8px;margin:0 0 8px;border-radius:12px;background:rgba(8,8,8,.72);color:#f2eee5;backdrop-filter:blur(10px);";
+  "display:none;max-height:34svh;overflow-y:auto;padding:5px 10px 8px;margin:0 0 8px;border-radius:12px;background:rgba(8,8,8,.72);color:#f2eee5;backdrop-filter:blur(10px);";
 
 const details = document.createElement("p");
 details.className = "small";
@@ -10715,12 +10721,14 @@ if (p.bio) {
 detailsToggle.onclick = () => {
   const expanded = detailsPanel.style.display !== "none";
   detailsPanel.style.display = expanded ? "none" : "block";
+  if (!expanded) refreshFirstMessageTicketState?.();
   detailsToggle.textContent = expanded
     ? "⌄  View details"
     : "⌃  Hide details";
   detailsToggle.setAttribute("aria-expanded", String(!expanded));
 };
 
+const refreshFirstMessageTicketState = appendDiscoverFirstMessageComposer(detailsPanel, p.id, p.display_name);
 infoOverlay.append(detailsToggle, detailsPanel);
 
 const actions = document.createElement("div");
@@ -10791,6 +10799,14 @@ like.textContent="♥";
 like.setAttribute("aria-label","Like this profile");
 like.title="Like";
 like.style.cssText="flex:1;min-height:54px;border-radius:18px;border:1px solid #ff6b9d;background:linear-gradient(135deg,#ff397b,#d91659);color:#fff;font-size:16px;font-weight:800;box-shadow:0 5px 18px #ff397b35;";
+const superLike=document.createElement("button");
+superLike.type="button";
+superLike.className="discover-super-like";
+superLike.innerHTML='<span aria-hidden="true">✦</span>';
+superLike.setAttribute("aria-label","Send a Super Like");
+superLike.title="Super Like · Uses one from your Coin Store inventory";
+superLike.style.cssText="flex:1;min-height:54px;max-width:74px;border-radius:19px;border:1px solid rgba(255,224,145,.95);background:radial-gradient(circle at 35% 20%,#fff5c8 0%,#e8bd59 38%,#a66b1c 100%);color:#241707;font-size:31px;font-weight:900;line-height:1;box-shadow:0 5px 20px rgba(230,183,77,.38),inset 0 1px 0 rgba(255,255,255,.65);text-shadow:0 1px 1px rgba(255,255,255,.45);";
+
 if (!currentDiscoverIsPremium && currentDailySwipesUsed >= 20) {
   like.disabled = true;
   pass.disabled = true;
@@ -10908,8 +10924,47 @@ if(matchError)throw matchError;
   }
 };
 
+superLike.onclick=async()=>{
+  if(superLike.disabled)return;
+  superLike.disabled=true;
+  like.disabled=true;
+  pass.disabled=true;
+  const targetId=p.id;
+  const requestKey="discover-super-like:"+currentUser.id+":"+targetId+":"+crypto.randomUUID();
+  try{
+    const {data,error}=await db.rpc("send_super_like",{
+      p_target_user_id:targetId,
+      p_idempotency_key:requestKey
+    });
+    if(error)throw error;
+    status("discoverStatus",data?.matched
+      ?"It's a match! Your Super Like was sent. ❤️"
+      :"Super Like sent! They'll know you picked them. ✨");
+    if(data?.matched){
+      showMatchNotification("It's a Match!","A Super Like and your like are mutual.","match");
+    }
+    await refreshDailyLikeCounter();
+    await animateCardExit("right");
+    personIndex++;
+    await showPerson();
+  }catch(error){
+    const message=String(error?.message||error);
+    if(/NO_SUPER_LIKES/i.test(message)){
+      status("discoverStatus","You're out of Super Likes. Open your Coin Wallet and buy more from the Match Store.",true);
+      document.querySelector('#bottomNavigation [data-page="coinWalletPage"]')?.click();
+      setTimeout(()=>document.querySelector('#coinWalletPage [data-cw-tab="store"]')?.click(),350);
+    }else{
+      status("discoverStatus","Couldn't send your Super Like: "+friendly(error),true);
+    }
+    superLike.disabled=false;
+    like.disabled=false;
+    pass.disabled=false;
+  }
+};
 
-      actions.append(pass,like);
+
+
+      actions.append(pass,superLike,like);
       actions.style.cssText="display:flex;justify-content:center;align-items:center;gap:10px;margin:4px 0 0;padding:0;";
       infoOverlay.appendChild(actions);
       photoBox.appendChild(infoOverlay);
@@ -13719,6 +13774,171 @@ $("backFromMatches").onclick=()=>show("discover");
 $("backFromMessages").onclick=()=>show("matches");
  let selectedMemberId = null;
 
+function appendDiscoverFirstMessageComposer(detailsPanel, memberId, memberName) {
+  if (!detailsPanel || !currentUser || !memberId) return;
+
+  const box = document.createElement("section");
+  box.className = "discover-first-message-box";
+  box.style.cssText = "margin:12px 0 5px;padding:13px;border:1px solid rgba(214,180,110,.48);border-radius:15px;background:rgba(12,11,10,.92);";
+  const heading = document.createElement("strong");
+  heading.textContent = "✉ Send a first message";
+  heading.style.cssText = "display:block;color:#e8c77f;font-size:14px;margin-bottom:6px;";
+  const hint = document.createElement("p");
+  hint.className = "small";
+  hint.textContent = "Checking your Boost Profile message tickets...";
+  hint.style.cssText = "font-size:12px;line-height:1.5;margin:0 0 9px;color:#e9e1d1;";
+  const input = document.createElement("textarea");
+  input.rows = 2;
+  input.maxLength = 2000;
+  input.placeholder = "Write a friendly introduction...";
+  input.style.cssText = "width:100%;box-sizing:border-box;min-height:76px;padding:11px;border:1px solid #806a43;border-radius:11px;background:#111;color:#fff;resize:vertical;font:inherit;";
+  const send = document.createElement("button");
+  send.type = "button";
+  send.className = "btn primary";
+  send.textContent = "Send first message · 1 ticket";
+  send.style.cssText = "width:100%;margin-top:8px;min-height:42px;";
+  const activate = document.createElement("button");
+  activate.type = "button";
+  activate.className = "btn secondary";
+  activate.textContent = "✦ Activate another Boost Profile";
+  activate.style.cssText = "display:none;width:100%;margin-top:8px;min-height:42px;";
+  const continueChat = document.createElement("button");
+  continueChat.type = "button";
+  continueChat.className = "btn secondary";
+  continueChat.textContent = "💬 Continue in Chats";
+  continueChat.style.cssText = "display:none;width:100%;margin-top:8px;min-height:42px;";
+  box.append(heading,hint,input,send,activate,continueChat);
+  detailsPanel.appendChild(box);
+
+  const openConversation = async () => {
+    show("messages");
+    await loadMyConversations();
+    await openChat(memberId, memberName || "Member");
+  };
+
+  const refreshTicketState = async () => {
+    input.disabled = true;
+    send.disabled = true;
+    send.style.display = "";
+    activate.style.display = "none";
+    continueChat.style.display = "none";
+    const { data: tickets, error } = await db.from("profile_boost_message_tickets")
+      .select("id,recipient_id,expires_at,used_at")
+      .eq("user_id", currentUser.id)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+
+    const alreadyMessaged = (tickets || []).some(ticket =>
+      ticket.recipient_id === memberId && !!ticket.used_at
+    );
+    const available = (tickets || []).filter(ticket =>
+      !ticket.used_at && new Date(ticket.expires_at).getTime() > Date.now()
+    ).length;
+
+    if (alreadyMessaged) {
+      hint.textContent = "You've already used a first-message ticket for this member. Continue your conversation in Chats.";
+      input.placeholder = "Your first message has already been sent.";
+      send.style.display = "none";
+      continueChat.style.display = "";
+      return;
+    }
+
+    if (available > 0) {
+      hint.textContent = available + " first-message ticket" + (available === 1 ? "" : "s") + " available. Sending successfully uses one ticket. Replies and the rest of this conversation are free.";
+      input.placeholder = "Write a friendly introduction...";
+      input.disabled = false;
+      send.disabled = false;
+      send.textContent = "Send first message · 1 ticket";
+    } else {
+      hint.textContent = "You've used all your first-message tickets. Activate another purchased Boost Profile to get another first-message ticket and a fresh 24-hour visibility period.";
+      input.placeholder = "Activate another Boost Profile to send a first message...";
+      send.disabled = true;
+      send.textContent = "No message tickets available";
+      activate.style.display = "";
+    }
+  };
+
+  activate.onclick = async () => {
+    activate.disabled = true;
+    activate.textContent = "Activating...";
+    try {
+      const { data: inventory, error: inventoryError } = await db.from("coin_store_inventory")
+        .select("item_code,quantity")
+        .eq("user_id", currentUser.id)
+        .in("item_code", ["profile_boost_24h","profile_boost_3"])
+        .gt("quantity", 0);
+      if (inventoryError) throw inventoryError;
+      const itemCode = inventory?.some(item => item.item_code === "profile_boost_24h" && item.quantity > 0)
+        ? "profile_boost_24h"
+        : inventory?.some(item => item.item_code === "profile_boost_3" && item.quantity > 0)
+          ? "profile_boost_3" : null;
+
+      if (!itemCode) {
+        document.querySelector('#bottomNavigation [data-page="coinWalletPage"]')?.click();
+        window.setTimeout(() => document.querySelector('#coinWalletPage [data-cw-tab="store"]')?.click(), 350);
+        hint.textContent = "Choose a Profile Boost in the Coin Store. Each purchased activation adds one first-message ticket and 24-hour visibility.";
+        return;
+      }
+
+      const { error } = await db.rpc("activate_my_purchased_profile_boost", { p_item_code: itemCode });
+      if (error) throw error;
+      await refreshTicketState();
+      status("discoverStatus", "Your purchased 24-hour Profile Boost is active and one first-message ticket has been added.");
+    } catch (error) {
+      hint.textContent = "Could not activate a Profile Boost: " + friendly(error);
+    } finally {
+      activate.disabled = false;
+      activate.textContent = "✦ Activate another Boost Profile";
+    }
+  };
+
+  send.onclick = async () => {
+    const body = input.value.trim();
+    if (!body) {
+      hint.textContent = "Write a message before sending.";
+      input.focus();
+      return;
+    }
+    send.disabled = true;
+    send.textContent = "Sending...";
+    try {
+      const { error } = await db.rpc("send_discover_first_message", {
+        p_target_user_id: memberId,
+        p_body: body,
+        p_idempotency_key: "boost-first-message:" + crypto.randomUUID()
+      });
+      if (error) throw error;
+      input.value = "";
+      await refreshTicketState();
+      status("discoverStatus", "Your first message to " + (memberName || "this member") + " was sent. You can continue chatting for free.");
+      await openConversation();
+    } catch (error) {
+      const message = String(error?.message || error);
+      if (/NO_BOOST_MESSAGE_TICKETS/i.test(message)) {
+        hint.textContent = "You've used all your first-message tickets. Activate another purchased Boost Profile to get another ticket and 24-hour visibility.";
+        input.disabled = true;
+        send.disabled = true;
+        send.textContent = "No message tickets available";
+        activate.style.display = "";
+      } else {
+        hint.textContent = "Could not send your first message: " + friendly(error);
+        send.disabled = false;
+        send.textContent = "Send first message · 1 ticket";
+      }
+    }
+  };
+
+  continueChat.onclick = () => openConversation().catch(error => {
+    hint.textContent = "Could not open Chats: " + friendly(error);
+  });
+
+  return () => refreshTicketState().catch(error => {
+    hint.textContent = "Message tickets could not be checked: " + friendly(error);
+    input.disabled = true;
+    send.disabled = true;
+  });
+}
+
 async function openMemberProfile(memberId){
   selectedMemberId = memberId;
   show("memberProfilePage");
@@ -13787,15 +14007,18 @@ if (p.verification_level === "enhanced" ||
 if (memberHasSpecialBadge) {
   const specialBadge = document.createElement("span");
   specialBadge.className = "tm-special-profile-badge";
-  specialBadge.textContent = " SPECIAL";
+  specialBadge.textContent = "✦";
+  specialBadge.setAttribute("aria-label", "Special profile badge");
+  specialBadge.style.cssText = "display:inline-flex;align-items:center;justify-content:center;width:25px;height:25px;margin-left:7px;border-radius:50%;background:linear-gradient(135deg,#d9f5ef,#5eb8a8);color:#123b36;font-size:17px;font-weight:900;vertical-align:middle;box-shadow:0 2px 10px rgba(94,184,168,.3);";
   specialBadge.title = "Special Profile Badge";
   name.appendChild(specialBadge);
 }
 if (memberIsPremium) {
   const premiumBadge = document.createElement("span");
   premiumBadge.className = "tm-premium-profile-badge";
-  premiumBadge.textContent = " PREMIUM";
-  premiumBadge.style.cssText = "display:inline-block;margin-left:7px;padding:4px 8px;border-radius:999px;background:linear-gradient(135deg,#e2c17d,#a77b32);color:#17130b;font-size:10px;font-weight:900;letter-spacing:.7px;vertical-align:middle;";
+  premiumBadge.textContent = "👑";
+  premiumBadge.setAttribute("aria-label", "Premium member");
+  premiumBadge.style.cssText = "display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;margin-left:7px;border-radius:50%;background:linear-gradient(135deg,#f6dfaa,#bd8b39);color:#241a08;font-size:18px;font-weight:900;vertical-align:middle;box-shadow:0 2px 10px rgba(226,193,125,.35);";
   premiumBadge.title = "Active Premium member";
   name.appendChild(premiumBadge);
 }

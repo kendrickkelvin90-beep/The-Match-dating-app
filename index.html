@@ -10650,7 +10650,7 @@ if (isNewHere) {
       photo.style.cursor = photoUrls.length > 1 ? "pointer" : "default";
       photoBox.addEventListener("click", (event) => {
         if (photoUrls.length < 2) return;
-        if (event.target.closest("button, a, input, textarea, select, [role='button']")) return;
+        if (event.target.closest(".discover-option3-overlay, button, a, input, textarea, select, [role='button']")) return;
         showPhotoAt(photoIndex + 1);
       });
 

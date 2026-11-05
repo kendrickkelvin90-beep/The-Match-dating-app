@@ -194,7 +194,17 @@ begin
     select 1 from public.profile_boost_message_tickets t
     where t.user_id = v_uid and t.recipient_id = p_target_user_id
   ) then
-    raise exception 'You already used a first-message ticket for this member. Continue in Chats.';
+    select t.message_id into v_existing_message_id
+    from public.profile_boost_message_tickets t
+    where t.user_id = v_uid and t.recipient_id = p_target_user_id
+    order by t.created_at desc limit 1;
+    select count(*)::integer into v_remaining
+    from public.profile_boost_message_tickets t
+    where t.user_id = v_uid and t.used_at is null and t.expires_at > now();
+    return pg_catalog.jsonb_build_object(
+      'sent',true,'already_sent',true,
+      'message_id',v_existing_message_id,'remaining_tickets',v_remaining
+    );
   end if;
 
   select t.id into v_ticket_id

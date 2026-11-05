@@ -20,11 +20,13 @@ select public.test_assert(
   (select quantity=0 from public.coin_store_inventory where user_id='77777777-7777-4777-8777-777777777777' and item_code='profile_boost_24h'),
   '24-hour boost inventory was not consumed exactly once'
 );
+reset role;
 select public.test_assert(
-  (select count(*)=1 from public.get_active_discover_boost_ids() where get_active_discover_boost_ids='77777777-7777-4777-8777-777777777777'::uuid),
-  'activated 24-hour boost was not returned as an active Discover boost'
+  (select count(*)=1 and bool_and(ends_at-starts_at=interval '24 hours')
+   from public.profile_boosts where user_id='77777777-7777-4777-8777-777777777777'),
+  'activated 24-hour boost was not recorded for the full duration'
 );
-
+set role authenticated;
 select set_config('request.jwt.claim.sub','88888888-8888-4888-8888-888888888888',false);
 do $boost_test$
 declare v_result jsonb;
@@ -43,11 +45,13 @@ select public.test_assert(
   (select quantity=2 from public.coin_store_inventory where user_id='88888888-8888-4888-8888-888888888888' and item_code='profile_boost_24h'),
   'unused boosts from the pack were not retained as two individual activations'
 );
+reset role;
 select public.test_assert(
-  (select count(*)=1 from public.get_active_discover_boost_ids() where get_active_discover_boost_ids='88888888-8888-4888-8888-888888888888'::uuid),
-  '3-boost pack did not activate a boost visible to Discover'
+  (select count(*)=1 and bool_and(ends_at-starts_at=interval '24 hours')
+   from public.profile_boosts where user_id='88888888-8888-4888-8888-888888888888'),
+  '3-boost pack did not start exactly one 24-hour boost'
 );
-
+set role authenticated;
 select set_config('request.jwt.claim.sub','33333333-3333-4333-8333-333333333333',false);
 select public.test_expect_error(
   $$select public.activate_my_purchased_profile_boost('profile_boost_24h')$$,

@@ -13825,7 +13825,7 @@ async function loadDiscoverFirstMessageBox(memberId) {
       send.textContent = "Send first message · 1 ticket";
       activate.style.display = "none";
     } else {
-      hint.textContent = "You've used all your first-message tickets. Activate another purchased Boost Profile to message someone new. Your 24-hour visibility is separate and will not be cut short.";
+      hint.textContent = "You've used all your first-message tickets. Activate another purchased Boost Profile to get another first-message ticket and a fresh 24-hour visibility period.";
       input.placeholder = "Activate another Boost Profile to send a first message...";
       activate.style.display = "";
       send.textContent = "No message tickets available";
@@ -13855,7 +13855,7 @@ async function loadDiscoverFirstMessageBox(memberId) {
       if (!itemCode) {
         document.querySelector('#bottomNavigation [data-page="coinWalletPage"]')?.click();
         window.setTimeout(() => document.querySelector('#coinWalletPage [data-cw-tab="store"]')?.click(), 350);
-        hint.textContent = "Choose a Profile Boost in the Coin Store. Activating a purchased boost adds one message ticket and 24-hour visibility.";
+        hint.textContent = "Choose a Profile Boost in the Coin Store. Each purchased activation adds one first-message ticket and 24-hour visibility.";
         return;
       }
 

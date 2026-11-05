@@ -54,10 +54,14 @@ jobs:
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261105090000_individual_coin_store_purchases.sql
       - name: Apply profile badge activation migration to disposable database
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261105110000_activate_special_profile_badge.sql
+      - name: Apply purchased profile boost migration to disposable database
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261105143000_activate_purchased_profile_boosts.sql
       - name: Run wallet, membership, gifts, and admin assertions
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/coin-wallet/assertions.sql
       - name: Run profile badge activation assertions
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/coin-wallet/profile-badge-assertions.sql
+      - name: Run purchased profile boost assertions
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/coin-wallet/purchased-profile-boost-assertions.sql
       - name: Configure concurrency probes
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/coin-wallet/concurrency-setup.sql
       - name: Run concurrent transaction tests

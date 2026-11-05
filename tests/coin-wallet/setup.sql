@@ -32,6 +32,15 @@ create table public.notifications(
   created_at timestamptz not null default now()
 );
 
+-- Existing application boost table used by the profile boost RPCs.
+create table public.profile_boosts(
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  starts_at timestamptz not null default now(),
+  ends_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+
 create or replace function public.is_match_admin()
 returns boolean language sql stable security definer set search_path=''
 as $$

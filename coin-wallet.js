@@ -143,7 +143,10 @@
       const badgeControl=item.code==="decorative_badge"&&count>0
         ? '<div class="cw-badge-state"><span>'+(badgeIsActive?'✦ Badge is active on your profile':'Badge is not active')+'</span><button type="button" class="cw-button '+(badgeIsActive?'':'primary')+'" data-cw-badge-toggle="'+(badgeIsActive?'off':'on')+'">'+(badgeIsActive?'Deactivate':'Activate badge')+'</button></div>'
         : '';
-      return '<article class="cw-card"><h3>'+item.name+'</h3><div class="cw-price">'+item.cost+' coins</div><p class="cw-muted">In your inventory: <strong>'+count+'</strong></p><button class="cw-button primary" data-cw-store-item="'+item.code+'">Buy '+item.name+'</button>'+badgeControl+'</article>';
+      const boostControl=(item.code==="profile_boost_24h"||item.code==="profile_boost_3")&&count>0
+        ? '<div class="cw-badge-state"><span>Ready to use</span><button type="button" class="cw-button primary" data-cw-boost-activate="'+item.code+'">'+(item.code==="profile_boost_3"?'Use 3-boost pack':'Activate 24-hour boost')+'</button></div>'
+        : '';
+      return '<article class="cw-card"><h3>'+item.name+'</h3><div class="cw-price">'+item.cost+' coins</div><p class="cw-muted">In your inventory: <strong>'+count+'</strong></p><button class="cw-button primary" data-cw-store-item="'+item.code+'">Buy '+item.name+'</button>'+badgeControl+boostControl+'</article>';
     }).join("");
   }
   document.getElementById("cwPackages").innerHTML=PACKS.map((p,i)=>'<article class="cw-card '+(i===1?'cw-package-featured':'')+'">'+(i===1?'<span class="cw-package-tag">MOST POPULAR</span>':'')+'<h3>'+p[1]+'</h3><div class="cw-price">'+p[2]+'</div><strong>'+p[3]+'</strong><button class="cw-button primary" data-cw-package="'+p[0]+'">Choose package</button></article>').join("");
@@ -158,6 +161,29 @@
         await refresh();
         status(activate?"Your Special Profile Badge is now active and visible on your profile, Discover and member profile views.":"Your Special Profile Badge has been deactivated.");
       }catch(error){status(error.message||"Could not update your profile badge.");badgeToggle.disabled=false;}
+      return;
+    }
+    const boostButton=event.target.closest("[data-cw-boost-activate]");
+    if(boostButton){
+      const itemCode=boostButton.dataset.cwBoostActivate;
+      boostButton.disabled=true;
+      let confirmed=false;
+      try{
+        confirmed=await window.matchConfirm(
+          itemCode==="profile_boost_3"
+            ? "Use one 3-boost pack? One 24-hour boost starts now and the other two will remain in your inventory."
+            : "Activate your purchased 24-hour Profile Boost now?",
+          "Activate Profile Boost"
+        );
+      }catch(e){status(e.message||"Could not open boost confirmation.");}
+      if(!confirmed){boostButton.disabled=false;return;}
+      try{
+        const {data,error}=await client.rpc("activate_my_purchased_profile_boost",{p_item_code:itemCode});
+        if(error)throw error;
+        await refresh();
+        const end=data?.ends_at?new Date(data.ends_at):new Date(Date.now()+24*60*60*1000);
+        status("Your purchased Profile Boost is active until "+end.toLocaleString()+". No membership cooldown or extra coin charge was applied.");
+      }catch(e){status(e.message||"Could not activate your purchased Profile Boost.");boostButton.disabled=false;}
       return;
     }
     const packageButton=event.target.closest("[data-cw-package]");

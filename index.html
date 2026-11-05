@@ -12984,7 +12984,17 @@ async function matchCanRewind(userId = currentUser?.id) {
 }
 async function matchCanBoost(userId = currentUser?.id) {
   const tier = await matchPlusTier(userId);
-  return (await matchIsPremium(userId)) || tier === "quarterly" || tier === "annual";
+  const membershipEligible = (await matchIsPremium(userId)) || tier === "quarterly" || tier === "annual";
+  if (membershipEligible) return true;
+  if (!userId) return false;
+  const { data, error } = await db.from("coin_store_inventory")
+    .select("item_code,quantity")
+    .eq("user_id", userId)
+    .in("item_code", ["profile_boost_24h","profile_boost_3"])
+    .gt("quantity", 0)
+    .limit(2);
+  if (error) throw error;
+  return !!data?.length;
 }
 async function matchHasAdvancedFilters(userId = currentUser?.id) {
   const tier = await matchPlusTier(userId);
@@ -13079,10 +13089,30 @@ $("profileBoostBtn")?.addEventListener("click", async () => {
   try {
     if (!await matchCanBoost()) { document.querySelector('#bottomNavigation [data-page="coinWalletPage"]')?.click(); return; }
     button.disabled = true;
-    const { data, error } = await db.rpc("activate_my_profile_boost");
-    if (error) throw error;
-    const end = data?.ends_at ? new Date(data.ends_at) : new Date(Date.now()+30*60*1000);
-    status("discoverStatus", "Your profile is boosted for 30 minutes, until " + end.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}) + ".");
+
+    // A purchased store boost is independent of Match Plus/Premium cooldowns.
+    const { data: ownedBoosts, error: inventoryError } = await db.from("coin_store_inventory")
+      .select("item_code,quantity")
+      .eq("user_id", currentUser.id)
+      .in("item_code", ["profile_boost_24h","profile_boost_3"])
+      .gt("quantity", 0);
+    if (inventoryError) throw inventoryError;
+    const purchasedCode = ownedBoosts?.some(x => x.item_code === "profile_boost_24h" && x.quantity > 0)
+      ? "profile_boost_24h"
+      : ownedBoosts?.some(x => x.item_code === "profile_boost_3" && x.quantity > 0)
+        ? "profile_boost_3" : null;
+
+    if (purchasedCode) {
+      const { data, error } = await db.rpc("activate_my_purchased_profile_boost", { p_item_code: purchasedCode });
+      if (error) throw error;
+      const end = data?.ends_at ? new Date(data.ends_at) : new Date(Date.now()+24*60*60*1000);
+      status("discoverStatus", "Your purchased 24-hour Profile Boost is active until " + end.toLocaleString() + ".");
+    } else {
+      const { data, error } = await db.rpc("activate_my_profile_boost");
+      if (error) throw error;
+      const end = data?.ends_at ? new Date(data.ends_at) : new Date(Date.now()+30*60*1000);
+      status("discoverStatus", "Your membership Profile Boost is active for 30 minutes, until " + end.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}) + ".");
+    }
     await loadNearby();
   } catch (error) {
     status("discoverStatus", "Could not activate boost: " + friendly(error), true);

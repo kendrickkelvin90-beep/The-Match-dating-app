@@ -10658,11 +10658,6 @@ if (isNewHere) {
       const infoOverlay=document.createElement("div");
       infoOverlay.className="discover-profile-overlay discover-option3-overlay";
       infoOverlay.style.cssText="position:absolute;left:0;right:0;bottom:0;z-index:6;padding:82px 16px 16px;background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.30) 18%,rgba(0,0,0,.88) 55%,#050505 100%);box-sizing:border-box;display:flex;flex-direction:column;gap:0;pointer-events:none;";
-      // Let taps pass through the transparent overlay to the photo while keeping
-      // actual controls (details, Like, Pass, Super Like) fully clickable.
-      infoOverlay.querySelectorAll("*").forEach(element => {
-        element.style.pointerEvents = "auto";
-      });
 
 const name=document.createElement("h2");
 name.appendChild(

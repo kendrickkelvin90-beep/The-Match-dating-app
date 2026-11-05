@@ -10473,9 +10473,13 @@ if (!people.length) {
     let personIndex=0;
 
     async function showPerson(){
-      list.replaceChildren();
+      // Keep the Discover feed at the member card while the next card is prepared.
+      // Replacing the only card after Like/Pass must not let browser scroll anchoring
+      // jump the page back to the Stories section.
+      const discoverScrollPosition = document.scrollingElement?.scrollTop ?? window.scrollY;
 
       if(personIndex>=people.length){
+        list.replaceChildren();
         status("discoverStatus","You've seen all available profiles. Refresh to check again.");
         return;
       }
@@ -11026,6 +11030,13 @@ superLike.onclick=async()=>{
       photoBox.appendChild(infoOverlay);
       card.appendChild(photoBox);
       list.replaceChildren(card);
+      // Restore the exact document scroll position after the card DOM swap.
+      // This is intentionally scoped to Discover and does not alter photo navigation.
+      requestAnimationFrame(() => {
+        if (document.getElementById("discover")?.classList.contains("hidden")) return;
+        if (document.scrollingElement) document.scrollingElement.scrollTop = discoverScrollPosition;
+        window.scrollTo(0, discoverScrollPosition);
+      });
 
       let startX=0;
       let startY=0;

@@ -13587,8 +13587,9 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
   };
 
   try {
+    if (!currentUser?.id) throw new Error("Please sign in before saving discovery preferences.");
     localStorage.setItem(
-      "theMatchDiscoveryPreferences",
+      getDiscoveryPreferencesStorageKey(),
       JSON.stringify(preferences)
     );
     await loadDiscoveryPreferences();
@@ -13602,10 +13603,36 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
       "Could not save preferences on this device. Check your browser storage and try again.";
   }
 });
+  function getDiscoveryPreferencesStorageKey() {
+    if (!currentUser?.id) throw new Error("Please sign in before loading discovery preferences.");
+    return "theMatchDiscoveryPreferences:" + currentUser.id;
+  }
+
+  async function getCurrentAccountDiscoveryPreferences() {
+    const accountKey = getDiscoveryPreferencesStorageKey();
+    let raw = localStorage.getItem(accountKey);
+
+    // The previous release used one shared key. Migrate it only for a verified
+    // Match admin so the admin's existing Lagos settings are preserved without
+    // leaking them into another member's account.
+    if (raw === null) {
+      const legacyRaw = localStorage.getItem("theMatchDiscoveryPreferences");
+      if (legacyRaw && await checkMatchAdmin()) {
+        JSON.parse(legacyRaw); // Validate before moving the legacy value.
+        localStorage.setItem(accountKey, legacyRaw);
+        localStorage.removeItem("theMatchDiscoveryPreferences");
+        raw = legacyRaw;
+      }
+    }
+
+    return raw ? JSON.parse(raw) : {};
+  }
+
   async function loadDiscoveryPreferences() {
   try {
+    if (!currentUser?.id) throw new Error("Please sign in to load discovery preferences.");
     const premium = await matchHasAdvancedFilters();
-    const saved = JSON.parse(localStorage.getItem("theMatchDiscoveryPreferences") || "{}");
+    const saved = await getCurrentAccountDiscoveryPreferences();
     const distance = $("discoveryDistance");
     distance.max = premium ? "200" : "50";
     distance.value = Math.min(Number(saved.distance || 50), premium ? 200 : 50);
@@ -13614,12 +13641,13 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
     $("discoveryAgeMax").max = premium ? "99" : "79";
     $("discoveryAgeMin").value = saved.minAge ?? 18;
     $("discoveryAgeMax").value = Math.min(Number(saved.maxAge ?? 79), premium ? 99 : 79);
-    if (saved.location !== undefined) $("discoveryLocation").value = saved.location;
-    if (saved.showMe !== undefined) $("discoveryShowMe").value = saved.showMe;
-    if (saved.lookingFor !== undefined) $("discoveryLookingFor").value = saved.lookingFor;
-    if (saved.interests !== undefined) $("discoveryInterests").value = saved.interests;
+    $("discoveryLocation").value = saved.location ?? "";
+    $("discoveryShowMe").value = saved.showMe ?? "everyone";
+    $("discoveryLookingFor").value = saved.lookingFor ?? "";
+    $("discoveryInterests").value = saved.interests ?? "";
 
     const premiumOnly = ["discoveryVerifiedOnly","discoveryRecentlyActive","discoveryExpandRange"];
+    const premiumDefaults = { verifiedOnly: false, recentlyActive: false, expandRange: true };
     premiumOnly.forEach(id => {
       const input = $(id);
       const label = input?.closest("label");
@@ -13633,10 +13661,8 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
         tag.textContent = " 🔒 Premium";
         label.querySelector("span")?.appendChild(tag);
       } else if (premium && tag) tag.remove();
-      if (!premium) input.checked = false;
-      else if (saved[id.replace("discovery","").charAt(0).toLowerCase()+id.replace("discovery","").slice(1)] !== undefined) {
-        input.checked = !!saved[id.replace("discovery","").charAt(0).toLowerCase()+id.replace("discovery","").slice(1)];
-      }
+      const preferenceKey = id.replace("discovery","").charAt(0).toLowerCase()+id.replace("discovery","").slice(1);
+      input.checked = premium && (saved[preferenceKey] ?? premiumDefaults[preferenceKey]);
     });
 
     document.querySelectorAll('input[name="discoveryRolePreference"]').forEach(el=>{
@@ -13676,7 +13702,10 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
   $("discoveryDistanceValue").textContent = "50 km";
 
   try {
-    localStorage.removeItem("theMatchDiscoveryPreferences");
+    if (!currentUser?.id) throw new Error("Please sign in before resetting discovery preferences.");
+    // Run the one-time admin-only migration first, then remove only this account's key.
+    await getCurrentAccountDiscoveryPreferences();
+    localStorage.removeItem(getDiscoveryPreferencesStorageKey());
     await loadDiscoveryPreferences();
     if(currentUser){
       db.from("profiles").update({discovery_role_preferences:[]}).eq("id",currentUser.id)

@@ -10484,6 +10484,7 @@ if (!people.length) {
 
 
     let personIndex=0;
+    let discoverSuperLikeInventoryPromise=null;
 
     async function showPerson(){
       // Keep the Discover feed at the member card while the next card is prepared.
@@ -10499,24 +10500,29 @@ if (!people.length) {
 
       const p=people[personIndex];
 
-      // Super Likes are a coin-store entitlement, not a Premium membership benefit.
-      // Check inventory for every member and default to locked if the lookup fails.
-      let hasSuperLikeInventory = false;
-      try {
-        const { data: superLikeItems, error: superLikeInventoryError } = await db
-          .from("coin_store_inventory")
-          .select("item_code,quantity")
-          .eq("user_id", currentUser.id)
-          .in("item_code", ["super_like_1","super_like_5"])
-          .gt("quantity", 0);
-        if (superLikeInventoryError) throw superLikeInventoryError;
-        hasSuperLikeInventory = (superLikeItems || []).some(item =>
-          Number(item.quantity) > 0 &&
-          ["super_like_1","super_like_5"].includes(item.item_code)
-        );
-      } catch (inventoryError) {
-        console.warn("Could not check Super Like inventory; keeping the action locked.", inventoryError);
+      // Fetch Super Like inventory once per Discover feed, not once for every
+      // profile. Reusing this result removes an avoidable network wait between swipes.
+      if (!discoverSuperLikeInventoryPromise) {
+        discoverSuperLikeInventoryPromise = (async () => {
+          try {
+            const { data: superLikeItems, error: superLikeInventoryError } = await db
+              .from("coin_store_inventory")
+              .select("item_code,quantity")
+              .eq("user_id", currentUser.id)
+              .in("item_code", ["super_like_1","super_like_5"])
+              .gt("quantity", 0);
+            if (superLikeInventoryError) throw superLikeInventoryError;
+            return (superLikeItems || []).some(item =>
+              Number(item.quantity) > 0 &&
+              ["super_like_1","super_like_5"].includes(item.item_code)
+            );
+          } catch (inventoryError) {
+            console.warn("Could not check Super Like inventory; keeping the action locked.", inventoryError);
+            return false;
+          }
+        })();
       }
+      const hasSuperLikeInventory = await discoverSuperLikeInventoryPromise;
       
 
 const discoverPanel=document.getElementById("discover");
@@ -10802,8 +10808,17 @@ pass.setAttribute("aria-label","Pass on this profile");
 pass.title="Pass";
 pass.style.cssText="flex:1;min-height:54px;border-radius:18px;border:1px solid #55404a;background:#171116;color:#fff;font-size:16px;font-weight:800;box-shadow:0 5px 16px #0005;";
 pass.onclick = async () => {
+  if (pass.disabled || like.disabled) return;
   pass.disabled = true;
   like.disabled = true;
+
+  // Start the swipe animation immediately while the pass is being saved.
+  const exitAnimation = animateCardExit("left");
+  const restoreCard = () => {
+    card.style.transition = "";
+    card.style.transform = "";
+    card.style.opacity = "1";
+  };
 
   try {
     
@@ -10823,8 +10838,9 @@ const { error } = await db
 
     if (error) {
       if (/DAILY_SWIPE_LIMIT/i.test(error.message)) {
+        restoreCard();
         status("discoverStatus","You have used your 20 free swipes for today. Go Premium for unlimited swipes.",true);
-        await refreshDailyLikeCounter();
+        void refreshDailyLikeCounter().catch(counterError => console.warn("Swipe counter refresh failed:", counterError));
         pass.disabled = true;
         like.disabled = true;
         return;
@@ -10832,11 +10848,12 @@ const { error } = await db
       throw error;
     }
 
-    await refreshDailyLikeCounter();
-    await animateCardExit("left");
+    await exitAnimation;
     personIndex++;
     await showPerson();
+    void refreshDailyLikeCounter().catch(counterError => console.warn("Swipe counter refresh failed:", counterError));
   } catch (error) {
+    restoreCard();
     status(
       "discoverStatus",
       "Couldn't save your pass: " + friendly(error),
@@ -10882,8 +10899,18 @@ if (!currentDiscoverIsPremium && currentDailySwipesUsed >= 20) {
 
       
 like.onclick=async()=>{
+  if (like.disabled || pass.disabled) return;
   like.disabled=true;
   pass.disabled=true;
+
+  // Begin the card exit as soon as the user taps Like; network work continues
+  // during the animation instead of making the button feel unresponsive.
+  const exitAnimation = animateCardExit("right");
+  const restoreCard = () => {
+    card.style.transition = "";
+    card.style.transform = "";
+    card.style.opacity = "1";
+  };
 
   try{
         const { data: authData, error: authError } = await db.auth.getUser();
@@ -10906,8 +10933,9 @@ like.onclick=async()=>{
           :/duplicate/i.test(likeError.message)
             ?"You've already liked this member."
             :"Couldn't send like: "+friendly(likeError),true);
+      restoreCard();
       if (/DAILY_SWIPE_LIMIT/i.test(likeError.message)) {
-        await refreshDailyLikeCounter();
+        void refreshDailyLikeCounter().catch(counterError => console.warn("Swipe counter refresh failed:", counterError));
         like.disabled = true;
         pass.disabled = true;
         like.textContent = "🔒";
@@ -10919,14 +10947,14 @@ like.onclick=async()=>{
       return;
     }
 
-  await refreshDailyLikeCounter();
+  void refreshDailyLikeCounter().catch(counterError => console.warn("Swipe counter refresh failed:", counterError));
   const {data:reverseLike,error:matchError}=await db
   .rpc("check_mutual_like",{p_other_user_id:p.id});
 
 if(matchError)throw matchError;
 
     if(reverseLike){
-      await animateCardExit("right");
+      await exitAnimation;
       const {data:myProfile}=await db
         .from("profiles")
         .select("display_name")
@@ -10975,11 +11003,12 @@ if(matchError)throw matchError;
     }
 
     status("discoverStatus","Like sent successfully! ❤️");
-    await animateCardExit("right");
+    await exitAnimation;
     personIndex++;
     await showPerson();
 
   }catch(error){
+    restoreCard();
     status("discoverStatus","Couldn't complete your like: "+friendly(error),true);
     like.disabled=false;
     pass.disabled=false;
@@ -15394,11 +15423,12 @@ data.reverse();
               existingReceipt.onclick = null;
               existingReceipt.style.cursor = "default";
             } else if (message.read_at) {
-              existingReceipt.textContent =
-                "Want to know if your message has been seen? Tap here to explore Premium.";
-              existingReceipt.style.color = "#ffffff";
-              existingReceipt.style.cursor = "pointer";
-              existingReceipt.onclick = () => show("premium");
+              // Keep read receipts as a quiet delivery state for non-Premium senders.
+              // Never inject a Premium advertisement into the message bubble.
+              existingReceipt.textContent = "✓✓ Delivered";
+              existingReceipt.style.color = "";
+              existingReceipt.style.cursor = "default";
+              existingReceipt.onclick = null;
             } else if (message.delivered_at) {
               existingReceipt.textContent = "✓✓ Delivered";
               existingReceipt.style.color = "#ffffff";
@@ -15457,11 +15487,10 @@ if(mine){
     receipt.textContent = "✓✓ Seen";
     receipt.style.color = "#60d8ff";
   } else if (message.read_at) {
-    receipt.textContent =
-      "Want to know if your message has been seen? Tap here to explore Premium.";
-    receipt.style.color = "#ffffff";
-    receipt.style.cursor = "pointer";
-    receipt.onclick = () => show("premium");
+    // Do not place Premium promotional copy inside a member's message bubble.
+    receipt.textContent = "✓✓ Delivered";
+    receipt.style.color = "";
+    receipt.style.cursor = "default";
   } else if (message.delivered_at) {
     receipt.textContent = "✓✓ Delivered";
     receipt.style.color = "#ffffff";

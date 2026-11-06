@@ -5683,7 +5683,7 @@ body.light-theme #matchFeaturePromoClose {
   </div>
   <div class="member-card" id="photoGallery">
   <h2>My photos 📸</h2>
-  <p class="small">Upload at least 2 profile photos to use Discover, and up to 7 if you wish. Your first photo is your main photo. JPG, PNG or WebP, up to 5 MB each.</p>
+  <p class="small">Upload at least 2 profile photos to use The Match, and up to 7 if you wish. Your first photo is your main photo. JPG, PNG or WebP, up to 5 MB each.</p>
   <input id="photoFiles" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
 <button class="btn primary" id="uploadPhotos" type="button" hidden>Upload selected photos</button>
   <p class="status" id="photoStatus"></p>
@@ -7621,7 +7621,8 @@ async function loadNotificationBadge() {
 
 const pageHistory = [];
 let currentPage = null;
-  let hasRequiredProfilePhoto = false;
+  const MIN_REQUIRED_PROFILE_PHOTOS = 2;
+  let hasRequiredProfilePhotos = false;
 
 function profileDetailsAreComplete() {
   const age = Number($("age")?.value);
@@ -7654,7 +7655,7 @@ function show(id, addToHistory = true) {
 
   if (
     currentUser &&
-    !hasRequiredProfilePhoto &&
+    !hasRequiredProfilePhotos &&
     id !== "profile" &&
     !publicPages.includes(id)
   ) {
@@ -7662,7 +7663,7 @@ function show(id, addToHistory = true) {
     setTimeout(() => {
       status(
         "photoStatus",
-        "Please upload your main profile photo before using The Match.",
+        "Please upload at least 2 profile photos before using The Match.",
         true
       );
     }, 0);
@@ -10247,8 +10248,8 @@ status("profileStatus","Your profile is loaded. Check your details and save when
   await loadMyPhotos();
 
   // Profile details can be completed or edited without locking members
-  // out of the rest of the app. Only the main-photo safety requirement gates access.
-  const savedProfileIsReady = hasRequiredProfilePhoto;
+  // out of the rest of the app. Two saved profile photos are required for access.
+  const savedProfileIsReady = hasRequiredProfilePhotos;
 
   if (savedProfileIsReady) {
     show("discover", false);
@@ -16145,20 +16146,20 @@ button.textContent = "➤";
       .order("position");
 
     if(error)throw error;
-    const hadRequiredPhoto = hasRequiredProfilePhoto;
-    hasRequiredProfilePhoto = (photos || []).some(
-      photo => photo.position === 0
-    );
+    const hadRequiredPhotos = hasRequiredProfilePhotos;
+    const savedPhotos = photos || [];
+    const hasMainPhoto = savedPhotos.some(photo => Number(photo.position) === 0);
+    hasRequiredProfilePhotos = hasMainPhoto && savedPhotos.length >= MIN_REQUIRED_PROFILE_PHOTOS;
 
-    if (!hasRequiredProfilePhoto) {
+    if (!hasRequiredProfilePhotos) {
       show("profile", false);
-      status(
-        "photoStatus",
-        "A main profile photo is required before you can continue.",
-        true
-      );
-    
-    } else if (!hadRequiredPhoto && currentPage === "profile") {
+      const message = savedPhotos.length === 0
+        ? "Upload your main photo and one additional photo before you can continue."
+        : savedPhotos.length === 1
+          ? "Your main photo is saved. Upload one more profile photo to continue."
+          : "Please make sure your main photo and at least one additional photo are saved.";
+      status("photoStatus", message, true);
+    } else if (!hadRequiredPhotos && currentPage === "profile") {
       show("discover", false);
     }
 
@@ -16232,6 +16233,10 @@ button.textContent = "➤";
 del.title = "Delete photo";
 del.setAttribute("aria-label", "Delete photo");
       del.onclick=async()=>{
+        if (photos.length <= MIN_REQUIRED_PROFILE_PHOTOS) {
+          status("photoStatus", "The Match requires at least 2 profile photos. Upload a replacement before deleting this one.", true);
+          return;
+        }
         if(!await matchConfirm("Delete this photo?"))return;
         if (p.storage_path.startsWith("b2://")) {
           const { data: deleteData, error } = await db.functions.invoke("b2-media", {

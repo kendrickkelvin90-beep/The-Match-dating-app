@@ -8173,15 +8173,19 @@ async function loadAdminMemberReports() {
           const member = reported ? { ...reported, id: report.reported_user_id } : { id: report.reported_user_id, display_name: "this member" };
           const addAction = (label, action, disabled = false) => { const button = document.createElement("button"); button.type = "button"; button.textContent = label; button.disabled = disabled; button.addEventListener("click", async () => {
             button.disabled = true;
+            let moderationApplied = false;
             try {
               await moderateAdminMember(member, action);
+              moderationApplied = true;
               const { error: reportUpdateError } = await db.from("member_reports")
                 .update({ status: "actioned" }).eq("id", report.id);
               if (reportUpdateError) throw reportUpdateError;
               await loadAdminMemberReports();
             } catch (moderationError) {
-              status("adminStatus", "Moderation failed: " + friendly(moderationError), true);
-              button.disabled = false;
+              status("adminStatus", moderationApplied
+                ? "The account action was applied, but the report could not be marked actioned: " + friendly(moderationError)
+                : "Moderation failed: " + friendly(moderationError), true);
+              button.disabled = moderationApplied;
             }
           }); actionRow.appendChild(button); };
           addAction("Suspend member", "suspended", !!moderation);

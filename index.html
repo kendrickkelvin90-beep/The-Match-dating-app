@@ -14943,33 +14943,36 @@ mutualIds.splice(
     
 const conversations = await Promise.all(
   (profiles || []).map(async p => {
-    const { data: messages, error: messagesError } = await db
-      .from("messages")
-      .select("id,sender_id,receiver_id,body,created_at,read_at")
-      .or(
-        "and(sender_id.eq." + me +
-        ",receiver_id.eq." + p.id +
-        "),and(sender_id.eq." + p.id +
-        ",receiver_id.eq." + me + ")"
-      )
-      .order("created_at", { ascending: false })
-      .limit(1000);
+    const conversationFilter =
+      "and(sender_id.eq." + me +
+      ",receiver_id.eq." + p.id +
+      "),and(sender_id.eq." + p.id +
+      ",receiver_id.eq." + me + ")";
 
-    if (messagesError) throw messagesError;
+    // The inbox only needs the newest message for its preview. Do not
+    // download up to 1,000 historical messages for every conversation.
+    const [latestResult, unreadResult] = await Promise.all([
+      db
+        .from("messages")
+        .select("id,sender_id,receiver_id,body,created_at,read_at")
+        .or(conversationFilter)
+        .order("created_at", { ascending: false })
+        .limit(1),
+      db
+        .from("messages")
+        .select("id", { count: "exact", head: true })
+        .eq("sender_id", p.id)
+        .eq("receiver_id", me)
+        .is("read_at", null)
+    ]);
 
-    const chatMessages = messages || [];
-    const latest = chatMessages[0] || null;
-
-    const unreadCount = chatMessages.filter(message =>
-      message.receiver_id === me &&
-      message.sender_id === p.id &&
-      message.read_at === null
-    ).length;
+    if (latestResult.error) throw latestResult.error;
+    if (unreadResult.error) throw unreadResult.error;
 
     return {
       profile: p,
-      latest,
-      unreadCount
+      latest: (latestResult.data || [])[0] || null,
+      unreadCount: unreadResult.count || 0
     };
   })
 );

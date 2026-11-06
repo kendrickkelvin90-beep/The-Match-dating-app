@@ -5512,6 +5512,13 @@ body.light-theme #matchFeaturePromoClose {
   <input id="password" type="password" minlength="8" required autocomplete="new-password" style="flex:1;min-width:0;">
   <button type="button" class="btn secondary" data-toggle-password="password" aria-label="Show password" aria-pressed="false" style="width:auto;padding:10px 14px;">👁</button>
 </div>
+<div id="confirmPasswordWrap" class="hidden">
+  <label for="confirmPassword">Confirm password</label>
+  <div class="password-wrap" style="display:flex;gap:8px;align-items:center;">
+    <input id="confirmPassword" type="password" minlength="8" autocomplete="new-password" style="flex:1;min-width:0;">
+    <button type="button" class="btn secondary" data-toggle-password="confirmPassword" aria-label="Show password" aria-pressed="false" style="width:auto;padding:10px 14px;">👁</button>
+  </div>
+</div>
 <div
   id="authCaptcha"
   data-sitekey="0x4AAAAAAFia9mw39tR1pGuq"
@@ -8608,6 +8615,9 @@ loginMode=isLogin;
 $("authTitle").textContent=isLogin?"Welcome back":"Create your account";
 $("submit").textContent=isLogin?"Log in":"Create account";
 $("password").autocomplete=isLogin?"current-password":"new-password";
+$("confirmPasswordWrap").classList.toggle("hidden",isLogin);
+$("confirmPassword").required=!isLogin;
+$("confirmPassword").value="";
 $("switch").textContent=isLogin?"New here? Create an account":"Already registered? Log in";
 status("authStatus","");
 show("auth");
@@ -8628,13 +8638,6 @@ document.querySelectorAll("[data-toggle-password]").forEach(button=>{
 
  
 const onboardingQuestions = [
-  {
-    key: "registration_country",
-    title: "Which country are you registering from?",
-    help: "The Match is currently accepting new registrations from Nigeria only.",
-    options: ["Nigeria"],
-    values: ["Nigeria"]
-  },
   {
     key: "age_confirmed",
     title: "Are you 18 years old or older?",
@@ -8687,7 +8690,7 @@ const onboardingQuestions = [
   {
     key: "sexual_orientation",
     title: "How do you describe your sexual orientation?",
-    options: ["Gay", "Lesbian", "Bisexual", "Straight", "Pansexual", "Queer", "Asexual", "Another orientation", "Prefer not to say"]
+    options: ["Gay", "Lesbian", "Bisexual", "Pansexual", "Queer", "Asexual", "Another orientation", "Prefer not to say"]
   },
   {
     key: "interested_in",
@@ -8949,6 +8952,22 @@ $("authForm").onsubmit = async e => {
   try {
     const email = $("email").value.trim();
     const password = $("password").value;
+
+    if (!loginMode) {
+      const confirmPassword = $("confirmPassword").value;
+      if (!confirmPassword) {
+        status("authStatus", "Please confirm your password.", true);
+        $("confirmPassword").focus();
+        button.disabled = false;
+        return;
+      }
+      if (password !== confirmPassword) {
+        status("authStatus", "Your passwords do not match. Please enter them again.", true);
+        $("confirmPassword").focus();
+        button.disabled = false;
+        return;
+      }
+    }
 
 const captchaToken = authCaptchaToken;
 if (!captchaToken || !authCaptchaIssuedAt || Date.now() - authCaptchaIssuedAt > 240000) {

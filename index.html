@@ -7153,6 +7153,19 @@ function subscribeToIncomingMessages(user) {
       filter: "receiver_id=eq." + user.id
     }, payload => {
       if (!payload?.new || currentUser?.id !== user.id) return;
+
+      // If this message belongs to the thread currently on screen, update it
+      // immediately instead of waiting for the inbox preview refresh.
+      if (
+        currentPage === "chatPage" &&
+        activeChatUserId === payload.new.sender_id
+      ) {
+        loadChatMessages().catch(error =>
+          console.warn("Live chat message refresh failed:", error)
+        );
+        return;
+      }
+
       if (currentPage !== "messages") return;
 
       if (conversationPreviewRefreshTimer) {
@@ -15040,7 +15053,7 @@ $("chatMessages").replaceChildren();
       if (activeChatUserId) openMemberProfile(activeChatUserId);
     };
 
-    $("chatPartnerLocation").textContent = "Loading profile...";
+    $("chatPartnerLocation").textContent = "";
 
    
         const currentPage = panels.find(page => {
@@ -15891,9 +15904,8 @@ if (body) {
 
   if (error) throw error;
   textMessageSaved = true;
-  // Remove the temporary bubble before the authoritative reload. The loader
-  // also reconciles a pending bubble if a live refresh wins this race.
-  if (optimisticBubble?.isConnected) optimisticBubble.remove();
+  // Keep the optimistic bubble visible until loadChatMessages reconciles it
+  // with the saved row. This avoids a blank gap after the insert succeeds.
 }
 
 // Upload an attachment to the private chat-media bucket.

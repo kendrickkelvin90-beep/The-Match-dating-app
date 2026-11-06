@@ -10404,7 +10404,7 @@ async function loadNearby(){
       greeting.appendChild(ownBadge);
     }
     await refreshDailyLikeCounter();
-    const allSavedPreferences = JSON.parse(localStorage.getItem("theMatchDiscoveryPreferences") || "{}");
+    const allSavedPreferences = await getCurrentAccountDiscoveryPreferences();
     // City/area discovery is available to every member. Other advanced filters
     // remain Premium-only.
     const savedPreferences = viewerPremium ? allSavedPreferences : {

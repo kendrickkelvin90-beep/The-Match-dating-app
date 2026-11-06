@@ -6316,7 +6316,6 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
   </button>
   <button class="btn secondary" type="button" id="openCallHistoryButton">◷ Call history</button>
   <p class="small">Chat privately with your mutual matches.</p>
-  <button class="btn secondary" type="button" onclick="show('premium')">Want to know if your message has been seen? Tap here to explore Premium.</button>
 
   <div id="conversationList"></div>
 
@@ -10911,6 +10910,7 @@ like.onclick=async()=>{
     card.style.transform = "";
     card.style.opacity = "1";
   };
+  let likeWasSaved = false;
 
   try{
         const { data: authData, error: authError } = await db.auth.getUser();
@@ -10947,7 +10947,8 @@ like.onclick=async()=>{
       return;
     }
 
-  void refreshDailyLikeCounter().catch(counterError => console.warn("Swipe counter refresh failed:", counterError));
+    likeWasSaved = true;
+    void refreshDailyLikeCounter().catch(counterError => console.warn("Swipe counter refresh failed:", counterError));
   const {data:reverseLike,error:matchError}=await db
   .rpc("check_mutual_like",{p_other_user_id:p.id});
 
@@ -11008,10 +11009,19 @@ if(matchError)throw matchError;
     await showPerson();
 
   }catch(error){
-    restoreCard();
-    status("discoverStatus","Couldn't complete your like: "+friendly(error),true);
-    like.disabled=false;
-    pass.disabled=false;
+    if (likeWasSaved && card.isConnected) {
+      // The Like is already saved. Do not leave the member on screen where a
+      // second tap could create a duplicate; continue and report the match-check issue.
+      await exitAnimation;
+      personIndex++;
+      await showPerson();
+      status("discoverStatus","Your like was saved, but we couldn't finish checking for a mutual match. You can continue browsing.",true);
+    } else {
+      if (card.isConnected) restoreCard();
+      status("discoverStatus","Couldn't complete your like: "+friendly(error),true);
+      like.disabled=false;
+      pass.disabled=false;
+    }
   }
 };
 

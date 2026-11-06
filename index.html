@@ -10624,6 +10624,27 @@ if (!people.length) {
   
 
 
+    // Cache the current and next Discover member's resolved photo list.
+    // This avoids querying the next member's first photo once for preloading
+    // and querying it again when that member's card becomes active.
+    const discoverPhotoCache = new Map();
+    const getDiscoverPhotoUrls = userId => {
+      if (!discoverPhotoCache.has(userId)) {
+        discoverPhotoCache.set(userId, (async () => {
+          const { data: photos, error: photosError } = await db
+            .from("profile_photos")
+            .select("storage_path")
+            .eq("user_id", userId)
+            .order("position");
+          if (photosError) throw photosError;
+          return Promise.all((photos || []).map(item =>
+            resolveProfilePhotoUrl(item.storage_path)
+          ));
+        })());
+      }
+      return discoverPhotoCache.get(userId);
+    };
+
     let personIndex=0;
 
     async function showPerson(){
@@ -10639,6 +10660,7 @@ if (!people.length) {
       }
 
       const p=people[personIndex];
+      if (personIndex > 0) discoverPhotoCache.delete(people[personIndex - 1]?.id);
 
       // Super Likes are a coin-store entitlement, not a Premium membership benefit.
       // Check inventory for every member and default to locked if the lookup fails.
@@ -10733,12 +10755,7 @@ if (isNewHere) {
       let photoIndex=0;
       let photoUrls=[];
 
-      const {data:photos,error:photosError}=await db.from("profile_photos")
-        .select("storage_path").eq("user_id",p.id).order("position");
-
-      if(photosError)throw photosError;
-
-      photoUrls=await Promise.all((photos||[]).map(item=>resolveProfilePhotoUrl(item.storage_path)));
+      photoUrls = await getDiscoverPhotoUrls(p.id);
 
       if(photoUrls.length){
         photo.src=photoUrls[0];
@@ -10751,18 +10768,12 @@ if (isNewHere) {
       // Quietly preload the next profile's first photo while this card is visible.
       const nextPerson = people[personIndex + 1];
       if (nextPerson) {
-        db.from("profile_photos")
-          .select("storage_path")
-          .eq("user_id", nextPerson.id)
-          .order("position")
-          .limit(1)
-          .then(async ({ data: nextPhotos }) => {
-            const nextPath = nextPhotos?.[0]?.storage_path;
-            if (!nextPath) return;
-            const nextUrl = await resolveProfilePhotoUrl(nextPath);
+        getDiscoverPhotoUrls(nextPerson.id)
+          .then(nextUrls => {
+            if (!nextUrls.length) return;
             const preloadImage = new Image();
             preloadImage.decoding = "async";
-            preloadImage.src = nextUrl;
+            preloadImage.src = nextUrls[0];
           })
           .catch(() => {});
       }

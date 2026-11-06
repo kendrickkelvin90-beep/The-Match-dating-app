@@ -15065,6 +15065,7 @@ const firstPhotoByUser = new Map();
       const button = document.createElement("button");
       button.type = "button";
       button.className = "btn secondary";
+      button.dataset.unread = conversation.unreadCount > 0 ? "true" : "false";
       button.style.cssText =
         "display:flex;align-items:center;gap:12px;width:100%;" +
         "text-align:left;padding:12px;margin-bottom:8px;";
@@ -15177,10 +15178,18 @@ if (photoPath) {
       list.appendChild(button);
     }
 
-    status(
-      "messagesStatus",
-      "Choose a mutual match to open your conversation."
-    );
+    if (visibleConversations.length === 0 && messageInboxActiveFilter !== "all") {
+      status("messagesStatus",
+        messageInboxActiveFilter === "unread"
+          ? "You're all caught up. No unread messages."
+          : "You haven't favorited any conversations yet."
+      );
+    } else {
+      status(
+        "messagesStatus",
+        "Choose a mutual match to open your conversation."
+      );
+    }
 
     await updateAccountCounts();
     } catch (e) {

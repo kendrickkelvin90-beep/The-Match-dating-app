@@ -14666,31 +14666,32 @@ async function loadMyMatches(){
 
     if(sentError)throw sentError;
 
-    const mutualIds=[];
-
-        for (const item of (sent || [])) {
-      const { data: back, error: backError } = await db
-        .rpc("check_mutual_like", {
+    // Check mutual likes concurrently instead of waiting for one RPC at a time.
+    const mutualChecks = await Promise.all(
+      (sent || []).map(async item => {
+        const { data: isMutual, error } = await db.rpc("check_mutual_like", {
           p_other_user_id: item.liked_id
         });
+        if (error) throw error;
+        return isMutual === true ? item.liked_id : null;
+      })
+    );
 
-      if (backError) throw backError;
-      if (back === true) mutualIds.push(item.liked_id);
-        }
-    
-    
-    for(let i = mutualIds.length - 1; i >= 0; i--) {
-      const { data: canInteract, error: checkError } = await db
-        .rpc("can_interact_with_member", {
-          target_user_id: mutualIds[i]
-        });
+    const mutualCandidates = [...new Set(mutualChecks.filter(Boolean))];
 
-      if(checkError) throw checkError;
+    // Preserve the existing two-way block check for every mutual match.
+    const interactionChecks = await Promise.all(
+      mutualCandidates.map(async id => {
+        const { data: canInteract, error } = await db.rpc(
+          "can_interact_with_member",
+          { target_user_id: id }
+        );
+        if (error) throw error;
+        return canInteract === true ? id : null;
+      })
+    );
 
-      if(canInteract !== true) {
-        mutualIds.splice(i, 1);
-      }
-    }
+    const mutualIds = [...new Set(interactionChecks.filter(Boolean))];
 
 
     if(!mutualIds.length){
@@ -14707,8 +14708,23 @@ async function loadMyMatches(){
 
     if(profileError)throw profileError;
 
-    
-    
+    // Fetch all match photos in one request rather than one request per card.
+    const profileIds = (profiles || []).map(profile => profile.id);
+    const { data: matchPhotos, error: photosError } = await db
+      .from("profile_photos")
+      .select("user_id,storage_path,position")
+      .in("user_id", profileIds)
+      .order("position", { ascending: true });
+
+    if (photosError) throw photosError;
+
+    const firstMatchPhotoByUser = new Map();
+    (matchPhotos || []).forEach(photo => {
+      if (!firstMatchPhotoByUser.has(photo.user_id) && photo.storage_path) {
+        firstMatchPhotoByUser.set(photo.user_id, photo.storage_path);
+      }
+    });
+
 (profiles||[]).forEach(p=>{
   const card=document.createElement("div");
   card.className="profile-card";
@@ -14779,28 +14795,20 @@ async function loadMyMatches(){
   details.append(name,age,hint);
   card.append(avatar,details);
 
-  db.from("profile_photos")
-    .select("storage_path")
-    .eq("user_id",p.id)
-    .order("position")
-    .limit(1)
-    .then(async ({data,error})=>{
-      if(error){
-        console.warn("Could not load match photo:",error);
+  const photoPath = firstMatchPhotoByUser.get(p.id);
+  if (photoPath) {
+    Promise.resolve(resolveProfilePhotoUrl(photoPath))
+      .then(url => {
+        if (url) avatar.src = url;
+        else showPhotoFallback();
+      })
+      .catch(error => {
+        console.warn("Could not resolve match photo:", error);
         showPhotoFallback();
-        return;
-      }
-
-      if(data && data.length && data[0].storage_path){
-        avatar.src=await resolveProfilePhotoUrl(data[0].storage_path);
-      }else{
-        showPhotoFallback();
-      }
-    })
-    .catch(error=>{
-      console.warn("Could not load match photo:",error);
-      showPhotoFallback();
-    });
+      });
+  } else {
+    showPhotoFallback();
+  }
 
   list.appendChild(card);
 });

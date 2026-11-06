@@ -15858,17 +15858,6 @@ let optimisticBubble = null;
 let textMessageSaved = false;
 
 try {
-const { data: allowed, error: blockError } = await db.rpc(
-"can_interact_with_member",
-{ target_user_id: receiverId }
-);
-
-if (blockError) throw blockError;
-
-if (allowed !== true) {
-  throw new Error("This conversation is unavailable.");
-}
-
 // Render text optimistically before the permission/network round trip so
 // the sender sees the message immediately. A failed check marks it unsent.
 if (body) {

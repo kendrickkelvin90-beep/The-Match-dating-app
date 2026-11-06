@@ -4486,6 +4486,20 @@ textarea.match-dialog-input{min-height:112px;resize:vertical}
   background:radial-gradient(circle at 35% 25%,#f6e5bd,#bd965b 75%);
   color:#30233e;font-size:12px;line-height:1;
 }
+/* The signed-in member's Special badge uses a cool blue-and-silver diamond. */
+.tm-own-special-profile-badge{
+  border:1px solid rgba(205,226,242,.92);
+  background:linear-gradient(135deg,#172d43 0%,#0b1b2d 62%,#263d54 100%);
+  color:#edf5fb!important;
+  box-shadow:0 2px 14px rgba(91,157,205,.24),inset 0 0 0 1px rgba(225,239,250,.12);
+}
+.tm-own-special-profile-badge::before{
+  content:"💎";display:inline-grid;place-items:center;width:22px;height:20px;
+  flex:0 0 22px;border:0;border-radius:0;background:transparent;
+  color:inherit;font-size:17px;line-height:1;
+  filter:drop-shadow(0 1px 4px rgba(113,190,239,.5));
+}
+
 .tm-premium-profile-badge{
   border:1px solid rgba(222,235,242,.85);
   background:linear-gradient(135deg,#23465a,#122d3e 62%,#31556a);
@@ -10163,7 +10177,7 @@ if (ownActiveBadgeError) {
   console.warn("Your Special Profile Badge status could not be loaded:", ownActiveBadgeError);
 } else if ((ownActiveBadgeRows || []).some(row => row.user_id === user.id)) {
   const ownSpecialBadge = document.createElement("span");
-  ownSpecialBadge.className = "tm-special-profile-badge";
+  ownSpecialBadge.className = "tm-special-profile-badge tm-own-special-profile-badge";
   ownSpecialBadge.textContent = " SPECIAL";
   ownSpecialBadge.title = "Your active Special Profile Badge";
   ownSpecialBadge.setAttribute("aria-label", "Your active Special Profile Badge");

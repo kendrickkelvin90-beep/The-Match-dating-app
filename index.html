@@ -15069,6 +15069,9 @@ $("chatMessages").replaceChildren();
     }
 
     show("chatPage");
+    // Start loading the thread immediately; header profile details can load
+    // in parallel instead of delaying the first messages.
+    const initialMessagesPromise = loadChatMessages();
 
       
       $("backFromChatHeader").onclick = async () => {
@@ -15151,7 +15154,7 @@ if (conversationListNode && activeConversationNode instanceof HTMLElement) {
     }, 8000);
 
 
-    await loadChatMessages();
+    await initialMessagesPromise;
 
   }catch(error){
     status(
@@ -15853,9 +15856,8 @@ if (allowed !== true) {
   throw new Error("This conversation is unavailable.");
 }
 
-// Render text optimistically so the sender sees it immediately after the
-// existing interaction permission check. The database remains authoritative.
-optimisticBubble = null;
+// Render text optimistically before the permission/network round trip so
+// the sender sees the message immediately. A failed check marks it unsent.
 if (body) {
   optimisticBubble = document.createElement("div");
   optimisticBubble.className = "chat-bubble sent";
@@ -15871,6 +15873,14 @@ if (body) {
   $("chatMessages").appendChild(optimisticBubble);
   $("chatMessages").scrollTop = $("chatMessages").scrollHeight;
 }
+
+const { data: allowed, error: blockError } = await db.rpc(
+  "can_interact_with_member",
+  { target_user_id: receiverId }
+);
+if (blockError) throw blockError;
+if (allowed !== true) throw new Error("This conversation is unavailable.");
+
 // Send an ordinary text message if one was entered.
 if (body) {
   const { error } = await db.from("messages").insert({

@@ -15455,44 +15455,56 @@ async function loadChatMessages(){
     if (error) throw error;
 
 // Keep messages deleted by this member hidden after reopening chat.
-const { data: hiddenRows, error: hiddenError } = await db
-.from("message_hidden_for")
-.select("message_id")
-.eq("user_id", me);
+// Scope the lookup to IDs in this conversation's latest page instead of
+// reading every hidden-message row belonging to the member on every refresh.
+let hiddenRows = [];
+const visiblePageMessageIds = (data || []).map(message => message.id);
+if (visiblePageMessageIds.length) {
+  const { data: rows, error: hiddenError } = await db
+    .from("message_hidden_for")
+    .select("message_id")
+    .eq("user_id", me)
+    .in("message_id", visiblePageMessageIds);
 
-if (hiddenError) throw hiddenError;
+  if (hiddenError) throw hiddenError;
+  hiddenRows = rows || [];
+}
 
 const hiddenMessageIds = new Set(
-(hiddenRows || []).map(row => row.message_id)
+  hiddenRows.map(row => row.message_id)
 );
 
 if (data) {
-for (let i = data.length - 1; i >= 0; i--) {
-if (hiddenMessageIds.has(data[i].id)) {
-data.splice(i, 1);
-}
-}
-data.reverse();
-}
-
-    for (const message of (data || [])) {
-      if (message.receiver_id === me && !message.read_at) {
-        const { error: receiptError } = await db.rpc(
-          "mark_message_receipt",
-          {
-            p_message_id: message.id,
-            p_mark_read: true
-          }
-        );
-
-        if (receiptError) {
-          console.error(
-            "Could not update message receipt:",
-            receiptError
-          );
-        }
-      }
+  for (let i = data.length - 1; i >= 0; i--) {
+    if (hiddenMessageIds.has(data[i].id)) {
+      data.splice(i, 1);
     }
+  }
+  data.reverse();
+}
+
+// Mark incoming messages as read concurrently. Each receipt remains an
+// individual server-authorized RPC; failures are logged without blocking
+// the rendering of the rest of the conversation.
+const unreadIncomingIds = (data || [])
+  .filter(message => message.receiver_id === me && !message.read_at)
+  .map(message => message.id);
+
+const receiptResults = await Promise.all(
+  unreadIncomingIds.map(async messageId => {
+    const { error: receiptError } = await db.rpc(
+      "mark_message_receipt",
+      {
+        p_message_id: messageId,
+        p_mark_read: true
+      }
+    );
+
+    if (receiptError) {
+      console.error("Could not update message receipt:", receiptError);
+    }
+  })
+);
 
     // Refresh the unread-message count.
     await updateAccountCounts();

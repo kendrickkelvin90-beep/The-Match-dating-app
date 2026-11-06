@@ -10630,7 +10630,7 @@ if (!people.length) {
     const discoverPhotoCache = new Map();
     const getDiscoverPhotoUrls = userId => {
       if (!discoverPhotoCache.has(userId)) {
-        discoverPhotoCache.set(userId, (async () => {
+        const photoRequest = (async () => {
           const { data: photos, error: photosError } = await db
             .from("profile_photos")
             .select("storage_path")
@@ -10640,7 +10640,15 @@ if (!people.length) {
           return Promise.all((photos || []).map(item =>
             resolveProfilePhotoUrl(item.storage_path)
           ));
-        })());
+        })();
+        discoverPhotoCache.set(userId, photoRequest);
+        // A temporary preload/network failure must not poison the cache:
+        // allow the active card to retry the photo query when it is shown.
+        photoRequest.catch(() => {
+          if (discoverPhotoCache.get(userId) === photoRequest) {
+            discoverPhotoCache.delete(userId);
+          }
+        });
       }
       return discoverPhotoCache.get(userId);
     };

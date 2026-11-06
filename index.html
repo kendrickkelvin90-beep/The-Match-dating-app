@@ -3086,6 +3086,17 @@ body:not(.light-theme) .panel {
   box-shadow:0 8px 22px rgba(0,0,0,.3)!important;
 }
 #messages { padding:18px 14px 26px!important; }
+
+#messages #messageInboxFilters{display:flex;gap:8px;margin:16px 0 10px;flex-wrap:wrap}
+#messages .message-inbox-filter{border:1px solid rgba(198,161,91,.35);border-radius:999px;padding:8px 16px;background:#111;color:#d8c9a7;font-weight:700}
+#messages .message-inbox-filter.active{background:linear-gradient(120deg,#e2c17e,#b58a43);color:#17120a;border-color:#d4b46f}
+#messages #conversationList > button[data-unread="true"]{border-color:rgba(224,193,123,.72)!important;background:linear-gradient(120deg,#211c10,#100e0a)!important}
+#messages #conversationList > button[data-unread="true"] strong{font-weight:900!important;color:#fff0c8!important}
+#messages #conversationList > button[data-unread="true"] [data-message-preview]{font-weight:750!important;color:#f4e6c7!important}
+#messages .conversation-favorite-toggle{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border:1px solid rgba(198,161,91,.35);border-radius:50%;background:rgba(198,161,91,.08);color:#8f8a80;font-size:19px;cursor:pointer}
+#messages .conversation-favorite-toggle[aria-pressed="true"]{color:#e3bd68;background:rgba(198,161,91,.16)}
+body.light-theme #messages .message-inbox-filter{background:#fff;color:#765a2b;border-color:#d9c9a9}
+body.light-theme #messages .message-inbox-filter.active{background:#c6a15b;color:#17120a}
 #messages #conversationList { display:flex!important; flex-direction:column!important; gap:9px!important; margin-top:16px!important; }
 #messages #conversationList>* {
   border:1px solid rgba(210,173,104,.22)!important; border-radius:15px!important;
@@ -6437,6 +6448,11 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
   ↻ Refresh conversations
   </button>
   <button class="btn secondary" type="button" id="openCallHistoryButton">◷ Call history</button>
+  <div id="messageInboxFilters" role="tablist" aria-label="Filter conversations">
+    <button type="button" class="message-inbox-filter active" data-message-filter="all" aria-pressed="true">All</button>
+    <button type="button" class="message-inbox-filter" data-message-filter="unread" aria-pressed="false">Unread</button>
+    <button type="button" class="message-inbox-filter" data-message-filter="favorites" aria-pressed="false">★ Favorites</button>
+  </div>
   <p class="small">Chat privately with your mutual matches.</p>
   <button class="btn secondary" type="button" onclick="show('premium')">Want to know if your message has been seen? Tap here to explore Premium.</button>
 
@@ -8897,6 +8913,7 @@ input.addEventListener("input", () => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "btn secondary";
+      button.dataset.unread = conversation.unreadCount > 0 ? "true" : "false";
       button.textContent = option;
       button.dataset.answerValue = q.values ? q.values[i] : option;
       button.setAttribute("aria-pressed",
@@ -9584,6 +9601,13 @@ async function updateAccountCounts() {
 
   try {
     const me = currentUser.id;
+    setupMessageInboxFilters();
+    const { data: favoriteRows, error: favoriteError } = await db
+      .from("conversation_favorites")
+      .select("conversation_user_id")
+      .eq("user_id", me);
+    if (favoriteError) throw favoriteError;
+    messageInboxFavoriteIds = new Set((favoriteRows || []).map(row => row.conversation_user_id));
 
     
     const [likesResult, unreadResult] = await Promise.all([
@@ -14815,6 +14839,28 @@ async function loadMyMatches(){
 
  
 
+
+let messageInboxActiveFilter = "all";
+let messageInboxFavoriteIds = new Set();
+let messageInboxFilterListenersReady = false;
+
+function setupMessageInboxFilters() {
+  const filters = document.getElementById("messageInboxFilters");
+  if (!filters || messageInboxFilterListenersReady) return;
+  messageInboxFilterListenersReady = true;
+  filters.addEventListener("click", event => {
+    const button = event.target.closest("[data-message-filter]");
+    if (!button) return;
+    messageInboxActiveFilter = button.dataset.messageFilter;
+    filters.querySelectorAll("[data-message-filter]").forEach(item => {
+      const active = item === button;
+      item.classList.toggle("active", active);
+      item.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+    loadMyConversations();
+  });
+}
+
 async function loadMyConversations() {
   if (!currentUser || conversationListLoadInProgress) return;
 
@@ -15008,7 +15054,12 @@ const firstPhotoByUser = new Map();
       return timeB - timeA;
     });
 
-    for (const conversation of conversations) {
+    const visibleConversations = conversations.filter(conversation => {
+      if (messageInboxActiveFilter === "unread") return conversation.unreadCount > 0;
+      if (messageInboxActiveFilter === "favorites") return messageInboxFavoriteIds.has(conversation.profile.id);
+      return true;
+    });
+    for (const conversation of visibleConversations) {
       const p = conversation.profile;
 
       const button = document.createElement("button");
@@ -15055,6 +15106,7 @@ const firstPhotoByUser = new Map();
         "text-overflow:ellipsis;white-space:nowrap;";
 
       
+      preview.dataset.messagePreview = "true";
       preview.textContent = conversation.latest
         ? (
             conversation.latest.sender_id === me
@@ -15065,7 +15117,37 @@ const firstPhotoByUser = new Map();
 
 
       details.append(name, age, preview);
-      button.append(avatar, details);
+      const favoriteButton = document.createElement("button");
+      favoriteButton.type = "button";
+      favoriteButton.className = "conversation-favorite-toggle";
+      favoriteButton.textContent = messageInboxFavoriteIds.has(p.id) ? "★" : "☆";
+      favoriteButton.setAttribute("aria-label", messageInboxFavoriteIds.has(p.id) ? "Remove from favorites" : "Add to favorites");
+      favoriteButton.setAttribute("aria-pressed", messageInboxFavoriteIds.has(p.id) ? "true" : "false");
+      favoriteButton.title = messageInboxFavoriteIds.has(p.id) ? "Remove from favorites" : "Add to favorites";
+      favoriteButton.onclick = async event => {
+        event.stopPropagation();
+        favoriteButton.disabled = true;
+        try {
+          if (messageInboxFavoriteIds.has(p.id)) {
+            const { error } = await db.from("conversation_favorites").delete()
+              .eq("user_id", me).eq("conversation_user_id", p.id);
+            if (error) throw error;
+            messageInboxFavoriteIds.delete(p.id);
+          } else {
+            const { error } = await db.from("conversation_favorites")
+              .insert({ user_id: me, conversation_user_id: p.id });
+            if (error) throw error;
+            messageInboxFavoriteIds.add(p.id);
+          }
+          await loadMyConversations();
+        } catch (error) {
+          console.error("Could not update conversation favorite:", error);
+          status("messagesStatus", "Could not update favorite. Please try again.", true);
+        } finally {
+          favoriteButton.disabled = false;
+        }
+      };
+      button.append(avatar, details, favoriteButton);
 
       if (conversation.unreadCount > 0) {
         const badge = document.createElement("span");

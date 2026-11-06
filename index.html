@@ -10805,43 +10805,44 @@ pass.onclick = async () => {
   pass.disabled = true;
   like.disabled = true;
 
+  // Start the card transition at once while the pass is saved in the background.
+  const exitAnimation = animateCardExit("left");
   try {
-    
-const { error } = await db
-  .from("profile_passes")
-  .upsert(
-    {
-      passer_id: currentUser.id,
-      passed_id: p.id,
-      created_at: new Date().toISOString()
-    },
-    { onConflict: "passer_id,passed_id" }
-  );
+    const savePromise = db
+      .from("profile_passes")
+      .upsert(
+        {
+          passer_id: currentUser.id,
+          passed_id: p.id,
+          created_at: new Date().toISOString()
+        },
+        { onConflict: "passer_id,passed_id" }
+      );
 
-
-      
-
+    const [{ error }] = await Promise.all([savePromise, exitAnimation]);
     if (error) {
       if (/DAILY_SWIPE_LIMIT/i.test(error.message)) {
         status("discoverStatus","You have used your 20 free swipes for today. Go Premium for unlimited swipes.",true);
-        await refreshDailyLikeCounter();
+        void refreshDailyLikeCounter();
         pass.disabled = true;
         like.disabled = true;
+        card.style.transition = "none";
+        card.style.transform = "translate3d(0,0,0)";
+        card.style.opacity = "1";
         return;
       }
       throw error;
     }
 
-    await refreshDailyLikeCounter();
-    await animateCardExit("left");
+    // The counter is secondary UI; don't make the next profile wait for it.
+    void refreshDailyLikeCounter();
     personIndex++;
     await showPerson();
   } catch (error) {
-    status(
-      "discoverStatus",
-      "Couldn't save your pass: " + friendly(error),
-      true
-    );
+    card.style.transition = "transform 180ms ease, opacity 180ms ease";
+    card.style.transform = "translate3d(0,0,0)";
+    card.style.opacity = "1";
+    status("discoverStatus","Couldn't save your pass: " + friendly(error),true);
     pass.disabled = false;
     like.disabled = false;
   }
@@ -10885,58 +10886,53 @@ like.onclick=async()=>{
   like.disabled=true;
   pass.disabled=true;
 
+  // Animate immediately and perform the database work concurrently.
+  const exitAnimation = animateCardExit("right");
   try{
-        const { data: authData, error: authError } = await db.auth.getUser();
-    if (authError) throw authError;
-    if (!authData?.user) {
-      throw new Error("Please sign in again before sending a like.");
-    }
+    const likerId = currentUser?.id;
+    if (!likerId) throw new Error("Please sign in again before sending a like.");
 
-    currentUser = authData.user;
-
-    const {error:likeError}=await db.from("likes").insert({
-      liker_id:authData.user.id,
+    const likePromise = db.from("likes").insert({
+      liker_id:likerId,
       liked_id:p.id
     });
+    const matchPromise = db.rpc("check_mutual_like",{p_other_user_id:p.id});
+
+    const [{error:likeError}, {data:reverseLike,error:matchError}] =
+      await Promise.all([likePromise, matchPromise, exitAnimation]).then(results => [results[0], results[1]]);
 
     if(likeError){
-      status("discoverStatus",
-        /DAILY_SWIPE_LIMIT/i.test(likeError.message)
-          ?"You've used your 20 free swipes for today. Go Premium for unlimited swipes."
-          :/duplicate/i.test(likeError.message)
-            ?"You've already liked this member."
-            :"Couldn't send like: "+friendly(likeError),true);
       if (/DAILY_SWIPE_LIMIT/i.test(likeError.message)) {
-        await refreshDailyLikeCounter();
+        status("discoverStatus","You've used your 20 free swipes for today. Go Premium for unlimited swipes.",true);
+        void refreshDailyLikeCounter();
         like.disabled = true;
         pass.disabled = true;
         like.textContent = "🔒";
         pass.textContent = "🔒";
       } else {
-        like.disabled = false;
-        pass.disabled = false;
+        throw likeError;
       }
+      card.style.transition = "none";
+      card.style.transform = "translate3d(0,0,0)";
+      card.style.opacity = "1";
       return;
     }
+    if(matchError) throw matchError;
 
-  await refreshDailyLikeCounter();
-  const {data:reverseLike,error:matchError}=await db
-  .rpc("check_mutual_like",{p_other_user_id:p.id});
-
-if(matchError)throw matchError;
+    // Update the swipe counter without delaying the next card.
+    void refreshDailyLikeCounter();
 
     if(reverseLike){
-      await animateCardExit("right");
       const {data:myProfile}=await db
         .from("profiles")
         .select("display_name")
-        .eq("id",currentUser.id)
+        .eq("id",likerId)
         .maybeSingle();
 
       const {data:myPhotos}=await db
         .from("profile_photos")
         .select("storage_path")
-        .eq("user_id",currentUser.id)
+        .eq("user_id",likerId)
         .order("position")
         .limit(1);
 
@@ -10949,11 +10945,9 @@ if(matchError)throw matchError;
 
       $("matchMyName").textContent=myProfile?.display_name||"You";
       $("matchOtherName").textContent=p.display_name||"Your match";
-
       $("matchMyPhoto").src=myPhotos?.length
         ?await resolveProfilePhotoUrl(myPhotos[0].storage_path)
         :"";
-
       $("matchOtherPhoto").src=theirPhotos?.length
         ?await resolveProfilePhotoUrl(theirPhotos[0].storage_path)
         :"";
@@ -10961,7 +10955,6 @@ if(matchError)throw matchError;
       $("matchSendMessage").onclick=()=>{
         openChat(p.id,p.display_name||"Your match");
       };
-
       $("matchContinueDiscover").onclick=async()=>{
         personIndex++;
         show("discover");
@@ -10975,11 +10968,13 @@ if(matchError)throw matchError;
     }
 
     status("discoverStatus","Like sent successfully! ❤️");
-    await animateCardExit("right");
     personIndex++;
     await showPerson();
 
   }catch(error){
+    card.style.transition = "transform 180ms ease, opacity 180ms ease";
+    card.style.transform = "translate3d(0,0,0)";
+    card.style.opacity = "1";
     status("discoverStatus","Couldn't complete your like: "+friendly(error),true);
     like.disabled=false;
     pass.disabled=false;
@@ -19412,6 +19407,17 @@ body.light-theme #eventsPage .events-featured-meta strong {
   height: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
+}
+
+
+/* Neutral chat header: keep member name, avatar and call controls unchanged. */
+#chatPage #chatHeader {
+  background: #080808 !important;
+  border-bottom: 1px solid #292929 !important;
+  box-shadow: none !important;
+}
+#chatPage #chatPageTitle {
+  color: #f5f5f5 !important;
 }
 
 </style>

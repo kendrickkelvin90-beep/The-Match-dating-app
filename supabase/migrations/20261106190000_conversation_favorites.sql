@@ -22,4 +22,4 @@ create policy "Members can remove their own conversation favorites"
   using ((select auth.uid()) = user_id);
 
 grant select, insert, delete on public.conversation_favorites to authenticated;
-revoke all on public.conversation_favorites from anon;
+revoke all on public.conversation_favorites from public, anon;

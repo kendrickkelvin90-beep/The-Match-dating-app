@@ -4524,6 +4524,14 @@ textarea.match-dialog-input{min-height:112px;resize:vertical}
   color:#173448;font-size:15px;line-height:1;
 }
 
+.admin-report-card{display:flex;flex-direction:column;gap:10px}
+.admin-report-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.admin-report-detail{margin-top:12px;padding:14px;border:1px solid rgba(214,180,92,.28);border-radius:14px;background:#171717;overflow-wrap:anywhere}
+.admin-report-detail h4{margin:12px 0 8px;color:#e0c16e}
+.admin-report-detail p{margin:7px 0;line-height:1.5}
+.admin-report-profile{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+.admin-report-avatar{width:46px;height:46px;border-radius:50%;object-fit:cover;background:#292929}
+.admin-report-actions button{min-height:38px}
 </style>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
@@ -8147,6 +8155,7 @@ async function loadAdminMemberReports() {
           const profileHeading = document.createElement("h4"); profileHeading.textContent = "Members involved"; detail.appendChild(profileHeading);
           const profileLine = (label, profile, fallbackId) => {
             const section = document.createElement("section"); section.className = "admin-report-profile";
+            if (profile?.avatar_url) { const avatar = document.createElement("img"); avatar.src = profile.avatar_url; avatar.alt = ""; avatar.loading = "lazy"; avatar.className = "admin-report-avatar"; section.appendChild(avatar); }
             const name = document.createElement("strong"); name.textContent = label + ": " + (profile?.display_name || "Profile unavailable"); section.appendChild(name);
             const meta = document.createElement("p"); meta.textContent = [profile?.age ? "Age " + profile.age : null, profile?.city || null, profile?.is_verified ? "Verified" : null].filter(Boolean).join(" · ") || "No public profile details"; section.appendChild(meta);
             const id = document.createElement("p"); id.className = "small"; id.textContent = "Account ID: " + (profile?.id || fallbackId); section.appendChild(id);

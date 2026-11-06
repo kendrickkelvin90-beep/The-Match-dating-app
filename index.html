@@ -15126,6 +15126,8 @@ const firstPhotoByUser = new Map();
       favoriteButton.setAttribute("aria-label", messageInboxFavoriteIds.has(p.id) ? "Remove from favorites" : "Add to favorites");
       favoriteButton.setAttribute("aria-pressed", messageInboxFavoriteIds.has(p.id) ? "true" : "false");
       favoriteButton.title = messageInboxFavoriteIds.has(p.id) ? "Remove from favorites" : "Add to favorites";
+      // Keep keyboard activation of the nested star control from opening the chat row.
+      favoriteButton.onkeydown = event => event.stopPropagation();
       favoriteButton.onclick = async event => {
         event.stopPropagation();
         favoriteButton.disabled = true;

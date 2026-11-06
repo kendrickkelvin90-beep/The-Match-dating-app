@@ -7619,7 +7619,7 @@ async function leaveChatPage() {
   window.activeChatUserId = null;
 }
 
-async async function goBackInApp() {
+async function goBackInApp() {
   if (currentPage === "chatPage") {
     // First system-back closes an open emoji tray; a second back leaves chat.
     const emojiPicker = document.getElementById("chatEmojiPicker");

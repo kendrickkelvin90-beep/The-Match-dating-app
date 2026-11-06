@@ -19363,6 +19363,46 @@ body.light-theme #eventsPage .events-featured-meta strong {
 #chatPage #backFromChatPage{display:none!important}
 @media(max-width:390px){#chatPage #chatComposer{gap:5px;padding:7px 8px}#chatPage #chatComposer #chatEmojiToggle{flex-basis:30px;width:30px}#chatPage #chatComposer #chatMediaButton{flex-basis:36px;width:36px!important;height:36px!important}#chatPage #chatComposer #sendChatMessage{flex-basis:40px;width:40px!important;min-width:40px!important;height:40px;min-height:40px}}
 
+
+/* CHAT LAYOUT REFINEMENT — anchor composer above the Android/iOS system bar */
+#chatPage:not(.hidden) {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 3px) !important;
+}
+#chatPage #chatPageContent,
+#chatPage #activeConversation {
+  min-height: 0 !important;
+  height: 100% !important;
+}
+#chatPage #activeConversation {
+  gap: 0 !important;
+}
+#chatPage #chatMessages {
+  width: 100% !important;
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  padding: 8px 2px !important;
+  background: transparent !important;
+}
+#chatPage #chatComposer {
+  margin: auto 0 0 !important;
+  flex: 0 0 auto !important;
+  border: 0 !important;
+  border-radius: 28px !important;
+  box-shadow: none !important;
+  padding: 8px 10px !important;
+}
+#chatPage #chatPageStatus,
+#chatPage #messagesStatus {
+  display: none !important;
+  min-height: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 </style>
 <script src="/coin-wallet.js"></script>
 <script src="/gifts.js"></script>

@@ -7619,8 +7619,14 @@ async function leaveChatPage() {
   window.activeChatUserId = null;
 }
 
-async function goBackInApp() {
+async async function goBackInApp() {
   if (currentPage === "chatPage") {
+    // First system-back closes an open emoji tray; a second back leaves chat.
+    const emojiPicker = document.getElementById("chatEmojiPicker");
+    if (emojiPicker && !emojiPicker.classList.contains("hidden")) {
+      emojiPicker.classList.add("hidden");
+      return;
+    }
     await leaveChatPage();
     const chatHistoryIndex = pageHistory.lastIndexOf("messages");
     if (chatHistoryIndex >= 0) {
@@ -15772,13 +15778,24 @@ for (const media of mediaRows || []) {
   $("chatPageStatus").textContent="";
 });
   
-$("chatEmojiToggle").addEventListener("click", () => {
+$("chatEmojiToggle").addEventListener("click", event => {
+  event.stopPropagation();
   const picker = $("chatEmojiPicker");
   if (!picker) return;
   picker.classList.toggle("hidden");
 });
 
+// Tapping anywhere in the conversation outside the emoji tray dismisses it.
+document.addEventListener("pointerdown", event => {
+  const picker = $("chatEmojiPicker");
+  const toggle = $("chatEmojiToggle");
+  if (!picker || picker.classList.contains("hidden")) return;
+  if (picker.contains(event.target) || toggle?.contains(event.target)) return;
+  picker.classList.add("hidden");
+});
+
 $("chatEmojiPicker").addEventListener("click", event => {
+  event.stopPropagation();
   const emojiButton = event.target.closest("[data-chat-emoji]");
   if (!emojiButton) return;
 

@@ -6151,6 +6151,11 @@ body.light-theme #matchFeaturePromoClose {
 #adminPanel .admin-directory-card h4 { margin:0 0 5px; color:#f3eee3; font-size:13px; overflow-wrap:anywhere; }
 #adminPanel .admin-directory-card p { margin:3px 0; color:#9c988e; font-size:11px; overflow-wrap:anywhere; }
 #adminPanel .admin-member-badge { display:inline-block; margin-top:7px; padding:4px 8px; border-radius:20px; background:rgba(205,166,82,.12); color:#d9b76d; font-size:10px; }
+#adminPanel .admin-directory-actions { display:grid; grid-template-columns:1fr; gap:8px; margin-top:13px; }
+#adminPanel .admin-directory-actions .admin-member-action { width:100%; min-height:40px; padding:10px 12px; border:1px solid #8b713d; border-radius:10px; background:#211c13; color:#e7ca8b; font-size:12px; font-weight:700; text-align:center; }
+#adminPanel .admin-directory-actions .admin-member-action-danger { border-color:#8d4141; background:#281313; color:#ffb4b4; }
+#adminPanel .admin-directory-actions .admin-member-action-restore { border-color:#557c63; background:#132119; color:#b8e3c4; }
+#adminPanel .admin-directory-actions .admin-member-action:disabled { opacity:.42; cursor:not-allowed; filter:saturate(.5); }
 #adminPanel .admin-premium-row { display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid #292720; }
 #adminPanel .admin-premium-row:last-child { border-bottom:0; }
 #adminPanel .admin-premium-row strong { color:#eee7d8; font-size:12px; }
@@ -8310,8 +8315,11 @@ function renderAdminMemberDirectory(query = "") {
           "SUSPENDED until " + new Date(moderation.expires_at).toLocaleString()) +
         " · Reason: " + (moderation.reason || "Not provided")
       : "Account status: Active";
+    const actions = document.createElement("div");
+    actions.className = "admin-directory-actions";
     const suspend = document.createElement("button");
     suspend.type = "button";
+    suspend.className = "admin-member-action";
     suspend.textContent = "Suspend";
     suspend.disabled = !!moderation;
     suspend.addEventListener("click", async () => {
@@ -8320,21 +8328,24 @@ function renderAdminMemberDirectory(query = "") {
     });
     const ban = document.createElement("button");
     ban.type = "button";
-    ban.textContent = "Ban member";
+    ban.className = "admin-member-action admin-member-action-danger";
+    ban.textContent = "Permanently ban";
     ban.disabled = moderation?.status === "banned";
     ban.addEventListener("click", async () => {
       try { await moderateAdminMember(member, "banned"); }
-      catch (error) { status("adminStatus", "Ban failed: " + friendly(error), true); }
+      catch (error) { status("adminStatus", "Permanent ban failed: " + friendly(error), true); }
     });
     const restore = document.createElement("button");
     restore.type = "button";
+    restore.className = "admin-member-action admin-member-action-restore";
     restore.textContent = "Restore account";
     restore.disabled = !moderation;
     restore.addEventListener("click", async () => {
       try { await moderateAdminMember(member, "restored"); }
       catch (error) { status("adminStatus", "Restore failed: " + friendly(error), true); }
     });
-    card.append(name, location, joined, age, badge, state, suspend, ban, restore);
+    actions.append(suspend, ban, restore);
+    card.append(name, location, joined, age, badge, state, actions);
     list.appendChild(card);
   });
 }

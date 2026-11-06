@@ -15265,6 +15265,11 @@ const firstPhotoByUser = new Map();
       const favoriteButton = document.createElement("button");
       favoriteButton.type = "button";
       favoriteButton.className = "conversation-favorite-toggle";
+      favoriteButton.style.cssText =
+        "display:inline-flex;align-items:center;justify-content:center;" +
+        "flex:0 0 28px;width:28px;min-width:28px;height:32px;min-height:32px;" +
+        "padding:0;margin:0;border:0;border-radius:0;background:transparent;" +
+        "box-shadow:none;font-size:23px;line-height:1;color:#c6a66b;cursor:pointer;";
       favoriteButton.textContent = messageInboxFavoriteIds.has(p.id) ? "★" : "☆";
       favoriteButton.setAttribute("aria-label", messageInboxFavoriteIds.has(p.id) ? "Remove from favorites" : "Add to favorites");
       favoriteButton.setAttribute("aria-pressed", messageInboxFavoriteIds.has(p.id) ? "true" : "false");
@@ -19836,6 +19841,33 @@ body.light-theme #eventsPage .events-featured-meta strong {
 </style>
 <script src="/coin-wallet.js"></script>
 <script src="/gifts.js"></script>
+
+<style id="messages-inbox-compact-favorites">
+/* Keep the inbox favorite as a small, clear star icon rather than a large pill. */
+#messages #conversationList .conversation-favorite-toggle,
+#messages #conversationList .conversation-favorite-toggle:hover,
+#messages #conversationList .conversation-favorite-toggle:focus-visible {
+  display:inline-flex!important; flex:0 0 28px!important; width:28px!important;
+  min-width:28px!important; max-width:28px!important; height:32px!important;
+  min-height:32px!important; max-height:32px!important; padding:0!important;
+  margin:0!important; border:0!important; border-radius:0!important;
+  background:transparent!important; box-shadow:none!important;
+  font-size:23px!important; line-height:1!important; color:#c6a66b!important;
+}
+#messages #conversationList .conversation-favorite-toggle[aria-pressed="true"] {
+  color:#e3bd68!important; background:transparent!important;
+}
+/* Remove the extra card/rectangle around each chat preview so the row can breathe. */
+#messages #conversationList > .conversation-row,
+#messages #conversationList > .conversation-row:hover,
+#messages #conversationList > .conversation-row:focus-visible {
+  border:0!important; outline-offset:2px; border-radius:0!important;
+  background:transparent!important; box-shadow:none!important;
+}
+#messages #conversationList > .conversation-row {
+  gap:10px!important; padding:12px 4px!important; margin:0 0 4px!important;
+}
+</style>
 </body>
 </html>
 

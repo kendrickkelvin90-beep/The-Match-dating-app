@@ -4524,6 +4524,14 @@ textarea.match-dialog-input{min-height:112px;resize:vertical}
   color:#173448;font-size:15px;line-height:1;
 }
 
+.admin-report-card{display:flex;flex-direction:column;gap:10px}
+.admin-report-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.admin-report-detail{margin-top:12px;padding:14px;border:1px solid rgba(214,180,92,.28);border-radius:14px;background:#171717;overflow-wrap:anywhere}
+.admin-report-detail h4{margin:12px 0 8px;color:#e0c16e}
+.admin-report-detail p{margin:7px 0;line-height:1.5}
+.admin-report-profile{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+.admin-report-avatar{width:46px;height:46px;border-radius:50%;object-fit:cover;background:#292929}
+.admin-report-actions button{min-height:38px}
 </style>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
@@ -8095,50 +8103,113 @@ async function loadAdminPaymentRequests() {
 
 async function loadAdminMemberReports() {
   const list = $("adminReportsList");
+  if (!list) return;
   list.textContent = "Loading member reports...";
 
   try {
-    const { data, error } = await db
-      .from("member_reports")
+    const { data, error } = await db.from("member_reports")
       .select("id,reporter_id,reported_user_id,reason,details,status,created_at")
-      .order("created_at", { ascending: false })
-      .limit(50);
-
+      .order("created_at", { ascending: false }).limit(50);
     if (error) throw error;
     list.replaceChildren();
-
-    if (!data || data.length === 0) {
-      list.textContent = "No member reports found.";
-      return;
-    }
+    if (!data?.length) { list.textContent = "No member reports found."; return; }
 
     data.forEach(report => {
-      const card = document.createElement("div");
-      card.className = "member-card";
-
+      const card = document.createElement("article");
+      card.className = "member-card admin-report-card";
       const title = document.createElement("h4");
       title.textContent = "Report · " + (report.status || "pending");
-
-      const details = document.createElement("p");
-      details.textContent =
-        "Reported member: " + report.reported_user_id +
-        " · Reason: " + (report.reason || "Not specified") +
-        (report.details ? " · Details: " + report.details : "");
-
+      const summary = document.createElement("p");
+      summary.textContent = "Reported member: " + report.reported_user_id + " · Reason: " + (report.reason || "Not specified");
+      const submitted = document.createElement("p");
+      submitted.className = "small";
+      submitted.textContent = "Submitted " + (report.created_at ? new Date(report.created_at).toLocaleString() : "date unavailable");
+      const actions = document.createElement("div");
+      actions.className = "admin-report-actions";
+      const view = document.createElement("button");
+      view.type = "button"; view.textContent = "View full report";
+      const detail = document.createElement("div");
+      detail.className = "admin-report-detail hidden";
+      view.addEventListener("click", async () => {
+        if (!detail.classList.contains("hidden")) { detail.classList.add("hidden"); view.textContent = "View full report"; return; }
+        detail.classList.remove("hidden"); view.textContent = "Hide report details";
+        detail.textContent = "Loading member profiles and moderation history...";
+        try {
+          const ids = [...new Set([report.reporter_id, report.reported_user_id].filter(Boolean))];
+          const [profilesResult, historyResult] = await Promise.all([
+            db.from("profiles").select("id,display_name,city,age,avatar_url,is_verified,created_at").in("id", ids),
+            db.from("member_moderation_history").select("action,reason,expires_at,actor_id,created_at").eq("user_id", report.reported_user_id).order("created_at", { ascending: false }).limit(10)
+          ]);
+          if (profilesResult.error) throw profilesResult.error;
+          if (historyResult.error) throw historyResult.error;
+          const profiles = new Map((profilesResult.data || []).map(profile => [profile.id, profile]));
+          const reporter = profiles.get(report.reporter_id);
+          const reported = profiles.get(report.reported_user_id);
+          detail.replaceChildren();
+          const addLine = (label, value) => { const p = document.createElement("p"); const strong = document.createElement("strong"); strong.textContent = label + ": "; p.append(strong, document.createTextNode(value || "Not provided")); detail.appendChild(p); };
+          const heading = document.createElement("h4"); heading.textContent = "Report details"; detail.appendChild(heading);
+          addLine("Report ID", report.id);
+          addLine("Reason", report.reason);
+          addLine("Additional explanation", report.details || "No additional explanation submitted");
+          addLine("Submitted", report.created_at ? new Date(report.created_at).toLocaleString() : "Date unavailable");
+          const profileHeading = document.createElement("h4"); profileHeading.textContent = "Members involved"; detail.appendChild(profileHeading);
+          const profileLine = (label, profile, fallbackId) => {
+            const section = document.createElement("section"); section.className = "admin-report-profile";
+            if (profile?.avatar_url) { const avatar = document.createElement("img"); avatar.src = profile.avatar_url; avatar.alt = ""; avatar.loading = "lazy"; avatar.className = "admin-report-avatar"; section.appendChild(avatar); }
+            const name = document.createElement("strong"); name.textContent = label + ": " + (profile?.display_name || "Profile unavailable"); section.appendChild(name);
+            const meta = document.createElement("p"); meta.textContent = [profile?.age ? "Age " + profile.age : null, profile?.city || null, profile?.is_verified ? "Verified" : null].filter(Boolean).join(" · ") || "No public profile details"; section.appendChild(meta);
+            const id = document.createElement("p"); id.className = "small"; id.textContent = "Account ID: " + (profile?.id || fallbackId); section.appendChild(id);
+            detail.appendChild(section);
+          };
+          profileLine("Reporter", reporter, report.reporter_id);
+          profileLine("Reported member", reported, report.reported_user_id);
+          const historyHeading = document.createElement("h4"); historyHeading.textContent = "Previous moderation actions"; detail.appendChild(historyHeading);
+          if (!historyResult.data?.length) addLine("History", "No previous moderation actions");
+          else historyResult.data.forEach(entry => addLine(entry.action, entry.reason + (entry.expires_at ? " · Until " + new Date(entry.expires_at).toLocaleString() : "") + " · " + new Date(entry.created_at).toLocaleString()));
+          await loadAdminModerationStatuses();
+          const moderation = adminModerationByUser.get(report.reported_user_id);
+          const actionHeading = document.createElement("h4"); actionHeading.textContent = "Take action on reported member"; detail.appendChild(actionHeading);
+          const actionRow = document.createElement("div"); actionRow.className = "admin-report-actions";
+          const member = reported ? { ...reported, id: report.reported_user_id } : { id: report.reported_user_id, display_name: "this member" };
+          const addAction = (label, action, disabled = false) => { const button = document.createElement("button"); button.type = "button"; button.textContent = label; button.disabled = disabled; button.addEventListener("click", async () => {
+            button.disabled = true;
+            let moderationApplied = false;
+            try {
+              const actionApplied = await moderateAdminMember(member, action);
+              if (!actionApplied) {
+                button.disabled = false;
+                return;
+              }
+              moderationApplied = true;
+              const { error: reportUpdateError } = await db.from("member_reports")
+                .update({ status: "actioned" }).eq("id", report.id);
+              if (reportUpdateError) throw reportUpdateError;
+              await loadAdminMemberReports();
+            } catch (moderationError) {
+              status("adminStatus", moderationApplied
+                ? "The account action was applied, but the report could not be marked actioned: " + friendly(moderationError)
+                : "Moderation failed: " + friendly(moderationError), true);
+              button.disabled = moderationApplied;
+            }
+          }); actionRow.appendChild(button); };
+          addAction("Suspend member", "suspended", !!moderation);
+          addAction("Permanently ban", "banned", moderation?.status === "banned");
+          addAction("Restore account", "restored", !moderation);
+          detail.appendChild(actionRow);
+        } catch (detailError) { detail.textContent = "Could not load report details: " + friendly(detailError); }
+      });
       const resolve = document.createElement("button");
-      resolve.type = "button";
-      resolve.textContent = "Mark reviewed";
-      resolve.onclick = () =>
-        reviewMatchAdminRequest("member_reports", report.id, "reviewed");
-
-      card.append(title, details, resolve);
+      resolve.type = "button"; resolve.textContent = report.status === "actioned" ? "Action recorded" : "Mark reviewed";
+      resolve.disabled = report.status === "actioned" || report.status === "reviewed";
+      resolve.addEventListener("click", () => reviewMatchAdminRequest("member_reports", report.id, "reviewed"));
+      actions.append(view, resolve);
+      card.append(title, summary, submitted, actions, detail);
       list.appendChild(card);
     });
   } catch (error) {
     list.textContent = "Could not load member reports: " + friendly(error);
   }
 }
-
 let adminMemberDirectory = [];
 let adminModerationByUser = new Map();
 
@@ -8158,22 +8229,22 @@ async function moderateAdminMember(member, action) {
   if (!(await checkMatchAdmin())) throw new Error("Admin access denied.");
   if (!member?.id || member.id === currentUser?.id) {
     alert("You cannot moderate your own account.");
-    return;
+    return false;
   }
   const existing = adminModerationByUser.get(member.id);
-  if (action === "restored" && !existing) return;
+  if (action === "restored" && !existing) return false;
   const enteredReason = await matchPrompt(
     action === "restored"
       ? "Reason for restoring this account (optional):"
       : "Enter the reason for this " + (action === "banned" ? "ban" : "suspension") + ":"
   );
-  if (enteredReason === null) return;
+  if (enteredReason === null) return false;
   const reason = action === "restored"
     ? (enteredReason.trim() || "Account restored after review")
     : enteredReason.trim();
   if (reason.length < 3 || reason.length > 500) {
     alert("Please enter a reason between 3 and 500 characters.");
-    return;
+    return false;
   }
   let expiresAt = null;
   if (action === "suspended") {
@@ -8181,7 +8252,7 @@ async function moderateAdminMember(member, action) {
     const days = Number(daysText);
     if (!Number.isInteger(days) || days < 1 || days > 30) {
       alert("Choose a whole number from 1 to 30 days.");
-      return;
+      return false;
     }
     expiresAt = new Date(Date.now() + days * 86400000).toISOString();
   }
@@ -8189,7 +8260,7 @@ async function moderateAdminMember(member, action) {
     ? "Restore " + (member.display_name || "this member") + "'s account?"
     : (action === "banned" ? "Ban " : "Suspend ") +
       (member.display_name || "this member") + "?";
-  if (!await matchConfirm(confirmText + (action === "banned" ? " This is a serious action." : ""))) return;
+  if (!await matchConfirm(confirmText + (action === "banned" ? " This is a serious action." : ""))) return false;
 
   status("adminStatus", "Applying account moderation...");
   const { data, error } = await db.functions.invoke("admin-moderate-member", {
@@ -8201,6 +8272,7 @@ async function moderateAdminMember(member, action) {
   renderAdminMemberDirectory($("adminMemberSearch")?.value || "");
   status("adminStatus", action === "restored" ? "Account restored." :
     action === "banned" ? "Account ban applied." : "Account suspended.");
+  return true;
 }
 
 function renderAdminMemberDirectory(query = "") {

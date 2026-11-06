@@ -10697,56 +10697,9 @@ if (isNewHere) {
       });
 
       photoBox.append(previous, nextPhoto);
-      // Enforce the photo-first card layout at runtime. Older global Discover
-      // styles used !important positioning and could visually place the profile
-      // panel over or ahead of the photo despite the DOM order.
-      const setDiscoverLayout = (element, styles) => {
-        Object.entries(styles).forEach(([property, value]) =>
-          element.style.setProperty(property, value, "important")
-        );
-      };
-      setDiscoverLayout(card, {
-        display: "flex",
-        "flex-direction": "column",
-        height: "clamp(480px, calc(100dvh - 300px), 680px)",
-        "min-height": "480px",
-        "max-height": "680px",
-        overflow: "hidden"
-      });
-      setDiscoverLayout(photoBox, {
-        position: "relative",
-        inset: "auto",
-        order: "0",
-        display: "block",
-        flex: "1 1 0",
-        "min-height": "0",
-        width: "100%",
-        height: "auto",
-        overflow: "hidden"
-      });
-      setDiscoverLayout(photo, {
-        position: "absolute",
-        inset: "0",
-        width: "100%",
-        height: "100%",
-        "object-fit": "cover",
-        "object-position": "center 30%"
-      });
       const infoOverlay=document.createElement("div");
       infoOverlay.className="discover-profile-overlay discover-option3-overlay";
       infoOverlay.style.cssText="position:relative;left:auto;right:auto;bottom:auto;z-index:6;flex:0 0 auto;width:100%;padding:10px 16px 12px;background:#080808;box-sizing:border-box;display:flex;flex-direction:column;gap:0;pointer-events:auto;";
-      setDiscoverLayout(infoOverlay, {
-        position: "relative",
-        inset: "auto",
-        order: "1",
-        flex: "0 0 auto",
-        width: "100%",
-        padding: "8px 16px 12px",
-        margin: "0",
-        background: "#080808",
-        "box-sizing": "border-box",
-        "pointer-events": "auto"
-      });
 
 const name=document.createElement("h2");
 name.appendChild(
@@ -19501,79 +19454,6 @@ body.light-theme #eventsPage .events-featured-meta strong {
 }
 #chatPage #chatPageTitle {
   color: #f5f5f5 !important;
-}
-
-
-/* Discover final layout correction: photo first, member details and actions
-   in a dedicated lower section, ending just above the swipe instruction. */
-#discover #profileList > .discover-option3-card {
-  display: flex !important;
-  flex-direction: column !important;
-  width: calc(100% + 24px) !important;
-  height: clamp(780px, calc(100dvh - 500px), 1050px) !important;
-  min-height: 780px !important;
-  max-height: none !important;
-  overflow: hidden !important;
-}
-#discover #profileList > .discover-option3-card > .discover-option3-photo {
-  position: relative !important;
-  inset: auto !important;
-  display: block !important;
-  flex: 1 1 auto !important;
-  width: 100% !important;
-  height: auto !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-}
-#discover #profileList > .discover-option3-card > .discover-option3-photo > .discover-option3-image {
-  position: absolute !important;
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-  object-position: center 30% !important;
-}
-#discover #profileList > .discover-option3-card > .discover-profile-overlay {
-  position: relative !important;
-  inset: auto !important;
-  flex: 0 0 auto !important;
-  display: flex !important;
-  flex-direction: column !important;
-  width: 100% !important;
-  padding: 8px 16px 12px !important;
-  margin: 0 !important;
-  background: #080808 !important;
-  box-sizing: border-box !important;
-  pointer-events: auto !important;
-}
-#discover #profileList > .discover-option3-card > .discover-profile-overlay h2 {
-  margin: 0 0 4px !important;
-}
-#discover #profileList > .discover-option3-card > .discover-profile-overlay .distance {
-  margin: 0 0 8px !important;
-}
-#discover #profileList > .discover-option3-card > .discover-profile-overlay button[aria-expanded] {
-  min-height: 40px !important;
-  margin-bottom: 8px !important;
-}
-#discover #profileList > .discover-option3-card > .discover-profile-overlay .discover-floating-actions {
-  margin: 8px 0 0 !important;
-  gap: 24px !important;
-}
-@media (max-height: 900px) {
-  #discover #profileList > .discover-option3-card {
-    height: clamp(700px, calc(100dvh - 420px), 900px) !important;
-    min-height: 700px !important;
-  }
-}
-@media (max-height: 760px) {
-  #discover #profileList > .discover-option3-card {
-    height: max(620px, calc(100dvh - 350px)) !important;
-    min-height: 620px !important;
-  }
-  #discover #profileList > .discover-option3-card > .discover-profile-overlay {
-    padding: 6px 12px 8px !important;
-  }
 }
 
 </style>

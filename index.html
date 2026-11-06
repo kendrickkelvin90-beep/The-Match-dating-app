@@ -7153,6 +7153,19 @@ function subscribeToIncomingMessages(user) {
       filter: "receiver_id=eq." + user.id
     }, payload => {
       if (!payload?.new || currentUser?.id !== user.id) return;
+
+      // If this message belongs to the thread currently on screen, update it
+      // immediately instead of waiting for the inbox preview refresh.
+      if (
+        currentPage === "chatPage" &&
+        activeChatUserId === payload.new.sender_id
+      ) {
+        loadChatMessages().catch(error =>
+          console.warn("Live chat message refresh failed:", error)
+        );
+        return;
+      }
+
       if (currentPage !== "messages") return;
 
       if (conversationPreviewRefreshTimer) {
@@ -15017,7 +15030,8 @@ async function openChat(userId, userName){
   }
 
   try{
-    status("messagesStatus","Opening conversation...");
+    $("messagesStatus").textContent = "";
+$("chatPageStatus").textContent = "";
 $("chatMessages").replaceChildren();
     activeChatUserId = userId;
     window.activeChatUserId = userId;
@@ -15039,7 +15053,7 @@ $("chatMessages").replaceChildren();
       if (activeChatUserId) openMemberProfile(activeChatUserId);
     };
 
-    $("chatPartnerLocation").textContent = "Loading profile...";
+    $("chatPartnerLocation").textContent = "";
 
    
         const currentPage = panels.find(page => {
@@ -15057,7 +15071,20 @@ $("chatMessages").replaceChildren();
     chatContent.appendChild($("activeConversation"));
     $("activeConversation").classList.remove("hidden");
 
+    // The emoji picker used to sit outside #activeConversation. Moving the
+    // conversation into the full-screen chat page left the picker behind on
+    // the hidden Messages page, so the emoji button appeared to do nothing.
+    // Keep the picker inside the active conversation beside the composer.
+    const emojiPicker = $("chatEmojiPicker");
+    const chatComposer = $("chatComposer");
+    if (emojiPicker && chatComposer && emojiPicker.parentElement !== $("activeConversation")) {
+      $("activeConversation").insertBefore(emojiPicker, chatComposer);
+    }
+
     show("chatPage");
+    // Start loading the thread immediately; header profile details can load
+    // in parallel instead of delaying the first messages.
+    const initialMessagesPromise = loadChatMessages();
 
       
       $("backFromChatHeader").onclick = async () => {
@@ -15087,8 +15114,6 @@ if (conversationListNode && activeConversationNode instanceof HTMLElement) {
       }
     };
 
-
-    status("chatPageStatus","Loading conversation...");
 
     const {data: chatProfile, error: profileError} = await db
       .from("profiles")
@@ -15142,7 +15167,7 @@ if (conversationListNode && activeConversationNode instanceof HTMLElement) {
     }, 8000);
 
 
-    await loadChatMessages();
+    await initialMessagesPromise;
 
   }catch(error){
     status(
@@ -15255,8 +15280,6 @@ async function loadChatMessages(){
     padding:"12px",
     borderRadius:"12px"
   });
-    status("chatPageStatus","Loading messages...");
-
   try {
     
     
@@ -15728,7 +15751,9 @@ for (const media of mediaRows || []) {
     // Preserve a member's reading position. Only follow the latest message
     // when they were already at the bottom or this is the first load.
     if (wasNearBottom) chat.scrollTop = chat.scrollHeight;
-    status("chatPageStatus","Conversation loaded.");
+    // Keep the chat status quiet during normal loading. Errors and send
+    // failures still surface below, but routine success/loading notices
+    // should not interrupt the conversation.
   } catch(e) {
     status("chatPageStatus","Could not load messages: "+friendly(e),true);
   }
@@ -15742,7 +15767,9 @@ for (const media of mediaRows || []) {
 });
   
 $("chatEmojiToggle").addEventListener("click", () => {
-  $("chatEmojiPicker").classList.toggle("hidden");
+  const picker = $("chatEmojiPicker");
+  if (!picker) return;
+  picker.classList.toggle("hidden");
 });
 
 $("chatEmojiPicker").addEventListener("click", event => {
@@ -15831,20 +15858,8 @@ let optimisticBubble = null;
 let textMessageSaved = false;
 
 try {
-const { data: allowed, error: blockError } = await db.rpc(
-"can_interact_with_member",
-{ target_user_id: receiverId }
-);
-
-if (blockError) throw blockError;
-
-if (allowed !== true) {
-  throw new Error("This conversation is unavailable.");
-}
-
-// Render text optimistically so the sender sees it immediately after the
-// existing interaction permission check. The database remains authoritative.
-optimisticBubble = null;
+// Render text optimistically before the permission/network round trip so
+// the sender sees the message immediately. A failed check marks it unsent.
 if (body) {
   optimisticBubble = document.createElement("div");
   optimisticBubble.className = "chat-bubble sent";
@@ -15860,6 +15875,14 @@ if (body) {
   $("chatMessages").appendChild(optimisticBubble);
   $("chatMessages").scrollTop = $("chatMessages").scrollHeight;
 }
+
+const { data: allowed, error: blockError } = await db.rpc(
+  "can_interact_with_member",
+  { target_user_id: receiverId }
+);
+if (blockError) throw blockError;
+if (allowed !== true) throw new Error("This conversation is unavailable.");
+
 // Send an ordinary text message if one was entered.
 if (body) {
   const { error } = await db.from("messages").insert({
@@ -15870,9 +15893,8 @@ if (body) {
 
   if (error) throw error;
   textMessageSaved = true;
-  // Remove the temporary bubble before the authoritative reload. The loader
-  // also reconciles a pending bubble if a live refresh wins this race.
-  if (optimisticBubble?.isConnected) optimisticBubble.remove();
+  // Keep the optimistic bubble visible until loadChatMessages reconciles it
+  // with the saved row. This avoids a blank gap after the insert succeeds.
 }
 
 // Upload an attachment to the private chat-media bucket.
@@ -19340,6 +19362,46 @@ body.light-theme #eventsPage .events-featured-meta strong {
 #chatPage #chatPageStatus{flex:0 0 auto;min-height:0}
 #chatPage #backFromChatPage{display:none!important}
 @media(max-width:390px){#chatPage #chatComposer{gap:5px;padding:7px 8px}#chatPage #chatComposer #chatEmojiToggle{flex-basis:30px;width:30px}#chatPage #chatComposer #chatMediaButton{flex-basis:36px;width:36px!important;height:36px!important}#chatPage #chatComposer #sendChatMessage{flex-basis:40px;width:40px!important;min-width:40px!important;height:40px;min-height:40px}}
+
+
+/* CHAT LAYOUT REFINEMENT — anchor composer above the Android/iOS system bar */
+#chatPage:not(.hidden) {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 3px) !important;
+}
+#chatPage #chatPageContent,
+#chatPage #activeConversation {
+  min-height: 0 !important;
+  height: 100% !important;
+}
+#chatPage #activeConversation {
+  gap: 0 !important;
+}
+#chatPage #chatMessages {
+  width: 100% !important;
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  padding: 8px 2px !important;
+  background: transparent !important;
+}
+#chatPage #chatComposer {
+  margin: auto 0 0 !important;
+  flex: 0 0 auto !important;
+  border: 0 !important;
+  border-radius: 28px !important;
+  box-shadow: none !important;
+  padding: 8px 10px !important;
+}
+#chatPage #chatPageStatus,
+#chatPage #messagesStatus {
+  display: none !important;
+  min-height: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
 
 </style>
 <script src="/coin-wallet.js"></script>

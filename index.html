@@ -15017,7 +15017,8 @@ async function openChat(userId, userName){
   }
 
   try{
-    status("messagesStatus","Opening conversation...");
+    $("messagesStatus").textContent = "";
+$("chatPageStatus").textContent = "";
 $("chatMessages").replaceChildren();
     activeChatUserId = userId;
     window.activeChatUserId = userId;
@@ -15057,6 +15058,16 @@ $("chatMessages").replaceChildren();
     chatContent.appendChild($("activeConversation"));
     $("activeConversation").classList.remove("hidden");
 
+    // The emoji picker used to sit outside #activeConversation. Moving the
+    // conversation into the full-screen chat page left the picker behind on
+    // the hidden Messages page, so the emoji button appeared to do nothing.
+    // Keep the picker inside the active conversation beside the composer.
+    const emojiPicker = $("chatEmojiPicker");
+    const chatComposer = $("chatComposer");
+    if (emojiPicker && chatComposer && emojiPicker.parentElement !== $("activeConversation")) {
+      $("activeConversation").insertBefore(emojiPicker, chatComposer);
+    }
+
     show("chatPage");
 
       
@@ -15087,8 +15098,6 @@ if (conversationListNode && activeConversationNode instanceof HTMLElement) {
       }
     };
 
-
-    status("chatPageStatus","Loading conversation...");
 
     const {data: chatProfile, error: profileError} = await db
       .from("profiles")
@@ -15255,8 +15264,6 @@ async function loadChatMessages(){
     padding:"12px",
     borderRadius:"12px"
   });
-    status("chatPageStatus","Loading messages...");
-
   try {
     
     
@@ -15728,7 +15735,9 @@ for (const media of mediaRows || []) {
     // Preserve a member's reading position. Only follow the latest message
     // when they were already at the bottom or this is the first load.
     if (wasNearBottom) chat.scrollTop = chat.scrollHeight;
-    status("chatPageStatus","Conversation loaded.");
+    // Keep the chat status quiet during normal loading. Errors and send
+    // failures still surface below, but routine success/loading notices
+    // should not interrupt the conversation.
   } catch(e) {
     status("chatPageStatus","Could not load messages: "+friendly(e),true);
   }
@@ -15742,7 +15751,9 @@ for (const media of mediaRows || []) {
 });
   
 $("chatEmojiToggle").addEventListener("click", () => {
-  $("chatEmojiPicker").classList.toggle("hidden");
+  const picker = $("chatEmojiPicker");
+  if (!picker) return;
+  picker.classList.toggle("hidden");
 });
 
 $("chatEmojiPicker").addEventListener("click", event => {

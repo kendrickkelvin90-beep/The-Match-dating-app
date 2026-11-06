@@ -6156,6 +6156,8 @@ body.light-theme #matchFeaturePromoClose {
 #adminPanel .admin-directory-actions .admin-member-action-danger { border-color:#8d4141; background:#281313; color:#ffb4b4; }
 #adminPanel .admin-directory-actions .admin-member-action-restore { border-color:#557c63; background:#132119; color:#b8e3c4; }
 #adminPanel .admin-directory-actions .admin-member-action:disabled { opacity:.42; cursor:not-allowed; filter:saturate(.5); }
+#adminPanel .admin-activity-member-status { margin-top:10px; color:#d9b76d; font-weight:700; }
+#adminPanel #adminActivityDetailList .admin-directory-actions { grid-template-columns:1fr; margin-top:12px; }
 #adminPanel .admin-premium-row { display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid #292720; }
 #adminPanel .admin-premium-row:last-child { border-bottom:0; }
 #adminPanel .admin-premium-row strong { color:#eee7d8; font-size:12px; }
@@ -8428,6 +8430,33 @@ function renderAdminActivityDetail(){
    const formatted=/(created_at|premium_until|premium_started_at|expires_at|opened_at|read_at|registered_at)$/.test(key)&&!Number.isNaN(Date.parse(value))?new Date(value).toLocaleString():String(value);
    line.textContent=label+": "+formatted;card.appendChild(line);
   });
+  if(adminActivityCurrentKey==="members"&&row.member_id){
+   const moderation=adminModerationByUser.get(row.member_id);
+   const state=document.createElement("p");
+   state.className="admin-activity-member-status";
+   state.textContent=moderation
+    ?(moderation.status==="banned"?"PERMANENTLY BANNED":"SUSPENDED until "+(moderation.expires_at?new Date(moderation.expires_at).toLocaleString():"date unavailable"))+" · Reason: "+(moderation.reason||"Not provided")
+    :"Account status: Active";
+   card.appendChild(state);
+   const actions=document.createElement("div");
+   actions.className="admin-directory-actions";
+   const makeAction=(label,action,disabled,styleClass)=>{
+    const button=document.createElement("button");
+    button.type="button";button.className="admin-member-action "+(styleClass||"");
+    button.textContent=label;button.disabled=!!disabled;
+    button.addEventListener("click",async()=>{
+     button.disabled=true;
+     try{await moderateAdminMember({id:row.member_id,display_name:row._title},action);}
+     catch(error){status("adminStatus","Account action failed: "+friendly(error),true);}
+     finally{await loadAdminModerationStatuses();renderAdminActivityDetail();}
+    });
+    actions.appendChild(button);
+   };
+   makeAction("Suspend account","suspended",!!moderation,"");
+   makeAction("Permanently ban","banned",moderation?.status==="banned","admin-member-action-danger");
+   makeAction("Restore account","restored",!moderation,"admin-member-action-restore");
+   card.appendChild(actions);
+  }
   list.appendChild(card);
  });
 }
@@ -8463,6 +8492,7 @@ async function loadAdminActivityDetail(){
   result=await db.from("chat_media").select("id,sender_id,receiver_id,media_type,view_once,opened_at,created_at").order("created_at",{ascending:false}).limit(100);
   if(!result.error)adminActivityRows=(result.data||[]).map(row=>({_title:"Chat media "+String(row.id).slice(0,8),id:row.id,sender_id:row.sender_id,receiver_id:row.receiver_id,media_type:row.media_type,view_once:row.view_once,opened_at:row.opened_at,created_at:row.created_at}));
  }else if(key==="members"){
+  await loadAdminModerationStatuses();
   result=await db.from("profiles").select("id,display_name,city,age,is_verified,created_at").order("created_at",{ascending:false}).limit(100);
   if(!result.error)adminActivityRows=(result.data||[]).map(row=>({_title:row.display_name||("Member "+String(row.id).slice(0,8)),member_id:row.id,city:row.city,age:row.age,verified:row.is_verified,registered_at:row.created_at}));
  }else if(key==="likes"){

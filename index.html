@@ -11738,23 +11738,35 @@ async function loadStories(){
     const avatars = new Map(avatarEntries);
 
     
-    const seen=new Set();
+    // Group each member's active stories once. Reuse these groups for the
+    // seen-state calculation and viewer instead of filtering the full list
+    // repeatedly for every story row.
+    const storiesByUser = new Map();
+    for (const story of stories) {
+      if (!storiesByUser.has(story.user_id)) storiesByUser.set(story.user_id, []);
+      storiesByUser.get(story.user_id).push(story);
+    }
+    for (const memberStories of storiesByUser.values()) {
+      memberStories.sort((a, b) =>
+        new Date(a.created_at) - new Date(b.created_at)
+      );
+    }
 
-        const orderedStories = [
-      ...stories.filter(story => story.user_id === currentUser.id),
-      ...stories.filter(story => story.user_id !== currentUser.id)
+    const orderedStoryUsers = [
+      ...(storiesByUser.has(currentUser.id) ? [currentUser.id] : []),
+      ...[...storiesByUser.keys()].filter(userId => userId !== currentUser.id)
     ];
 
-    orderedStories.forEach(story=>{
-      
-      if(seen.has(story.user_id))return;
-      seen.add(story.user_id);
+    orderedStoryUsers.forEach(userId => {
+      const memberStories = storiesByUser.get(userId) || [];
+      const story = memberStories[memberStories.length - 1];
+      if (!story) return;
 
       const name=names.get(story.user_id)||"The Match member";
       const button=document.createElement("button");
       button.type="button";
       button.className="story-item";
-      const memberStoryIds = stories.filter(item => item.user_id === story.user_id).map(item => item.id);
+      const memberStoryIds = memberStories.map(item => item.id);
       if (memberStoryIds.length && memberStoryIds.every(id => seenStoryIds.has(id))) {
         button.classList.add("seen");
       }
@@ -11782,11 +11794,8 @@ async function loadStories(){
       button.append(avatar,label);
 
       button.onclick=async()=>{
-        const memberStories = stories
-  .filter(s => s.user_id === story.user_id)
-  .sort((a, b) =>
-    new Date(a.created_at) - new Date(b.created_at)
-  );
+        // The already grouped, chronologically ordered list is reused here.
+        const memberStories = storiesByUser.get(story.user_id) || [];
   
 
         

@@ -5314,6 +5314,107 @@ body.light-theme #matchFeaturePromoClose {
 }
 </style>
   <link rel="stylesheet" href="/romantic-premium.css?v=1">
+<style>
+/* Discover immersive full-bleed profile card — approved mobile layout */
+#discover #profileList>.discover-option3-card{
+  height:clamp(500px,calc(100svh - 340px),1100px)!important;
+  min-height:500px!important;
+  max-height:1100px!important;
+  width:calc(100% + 24px)!important;
+  margin-left:-12px!important;
+  border:0!important;
+  border-radius:0!important;
+  overflow:hidden!important;
+}
+#discover .discover-option3-photo>.discover-option3-image{
+  object-fit:cover!important;
+  object-position:center 32%!important;
+  background:#080808!important;
+}
+#discover .discover-option3-overlay{
+  left:0!important;
+  right:0!important;
+  bottom:0!important;
+  padding:76px 16px max(16px,env(safe-area-inset-bottom))!important;
+  background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.22) 18%,rgba(0,0,0,.78) 48%,rgba(0,0,0,.97) 100%)!important;
+}
+#discover .discover-option3-overlay h2{
+  font-size:clamp(30px,7.2vw,40px)!important;
+  line-height:1.08!important;
+  margin-bottom:5px!important;
+}
+#discover .discover-option3-overlay .distance{
+  font-size:15px!important;
+  margin-bottom:12px!important;
+}
+#discover .discover-option3-overlay button[aria-expanded]{
+  min-height:46px!important;
+  margin-bottom:8px!important;
+  border:1px solid rgba(228,199,131,.72)!important;
+  border-radius:15px!important;
+  background:rgba(12,10,7,.78)!important;
+  color:#f0d79e!important;
+  font-size:15px!important;
+}
+#discover .discover-option3-overlay .discover-floating-actions{
+  display:flex!important;
+  justify-content:center!important;
+  align-items:center!important;
+  gap:clamp(22px,7vw,42px)!important;
+  width:100%!important;
+  margin:12px 0 0!important;
+  padding:0!important;
+}
+#discover .discover-option3-overlay .discover-floating-actions .btn,
+#discover .discover-option3-overlay .discover-floating-actions .discover-super-like{
+  flex:0 0 74px!important;
+  width:74px!important;
+  min-width:74px!important;
+  height:74px!important;
+  min-height:74px!important;
+  max-width:74px!important;
+  padding:0!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border-radius:50%!important;
+  font-size:32px!important;
+  line-height:1!important;
+  margin:0!important;
+}
+#discover .discover-option3-overlay .discover-floating-actions .btn.secondary{
+  background:rgba(18,18,18,.94)!important;
+  color:#fff!important;
+  border:1px solid rgba(255,255,255,.62)!important;
+}
+#discover .discover-option3-overlay .discover-floating-actions .btn.primary{
+  background:linear-gradient(145deg,#f3d18a,#b88b42)!important;
+  color:#171108!important;
+  border:1px solid #f0d18b!important;
+}
+#discover .discover-option3-overlay .discover-floating-actions .discover-super-like{
+  border:1px solid rgba(255,224,145,.95)!important;
+  background:radial-gradient(circle at 35% 20%,#fff5c8 0%,#e8bd59 38%,#a66b1c 100%)!important;
+  color:#241707!important;
+}
+#discover #discoverStatus:empty{display:none!important}
+@media(max-height:740px){
+  #discover #profileList>.discover-option3-card{
+    height:clamp(500px,calc(100svh - 300px),1100px)!important;
+    min-height:500px!important;
+  }
+  #discover .discover-option3-overlay{padding-top:58px!important}
+  #discover .discover-option3-overlay .discover-floating-actions .btn,
+  #discover .discover-option3-overlay .discover-floating-actions .discover-super-like{
+    flex-basis:64px!important;width:64px!important;min-width:64px!important;
+    height:64px!important;min-height:64px!important;max-width:64px!important;
+  }
+}
+@media(max-width:380px){
+  #discover .discover-option3-overlay{padding-left:12px!important;padding-right:12px!important}
+  #discover .discover-option3-overlay .discover-floating-actions{gap:20px!important}
+}
+</style>
 </head>
 <body>
 <div id="stars" aria-hidden="true"></div>
@@ -19479,107 +19580,3 @@ body.light-theme #eventsPage .events-featured-meta strong {
     </div>
   </div>
 </div>
-
-
-
-
-
-/* Discover immersive full-bleed profile card — approved mobile layout */
-#discover #profileList>.discover-option3-card{
-  height:clamp(500px,calc(100svh - 340px),1100px)!important;
-  min-height:500px!important;
-  max-height:1100px!important;
-  width:calc(100% + 24px)!important;
-  margin-left:-12px!important;
-  border:0!important;
-  border-radius:0!important;
-  overflow:hidden!important;
-}
-#discover .discover-option3-photo>.discover-option3-image{
-  object-fit:cover!important;
-  object-position:center 32%!important;
-  background:#080808!important;
-}
-#discover .discover-option3-overlay{
-  left:0!important;
-  right:0!important;
-  bottom:0!important;
-  padding:76px 16px max(16px,env(safe-area-inset-bottom))!important;
-  background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.22) 18%,rgba(0,0,0,.78) 48%,rgba(0,0,0,.97) 100%)!important;
-}
-#discover .discover-option3-overlay h2{
-  font-size:clamp(30px,7.2vw,40px)!important;
-  line-height:1.08!important;
-  margin-bottom:5px!important;
-}
-#discover .discover-option3-overlay .distance{
-  font-size:15px!important;
-  margin-bottom:12px!important;
-}
-#discover .discover-option3-overlay button[aria-expanded]{
-  min-height:46px!important;
-  margin-bottom:8px!important;
-  border:1px solid rgba(228,199,131,.72)!important;
-  border-radius:15px!important;
-  background:rgba(12,10,7,.78)!important;
-  color:#f0d79e!important;
-  font-size:15px!important;
-}
-#discover .discover-option3-overlay .discover-floating-actions{
-  display:flex!important;
-  justify-content:center!important;
-  align-items:center!important;
-  gap:clamp(22px,7vw,42px)!important;
-  width:100%!important;
-  margin:12px 0 0!important;
-  padding:0!important;
-}
-#discover .discover-option3-overlay .discover-floating-actions .btn,
-#discover .discover-option3-overlay .discover-floating-actions .discover-super-like{
-  flex:0 0 74px!important;
-  width:74px!important;
-  min-width:74px!important;
-  height:74px!important;
-  min-height:74px!important;
-  max-width:74px!important;
-  padding:0!important;
-  display:inline-flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  border-radius:50%!important;
-  font-size:32px!important;
-  line-height:1!important;
-  margin:0!important;
-}
-#discover .discover-option3-overlay .discover-floating-actions .btn.secondary{
-  background:rgba(18,18,18,.94)!important;
-  color:#fff!important;
-  border:1px solid rgba(255,255,255,.62)!important;
-}
-#discover .discover-option3-overlay .discover-floating-actions .btn.primary{
-  background:linear-gradient(145deg,#f3d18a,#b88b42)!important;
-  color:#171108!important;
-  border:1px solid #f0d18b!important;
-}
-#discover .discover-option3-overlay .discover-floating-actions .discover-super-like{
-  border:1px solid rgba(255,224,145,.95)!important;
-  background:radial-gradient(circle at 35% 20%,#fff5c8 0%,#e8bd59 38%,#a66b1c 100%)!important;
-  color:#241707!important;
-}
-#discover #discoverStatus:empty{display:none!important}
-@media(max-height:740px){
-  #discover #profileList>.discover-option3-card{
-    height:clamp(500px,calc(100svh - 300px),1100px)!important;
-    min-height:500px!important;
-  }
-  #discover .discover-option3-overlay{padding-top:58px!important}
-  #discover .discover-option3-overlay .discover-floating-actions .btn,
-  #discover .discover-option3-overlay .discover-floating-actions .discover-super-like{
-    flex-basis:64px!important;width:64px!important;min-width:64px!important;
-    height:64px!important;min-height:64px!important;max-width:64px!important;
-  }
-}
-@media(max-width:380px){
-  #discover .discover-option3-overlay{padding-left:12px!important;padding-right:12px!important}
-  #discover .discover-option3-overlay .discover-floating-actions{gap:20px!important}
-}

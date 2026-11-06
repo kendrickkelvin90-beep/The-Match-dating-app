@@ -8175,7 +8175,11 @@ async function loadAdminMemberReports() {
             button.disabled = true;
             let moderationApplied = false;
             try {
-              await moderateAdminMember(member, action);
+              const actionApplied = await moderateAdminMember(member, action);
+              if (!actionApplied) {
+                button.disabled = false;
+                return;
+              }
               moderationApplied = true;
               const { error: reportUpdateError } = await db.from("member_reports")
                 .update({ status: "actioned" }).eq("id", report.id);
@@ -8225,22 +8229,22 @@ async function moderateAdminMember(member, action) {
   if (!(await checkMatchAdmin())) throw new Error("Admin access denied.");
   if (!member?.id || member.id === currentUser?.id) {
     alert("You cannot moderate your own account.");
-    return;
+    return false;
   }
   const existing = adminModerationByUser.get(member.id);
-  if (action === "restored" && !existing) return;
+  if (action === "restored" && !existing) return false;
   const enteredReason = await matchPrompt(
     action === "restored"
       ? "Reason for restoring this account (optional):"
       : "Enter the reason for this " + (action === "banned" ? "ban" : "suspension") + ":"
   );
-  if (enteredReason === null) return;
+  if (enteredReason === null) return false;
   const reason = action === "restored"
     ? (enteredReason.trim() || "Account restored after review")
     : enteredReason.trim();
   if (reason.length < 3 || reason.length > 500) {
     alert("Please enter a reason between 3 and 500 characters.");
-    return;
+    return false;
   }
   let expiresAt = null;
   if (action === "suspended") {
@@ -8248,7 +8252,7 @@ async function moderateAdminMember(member, action) {
     const days = Number(daysText);
     if (!Number.isInteger(days) || days < 1 || days > 30) {
       alert("Choose a whole number from 1 to 30 days.");
-      return;
+      return false;
     }
     expiresAt = new Date(Date.now() + days * 86400000).toISOString();
   }
@@ -8256,7 +8260,7 @@ async function moderateAdminMember(member, action) {
     ? "Restore " + (member.display_name || "this member") + "'s account?"
     : (action === "banned" ? "Ban " : "Suspend ") +
       (member.display_name || "this member") + "?";
-  if (!await matchConfirm(confirmText + (action === "banned" ? " This is a serious action." : ""))) return;
+  if (!await matchConfirm(confirmText + (action === "banned" ? " This is a serious action." : ""))) return false;
 
   status("adminStatus", "Applying account moderation...");
   const { data, error } = await db.functions.invoke("admin-moderate-member", {
@@ -8268,6 +8272,7 @@ async function moderateAdminMember(member, action) {
   renderAdminMemberDirectory($("adminMemberSearch")?.value || "");
   status("adminStatus", action === "restored" ? "Account restored." :
     action === "banned" ? "Account ban applied." : "Account suspended.");
+  return true;
 }
 
 function renderAdminMemberDirectory(query = "") {

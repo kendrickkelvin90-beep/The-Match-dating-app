@@ -41,7 +41,14 @@ begin
   from public.messages
   where sender_id='11111111-1111-4111-8111-111111111111'
     and receiver_id='22222222-2222-4222-8222-222222222222'
-    and body like '[[MATCH_GIFT:%]]';
+    and body = (
+      select '[[MATCH_GIFT:' || id::text || ']]'
+      from public.member_gifts
+      where sender_id='11111111-1111-4111-8111-111111111111'
+        and recipient_id='22222222-2222-4222-8222-222222222222'
+        and gift_code='notification_test'
+        and message='A test gift'
+    );
 
   if v_dm_count <> 1 or v_dm_body <> (
     select '[[MATCH_GIFT:' || id::text || ']]'

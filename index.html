@@ -20455,6 +20455,21 @@ body.light-theme #eventsPage .events-featured-meta strong {
  else initAdminPages();
 })();
 </script>
+
+<style id="discover-profile-overlay-lowered">
+/* Move Discover profile details and actions lower so more of each photo stays visible. */
+#discover .discover-option3-overlay,
+#discover #profileList > .member-card > .discover-profile-overlay {
+  bottom: -56px !important;
+}
+@media (max-height: 740px) {
+  #discover .discover-option3-overlay,
+  #discover #profileList > .member-card > .discover-profile-overlay {
+    bottom: -42px !important;
+  }
+}
+</style>
+
 </body>
 </html>
 

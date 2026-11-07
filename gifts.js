@@ -118,6 +118,7 @@ async function load(){
  panel.querySelector("#mgCollection").innerHTML=(gifts.data||[]).filter(g=>g.gift_catalog).map(g=>`<div class="mg-row"><strong>${esc(g.gift_catalog.emoji)} ${esc(g.gift_catalog.name)}</strong><div class="mg-muted">${new Date(g.created_at).toLocaleString()} · ${g.redeemed_at?"Redeemed":g.redeem_coins+" coins available"}</div>${g.message?`<div>${esc(g.message)}</div>`:""}${!g.redeemed_at&&g.redeem_coins>0?`<button data-redeem="${g.id}">Redeem ${g.redeem_coins} coins</button>`:""}</div>`).join("")||"Your gift collection is empty.";
 }
 window.openMatchGifts=async userId=>{recipient=userId||null;panel.classList.add("open");status("");try{await load();}catch(e){status(e.message||"Could not load gifts.");}};
+window.refreshMatchGiftCollection=async()=>{if(!panel.classList.contains("open"))return;try{await load();}catch(e){status(e.message||"Could not refresh gifts.");}};
 panel.querySelector("#mgClose").onclick=()=>panel.classList.remove("open");
 panel.addEventListener("click",async e=>{
  const send=e.target.closest("[data-gift]");

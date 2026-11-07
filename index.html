@@ -11729,8 +11729,22 @@ function setNearbyView(view) {
     view = "map";
   }
   const showCards = view === "cards";
-  $("nearbyMapPanel")?.classList.toggle("hidden", showCards);
-  $("nearbyMembersList")?.classList.toggle("hidden", !showCards);
+  const mapPanel = $("nearbyMapPanel");
+  const membersList = $("nearbyMembersList");
+  mapPanel?.classList.toggle("hidden", showCards);
+  membersList?.classList.toggle("hidden", !showCards);
+
+  // Nearby layout CSS uses !important display rules for its full-width cards.
+  // Enforce the Map/Cards switch inline so those layout rules cannot make
+  // the cards appear underneath the map while Map is the selected view.
+  if (showCards) {
+    mapPanel?.style.setProperty("display", "none", "important");
+    membersList?.style.removeProperty("display");
+  } else {
+    membersList?.style.setProperty("display", "none", "important");
+    mapPanel?.style.removeProperty("display");
+  }
+
   $("nearbyMapViewBtn")?.classList.toggle("active", !showCards);
   $("nearbyMapViewBtn")?.setAttribute("aria-pressed", String(!showCards));
   $("nearbyCardsViewBtn")?.classList.toggle("active", showCards);

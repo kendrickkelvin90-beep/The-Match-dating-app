@@ -12706,9 +12706,38 @@ viewersInfo.onclick = async event => {
                 media.controls = false;
                 media.playsInline = true;
                 media.autoplay = true;
-                media.loop = true;
-                storyDuration = 15000;
-                storyRemaining = storyDuration;
+                media.loop = false;
+                let videoReplayCount = 0;
+                media.addEventListener("loadedmetadata", () => {
+                  const onePlayDuration = Number.isFinite(media.duration)
+                    ? Math.max(1000, media.duration * 1000)
+                    : 7500;
+                  storyDuration = onePlayDuration * 2;
+                  storyRemaining = storyDuration;
+                  if (storyTimer) clearTimeout(storyTimer);
+                  storyTimerStartedAt = Date.now();
+                  const activeFill = progressFills[index];
+                  if (activeFill) {
+                    activeFill.style.transition = "none";
+                    activeFill.style.width = "0%";
+                    requestAnimationFrame(() => {
+                      activeFill.style.transition = "width " + storyDuration + "ms linear";
+                      activeFill.style.width = "100%";
+                    });
+                  }
+                  storyTimer = setTimeout(advanceStory, storyDuration);
+                });
+                media.addEventListener("ended", () => {
+                  if (videoReplayCount === 0) {
+                    videoReplayCount++;
+                    media.currentTime = 0;
+                    media.play().catch(() => advanceStory());
+                  } else {
+                    if (storyTimer) clearTimeout(storyTimer);
+                    storyTimer = null;
+                    advanceStory();
+                  }
+                });
               } else {
                 storyDuration = 5000;
                 storyRemaining = storyDuration;

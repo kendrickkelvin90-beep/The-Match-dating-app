@@ -20683,6 +20683,9 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
   #nearbyPage #nearbyMembersList {max-width:760px!important;margin-left:auto!important;margin-right:auto!important}
   #nearbyPage.panel {padding-left:24px!important;padding-right:24px!important}
 }
+/* Critical visibility fix: Nearby must remain hidden unless its own tab is active. */
+#nearbyPage.panel.hidden { display:none!important; }
+
 </style>
 
 </body>

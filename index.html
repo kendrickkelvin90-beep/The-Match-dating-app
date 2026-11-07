@@ -12728,6 +12728,7 @@ viewersInfo.onclick = async event => {
                   storyDuration = onePlayDuration * 2 + 1500;
                   storyRemaining = storyDuration;
                   if (storyTimer) clearTimeout(storyTimer);
+                  if (storyPaused) return;
                   storyTimerStartedAt = Date.now();
                   const activeFill = progressFills[index];
                   if (activeFill) {
@@ -12774,7 +12775,8 @@ viewersInfo.onclick = async event => {
               mediaArea.appendChild(media);
 
               if (current.media_type === "video") {
-                media.play().catch(() => {});
+                if (storyPaused) media.pause();
+                else media.play().catch(() => {});
               }
 
             }
@@ -12793,18 +12795,22 @@ viewersInfo.onclick = async event => {
                 activeFill.style.width = "100%";
               });
             }
-            storyTimerStartedAt = Date.now();
-            storyTimer = setTimeout(advanceStory, storyDuration);
+            if (!storyPaused) {
+              storyTimerStartedAt = Date.now();
+              storyTimer = setTimeout(advanceStory, storyDuration);
+            }
           }
         }
 
         await renderStory();
         const pauseStory = () => {
-          if (storyPaused || !storyTimer) return;
+          if (storyPaused) return;
           storyPaused = true;
-          storyRemaining = Math.max(0, storyRemaining - (Date.now() - storyTimerStartedAt));
-          clearTimeout(storyTimer);
-          storyTimer = null;
+          if (storyTimer) {
+            storyRemaining = Math.max(0, storyRemaining - (Date.now() - storyTimerStartedAt));
+            clearTimeout(storyTimer);
+            storyTimer = null;
+          }
           const video = mediaArea.querySelector("video");
           if (video) video.pause();
           const activeFill = progressFills[index];

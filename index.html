@@ -12560,6 +12560,8 @@ viewersInfo.onclick = async event => {
   const storyToView = memberStories[index];
   if (!storyToView || storyToView.user_id !== currentUser.id) return;
 
+  // Freeze the story and its progress timer before loading the viewers panel.
+  pauseStory();
   viewersInfo.disabled = true;
   viewersInfo.textContent = "👁 Loading views...";
 
@@ -12597,7 +12599,11 @@ viewersInfo.onclick = async event => {
     closeButton.style.cssText =
       "float:right;background:#c9a45e;color:#111;border:0;" +
       "border-radius:18px;padding:6px 12px;font-weight:700;";
-    closeButton.onclick = () => viewerList.remove();
+    closeButton.onclick = event => {
+      event.stopPropagation();
+      viewerList.remove();
+      resumeStory();
+    };
     title.appendChild(closeButton);
 
     if (!viewerIds.length) {
@@ -12686,6 +12692,8 @@ viewersInfo.onclick = async event => {
   } catch (error) {
     viewersInfo.textContent = "👁 Couldn't load views";
     console.error("Story viewer list failed:", error);
+    // If the panel could not be opened, don't leave the story stuck paused.
+    resumeStory();
   } finally {
     viewersInfo.disabled = false;
   }
@@ -12789,11 +12797,13 @@ viewersInfo.onclick = async event => {
 
         await renderStory();
         const pauseStory = () => {
-          if (storyPaused || !storyTimer) return;
+          if (storyPaused) return;
           storyPaused = true;
-          storyRemaining = Math.max(0, storyRemaining - (Date.now() - storyTimerStartedAt));
-          clearTimeout(storyTimer);
-          storyTimer = null;
+          if (storyTimer) {
+            storyRemaining = Math.max(0, storyRemaining - (Date.now() - storyTimerStartedAt));
+            clearTimeout(storyTimer);
+            storyTimer = null;
+          }
           const video = mediaArea.querySelector("video");
           if (video) video.pause();
           const activeFill = progressFills[index];

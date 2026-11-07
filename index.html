@@ -12006,6 +12006,15 @@ async function loadStories(){
         const storyAvatar = document.createElement("img");
         storyAvatar.alt = storyOwnerName + "'s profile photo";
         storyAvatar.style.cssText = "width:40px;height:40px;flex:0 0 40px;border-radius:50%;object-fit:cover;border:2px solid #d5b45c;background:#242019;";
+        const storyAvatarFallback = () => "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><rect width="80" height="80" rx="40" fill="#292319"/><text x="40" y="51" text-anchor="middle" font-size="36" font-family="Arial" font-weight="700" fill="#e5c477">' +
+          (storyOwnerName.trim()[0] || "M").toUpperCase() + '</text></svg>'
+        );
+        storyAvatar.onerror = () => {
+          if (storyAvatar.dataset.fallback === "true") return;
+          storyAvatar.dataset.fallback = "true";
+          storyAvatar.src = storyAvatarFallback();
+        };
         const storyName = document.createElement("strong");
         storyName.textContent = storyOwnerName;
         storyName.style.cssText = "display:block;max-width:42vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;color:#fff;";
@@ -12017,7 +12026,9 @@ async function loadStories(){
         const updateStoryHeader = () => {
           storyName.textContent = storyOwnerName;
           storyAvatar.alt = storyOwnerName + "'s profile photo";
-          storyAvatar.src = avatars.get(storyOwnerId) || "";
+          const profilePhoto = avatars.get(storyOwnerId);
+          storyAvatar.dataset.fallback = profilePhoto ? "false" : "true";
+          storyAvatar.src = profilePhoto || storyAvatarFallback();
           storyProfileButton.setAttribute("aria-label","View " + storyOwnerName + "'s profile");
         };
         updateStoryHeader();
@@ -12485,7 +12496,9 @@ reactionsInfo.onclick = async event => {
           const current=memberStories[index];
           storyName.textContent = storyOwnerName;
           storyAvatar.alt = storyOwnerName + "'s profile photo";
-          storyAvatar.src = avatars.get(storyOwnerId) || "";
+          const profilePhoto = avatars.get(storyOwnerId);
+          storyAvatar.dataset.fallback = profilePhoto ? "false" : "true";
+          storyAvatar.src = profilePhoto || storyAvatarFallback();
           storyProfileButton.setAttribute("aria-label","View " + storyOwnerName + "'s profile");
           discardStoryButton.style.display = current.user_id === currentUser.id ? "block" : "none";
           storyReplyButton.style.display =

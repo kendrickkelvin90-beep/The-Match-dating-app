@@ -7340,6 +7340,38 @@ function subscribeToIncomingMessages(user) {
         loadMyConversations();
       }, 350);
     })
+    .on("postgres_changes", {
+      event: "*",
+      schema: "public",
+      table: "member_gifts",
+      filter: "recipient_id=eq." + user.id
+    }, payload => {
+      const gift = payload?.new;
+      if (!gift || currentUser?.id !== user.id) return;
+      const partnerId = gift.sender_id;
+      if (currentPage === "chatPage" && activeChatUserId === partnerId) {
+        loadChatMessages().catch(error => console.warn("Incoming gift chat refresh failed:", error));
+      } else if (currentPage === "messages") {
+        if (conversationPreviewRefreshTimer) clearTimeout(conversationPreviewRefreshTimer);
+        conversationPreviewRefreshTimer = setTimeout(() => {
+          conversationPreviewRefreshTimer = null;
+          if (currentUser?.id === user.id && currentPage === "messages") loadMyConversations();
+        }, 350);
+      }
+    })
+    .on("postgres_changes", {
+      event: "*",
+      schema: "public",
+      table: "member_gifts",
+      filter: "sender_id=eq." + user.id
+    }, payload => {
+      const gift = payload?.new;
+      if (!gift || currentUser?.id !== user.id) return;
+      const partnerId = gift.recipient_id;
+      if (currentPage === "chatPage" && activeChatUserId === partnerId) {
+        loadChatMessages().catch(error => console.warn("Gift status refresh failed:", error));
+      }
+    })
     .subscribe();
 }
 
@@ -15394,11 +15426,15 @@ const firstPhotoByUser = new Map();
 
       
       preview.dataset.messagePreview = "true";
+      const latestBody = conversation.latest?.body || "";
+      const isGiftPreview = /^\\[\\[MATCH_GIFT:[0-9a-f-]{36}\\]\\]$/i.test(latestBody);
       preview.textContent = conversation.latest
         ? (
-            conversation.latest.sender_id === me
-              ? "You: " + (conversation.latest.body || "New message")
-              : (conversation.latest.body || "New message")
+            isGiftPreview
+              ? (conversation.latest.sender_id === me ? "You sent a gift 🎁" : "Sent you a gift 🎁")
+              : (conversation.latest.sender_id === me
+                  ? "You: " + (latestBody || "New message")
+                  : (latestBody || "New message"))
           )
         : "No messages yet";
 
@@ -15912,6 +15948,9 @@ const receiptResults = await Promise.all(
       chat.querySelectorAll("[data-empty-message]").forEach(node => node.remove());
 
       data.forEach(message => {
+        // Gift system entries are delivery signals; the authoritative gift row
+        // below renders the actual card and redeem action, not a raw marker.
+        if (/^\\[\\[MATCH_GIFT:[0-9a-f-]{36}\\]\\]$/i.test(message.body || "")) return;
         const mine = message.sender_id === me;
         if (mine) {
           const pendingBubble = Array.from(
@@ -16299,11 +16338,12 @@ for (const media of mediaRows || []) {
 
   insertBubbleInTimeOrder(bubble, media.created_at);
         }
-// Render gifts in the same conversation timeline as text and media.
-// Gift records remain the source of truth; this never creates or changes a wallet entry.
+// Load gift rows independently of the catalogue relationship. This avoids
+// an embedded PostgREST relationship/RLS join preventing either participant
+// from seeing an otherwise readable gift transaction.
 const { data: chatGifts, error: chatGiftsError } = await db
   .from("member_gifts")
-  .select("id,sender_id,recipient_id,gift_code,send_cost,redeem_coins,message,created_at,redeemed_at,gift_catalog(name,emoji)")
+  .select("id,sender_id,recipient_id,gift_code,send_cost,redeem_coins,message,created_at,redeemed_at")
   .or(
     "and(sender_id.eq." + me + ",recipient_id.eq." + them + "),and(sender_id.eq." + them + ",recipient_id.eq." + me + ")"
   )
@@ -16312,15 +16352,26 @@ const { data: chatGifts, error: chatGiftsError } = await db
 
 if (chatGiftsError) throw chatGiftsError;
 
+const giftCodes = [...new Set((chatGifts || []).map(gift => gift.gift_code))];
+let giftCatalogByCode = new Map();
+if (giftCodes.length) {
+  const { data: giftCatalogRows, error: giftCatalogError } = await db
+    .from("gift_catalog")
+    .select("code,name,emoji")
+    .in("code", giftCodes);
+  if (giftCatalogError) throw giftCatalogError;
+  giftCatalogByCode = new Map((giftCatalogRows || []).map(item => [item.code, item]));
+}
+
 for (const gift of chatGifts || []) {
   const mine = gift.sender_id === me;
+  const catalogItem = giftCatalogByCode.get(gift.gift_code);
   let bubble = chat.querySelector('[data-gift-id="' + gift.id + '"]');
 
   if (!bubble) {
     chat.querySelectorAll("[data-empty-message]").forEach(node => node.remove());
     bubble = document.createElement("div");
     bubble.dataset.giftId = gift.id;
-    bubble.dataset.createdAt = gift.created_at;
     bubble.className = mine ? "chat-bubble sent match-gift-chat-bubble" : "chat-bubble received match-gift-chat-bubble";
     Object.assign(bubble.style, {
       maxWidth: "84%",
@@ -16338,7 +16389,7 @@ for (const gift of chatGifts || []) {
     });
 
     const heading = document.createElement("div");
-    heading.textContent = (gift.gift_catalog?.emoji || "🎁") + " " + (gift.gift_catalog?.name || gift.gift_code);
+    heading.textContent = (catalogItem?.emoji || "🎁") + " " + (catalogItem?.name || gift.gift_code);
     heading.style.cssText = "font-size:17px;font-weight:800;color:#f1d18d;margin-bottom:5px";
     const detail = document.createElement("div");
     detail.textContent = mine ? "You sent a gift" : "You received a gift";
@@ -16382,8 +16433,7 @@ for (const gift of chatGifts || []) {
       try {
         const { error: redeemError } = await db.rpc("redeem_member_gift", { p_gift_id: gift.id });
         if (redeemError) throw redeemError;
-        if (state) state.textContent = "Redeemed · " + gift.redeem_coins + " coins added";
-        redeem.remove();
+        await loadChatMessages();
         if (window.refreshMatchGiftCollection) await window.refreshMatchGiftCollection();
         await updateAccountCounts();
       } catch (error) {
@@ -16407,6 +16457,19 @@ for (const gift of chatGifts || []) {
   }
     
 }
+
+// The sender does not receive their own receiver-filtered Realtime event.
+// gifts.js emits this after the send RPC commits, so refresh the sender's DM.
+window.addEventListener("match:gift-sent", event => {
+  const recipientId = event.detail?.recipientId;
+  if (currentUser?.id && activeChatUserId && activeChatUserId === recipientId) {
+    loadChatMessages().catch(error => console.warn("Sender gift chat refresh failed:", error));
+  }
+  if (currentPage === "messages") {
+    loadMyConversations().catch(error => console.warn("Gift inbox refresh failed:", error));
+  }
+});
+
  $("chatMessageInput").addEventListener("input",()=>{
   const input=$("chatMessageInput");
   input.style.height="auto";

@@ -33,6 +33,10 @@ create table public.notifications(
 );
 
 -- Minimal DM table and notification trigger used by the virtual-gift delivery migration.
+create table public.profiles(
+  id uuid primary key references auth.users(id) on delete cascade,
+  display_name text
+);
 create table public.messages(
   id uuid primary key default gen_random_uuid(),
   sender_id uuid not null references auth.users(id),
@@ -111,6 +115,10 @@ insert into auth.users(id) values
  ('88888888-8888-4888-8888-888888888888'),
  ('99999999-9999-4999-8999-999999999999'),
  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+on conflict(id) do nothing;
+
+insert into public.profiles(id,display_name)
+select id,'Test member' from auth.users
 on conflict(id) do nothing;
 
 insert into public.app_admins(user_id)

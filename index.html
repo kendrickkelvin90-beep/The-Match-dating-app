@@ -12496,6 +12496,7 @@ reactionsInfo.onclick = async event => {
           
 
           const current=memberStories[index];
+          let storyUsesVideo = false;
           storyName.textContent = storyOwnerName;
           storyAvatar.alt = storyOwnerName + "'s profile photo";
           const profilePhoto = avatars.get(storyOwnerId);
@@ -12703,6 +12704,7 @@ viewersInfo.onclick = async event => {
     );
               
               if (current.media_type === "video") {
+                storyUsesVideo = true;
                 media.controls = false;
                 media.playsInline = true;
                 media.autoplay = true;
@@ -12712,7 +12714,7 @@ viewersInfo.onclick = async event => {
                   const onePlayDuration = Number.isFinite(media.duration)
                     ? Math.max(1000, media.duration * 1000)
                     : 7500;
-                  storyDuration = onePlayDuration * 2;
+                  storyDuration = onePlayDuration * 2 + 1500;
                   storyRemaining = storyDuration;
                   if (storyTimer) clearTimeout(storyTimer);
                   storyTimerStartedAt = Date.now();
@@ -12769,18 +12771,20 @@ viewersInfo.onclick = async event => {
 
           caption.textContent=current.caption||"";
           time.textContent=new Date(current.created_at).toLocaleString();
-          const activeFill = progressFills[index];
-          if (activeFill) {
-            activeFill.style.transition = "none";
-            activeFill.style.width = "0%";
-            requestAnimationFrame(() => {
-              if (!activeFill || !overlay.isConnected) return;
-              activeFill.style.transition = "width " + storyDuration + "ms linear";
-              activeFill.style.width = "100%";
-            });
+          if (!storyUsesVideo) {
+            const activeFill = progressFills[index];
+            if (activeFill) {
+              activeFill.style.transition = "none";
+              activeFill.style.width = "0%";
+              requestAnimationFrame(() => {
+                if (!activeFill || !overlay.isConnected) return;
+                activeFill.style.transition = "width " + storyDuration + "ms linear";
+                activeFill.style.width = "100%";
+              });
+            }
+            storyTimerStartedAt = Date.now();
+            storyTimer = setTimeout(advanceStory, storyDuration);
           }
-          storyTimerStartedAt = Date.now();
-          storyTimer = setTimeout(advanceStory, storyDuration);
         }
 
         await renderStory();

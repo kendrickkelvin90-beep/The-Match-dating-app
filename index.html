@@ -7861,7 +7861,16 @@ function show(id, addToHistory = true) {
   panels.forEach(p => {
     const panel = $(p);
     if (panel) {
-      panel.classList.toggle("hidden", p !== id);
+      const isActivePage = p === id;
+      panel.classList.toggle("hidden", !isActivePage);
+      // Enforce page isolation at the navigation layer as well as via the
+      // .hidden class. This prevents page-specific !important layout rules
+      // (such as Nearby's full-width panel styling) from leaking onto Home.
+      if (isActivePage) {
+        panel.style.removeProperty("display");
+      } else {
+        panel.style.setProperty("display", "none", "important");
+      }
     }
   });
 

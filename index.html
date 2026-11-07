@@ -20094,7 +20094,7 @@ body.light-theme #eventsPage .events-featured-meta strong {
    const jump=event.target.closest("[data-admin-jump]");
    if(jump){event.stopImmediatePropagation();navigate(jump.dataset.adminJump==="payments"?"premium":jump.dataset.adminJump);return}
    const metric=event.target.closest("[data-admin-detail]");
-   if(metric){navigate(metric.dataset.adminDetail==="members"?"members":"analytics")}
+   if(metric){event.stopImmediatePropagation();navigate(metric.dataset.adminDetail==="members"?"members":"analytics")}
   },true);
   shell.addEventListener("keydown",event=>{
    const jump=event.target.closest("[data-admin-jump]");

@@ -20010,6 +20010,111 @@ body.light-theme #eventsPage .events-featured-meta strong {
   gap:10px!important; padding:12px 4px!important; margin:0 0 4px!important;
 }
 </style>
+
+<style>
+/* Admin workspace: independent, mobile-friendly pages */
+#adminPanel .admin-page[hidden],#adminPanel .admin-home-hidden{display:none!important}
+#adminPanel .admin-page{min-width:0}
+#adminPanel .admin-page-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0 22px}
+#adminPanel .admin-page-head h3{margin:0;color:#fff;font-size:clamp(20px,4vw,28px)}
+#adminPanel .admin-page-head button,#adminPanel .admin-nav-card{border:1px solid #a78139;background:#17130b;color:#f5d38b;border-radius:14px;cursor:pointer}
+#adminPanel .admin-page-head button{padding:11px 15px;font-weight:700}
+#adminPanel .admin-nav-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:22px 0}
+#adminPanel .admin-nav-card{padding:20px;text-align:left;min-height:92px;display:flex;flex-direction:column;gap:8px}
+#adminPanel .admin-nav-card strong{font-size:17px;color:#fff}
+#adminPanel .admin-nav-card span{font-size:13px;color:#c9b993}
+#adminPanel .admin-nav-card:focus-visible,#adminPanel .admin-page-head button:focus-visible{outline:3px solid #e5b95e;outline-offset:3px}
+#adminPanel .admin-page .admin-queue-card{min-width:0}
+#adminPanel .admin-page .admin-queues-grid{display:block}
+#adminPanel .admin-page .admin-feature-section{margin-top:16px}
+@media(max-width:560px){#adminPanel .admin-nav-grid{grid-template-columns:1fr 1fr;gap:9px}#adminPanel .admin-nav-card{padding:14px;min-height:100px}#adminPanel .admin-nav-card strong{font-size:15px}#adminPanel .admin-page-head{margin-top:10px}}
+</style>
+<script>
+(function(){
+ function initAdminPages(){
+  const panel=document.getElementById("adminPanel"),shell=panel?.querySelector(".admin-shell");
+  if(!shell||shell.dataset.pagesReady)return;
+  shell.dataset.pagesReady="true";
+  const welcome=shell.querySelector(".admin-welcome-strip");
+  const snapshot=welcome?.nextElementSibling;
+  const metrics=snapshot?.nextElementSibling;
+  const actionHeading=metrics?.nextElementSibling;
+  const queues=actionHeading?.nextElementSibling;
+  if(!welcome||!metrics||!queues)return;
+  const originalSections=[...shell.querySelectorAll(":scope > .admin-feature-section")];
+  const byHeading=id=>originalSections.find(section=>section.querySelector("#"+id));
+  const verification=document.getElementById("adminVerificationList")?.closest(".admin-queue-card");
+  const payments=document.getElementById("adminPaymentsList")?.closest(".admin-queue-card");
+  const reports=document.getElementById("adminReportsList")?.closest(".admin-queue-card");
+  const pages={};
+  const definitions=[
+   ["members","Members","Find members and manage accounts"],
+   ["coins","Coin payments","Review transfers and approve coins"],
+   ["premium","Premium payments","Approve payments and view subscriptions"],
+   ["reports","Member reports","Review reports and take action"],
+   ["verification","Verification","Review identity verification requests"],
+   ["events","Events","Manage event submissions and reports"],
+   ["analytics","Activity & insights","View detailed platform activity"]
+  ];
+  const nav=document.createElement("div");nav.className="admin-nav-grid";nav.setAttribute("aria-label","Admin sections");
+  const heading=document.createElement("div");heading.className="admin-section-heading";heading.innerHTML="<div><p class='admin-eyebrow'>MANAGE THE MATCH</p><h3>Choose a section</h3></div>";
+  metrics.after(heading,nav);
+  definitions.forEach(([key,title,description])=>{
+   const btn=document.createElement("button");btn.type="button";btn.className="admin-nav-card";btn.dataset.adminPageLink=key;
+   const strong=document.createElement("strong");strong.textContent=title;
+   const small=document.createElement("span");small.textContent=description;btn.append(strong,small);nav.append(btn);
+   const page=document.createElement("div");page.className="admin-page";page.dataset.adminPage=key;page.hidden=true;
+   const head=document.createElement("div");head.className="admin-page-head";
+   const back=document.createElement("button");back.type="button";back.textContent="← Dashboard";back.dataset.adminPageLink="home";
+   const h=document.createElement("h3");h.textContent=title;head.append(back,h);page.append(head);shell.append(page);pages[key]=page;
+  });
+  const move=(node,key)=>{if(node)pages[key].append(node)};
+  move(byHeading("adminMembersHeading"),"members");
+  move(byHeading("adminEventsHeading"),"events");
+  move(byHeading("adminPremiumHeading"),"premium");
+  move(byHeading("adminAnalyticsHeading"),"analytics");
+  move(document.getElementById("adminActivityDetail"),"analytics");
+  move(verification,"verification");move(payments,"premium");move(reports,"reports");
+  if(queues)queues.remove();
+  if(actionHeading)actionHeading.remove();
+  const status=document.getElementById("adminStatus");if(status)pages.analytics.append(status);
+  const homeNodes=[welcome,snapshot,metrics,heading,nav];
+  function navigate(key){
+   if(key!=="home"&&!pages[key])return;
+   homeNodes.forEach(node=>node?.classList.toggle("admin-home-hidden",key!=="home"));
+   Object.entries(pages).forEach(([id,page])=>page.hidden=id!==key);
+   shell.dataset.activeAdminPage=key;
+   const title=shell.querySelector(".admin-brand h2");if(title)title.textContent=key==="home"?"Admin dashboard":definitions.find(d=>d[0]===key)?.[1]||"Admin dashboard";
+   if(key==="members")document.getElementById("adminMembersRefreshBtn")?.click();
+   if(key==="coins")document.getElementById("cwAdminRefresh")?.click();
+   panel.scrollIntoView({block:"start",behavior:"instant"});
+  }
+  shell.addEventListener("click",event=>{
+   const link=event.target.closest("[data-admin-page-link]");if(link){navigate(link.dataset.adminPageLink);return}
+   const jump=event.target.closest("[data-admin-jump]");
+   if(jump){event.stopImmediatePropagation();navigate(jump.dataset.adminJump==="payments"?"premium":jump.dataset.adminJump);return}
+   const metric=event.target.closest("[data-admin-detail]");
+   if(metric){navigate(metric.dataset.adminDetail==="members"?"members":"analytics")}
+  },true);
+  shell.addEventListener("keydown",event=>{
+   const jump=event.target.closest("[data-admin-jump]");
+   if(jump&&(event.key==="Enter"||event.key===" ")){event.preventDefault();event.stopImmediatePropagation();navigate(jump.dataset.adminJump==="payments"?"premium":jump.dataset.adminJump)}
+  },true);
+  // Coin wallet can mount after this script; keep its queue on the Coin payments page.
+  const relocateCoins=()=>{
+   const coin=document.getElementById("cwAdminQueue")?.closest(".admin-feature-section");
+   if(coin&&coin.parentElement!==pages.coins)pages.coins.append(coin);
+  };
+  relocateCoins();
+  new MutationObserver(relocateCoins).observe(shell,{childList:true,subtree:false});
+  document.getElementById("openAdminDashboardBtn")?.addEventListener("click",()=>navigate("home"));
+  document.getElementById("adminActivityDetailClose")?.addEventListener("click",()=>navigate("analytics"));
+  navigate("home");
+ }
+ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initAdminPages);
+ else initAdminPages();
+})();
+</script>
 </body>
 </html>
 

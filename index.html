@@ -20036,11 +20036,11 @@ body.light-theme #eventsPage .events-featured-meta strong {
   if(!shell||shell.dataset.pagesReady)return;
   shell.dataset.pagesReady="true";
   const welcome=shell.querySelector(".admin-welcome-strip");
-  const snapshot=welcome?.nextElementSibling;
-  const metrics=snapshot?.nextElementSibling;
-  const actionHeading=metrics?.nextElementSibling;
-  const queues=actionHeading?.nextElementSibling;
-  if(!welcome||!metrics||!queues)return;
+  const metrics=shell.querySelector(".admin-metrics-grid:not(.admin-analytics-grid)");
+  const snapshot=metrics?.previousElementSibling;
+  const actionHeading=shell.querySelector(".admin-queues-grid")?.previousElementSibling;
+  const queues=shell.querySelector(".admin-queues-grid");
+  if(!welcome||!metrics||!queues||!snapshot||!actionHeading)return;
   const originalSections=[...shell.querySelectorAll(":scope > .admin-feature-section")];
   const byHeading=id=>originalSections.find(section=>section.querySelector("#"+id));
   const verification=document.getElementById("adminVerificationList")?.closest(".admin-queue-card");

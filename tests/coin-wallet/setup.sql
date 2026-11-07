@@ -32,6 +32,32 @@ create table public.notifications(
   created_at timestamptz not null default now()
 );
 
+-- Minimal DM table and notification trigger used by the virtual-gift delivery migration.
+create table public.messages(
+  id uuid primary key default gen_random_uuid(),
+  sender_id uuid not null references auth.users(id),
+  receiver_id uuid not null references auth.users(id),
+  body text not null,
+  created_at timestamptz not null default now(),
+  delivered_at timestamptz,
+  read_at timestamptz,
+  unsent_at timestamptz
+);
+create or replace function public.notify_match_message()
+returns trigger language plpgsql security definer set search_path=''
+as $
+begin
+  insert into public.notifications(user_id,type,title,body)
+  values(new.receiver_id,'message','New message','A member sent you a message.');
+  return new;
+end;
+$;
+create trigger trg_notify_match_message
+after insert on public.messages
+for each row execute function public.notify_match_message();
+
+create publication supabase_realtime;
+
 -- Existing application boost table used by the profile boost RPCs.
 create table public.profile_boosts(
   id uuid primary key default gen_random_uuid(),

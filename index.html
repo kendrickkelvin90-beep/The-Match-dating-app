@@ -12483,6 +12483,8 @@ reactionsInfo.onclick = async event => {
         async function renderStory(){
           if (storyTimer) clearTimeout(storyTimer);
           storyPaused = false;
+          storyDuration = 5000;
+          storyRemaining = 5000;
           overlay.querySelectorAll("video").forEach(v=>v.pause());
           mediaArea.replaceChildren();
           caption.textContent="";

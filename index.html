@@ -20457,15 +20457,20 @@ body.light-theme #eventsPage .events-featured-meta strong {
 </script>
 
 <style id="discover-profile-overlay-lowered">
-/* Move Discover profile details and actions lower so more of each photo stays visible. */
-#discover .discover-option3-overlay,
-#discover #profileList > .member-card > .discover-profile-overlay {
-  bottom: -56px !important;
+/* Extend the Discover photo card downward so its details/actions sit lower
+   on the screen without being clipped by the card's overflow boundary. */
+#discover #profileList > .discover-option3-card {
+  height: clamp(460px, calc(100dvh - 194px), 956px) !important;
+}
+#discover #profileList > .member-card {
+  height: calc(100svh - 152px) !important;
 }
 @media (max-height: 740px) {
-  #discover .discover-option3-overlay,
-  #discover #profileList > .member-card > .discover-profile-overlay {
-    bottom: -42px !important;
+  #discover #profileList > .discover-option3-card {
+    height: max(420px, calc(100dvh - 178px)) !important;
+  }
+  #discover #profileList > .member-card {
+    height: calc(100svh - 133px) !important;
   }
 }
 </style>

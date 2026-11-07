@@ -29,6 +29,7 @@ create table public.notifications(
   type text not null,
   title text not null,
   body text not null,
+  related_user_id uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now()
 );
 

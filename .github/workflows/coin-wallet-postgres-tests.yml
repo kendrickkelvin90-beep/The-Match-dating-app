@@ -1,4 +1,4 @@
-name: Coin wallet PostgreSQL integration tests
+name: Coin wallet PostgreSQL integration tests # includes virtual gift DM delivery checks
 
 on:
   pull_request:

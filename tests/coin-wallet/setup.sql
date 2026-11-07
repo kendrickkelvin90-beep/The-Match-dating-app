@@ -45,13 +45,13 @@ create table public.messages(
 );
 create or replace function public.notify_match_message()
 returns trigger language plpgsql security definer set search_path=''
-as $
+as $gift_test$
 begin
   insert into public.notifications(user_id,type,title,body)
   values(new.receiver_id,'message','New message','A member sent you a message.');
   return new;
 end;
-$;
+$gift_test$;
 create trigger trg_notify_match_message
 after insert on public.messages
 for each row execute function public.notify_match_message();

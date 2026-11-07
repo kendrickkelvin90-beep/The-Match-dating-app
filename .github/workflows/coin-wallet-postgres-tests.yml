@@ -38,6 +38,41 @@ jobs:
     steps:
       - name: Check out test branch
         uses: actions/checkout@v4
+      - name: Check frontend JavaScript syntax
+        run: |
+          node --check gifts.js
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import subprocess
+          class Scripts(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.active = False
+                  self.current = []
+                  self.inline = []
+              def handle_starttag(self, tag, attrs):
+                  if tag == "script":
+                      self.active = True
+                      self.current = []
+                      self.external = any(k == "src" for k, _ in attrs)
+              def handle_data(self, data):
+                  if self.active:
+                      self.current.append(data)
+              def handle_endtag(self, tag):
+                  if tag == "script" and self.active:
+                      source = "".join(self.current)
+                      if not self.external and source.strip():
+                          self.inline.append(source)
+                      self.active = False
+          parser = Scripts()
+          parser.feed(Path("index.html").read_text())
+          for number, source in enumerate(parser.inline):
+              path = Path("/tmp") / f"match-inline-{number}.js"
+              path.write_text(source)
+              subprocess.run(["node", "--check", str(path)], check=True)
+          print(f"Checked gifts.js and {len(parser.inline)} inline script(s).")
+          PY
       - name: Install PostgreSQL client
         run: |
           sudo apt-get update

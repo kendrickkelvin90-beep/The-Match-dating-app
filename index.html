@@ -5448,6 +5448,115 @@ body.light-theme #matchFeaturePromoClose {
   #discover .discover-option3-overlay .discover-floating-actions{gap:20px!important}
 }
 </style>
+
+<style id="nearby-full-width-bold-cards">
+/* Nearby: remove the large framed panel and use bold, full-width member cards. */
+#nearbyPage.panel,
+#nearbyPage.panel:not(.hidden) {
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:18px 12px 28px!important;
+  border:0!important;
+  outline:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  background:radial-gradient(ellipse at 50% 0%,rgba(198,161,91,.08),transparent 46%),#070707!important;
+}
+#nearbyPage #nearbyMembersList {
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  align-items:stretch!important;
+  gap:16px!important;
+  width:100%!important;
+  max-width:none!important;
+  margin:18px 0 16px!important;
+  padding:0!important;
+}
+#nearbyPage #nearbyMembersList > .member-card {
+  display:flex!important;
+  flex-direction:column!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:12px!important;
+  overflow:hidden!important;
+  border:1px solid rgba(210,173,104,.58)!important;
+  border-radius:21px!important;
+  background:linear-gradient(155deg,#1b1914 0%,#101010 58%,#090909 100%)!important;
+  color:#f7f1e5!important;
+  box-shadow:0 12px 30px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.035)!important;
+}
+#nearbyPage #nearbyMembersList > .member-card img {
+  display:block!important;
+  width:100%!important;
+  height:clamp(210px,62vw,300px)!important;
+  aspect-ratio:16 / 9!important;
+  object-fit:cover!important;
+  object-position:center 35%!important;
+  margin:0 0 13px!important;
+  border:0!important;
+  border-radius:15px!important;
+  background:#090909!important;
+}
+#nearbyPage #nearbyMembersList > .member-card h3 {
+  margin:2px 2px 6px!important;
+  color:#f5e4bd!important;
+  font-size:clamp(19px,5vw,23px)!important;
+  line-height:1.2!important;
+  font-weight:900!important;
+  letter-spacing:-.25px!important;
+  overflow-wrap:anywhere!important;
+}
+#nearbyPage #nearbyMembersList > .member-card .small {
+  margin:4px 2px!important;
+  color:#bdb6aa!important;
+  font-size:13px!important;
+  line-height:1.5!important;
+  font-weight:500!important;
+  overflow-wrap:anywhere!important;
+}
+#nearbyPage #nearbyMembersList > .member-card .distance {
+  margin:7px 2px 9px!important;
+  color:#e5c47f!important;
+  font-size:15px!important;
+  line-height:1.35!important;
+  font-weight:900!important;
+}
+#nearbyPage #nearbyMembersList > .member-card .btn {
+  width:100%!important;
+  min-height:46px!important;
+  margin:12px 0 0!important;
+  padding:10px 14px!important;
+  border:1px solid #d8b66d!important;
+  border-radius:13px!important;
+  background:linear-gradient(135deg,#f0d493,#bd9148)!important;
+  color:#171108!important;
+  font-size:14px!important;
+  font-weight:900!important;
+  box-shadow:0 5px 16px rgba(198,161,91,.16)!important;
+}
+#nearbyPage #nearbyMembersList > .member-card .small:not(:first-of-type) {
+  line-height:1.5!important;
+}
+body.light-theme #nearbyPage.panel,
+body.light-theme #nearbyPage.panel:not(.hidden) {
+  background:#fff!important;
+}
+body.light-theme #nearbyPage #nearbyMembersList > .member-card {
+  border-color:#d1b77f!important;
+  background:linear-gradient(155deg,#fff 0%,#f8f5ee 100%)!important;
+  color:#24201a!important;
+  box-shadow:0 10px 26px rgba(40,30,10,.10)!important;
+}
+body.light-theme #nearbyPage #nearbyMembersList > .member-card h3 {color:#302719!important}
+body.light-theme #nearbyPage #nearbyMembersList > .member-card .small {color:#625b50!important}
+body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:#8a682e!important}
+@media(min-width:700px) {
+  #nearbyPage #nearbyMembersList {grid-template-columns:minmax(0,1fr)!important;max-width:760px!important;margin-left:auto!important;margin-right:auto!important}
+}
+</style>
+
 </head>
 <body>
 <div id="stars" aria-hidden="true"></div>

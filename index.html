@@ -16299,6 +16299,103 @@ for (const media of mediaRows || []) {
 
   insertBubbleInTimeOrder(bubble, media.created_at);
         }
+// Render gifts in the same conversation timeline as text and media.
+// Gift records remain the source of truth; this never creates or changes a wallet entry.
+const { data: chatGifts, error: chatGiftsError } = await db
+  .from("member_gifts")
+  .select("id,sender_id,recipient_id,gift_code,send_cost,redeem_coins,message,created_at,redeemed_at,gift_catalog(name,emoji)")
+  .or(
+    "and(sender_id.eq." + me + ",recipient_id.eq." + them + "),and(sender_id.eq." + them + ",recipient_id.eq." + me + ")"
+  )
+  .order("created_at", { ascending: true })
+  .limit(100);
+
+if (chatGiftsError) throw chatGiftsError;
+
+for (const gift of chatGifts || []) {
+  const mine = gift.sender_id === me;
+  let bubble = chat.querySelector('[data-gift-id="' + gift.id + '"]');
+
+  if (!bubble) {
+    chat.querySelectorAll("[data-empty-message]").forEach(node => node.remove());
+    bubble = document.createElement("div");
+    bubble.dataset.giftId = gift.id;
+    bubble.dataset.createdAt = gift.created_at;
+    bubble.className = mine ? "chat-bubble sent match-gift-chat-bubble" : "chat-bubble received match-gift-chat-bubble";
+    Object.assign(bubble.style, {
+      maxWidth: "84%",
+      width: "fit-content",
+      minWidth: "190px",
+      padding: "13px 15px",
+      margin: "7px 0",
+      borderRadius: "18px",
+      border: "1px solid #c6a15b",
+      background: mine ? "linear-gradient(145deg,#302719,#211b12)" : "linear-gradient(145deg,#241b1e,#171315)",
+      color: "#fff",
+      alignSelf: mine ? "flex-end" : "flex-start",
+      overflowWrap: "anywhere",
+      boxShadow: "0 5px 16px rgba(0,0,0,.18)"
+    });
+
+    const heading = document.createElement("div");
+    heading.textContent = (gift.gift_catalog?.emoji || "🎁") + " " + (gift.gift_catalog?.name || gift.gift_code);
+    heading.style.cssText = "font-size:17px;font-weight:800;color:#f1d18d;margin-bottom:5px";
+    const detail = document.createElement("div");
+    detail.textContent = mine ? "You sent a gift" : "You received a gift";
+    detail.style.cssText = "font-size:13px;font-weight:700";
+    const value = document.createElement("div");
+    value.textContent = gift.send_cost + " coins · " + gift.redeem_coins + " coins to redeem";
+    value.style.cssText = "font-size:12px;color:#d8c7a4;margin-top:4px";
+    const note = document.createElement("div");
+    note.className = "match-gift-note";
+    note.textContent = gift.message || "";
+    note.style.cssText = "font-size:13px;margin-top:7px;white-space:pre-wrap";
+    const state = document.createElement("div");
+    state.className = "match-gift-state";
+    state.style.cssText = "font-size:11px;color:#e5c77f;margin-top:8px";
+    const timestamp = document.createElement("small");
+    timestamp.textContent = new Date(gift.created_at).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+    timestamp.style.cssText = "display:block;margin-top:6px;text-align:right;color:#c6a15b";
+    bubble.append(heading, detail, value);
+    if (gift.message) bubble.appendChild(note);
+    bubble.append(state, timestamp);
+    insertBubbleInTimeOrder(bubble, gift.created_at);
+  }
+
+  const state = bubble.querySelector(".match-gift-state");
+  if (gift.redeemed_at) {
+    if (state) state.textContent = "Redeemed";
+    bubble.querySelector("[data-redeem-chat-gift]")?.remove();
+  } else if (state) {
+    state.textContent = mine ? "Waiting for recipient" : "Available in your gift collection";
+  }
+
+  if (!mine && !gift.redeemed_at && gift.redeem_coins > 0 && !bubble.querySelector("[data-redeem-chat-gift]")) {
+    const redeem = document.createElement("button");
+    redeem.type = "button";
+    redeem.dataset.redeemChatGift = gift.id;
+    redeem.textContent = "Redeem " + gift.redeem_coins + " coins";
+    redeem.style.cssText = "display:block;margin-top:10px;padding:9px 12px;border:0;border-radius:10px;background:#c6a15b;color:#17120a;font-weight:800";
+    redeem.addEventListener("click", async () => {
+      redeem.disabled = true;
+      redeem.textContent = "Redeeming…";
+      try {
+        const { error: redeemError } = await db.rpc("redeem_member_gift", { p_gift_id: gift.id });
+        if (redeemError) throw redeemError;
+        if (state) state.textContent = "Redeemed · " + gift.redeem_coins + " coins added";
+        redeem.remove();
+        if (window.refreshMatchGiftCollection) await window.refreshMatchGiftCollection();
+        await updateAccountCounts();
+      } catch (error) {
+        redeem.disabled = false;
+        redeem.textContent = "Try redeeming again";
+        status("chatPageStatus", error.message || "Could not redeem this gift.", true);
+      }
+    });
+    bubble.insertBefore(redeem, state || null);
+  }
+}
+
     // Preserve a member's reading position. Only follow the latest message
     // when they were already at the bottom or this is the first load.
     if (wasNearBottom) chat.scrollTop = chat.scrollHeight;

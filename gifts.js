@@ -145,6 +145,7 @@ panel.addEventListener("click",async e=>{
   const {error}=await db.rpc("send_member_gift",{p_recipient_id:recipient,p_gift_code:giftCode,p_message:msg,p_request_id:requestId});
   if(error)throw error;
   status("Gift sent successfully.");
+  window.dispatchEvent(new CustomEvent("match:gift-sent", { detail: { recipientId: recipient } }));
   await load();
   try{window.localStorage.removeItem(storageKey);}catch(storageError){}
   delete send.dataset.requestId;

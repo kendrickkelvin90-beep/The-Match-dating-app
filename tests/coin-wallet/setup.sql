@@ -29,8 +29,39 @@ create table public.notifications(
   type text not null,
   title text not null,
   body text not null,
+  related_user_id uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now()
 );
+
+-- Minimal DM table and notification trigger used by the virtual-gift delivery migration.
+create table public.profiles(
+  id uuid primary key references auth.users(id) on delete cascade,
+  display_name text
+);
+create table public.messages(
+  id uuid primary key default gen_random_uuid(),
+  sender_id uuid not null references auth.users(id),
+  receiver_id uuid not null references auth.users(id),
+  body text not null,
+  created_at timestamptz not null default now(),
+  delivered_at timestamptz,
+  read_at timestamptz,
+  unsent_at timestamptz
+);
+create or replace function public.notify_match_message()
+returns trigger language plpgsql security definer set search_path=''
+as $gift_test$
+begin
+  insert into public.notifications(user_id,type,title,body)
+  values(new.receiver_id,'message','New message','A member sent you a message.');
+  return new;
+end;
+$gift_test$;
+create trigger trg_notify_match_message
+after insert on public.messages
+for each row execute function public.notify_match_message();
+
+create publication supabase_realtime;
 
 -- Existing application boost table used by the profile boost RPCs.
 create table public.profile_boosts(
@@ -85,6 +116,10 @@ insert into auth.users(id) values
  ('88888888-8888-4888-8888-888888888888'),
  ('99999999-9999-4999-8999-999999999999'),
  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+on conflict(id) do nothing;
+
+insert into public.profiles(id,display_name)
+select id,'Test member' from auth.users
 on conflict(id) do nothing;
 
 insert into public.app_admins(user_id)

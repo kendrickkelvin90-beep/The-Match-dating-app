@@ -1,4 +1,4 @@
-name: Coin wallet PostgreSQL integration tests
+name: Coin wallet PostgreSQL integration tests # includes virtual gift DM delivery, full notification fixture and regression assertions
 
 on:
   pull_request:
@@ -85,6 +85,8 @@ jobs:
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261104225000_virtual_gifts.sql
       - name: Apply gift recipient notification migration to disposable database
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261107090000_notify_members_of_received_gifts.sql
+      - name: Apply virtual gift DM delivery migration to disposable database
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261107095000_deliver_virtual_gifts_in_dm.sql
       - name: Apply wallet hardening migration to disposable database
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261104231000_harden_coin_idempotency_and_membership_locks.sql
       - name: Apply individual coin store purchase migration to disposable database

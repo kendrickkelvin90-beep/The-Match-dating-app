@@ -9058,7 +9058,7 @@ input.addEventListener("input", () => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "btn secondary";
-      button.dataset.unread = conversation.unreadCount > 0 ? "true" : "false";
+
       button.textContent = option;
       button.dataset.answerValue = q.values ? q.values[i] : option;
       button.setAttribute("aria-pressed",

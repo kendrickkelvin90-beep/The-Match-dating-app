@@ -12000,8 +12000,6 @@ async function loadStories(){
           boxSizing: "border-box"
         });
 
-        let storyOwnerId = story.user_id;
-        let storyOwnerName = name;
         const storyHeader = document.createElement("div");
         storyHeader.className = "tm-story-profile-header";
         storyHeader.style.cssText = "position:absolute;top:max(14px,env(safe-area-inset-top));left:14px;right:110px;z-index:12;display:flex;align-items:center;gap:10px;min-height:44px;text-shadow:0 1px 5px #000;";
@@ -12698,7 +12696,7 @@ viewersInfo.onclick = async event => {
               } else {
                 storyDuration = 5000;
                 storyRemaining = storyDuration;
-                media.alt = "Story photo by " + name;
+                media.alt = "Story photo by " + storyOwnerName;
               }
 
               media.src = data.signedUrl;

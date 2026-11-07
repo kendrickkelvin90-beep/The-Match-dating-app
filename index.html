@@ -12560,6 +12560,10 @@ viewersInfo.onclick = async event => {
   const storyToView = memberStories[index];
   if (!storyToView || storyToView.user_id !== currentUser.id) return;
 
+  // Freeze the current Story, its progress timer, and any video while the
+  // owner checks the viewers list. The remaining time is preserved.
+  pauseStory();
+
   viewersInfo.disabled = true;
   viewersInfo.textContent = "👁 Loading views...";
 
@@ -12579,6 +12583,9 @@ viewersInfo.onclick = async event => {
     viewersInfo.textContent = "👁 " + viewerIds.length + " views";
 
     const viewerList = document.createElement("div");
+    // Mark the panel immediately so its touch/scroll gestures never trigger
+    // the Story viewer's hold-to-pause or navigation handlers while loading.
+    viewerList.setAttribute("data-story-viewers","true");
     viewerList.style.cssText =
       "position:fixed;left:12px;right:12px;bottom:calc(64px + env(safe-area-inset-bottom));z-index:100001;" +
       "max-height:55vh;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;" +
@@ -12597,7 +12604,10 @@ viewersInfo.onclick = async event => {
     closeButton.style.cssText =
       "float:right;background:#c9a45e;color:#111;border:0;" +
       "border-radius:18px;padding:6px 12px;font-weight:700;";
-    closeButton.onclick = () => viewerList.remove();
+    closeButton.onclick = () => {
+      viewerList.remove();
+      resumeStory();
+    };
     title.appendChild(closeButton);
 
     if (!viewerIds.length) {
@@ -12681,11 +12691,12 @@ viewersInfo.onclick = async event => {
       });
     }
 
-    viewerList.setAttribute("data-story-viewers","true");
     overlay.appendChild(viewerList);
   } catch (error) {
     viewersInfo.textContent = "👁 Couldn't load views";
     console.error("Story viewer list failed:", error);
+    // If loading the list fails, do not leave the Story frozen.
+    resumeStory();
   } finally {
     viewersInfo.disabled = false;
   }
@@ -12717,6 +12728,7 @@ viewersInfo.onclick = async event => {
                   storyDuration = onePlayDuration * 2 + 1500;
                   storyRemaining = storyDuration;
                   if (storyTimer) clearTimeout(storyTimer);
+                  if (storyPaused) return;
                   storyTimerStartedAt = Date.now();
                   const activeFill = progressFills[index];
                   if (activeFill) {
@@ -12763,7 +12775,8 @@ viewersInfo.onclick = async event => {
               mediaArea.appendChild(media);
 
               if (current.media_type === "video") {
-                media.play().catch(() => {});
+                if (storyPaused) media.pause();
+                else media.play().catch(() => {});
               }
 
             }
@@ -12782,18 +12795,22 @@ viewersInfo.onclick = async event => {
                 activeFill.style.width = "100%";
               });
             }
-            storyTimerStartedAt = Date.now();
-            storyTimer = setTimeout(advanceStory, storyDuration);
+            if (!storyPaused) {
+              storyTimerStartedAt = Date.now();
+              storyTimer = setTimeout(advanceStory, storyDuration);
+            }
           }
         }
 
         await renderStory();
         const pauseStory = () => {
-          if (storyPaused || !storyTimer) return;
+          if (storyPaused) return;
           storyPaused = true;
-          storyRemaining = Math.max(0, storyRemaining - (Date.now() - storyTimerStartedAt));
-          clearTimeout(storyTimer);
-          storyTimer = null;
+          if (storyTimer) {
+            storyRemaining = Math.max(0, storyRemaining - (Date.now() - storyTimerStartedAt));
+            clearTimeout(storyTimer);
+            storyTimer = null;
+          }
           const video = mediaArea.querySelector("video");
           if (video) video.pause();
           const activeFill = progressFills[index];

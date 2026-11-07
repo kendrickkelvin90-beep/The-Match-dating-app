@@ -11966,7 +11966,15 @@ async function loadStories(){
 
       button.onclick=async()=>{
         // Reuse the already grouped, chronologically ordered story list.
-        const memberStories = storiesByUser.get(story.user_id) || [];
+        let memberStories = storiesByUser.get(story.user_id) || [];
+        let storyOwnerId = story.user_id;
+        let storyOwnerName = name;
+        let storyOwnerIndex = orderedStoryUsers.indexOf(story.user_id);
+        let storyTimer = null;
+        let storyTimerStartedAt = 0;
+        let storyDuration = 5000;
+        let storyRemaining = 5000;
+        let storyPaused = false;
   
 
         
@@ -12242,7 +12250,7 @@ if (story.user_id === currentUser.id) {
         const progressTrack = document.createElement("div");
         progressTrack.setAttribute("aria-label","Story progress");
         progressTrack.style.cssText = "position:absolute;top:max(6px,env(safe-area-inset-top));left:10px;right:10px;z-index:15;display:flex;gap:4px;height:3px;pointer-events:none;";
-        const progressFills = memberStories.map(() => {
+        let progressFills = memberStories.map(() => {
           const segment = document.createElement("span");
           segment.style.cssText = "display:block;flex:1;min-width:2px;height:3px;border-radius:3px;background:rgba(255,255,255,.34);overflow:hidden;";
           const fill = document.createElement("span");
@@ -12350,6 +12358,7 @@ reactionsInfo.onclick = async event => {
 };
 
         const closeStory = () => {
+          if (storyTimer) clearTimeout(storyTimer);
           overlay.querySelectorAll("video").forEach(video => video.pause());
           overlay.remove();
         };
@@ -12413,14 +12422,41 @@ reactionsInfo.onclick = async event => {
           }
         };
 
-        rightTap.onclick = () => {
+        const advanceStory = () => {
           if (index < memberStories.length - 1) {
             index++;
             renderStory();
-          } else {
-            closeStory();
+            return;
           }
+          let nextUserIndex = storyOwnerIndex + 1;
+          while (nextUserIndex < orderedStoryUsers.length) {
+            const nextUserId = orderedStoryUsers[nextUserIndex];
+            const nextStories = storiesByUser.get(nextUserId) || [];
+            if (nextStories.length) {
+              storyOwnerIndex = nextUserIndex;
+              storyOwnerId = nextUserId;
+              storyOwnerName = names.get(nextUserId) || "The Match member";
+              memberStories = nextStories;
+              index = 0;
+              progressTrack.replaceChildren();
+              progressFills = memberStories.map(() => {
+                const segment = document.createElement("span");
+                segment.style.cssText = "display:block;flex:1;min-width:2px;height:3px;border-radius:3px;background:rgba(255,255,255,.34);overflow:hidden;";
+                const fill = document.createElement("span");
+                fill.style.cssText = "display:block;width:0;height:100%;border-radius:3px;background:#d5b45c;";
+                segment.appendChild(fill);
+                progressTrack.appendChild(segment);
+                return fill;
+              });
+              updateStoryHeader();
+              renderStory();
+              return;
+            }
+            nextUserIndex++;
+          }
+          closeStory();
         };
+        rightTap.onclick = advanceStory;
 
         
         
@@ -12435,6 +12471,8 @@ reactionsInfo.onclick = async event => {
 
         
         async function renderStory(){
+          if (storyTimer) clearTimeout(storyTimer);
+          storyPaused = false;
           overlay.querySelectorAll("video").forEach(v=>v.pause());
           mediaArea.replaceChildren();
           caption.textContent="";
@@ -12446,6 +12484,11 @@ reactionsInfo.onclick = async event => {
           
 
           const current=memberStories[index];
+          storyName.textContent = storyOwnerName;
+          storyAvatar.alt = storyOwnerName + "'s profile photo";
+          storyAvatar.src = avatars.get(storyOwnerId) || "";
+          storyProfileButton.setAttribute("aria-label","View " + storyOwnerName + "'s profile");
+          discardStoryButton.style.display = current.user_id === currentUser.id ? "block" : "none";
           storyReplyButton.style.display =
             current.user_id === currentUser.id ? "none" : "block";
           
@@ -12649,7 +12692,12 @@ viewersInfo.onclick = async event => {
                 media.controls = false;
                 media.playsInline = true;
                 media.autoplay = true;
+                media.loop = true;
+                storyDuration = 15000;
+                storyRemaining = storyDuration;
               } else {
+                storyDuration = 5000;
+                storyRemaining = storyDuration;
                 media.alt = "Story photo by " + name;
               }
 
@@ -12678,9 +12726,54 @@ viewersInfo.onclick = async event => {
 
           caption.textContent=current.caption||"";
           time.textContent=new Date(current.created_at).toLocaleString();
+          const activeFill = progressFills[index];
+          if (activeFill) {
+            activeFill.style.transition = "none";
+            activeFill.style.width = "0%";
+            requestAnimationFrame(() => {
+              if (!activeFill || !overlay.isConnected) return;
+              activeFill.style.transition = "width " + storyDuration + "ms linear";
+              activeFill.style.width = "100%";
+            });
+          }
+          storyTimerStartedAt = Date.now();
+          storyTimer = setTimeout(advanceStory, storyDuration);
         }
 
         await renderStory();
+        const pauseStory = () => {
+          if (storyPaused || !storyTimer) return;
+          storyPaused = true;
+          storyRemaining = Math.max(0, storyRemaining - (Date.now() - storyTimerStartedAt));
+          clearTimeout(storyTimer);
+          storyTimer = null;
+          const video = mediaArea.querySelector("video");
+          if (video) video.pause();
+          const activeFill = progressFills[index];
+          if (activeFill) {
+            activeFill.style.transition = "none";
+            activeFill.style.width = Math.min(100, ((storyDuration - storyRemaining) / storyDuration) * 100) + "%";
+          }
+        };
+        const resumeStory = () => {
+          if (!storyPaused) return;
+          storyPaused = false;
+          const video = mediaArea.querySelector("video");
+          if (video) video.play().catch(() => {});
+          storyTimerStartedAt = Date.now();
+          const activeFill = progressFills[index];
+          if (activeFill) {
+            activeFill.style.transition = "width " + storyRemaining + "ms linear";
+            activeFill.style.width = "100%";
+          }
+          storyTimer = setTimeout(advanceStory, storyRemaining);
+        };
+        overlay.addEventListener("pointerdown", event => {
+          if (event.target.closest("button") || event.target.closest("[data-story-viewers]")) return;
+          pauseStory();
+        });
+        overlay.addEventListener("pointerup", resumeStory);
+        overlay.addEventListener("pointercancel", resumeStory);
       };
 
       list.appendChild(button);

@@ -38,6 +38,41 @@ jobs:
     steps:
       - name: Check out test branch
         uses: actions/checkout@v4
+      - name: Check frontend JavaScript syntax
+        run: |
+          node --check gifts.js
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import subprocess
+          class Scripts(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.active = False
+                  self.current = []
+                  self.inline = []
+              def handle_starttag(self, tag, attrs):
+                  if tag == "script":
+                      self.active = True
+                      self.current = []
+                      self.external = any(k == "src" for k, _ in attrs)
+              def handle_data(self, data):
+                  if self.active:
+                      self.current.append(data)
+              def handle_endtag(self, tag):
+                  if tag == "script" and self.active:
+                      source = "".join(self.current)
+                      if not self.external and source.strip():
+                          self.inline.append(source)
+                      self.active = False
+          parser = Scripts()
+          parser.feed(Path("index.html").read_text())
+          for number, source in enumerate(parser.inline):
+              path = Path("/tmp") / f"match-inline-{number}.js"
+              path.write_text(source)
+              subprocess.run(["node", "--check", str(path)], check=True)
+          print(f"Checked gifts.js and {len(parser.inline)} inline script(s).")
+          PY
       - name: Install PostgreSQL client
         run: |
           sudo apt-get update
@@ -48,6 +83,8 @@ jobs:
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261104210236_coin_wallet_bank_transfer_foundation.sql
       - name: Apply gift migration to disposable database
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261104225000_virtual_gifts.sql
+      - name: Apply gift recipient notification migration to disposable database
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261107090000_notify_members_of_received_gifts.sql
       - name: Apply wallet hardening migration to disposable database
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261104231000_harden_coin_idempotency_and_membership_locks.sql
       - name: Apply individual coin store purchase migration to disposable database
@@ -64,6 +101,8 @@ jobs:
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261105180000_profile_boost_first_message_tickets.sql
       - name: Run wallet, membership, gifts, and admin assertions
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/coin-wallet/assertions.sql
+      - name: Run gift recipient notification assertions
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/coin-wallet/gift-notification-assertions.sql
       - name: Run profile badge activation assertions
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/coin-wallet/profile-badge-assertions.sql
       - name: Run purchased profile boost assertions

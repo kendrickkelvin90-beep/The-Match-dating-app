@@ -12832,12 +12832,57 @@ viewersInfo.onclick = async event => {
           }
           storyTimer = setTimeout(advanceStory, storyRemaining);
         };
+        // The invisible Previous/Next tap zones cover most of the Story screen.
+        // They must still support press-and-hold pause; only visible controls are excluded.
+        let storyHoldPointerId = null;
+        let storyHoldStartedAt = 0;
+        let suppressStoryTapAfterHold = false;
+
         overlay.addEventListener("pointerdown", event => {
-          if (event.target.closest("button") || event.target.closest("[data-story-viewers]")) return;
+          if (event.target.closest("[data-story-viewers]")) return;
+
+          const tapNavigationButton = event.target.closest(
+            'button[aria-label="Previous story"],button[aria-label="Next story"]'
+          );
+          if (event.target.closest("button") && !tapNavigationButton) return;
+
+          storyHoldPointerId = event.pointerId;
+          storyHoldStartedAt = Date.now();
+          suppressStoryTapAfterHold = false;
           pauseStory();
-        });
-        overlay.addEventListener("pointerup", resumeStory);
-        overlay.addEventListener("pointercancel", resumeStory);
+
+          // The window-level pointerup listener also resumes if the finger
+          // is released outside the Story overlay; avoid retargeting the click.
+        }, true);
+
+        window.addEventListener("pointerup", event => {
+          if (storyHoldPointerId !== event.pointerId) return;
+          const heldFor = Date.now() - storyHoldStartedAt;
+          storyHoldPointerId = null;
+          if (heldFor >= 250) {
+            suppressStoryTapAfterHold = true;
+            setTimeout(() => { suppressStoryTapAfterHold = false; }, 0);
+          }
+          resumeStory();
+        }, true);
+
+        window.addEventListener("pointercancel", event => {
+          if (storyHoldPointerId !== event.pointerId) return;
+          storyHoldPointerId = null;
+          resumeStory();
+        }, true);
+
+        // A long press should pause in place, not accidentally trigger the
+        // Previous/Next action when the finger is released.
+        overlay.addEventListener("click", event => {
+          if (!suppressStoryTapAfterHold) return;
+          if (!event.target.closest(
+            'button[aria-label="Previous story"],button[aria-label="Next story"]'
+          )) return;
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          suppressStoryTapAfterHold = false;
+        }, true);
       };
 
       list.appendChild(button);

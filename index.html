@@ -12851,8 +12851,8 @@ viewersInfo.onclick = async event => {
           suppressStoryTapAfterHold = false;
           pauseStory();
 
-          // Keep receiving pointerup even if the finger moves outside the overlay.
-          try { overlay.setPointerCapture(event.pointerId); } catch (_) {}
+          // The window-level pointerup listener also resumes if the finger
+          // is released outside the Story overlay; avoid retargeting the click.
         }, true);
 
         window.addEventListener("pointerup", event => {

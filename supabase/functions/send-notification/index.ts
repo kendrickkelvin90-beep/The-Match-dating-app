@@ -161,7 +161,9 @@ Deno.serve(async (req: Request) => {
           app_id: ONESIGNAL_APP_ID,
           target_channel: "push",
           include_aliases: { external_id: [userId] },
-          headings: { en: title },
+          // Keep the app identity as the notification title; show the actual event/message as the preview.
+          headings: { en: "The Match" },
+          subtitle: { en: title },
           contents: { en: body },
           // Explicit web-push branding: Chrome uses this image for the notification icon.
           chrome_web_icon: `https://match.beyondthebinarymedia.online/icons/file_00000000194481f48390cd96271ae5c9.png`,

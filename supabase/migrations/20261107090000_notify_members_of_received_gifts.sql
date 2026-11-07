@@ -18,15 +18,13 @@ begin
     user_id,
     type,
     title,
-    body,
-    related_user_id
+    body
   ) values (
     new.recipient_id,
     'message',
     'You received a gift 🎁',
     'You received a ' || coalesce(v_gift_name, new.gift_code) ||
-      ' gift. ' || new.redeem_coins::text || ' coins are available to redeem.',
-    new.sender_id
+      ' gift. ' || new.redeem_coins::text || ' coins are available to redeem.'
   );
 
   return new;

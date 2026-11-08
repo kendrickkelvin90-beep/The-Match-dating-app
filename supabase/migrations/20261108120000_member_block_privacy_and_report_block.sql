@@ -120,13 +120,22 @@ BEGIN
   IF v_reporter IS NULL THEN
     RAISE EXCEPTION 'You must be signed in to report a member';
   END IF;
-  IF NOT public.is_member_account_active(v_reporter) THEN
+  IF EXISTS (
+    SELECT 1 FROM public.member_moderation mm
+    WHERE mm.user_id = v_reporter
+      AND (mm.status = 'banned' OR (mm.status = 'suspended' AND mm.expires_at > now()))
+  ) THEN
     RAISE EXCEPTION 'Your account cannot submit reports right now';
   END IF;
   IF p_reported_user_id IS NULL OR p_reported_user_id = v_reporter THEN
     RAISE EXCEPTION 'Invalid member selected';
   END IF;
-  IF NOT public.is_member_account_active(p_reported_user_id) THEN
+  IF NOT EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = p_reported_user_id)
+     OR EXISTS (
+       SELECT 1 FROM public.member_moderation mm
+       WHERE mm.user_id = p_reported_user_id
+         AND (mm.status = 'banned' OR (mm.status = 'suspended' AND mm.expires_at > now()))
+     ) THEN
     RAISE EXCEPTION 'This member cannot be reported right now';
   END IF;
   IF length(btrim(coalesce(p_reason, ''))) < 3 OR length(p_reason) > 1000 THEN

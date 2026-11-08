@@ -7827,17 +7827,25 @@ function show(id, addToHistory = true) {
 
   if (
     currentUser &&
-    !hasRequiredProfilePhotos &&
+    (!hasRequiredProfilePhotos || !profileDetailsAreComplete()) &&
     id !== "profile" &&
     !publicPages.includes(id)
   ) {
     id = "profile";
     setTimeout(() => {
-      status(
-        "photoStatus",
-        "Please upload at least 2 profile photos before using The Match.",
-        true
-      );
+      if (!hasRequiredProfilePhotos) {
+        status(
+          "photoStatus",
+          "Please upload at least 2 profile photos before using The Match.",
+          true
+        );
+      } else if (!profileDetailsAreComplete()) {
+        status(
+          "profileStatus",
+          "Please complete all required profile details and save your profile before using The Match.",
+          true
+        );
+      }
     }, 0);
   }
 
@@ -10517,9 +10525,10 @@ status("profileStatus","Your profile is loaded. Check your details and save when
   
   await loadMyPhotos();
 
-  // Profile details can be completed or edited without locking members
-  // out of the rest of the app. Two saved profile photos are required for access.
-  const savedProfileIsReady = hasRequiredProfilePhotos;
+  // Members can access The Match only after both requirements are met:
+  // at least two saved profile photos and all required profile details.
+  const savedProfileIsReady =
+    hasRequiredProfilePhotos && profileDetailsAreComplete();
 
   if (savedProfileIsReady) {
     show("discover", false);

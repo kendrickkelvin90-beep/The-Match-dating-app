@@ -5980,7 +5980,7 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
 <p class="status" id="discoverStatus"></p>
 
 
-<button class="btn secondary" id="openBlockedMembers" type="button" style="display:none">🚫 Blocked Members</button>
+
 
   </section>
 <section class="panel hidden" id="nearbyPage">
@@ -6004,13 +6004,7 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
   <button class="btn secondary" id="refreshNearbyMembers" type="button">Refresh Nearby</button>
 </section>
 
-<section class="panel hidden" id="blockedMembers">
-  <h2>🚫 Blocked Members</h2>
-  <p class="small">Manage members you have blocked.</p>
-  <div id="blockedMembersList"></div>
-  <p class="status" id="blockedMembersStatus"></p>
-  <button class="btn secondary" id="backFromBlockedMembers" type="button">← Back to Discover</button>
-</section>
+
 
 
 <section class="panel hidden" id="premium">
@@ -6832,7 +6826,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     <p class="small">Location sharing is optional. Manage it from your profile.</p>
     <button class="btn secondary" id="settingsPrivacyProfile" type="button">Profile and location settings</button>
     
-<button class="btn secondary" id="settingsBlockedMembers" type="button" style="display:none">Blocked members</button>
+
 
   </div>
 
@@ -6939,6 +6933,10 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
         <section class="admin-queue-card admin-reports-card">
           <div class="admin-queue-title"><span class="admin-queue-icon">⚑</span><div><h3>Member reports</h3><p>Help keep The Match respectful and safe</p></div></div>
           <div id="adminReportsList" class="admin-queue-list"><p>Member reports will appear here.</p></div>
+        </section>
+        <section class="admin-queue-card">
+          <div class="admin-queue-title"><span class="admin-queue-icon">🚫</span><div><h3>Blocked members</h3><p>Private block records visible to administrators only</p></div></div>
+          <div id="adminBlockedMembersList" class="admin-queue-list"><p>Blocked-member records will appear here.</p></div>
         </section>
       </div>
 
@@ -8743,6 +8741,40 @@ async function reviewMatchAdminRequest(table, id, decision) {
   }
 }
 
+async function loadAdminBlockedMembers() {
+  const list = $("adminBlockedMembersList");
+  if (!list || !(await checkMatchAdmin())) return;
+  list.textContent = "Loading blocked-member records...";
+  try {
+    const { data, error } = await db.from("member_blocks")
+      .select("blocker_id,blocked_id,block_reason")
+      .order("blocker_id", { ascending: true })
+      .limit(200);
+    if (error) throw error;
+    if (!data?.length) { list.textContent = "No blocked-member records found."; return; }
+    const ids = [...new Set(data.flatMap(row => [row.blocker_id, row.blocked_id]))];
+    const { data: profiles, error: profileError } = await db.from("profiles")
+      .select("id,display_name")
+      .in("id", ids);
+    if (profileError) throw profileError;
+    const names = new Map((profiles || []).map(p => [p.id, p.display_name || "The Match member"]));
+    list.replaceChildren();
+    data.forEach(row => {
+      const item = document.createElement("article");
+      item.className = "member-card";
+      const title = document.createElement("strong");
+      title.textContent = (names.get(row.blocker_id) || "Member") + " blocked " + (names.get(row.blocked_id) || "Member");
+      const reason = document.createElement("p");
+      reason.className = "small";
+      reason.textContent = "Reason: " + (row.block_reason || "Not specified");
+      item.append(title, reason);
+      list.appendChild(item);
+    });
+  } catch (error) {
+    list.textContent = "Could not load blocked-member records: " + friendly(error);
+  }
+}
+
 async function loadAdminDashboard() {
   const resultIds = {
     profiles: "adminMembersCount",
@@ -8783,6 +8815,7 @@ await Promise.all([
   loadAdminVerificationRequests(),
   loadAdminPaymentRequests(),
   loadAdminMemberReports(),
+  loadAdminBlockedMembers(),
   loadAdminPremiumOverview(),
   loadAdminSupplementaryAnalytics()
 ]);
@@ -13502,94 +13535,7 @@ $("storyMediaFile").onchange = async () => {
 };
 
 
-async function loadBlockedMembers(){
-  if(!currentUser)return;
-
-  const list=$("blockedMembersList");
-  list.replaceChildren();
-  status("blockedMembersStatus","Loading blocked members...");
-
-  try{
-    const result=await db.from("member_blocks")
-      .select("blocked_id")
-      .eq("blocker_id",currentUser.id);
-
-    if(result.error)throw result.error;
-
-    const rows=result.data||[];
-
-    if(!rows.length){
-      status("blockedMembersStatus","You haven't blocked anyone.");
-      return;
-    }
-
-    const ids=rows.map(row=>row.blocked_id);
-    const resultProfiles=await db.from("profiles")
-      .select("id,display_name")
-      .in("id",ids);
-
-    if(resultProfiles.error)throw resultProfiles.error;
-
-    const names=new Map(
-      (resultProfiles.data||[]).map(p=>[
-        p.id,p.display_name||"The Match member"
-      ])
-    );
-
-    for(const row of rows){
-      const card=document.createElement("div");
-      card.className="member-card";
-
-      const name=document.createElement("h3");
-      name.textContent=names.get(row.blocked_id)||"The Match member";
-      card.appendChild(name);
-
-      const btn=document.createElement("button");
-      btn.className="btn secondary";
-      btn.textContent="Unblock";
-
-      btn.onclick=async()=>{
-        if(!await matchConfirm("Unblock this member?"))return;
-        btn.disabled=true;
-
-        try{
-          const removal=await db.from("member_blocks")
-            .delete()
-            .eq("blocker_id",currentUser.id)
-            .eq("blocked_id",row.blocked_id);
-
-          if(removal.error)throw removal.error;
-
-          await loadBlockedMembers();
-        }catch(e){
-          status("blockedMembersStatus",
-            "Could not unblock member: "+friendly(e),true);
-          btn.disabled=false;
-        }
-      };
-
-      card.appendChild(btn);
-      list.appendChild(card);
-    }
-
-    status("blockedMembersStatus","");
-  }catch(e){
-    status("blockedMembersStatus",
-      "Could not load blocked members: "+friendly(e),true);
-  }
-}
-
-$("openBlockedMembers").onclick=async()=>{
-  show("blockedMembers");
-  await loadBlockedMembers();
-};
-
-$("backFromBlockedMembers").onclick=()=>{
-  show("discover");
-  loadNearby();
-};
-
-
+/* Member-facing block identities are intentionally not displayed. */
 
 /* THE MATCH — Install app popup */
 let deferredInstallPrompt = null;
@@ -14208,12 +14154,6 @@ $("newPasswordForm").classList.add("hidden");
 status("resetStatus","");
 show("reset");
 };
-
-$("settingsBlockedMembers").onclick=async()=>{
-show("blockedMembers");
-await loadBlockedMembers();
-};
-
 
 function openMatchLogoutModal() {
   if (!currentUser) {
@@ -15148,18 +15088,18 @@ $("reportMemberButton").onclick = async () => {
   }
 
   try {
-    const result = await db.from("member_reports").insert({
-      reporter_id: currentUser.id,
-      reported_user_id: memberId,
-      reason: answer.experience + ": " + answer.reason,
-      details: answer.details || null
+    const result = await db.rpc("submit_member_report_and_block", {
+      p_reported_user_id: memberId,
+      p_reason: answer.experience + ": " + answer.reason,
+      p_details: answer.details || null,
+      p_block_reason: answer.experience
     });
 
     if (result.error) throw result.error;
 
     status(
       "memberProfileStatus",
-      "Report submitted. Thank you for helping keep The Match safe."
+      "Report submitted and member blocked. They will no longer appear to you, and you will not appear to them in Discover."
     );
   } catch (e) {
     status(

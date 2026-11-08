@@ -4,6 +4,9 @@
 ALTER TABLE public.member_blocks ENABLE ROW LEVEL SECURITY;
 GRANT SELECT ON public.member_blocks TO authenticated;
 DROP POLICY IF EXISTS "Admins only can read member blocks" ON public.member_blocks;
+CREATE POLICY "Admins can read member blocks"
+ON public.member_blocks FOR SELECT TO authenticated
+USING ((SELECT public.is_match_admin()));
 CREATE POLICY "Admins only can read member blocks"
 ON public.member_blocks AS RESTRICTIVE FOR SELECT TO authenticated
 USING ((SELECT public.is_match_admin()));

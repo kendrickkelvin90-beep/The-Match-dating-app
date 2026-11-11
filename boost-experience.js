@@ -13,21 +13,23 @@
     const style = document.createElement("style");
     style.id = STYLE_ID;
     style.textContent = `
-      #discover #${PANEL_ID} {
+      #profile #${PANEL_ID} {
         display:flex; align-items:center; justify-content:space-between; gap:14px;
         width:100%; box-sizing:border-box; margin:12px 0 14px; padding:14px 15px;
         border:1px solid rgba(213,179,109,.42); border-radius:16px;
         background:linear-gradient(125deg,rgba(213,179,109,.13),rgba(18,16,13,.96) 62%);
         color:#f7f0df;
       }
-      #discover #${PANEL_ID}[hidden] { display:none!important; }
+      #profile #${PANEL_ID}[hidden] { display:none!important; }
       #${PANEL_ID} .tm-boost-copy { min-width:0; }
       #${PANEL_ID} .tm-boost-eyebrow { display:block; margin-bottom:4px; color:#d8b76f; font-size:10px; font-weight:800; letter-spacing:1.35px; text-transform:uppercase; }
       #${PANEL_ID} .tm-boost-title { margin:0; color:#fff; font-size:14px; font-weight:800; }
       #${PANEL_ID} .tm-boost-description { margin:4px 0 0; color:#c7bdab; font-size:12px; line-height:1.45; }
       #${PANEL_ID} .tm-boost-time { flex:0 0 auto; color:#f0d493; font-size:15px; font-weight:900; font-variant-numeric:tabular-nums; text-align:right; }
       #${PANEL_ID} .tm-boost-action { flex:0 0 auto; min-height:38px; padding:8px 12px; border:1px solid #c6a15b; border-radius:11px; background:linear-gradient(135deg,#f0d493,#bd9148); color:#21180b; font-size:11px; font-weight:900; }
-      body.light-theme #discover #${PANEL_ID} { background:linear-gradient(125deg,#fffaf0,#f5eddd); color:#292319; border-color:#d8c08e; }
+      body.light-theme #profile #${PANEL_ID} { background:linear-gradient(125deg,#fffaf0,#f5eddd); color:#292319; border-color:#d8c08e; }
+      #profile #rewindSwipeBtn { display:block; width:100%; min-height:40px; margin:8px 0 16px; border:1px solid rgba(213,179,109,.38); border-radius:12px; background:transparent; color:#d8b76f; font-weight:700; }
+      body.light-theme #profile #rewindSwipeBtn { color:#80602b; border-color:#d8c08e; }
       body.light-theme #${PANEL_ID} .tm-boost-title { color:#292319; }
       body.light-theme #${PANEL_ID} .tm-boost-description { color:#655b49; }
       body.light-theme #${PANEL_ID} .tm-boost-time { color:#8a682e; }
@@ -37,7 +39,7 @@
   }
 
   function ensurePanel() {
-    const toolbar = document.querySelector("#discover .discover-premium-tools");
+    const toolbar = document.querySelector("#profile .profile-navigation-actions");
     if (!toolbar) return null;
     let panel = document.getElementById(PANEL_ID);
     if (panel) return panel;
@@ -55,6 +57,8 @@
       <button class="tm-boost-action" type="button" data-boost-action>Boost profile</button>
     `;
     toolbar.insertAdjacentElement("afterend", panel);
+    const rewindButton = document.getElementById("rewindSwipeBtn");
+    if (rewindButton) panel.insertAdjacentElement("afterend", rewindButton);
     panel.querySelector("[data-boost-action]").addEventListener("click", () => {
       document.getElementById("profileBoostBtn")?.click();
     });
@@ -82,7 +86,7 @@
 
     if (!activeEndsAt) {
       title.textContent = "Give your profile a lift";
-      description.textContent = "Activate a Profile Boost for priority placement in Discover. Duration depends on your Boost type.";
+      description.textContent = "Use a Profile Boost you have purchased from the Coin Store to get priority placement in Discover.";
       time.textContent = "";
       action.textContent = "Boost profile";
       action.hidden = false;
@@ -149,6 +153,10 @@
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) refreshBoostStatus();
     });
+    document.getElementById("bottomNavigation")?.addEventListener("click", event => {
+      if (event.target.closest('button[data-page="profile"]')) setTimeout(refreshBoostStatus, 350);
+    });
+    window.addEventListener("match:profile-boost-updated", refreshBoostStatus);
   }
 
   if (document.readyState === "loading") {

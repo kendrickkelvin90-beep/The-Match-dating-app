@@ -5942,15 +5942,18 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
   <section class="panel hidden" id="discover">
 <div class="discover-page-heading">
   <div><h2>Discover</h2><p class="small">Find people you'd like to meet.</p></div>
-  <button type="button" id="openLikesFromDiscover" class="discover-likes-shortcut" aria-label="Open likes">
-    <span aria-hidden="true">♡</span> Likes
-    <span id="likesCount" class="nav-badge" style="display:none;">0</span>
-  </button>
+  <div class="discover-header-actions">
+    <button type="button" id="openEventsFromDiscover" class="discover-events-shortcut">Events</button>
+    <button type="button" id="openLikesFromDiscover" class="discover-likes-shortcut" aria-label="Open likes">
+      <span aria-hidden="true">♡</span> Likes
+      <span id="likesCount" class="nav-badge" style="display:none;">0</span>
+    </button>
+  </div>
 </div>
     
 <div id="storiesSection" class="stories-section">
   <h3>Stories</h3>
-  <p class="small">Share a moment. Discover someone's world.</p>
+  
   
 
   <div id="storiesList" class="stories-list">
@@ -5966,8 +5969,6 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
   <p id="storiesStatus" class="status"></p>
 </div>
 
-
-<div class="events-discover-entry"><div><strong>Meet beyond the swipe</strong><p class="small">Discover LGBTQ+ gatherings and shared experiences with members of The Match.</p></div><button class="btn secondary" id="openEventsFromDiscover" type="button">Explore events</button></div>
 
 <p class="small">Discover people, one swipe at a time.</p>
 <div class="discover-premium-tools" style="display:flex;gap:9px;flex-wrap:wrap;margin:12px 0;align-items:center"><button class="btn secondary" id="rewindSwipeBtn" type="button">↶ Rewind</button><button class="btn secondary" id="profileBoostBtn" type="button">✦ Boost my profile</button><span id="dailyLikesStatus" class="small" aria-live="polite"></span></div><button class="btn secondary" id="refreshNearby" type="button">Refresh profiles</button>
@@ -13825,9 +13826,6 @@ async function matchCanRewind(userId = currentUser?.id) {
   return (await matchIsPremium(userId)) || !!(await matchPlusTier(userId));
 }
 async function matchCanBoost(userId = currentUser?.id) {
-  const tier = await matchPlusTier(userId);
-  const membershipEligible = (await matchIsPremium(userId)) || tier === "quarterly" || tier === "annual";
-  if (membershipEligible) return true;
   if (!userId) return false;
   const { data, error } = await db.from("coin_store_inventory")
     .select("item_code,quantity")
@@ -13929,10 +13927,8 @@ $("rewindSwipeBtn")?.addEventListener("click", async () => {
 $("profileBoostBtn")?.addEventListener("click", async () => {
   const button = $("profileBoostBtn");
   try {
-    if (!await matchCanBoost()) { document.querySelector('#bottomNavigation [data-page="coinWalletPage"]')?.click(); return; }
+    if (!currentUser?.id) return;
     button.disabled = true;
-
-    // A purchased store boost is independent of Match Plus/Premium cooldowns.
     const { data: ownedBoosts, error: inventoryError } = await db.from("coin_store_inventory")
       .select("item_code,quantity")
       .eq("user_id", currentUser.id)
@@ -13944,18 +13940,19 @@ $("profileBoostBtn")?.addEventListener("click", async () => {
       : ownedBoosts?.some(x => x.item_code === "profile_boost_3" && x.quantity > 0)
         ? "profile_boost_3" : null;
 
-    if (purchasedCode) {
-      const { data, error } = await db.rpc("activate_my_purchased_profile_boost", { p_item_code: purchasedCode });
-      if (error) throw error;
-      const end = data?.ends_at ? new Date(data.ends_at) : new Date(Date.now()+24*60*60*1000);
-      status("discoverStatus", "Your purchased 24-hour Profile Boost is active until " + end.toLocaleString() + ".");
-    } else {
-      const { data, error } = await db.rpc("activate_my_profile_boost");
-      if (error) throw error;
-      const end = data?.ends_at ? new Date(data.ends_at) : new Date(Date.now()+30*60*1000);
-      status("discoverStatus", "Your membership Profile Boost is active for 30 minutes, until " + end.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}) + ".");
+    if (!purchasedCode) {
+      document.querySelector('#bottomNavigation [data-page="coinWalletPage"]')?.click();
+      window.setTimeout(() => document.querySelector('#coinWalletPage [data-cw-tab="store"]')?.click(), 350);
+      status("discoverStatus", "Purchase a Profile Boost in the Coin Store before activating it.");
+      return;
     }
+
+    const { data, error } = await db.rpc("activate_my_purchased_profile_boost", { p_item_code: purchasedCode });
+    if (error) throw error;
+    const end = data?.ends_at ? new Date(data.ends_at) : new Date(Date.now()+24*60*60*1000);
+    status("discoverStatus", "Your purchased 24-hour Profile Boost is active until " + end.toLocaleString() + ".");
     await loadNearby();
+    window.dispatchEvent(new Event("match:profile-boost-updated"));
   } catch (error) {
     status("discoverStatus", "Could not activate boost: " + friendly(error), true);
   } finally {
@@ -20661,6 +20658,90 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
 </style>
 
 <script src="/boost-experience.js" defer></script>
+<style id="discover-home-simplification">
+/* Keep Discover focused on Stories and member photos. */
+#discover {
+  background:#050505!important;
+  padding:12px 14px 28px!important;
+}
+#discover .discover-page-heading { margin:2px 0 10px!important; }
+#discover #storiesSection {
+  margin:8px 0 12px!important;
+  padding:0 0 12px!important;
+  border:0!important;
+  border-bottom:1px solid rgba(214,180,110,.22)!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+#discover #storiesSection h3 {
+  margin:0 0 5px!important;
+  color:#e5c77f!important;
+  font-size:19px!important;
+}
+#discover #storiesSection > .small { display:none!important; }
+#discover #storiesList {
+  min-height:0!important;
+  margin:0!important;
+  padding:6px 0 2px!important;
+  gap:13px!important;
+}
+#discover #storiesSection #storiesStatus {
+  margin:3px 0 0!important;
+  font-size:11px!important;
+}
+#discover .events-discover-entry,
+#discover > p.small:not(.discover-page-heading .small),
+#discover .discover-premium-tools {
+  display:none!important;
+}
+#discover .discover-header-actions {
+  display:flex!important;
+  align-items:center!important;
+  gap:7px!important;
+  flex:0 0 auto!important;
+}
+#discover .discover-events-shortcut {
+  min-height:38px!important;
+  padding:0 10px!important;
+  border:1px solid rgba(214,180,110,.48)!important;
+  border-radius:20px!important;
+  background:transparent!important;
+  color:#d9b96f!important;
+  font-size:12px!important;
+  font-weight:700!important;
+}
+#discover #refreshNearby {
+  display:block!important;
+  width:auto!important;
+  min-height:32px!important;
+  margin:4px 0 10px auto!important;
+  padding:5px 0 5px 12px!important;
+  border:0!important;
+  background:transparent!important;
+  color:#d9b96f!important;
+  font-size:12px!important;
+  font-weight:700!important;
+  box-shadow:none!important;
+}
+#discover #profileList {
+  margin:0!important;
+  gap:12px!important;
+}
+#discover #profileList > * {
+  width:100%!important;
+  margin:0!important;
+}
+#discover #discoverStatus {
+  margin:10px 0!important;
+  color:#b8ad98!important;
+  font-size:12px!important;
+  text-align:center!important;
+}
+/* Boost status now lives with the member's own profile tools, not in Discover. */
+#profile #tm-discover-boost-status { margin:12px 0 16px!important; }
+</style>
+
 </body>
 </html>
 

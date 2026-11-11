@@ -13417,26 +13417,39 @@ $("createStoryButton").onclick = () => {
 
 
 
-// Retry transient Storage edge failures (including Cloudflare HTTP 520).
+// Retry transient Storage edge failures, including browser-level fetch exceptions.
 // Reuse the same object path so an upload whose response was lost can safely retry.
 async function uploadStoryMediaWithRetry(path, file) {
   let lastError;
   for (let attempt = 0; attempt < 3; attempt++) {
-    const { error } = await db.storage
-      .from("story-media")
-      .upload(path, file, {
-        contentType: file.type,
-        upsert: attempt > 0
-      });
-    if (!error) return;
-    lastError = error;
+    try {
+      const { error } = await db.storage
+        .from("story-media")
+        .upload(path, file, {
+          contentType: file.type,
+          upsert: attempt > 0
+        });
+      if (!error) return;
+      lastError = error;
+    } catch (error) {
+      // Supabase may reject the promise with TypeError: Failed to fetch
+      // instead of returning a Storage error object. Treat it as retryable.
+      lastError = error;
+    }
+
     const statusCode = Number(
-      error.statusCode || error.status || error.originalError?.status || 0
+      lastError?.statusCode ||
+      lastError?.status ||
+      lastError?.originalError?.status ||
+      lastError?.context?.status ||
+      0
     );
-    const message = String(error.message || error);
+    const message = String(lastError?.message || lastError || "");
     const transient = [0, 408, 425, 429, 500, 502, 503, 504, 520, 522, 524].includes(statusCode)
-      || /network|fetch failed|load failed|timeout|520/i.test(message);
-    if (!transient || attempt === 2) throw error;
+      || /network|failed to fetch|fetch failed|load failed|timeout|520|connection.*(?:reset|closed|lost)/i.test(message);
+
+    if (!transient || attempt === 2) throw lastError;
+
     status(
       "storiesStatus",
       "Storage connection interrupted. Retrying Story upload (" + (attempt + 2) + "/3)..."

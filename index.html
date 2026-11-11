@@ -11579,7 +11579,8 @@ superLike.onclick=async()=>{
         scheduleDiscoverCardFit();
       });
       window.addEventListener("resize", scheduleDiscoverCardFit, { passive: true });
-      window.addEventListener("scroll", scheduleDiscoverCardFit, { passive: true });
+      // Do not refit on ordinary page scrolling: changing card height while its
+      // top edge moves creates a feedback loop that makes the card grow.
       window.visualViewport?.addEventListener("resize", scheduleDiscoverCardFit, { passive: true });
       discoverCardFitObserver = new MutationObserver(scheduleDiscoverCardFit);
       const discoverPanelForFit = document.getElementById("discover");

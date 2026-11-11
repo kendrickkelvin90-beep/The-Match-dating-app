@@ -20938,6 +20938,74 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
 }
 </style>
 
+
+<style id="discover-visual-polish-nov2026">
+/* Discover-only visual polish. Navigation and app behavior are intentionally untouched. */
+
+/* Give Refresh profiles its own breathing room and align it with the card edge. */
+#discover #refreshNearby {
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-height:44px!important;
+  margin:8px 6px 16px auto!important;
+  padding:0 17px!important;
+  border:1px solid rgba(218,187,119,.58)!important;
+  border-radius:14px!important;
+  background:linear-gradient(135deg,#e6c77f,#c49b54)!important;
+  color:#1b150b!important;
+  font-size:13px!important;
+  font-weight:750!important;
+  line-height:1.2!important;
+  box-shadow:0 5px 16px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.28)!important;
+}
+
+/* Soften the card frame while retaining the black-and-gold identity. */
+#discover #profileList > .discover-option3-card {
+  border:1px solid rgba(213,179,109,.34)!important;
+  box-shadow:
+    0 16px 38px rgba(0,0,0,.42),
+    0 3px 12px rgba(0,0,0,.20),
+    inset 0 1px 0 rgba(255,255,255,.025)!important;
+}
+
+/* Smooth, dependable contrast over both bright and dark member photos. */
+#discover #profileList > .discover-option3-card .discover-option3-overlay,
+#discover #profileList > .discover-option3-card .discover-profile-overlay {
+  background:linear-gradient(
+    180deg,
+    rgba(0,0,0,0) 0%,
+    rgba(0,0,0,.025) 26%,
+    rgba(0,0,0,.16) 42%,
+    rgba(0,0,0,.48) 59%,
+    rgba(0,0,0,.78) 76%,
+    rgba(5,5,5,.94) 91%,
+    #050505 100%
+  )!important;
+}
+
+#discover #profileList > .discover-option3-card .discover-option3-overlay h2,
+#discover #profileList > .discover-option3-card .discover-profile-overlay h2 {
+  color:#fff!important;
+  text-shadow:0 2px 14px rgba(0,0,0,.88),0 1px 3px rgba(0,0,0,.9)!important;
+}
+
+#discover #profileList > .discover-option3-card .discover-option3-overlay .distance,
+#discover #profileList > .discover-option3-card .discover-profile-overlay .distance {
+  color:#efd394!important;
+  text-shadow:0 1px 10px rgba(0,0,0,.9)!important;
+}
+
+@media(max-width:380px) {
+  #discover #refreshNearby {
+    margin-right:4px!important;
+    margin-bottom:14px!important;
+    padding-left:14px!important;
+    padding-right:14px!important;
+  }
+}
+</style>
+
 </body>
 </html>
 

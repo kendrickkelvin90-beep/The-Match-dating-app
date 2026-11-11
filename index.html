@@ -11530,12 +11530,23 @@ superLike.onclick=async()=>{
       photoBox.appendChild(infoOverlay);
       card.appendChild(photoBox);
       list.replaceChildren(card);
-      // Restore the exact document scroll position after the card DOM swap.
-      // This is intentionally scoped to Discover and does not alter photo navigation.
+      // Size the Discover photo to the actual space between its position and
+      // the fixed bottom navigation. This avoids guessing device-specific
+      // header, Stories, browser-chrome, and safe-area heights.
       requestAnimationFrame(() => {
         if (document.getElementById("discover")?.classList.contains("hidden")) return;
         if (document.scrollingElement) document.scrollingElement.scrollTop = discoverScrollPosition;
         window.scrollTo(0, discoverScrollPosition);
+        requestAnimationFrame(() => {
+          if (!card.isConnected || document.getElementById("discover")?.classList.contains("hidden")) return;
+          const nav = document.getElementById("bottomNavigation");
+          const cardTop = card.getBoundingClientRect().top;
+          const navTop = nav ? nav.getBoundingClientRect().top : window.innerHeight - 90;
+          const availableHeight = Math.max(320, Math.floor(navTop - cardTop));
+          card.style.setProperty("height", availableHeight + "px", "important");
+          card.style.setProperty("min-height", "0", "important");
+          card.style.setProperty("max-height", "none", "important");
+        });
       });
 
       let startX=0;
@@ -21112,8 +21123,8 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
   width:100vw!important;
   min-width:100vw!important;
   max-width:100vw!important;
-  height:clamp(440px,calc(100dvh - 300px),900px)!important;
-  min-height:440px!important;
+  height:auto!important;
+  min-height:0!important;
   max-height:none!important;
   margin:0!important;
   padding:0!important;
@@ -21219,12 +21230,16 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
   margin-top:12px!important;
 }
 @media(max-height:700px) {
-  #discover #profileList > .discover-option3-card {
-    height:clamp(400px,calc(100dvh - 270px),700px)!important;
-    min-height:400px!important;
-  }
   #discover #profileList > .discover-option3-card .discover-option3-overlay {
-    padding-top:110px!important;
+    padding-top:90px!important;
+    padding-left:14px!important;
+    padding-right:14px!important;
+  }
+  #discover .discover-floating-actions > button {
+    width:56px!important;
+    height:56px!important;
+    min-height:56px!important;
+    flex-basis:56px!important;
   }
 }
 @media(prefers-reduced-motion:reduce) {

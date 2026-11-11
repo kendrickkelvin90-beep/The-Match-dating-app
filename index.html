@@ -11069,6 +11069,7 @@ if (isNewHere) {
 
 
       const photoCount=document.createElement("div");
+      photoCount.className="discover-photo-count";
       photoCount.style.cssText="position:absolute;top:14px;right:14px;z-index:5;background:rgba(0,0,0,.78);color:#fff;padding:9px 13px;border:1px solid rgba(255,255,255,.34);border-radius:999px;font-size:13px;font-weight:800;letter-spacing:.2px;backdrop-filter:blur(8px);box-shadow:0 4px 16px rgba(0,0,0,.28);";
       photoCount.textContent="Loading photos...";
       photoBox.appendChild(photoCount);
@@ -11112,6 +11113,7 @@ if (isNewHere) {
       const createPhotoArrow = (direction, label, glyph) => {
         const button = document.createElement("button");
         button.type = "button";
+        button.className = direction < 0 ? "discover-photo-arrow discover-photo-arrow-previous" : "discover-photo-arrow discover-photo-arrow-next";
         button.textContent = glyph;
         button.setAttribute("aria-label", label);
         button.disabled = photoUrls.length < 2;
@@ -20893,8 +20895,7 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
   font-size:30px!important;
   box-shadow:0 7px 18px rgba(194,151,71,.22),inset 0 1px 0 rgba(255,255,255,.55)!important;
 }
-#discover .discover-option3-photo > div[style*="Loading photos"],
-#discover .discover-option3-photo > div[style*="of "] {
+#discover .discover-option3-photo .discover-photo-count {
   top:13px!important;
   right:13px!important;
   padding:6px 10px!important;
@@ -20907,8 +20908,7 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
   backdrop-filter:blur(12px)!important;
   box-shadow:none!important;
 }
-#discover .discover-option3-photo > button[aria-label="Previous photo"],
-#discover .discover-option3-photo > button[aria-label="Next photo"] {
+#discover .discover-option3-photo .discover-photo-arrow {
   width:38px!important;
   height:38px!important;
   border:1px solid rgba(255,255,255,.24)!important;
@@ -20918,8 +20918,8 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
   box-shadow:none!important;
   backdrop-filter:blur(10px)!important;
 }
-#discover .discover-option3-photo > button[aria-label="Previous photo"] { left:9px!important; }
-#discover .discover-option3-photo > button[aria-label="Next photo"] { right:9px!important; }
+#discover .discover-option3-photo .discover-photo-arrow-previous { left:9px!important; }
+#discover .discover-option3-photo .discover-photo-arrow-next { right:9px!important; }
 #discover .discover-option3-card .discover-option3-overlay button,
 #discover .discover-option3-card .discover-floating-actions button {
   cursor:pointer!important;

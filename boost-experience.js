@@ -82,7 +82,7 @@
 
     if (!activeEndsAt) {
       title.textContent = "Give your profile a lift";
-      description.textContent = "Activate a 24-hour Boost to get priority placement in Discover.";
+      description.textContent = "Activate a Profile Boost for priority placement in Discover. Duration depends on your Boost type.";
       time.textContent = "";
       action.textContent = "Boost profile";
       action.hidden = false;

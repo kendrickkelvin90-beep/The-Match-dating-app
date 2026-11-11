@@ -11218,7 +11218,7 @@ if(discoverPanel){
 const card=document.createElement("div");
 card.className="member-card discover-option3-card";
 card.dataset.memberId = p.id;
-card.style.cssText="position:relative;display:block;width:100vw;max-width:none;height:calc(100dvh - 220px);min-height:480px;max-height:none;box-sizing:border-box;margin:0 0 0 calc(50% - 50vw);padding:0;border:0;border-radius:0;background:#080808;box-shadow:none;touch-action:pan-y;overflow:hidden;will-change:transform,opacity;animation:discoverCardEnter 260ms cubic-bezier(.2,.75,.25,1) both;";
+card.style.cssText="position:relative;display:block;width:calc(100vw - 28px);max-width:calc(100vw - 28px);height:calc(100dvh - 220px);min-height:360px;max-height:none;box-sizing:border-box;margin:0 14px;padding:0;border:1px solid rgba(224,190,116,.82);border-radius:28px;background:#080808;box-shadow:0 12px 34px rgba(0,0,0,.42),0 0 0 1px rgba(224,190,116,.10);touch-action:pan-y;overflow:hidden;will-change:transform,opacity;animation:discoverCardEnter 260ms cubic-bezier(.2,.75,.25,1) both;";
 
 
 
@@ -11257,10 +11257,13 @@ photo.style.setProperty("height","100%","important");
 photo.style.setProperty("max-width","none","important");
 photo.style.setProperty("object-fit","cover","important");
 photo.style.setProperty("object-position","center center","important");
+photo.style.setProperty("border-radius","inherit","important");
 photoBox.style.setProperty("position","absolute","important");
 photoBox.style.setProperty("inset","0","important");
 photoBox.style.setProperty("width","100%","important");
 photoBox.style.setProperty("height","100%","important");
+photoBox.style.setProperty("border-radius","27px","important");
+photoBox.style.setProperty("overflow","hidden","important");
 
 photoBox.appendChild(photo);
       
@@ -11765,10 +11768,14 @@ superLike.onclick=async()=>{
         if (!cardRect.width || !navRect.height) return;
         const availableHeight = Math.max(0, Math.floor(navRect.top - cardRect.top - 8));
         card.style.setProperty("box-sizing", "border-box", "important");
-        card.style.setProperty("width", "100vw", "important");
-        card.style.setProperty("min-width", "100vw", "important");
-        card.style.setProperty("max-width", "100vw", "important");
-        card.style.setProperty("margin-left", "calc(50% - 50vw)", "important");
+        card.style.setProperty("width", "calc(100vw - 28px)", "important");
+        card.style.setProperty("min-width", "0", "important");
+        card.style.setProperty("max-width", "calc(100vw - 28px)", "important");
+        card.style.setProperty("margin-left", "14px", "important");
+        card.style.setProperty("margin-right", "14px", "important");
+        card.style.setProperty("border", "1px solid rgba(224,190,116,.88)", "important");
+        card.style.setProperty("border-radius", "28px", "important");
+        card.style.setProperty("box-shadow", "0 12px 34px rgba(0,0,0,.42), 0 0 0 1px rgba(224,190,116,.10)", "important");
         card.style.setProperty("height", availableHeight + "px", "important");
         card.style.setProperty("min-height", "0", "important");
         card.style.setProperty("max-height", "none", "important");
@@ -21550,6 +21557,40 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
 @media(max-height:740px) {
   #discover #profileList > .discover-option3-card .discover-option3-overlay {
     padding-top:clamp(76px,14vh,108px)!important;
+    padding-left:13px!important;
+    padding-right:13px!important;
+  }
+}
+/* Option 3 — premium framed Discover card. The photo remains full-bleed inside the card. */
+#discover #profileList > .discover-option3-card {
+  background:#080808!important;
+  border:1px solid rgba(224,190,116,.88)!important;
+  border-radius:28px!important;
+  box-shadow:0 12px 34px rgba(0,0,0,.42),0 0 0 1px rgba(224,190,116,.10)!important;
+  overflow:hidden!important;
+}
+#discover #profileList > .discover-option3-card > .discover-option3-photo {
+  border-radius:27px!important;
+  overflow:hidden!important;
+}
+#discover #profileList > .discover-option3-card > .discover-option3-photo > .discover-option3-image {
+  border-radius:27px!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+}
+#discover #profileList > .discover-option3-card .discover-option3-overlay {
+  padding:clamp(88px,16vh,132px) 18px max(18px,env(safe-area-inset-bottom))!important;
+}
+#discover #profileList > .discover-option3-card .discover-photo-count {
+  top:14px!important;
+  right:14px!important;
+}
+#discover #profileList > .discover-option3-card .discover-photo-arrow {
+  top:42%!important;
+}
+@media(max-height:700px) {
+  #discover #profileList > .discover-option3-card .discover-option3-overlay {
+    padding-top:clamp(72px,13vh,100px)!important;
     padding-left:13px!important;
     padding-right:13px!important;
   }

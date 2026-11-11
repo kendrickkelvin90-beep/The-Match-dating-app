@@ -21033,6 +21033,41 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
   width:100%!important;
   height:100%!important;
 }
+
+
+
+<style id="discover-photo-full-bleed-fix">
+/* Final Discover-only override: remove letterboxing and fill the entire card. */
+#discover #profileList > .discover-option3-card > .discover-option3-photo {
+  position:absolute!important;
+  inset:0!important;
+  display:block!important;
+  width:100%!important;
+  min-width:100%!important;
+  max-width:none!important;
+  height:100%!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+#discover #profileList > .discover-option3-card > .discover-option3-photo > .discover-option3-image {
+  position:absolute!important;
+  inset:0!important;
+  display:block!important;
+  width:100%!important;
+  min-width:100%!important;
+  max-width:none!important;
+  height:100%!important;
+  margin:0!important;
+  padding:0!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  border:0!important;
+  border-radius:inherit!important;
+  box-sizing:border-box!important;
+}
+</style>
 </style>
 
 </body>

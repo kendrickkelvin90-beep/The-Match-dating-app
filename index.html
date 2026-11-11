@@ -21006,6 +21006,35 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
 }
 </style>
 
+
+<style id="discover-profile-card-flush-to-frame">
+/* Discover only: make the photo/card surface reach the inner edge of its
+   existing rounded frame, removing the inset side gap on every profile. */
+#discover #profileList > .discover-option3-card {
+  box-sizing:border-box!important;
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:0!important;
+}
+#discover #profileList > .discover-option3-card > .discover-option3-photo {
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:inherit!important;
+  box-sizing:border-box!important;
+}
+#discover #profileList > .discover-option3-card > .discover-option3-photo > .discover-option3-image {
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+}
+</style>
+
 </body>
 </html>
 

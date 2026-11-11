@@ -79,24 +79,16 @@
         return;
       }
       const now = new Date();
-      const { data, error } = await window.db
-        .from("profile_boosts")
-        .select("id,starts_at,ends_at")
-        .eq("user_id", authData.user.id)
-        .gt("ends_at", now.toISOString())
-        .lte("starts_at", now.toISOString())
-        .order("ends_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
+      const { data, error } = await window.db.rpc("get_my_active_profile_boost");
       if (error) throw error;
+      const activeBoost = Array.isArray(data) ? data[0] : data;
       const title = panel.querySelector(".tm-boost-title");
       const description = panel.querySelector(".tm-boost-description");
       const time = panel.querySelector("[data-boost-time]");
       const action = panel.querySelector("[data-boost-action]");
       panel.hidden = false;
 
-      if (!data?.ends_at) {
+      if (!activeBoost?.ends_at) {
         title.textContent = "Give your profile a lift";
         description.textContent = "Activate a 24-hour Boost to get priority placement in Discover.";
         time.textContent = "";
@@ -108,7 +100,7 @@
       title.textContent = "Your Profile Boost is active";
       description.textContent = "Your profile is receiving priority placement in Discover.";
       action.hidden = true;
-      const remaining = new Date(data.ends_at).getTime() - Date.now();
+      const remaining = new Date(activeBoost.ends_at).getTime() - Date.now();
       time.textContent = remaining > 0 ? formatRemaining(remaining) : "Expired";
       if (remaining <= 0) {
         title.textContent = "Your Profile Boost has ended";

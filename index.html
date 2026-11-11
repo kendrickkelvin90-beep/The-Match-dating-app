@@ -11012,7 +11012,7 @@ if(discoverPanel){
 const card=document.createElement("div");
 card.className="member-card discover-option3-card";
 card.dataset.memberId = p.id;
-card.style.cssText="position:relative;display:block;width:100vw;max-width:100vw;height:clamp(440px,calc(100dvh - 300px),900px);min-height:440px;max-height:none;box-sizing:border-box;margin:0;padding:0;border:0;border-radius:0;background:#080808;box-shadow:none;touch-action:pan-y;overflow:hidden;will-change:transform,opacity;animation:discoverCardEnter 260ms cubic-bezier(.2,.75,.25,1) both;";
+card.style.cssText="position:relative;display:block;width:100vw;max-width:none;height:520px;min-height:0;max-height:none;box-sizing:border-box;margin:0 0 0 calc(50% - 50vw);padding:0;border:0;border-radius:0;background:#080808;box-shadow:none;touch-action:pan-y;overflow:hidden;will-change:transform,opacity;animation:discoverCardEnter 260ms cubic-bezier(.2,.75,.25,1) both;";
 
 
 
@@ -11530,24 +11530,36 @@ superLike.onclick=async()=>{
       photoBox.appendChild(infoOverlay);
       card.appendChild(photoBox);
       list.replaceChildren(card);
-      // Size the Discover photo to the actual space between its position and
-      // the fixed bottom navigation. This avoids guessing device-specific
-      // header, Stories, browser-chrome, and safe-area heights.
+      // Fill the real remaining viewport below the Stories/refresh area.
+      // Measure after layout and keep the card fitted when the phone viewport changes.
+      const fitDiscoverCardToViewport = () => {
+        if (!card.isConnected) {
+          window.removeEventListener("resize", fitDiscoverCardToViewport);
+          window.visualViewport?.removeEventListener("resize", fitDiscoverCardToViewport);
+          return;
+        }
+        const discover = document.getElementById("discover");
+        if (!discover || discover.classList.contains("hidden")) return;
+        const nav = document.getElementById("bottomNavigation");
+        const viewportHeight = window.visualViewport?.height || window.innerHeight;
+        const cardTop = card.getBoundingClientRect().top;
+        const navTop = nav ? nav.getBoundingClientRect().top : viewportHeight - 84;
+        const usableBottom = Math.min(navTop, viewportHeight) - 8;
+        const availableHeight = Math.max(360, Math.floor(usableBottom - cardTop));
+        card.style.setProperty("width", "100vw", "important");
+        card.style.setProperty("max-width", "none", "important");
+        card.style.setProperty("margin-left", "calc(50% - 50vw)", "important");
+        card.style.setProperty("height", availableHeight + "px", "important");
+        card.style.setProperty("min-height", "0", "important");
+        card.style.setProperty("max-height", "none", "important");
+      };
       requestAnimationFrame(() => {
-        if (document.getElementById("discover")?.classList.contains("hidden")) return;
         if (document.scrollingElement) document.scrollingElement.scrollTop = discoverScrollPosition;
         window.scrollTo(0, discoverScrollPosition);
-        requestAnimationFrame(() => {
-          if (!card.isConnected || document.getElementById("discover")?.classList.contains("hidden")) return;
-          const nav = document.getElementById("bottomNavigation");
-          const cardTop = card.getBoundingClientRect().top;
-          const navTop = nav ? nav.getBoundingClientRect().top : window.innerHeight - 90;
-          const availableHeight = Math.max(320, Math.floor(navTop - cardTop));
-          card.style.setProperty("height", availableHeight + "px", "important");
-          card.style.setProperty("min-height", "0", "important");
-          card.style.setProperty("max-height", "none", "important");
-        });
+        requestAnimationFrame(fitDiscoverCardToViewport);
       });
+      window.addEventListener("resize", fitDiscoverCardToViewport, { passive: true });
+      window.visualViewport?.addEventListener("resize", fitDiscoverCardToViewport, { passive: true });
 
       let startX=0;
       let startY=0;

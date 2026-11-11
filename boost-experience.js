@@ -28,6 +28,8 @@
       #${PANEL_ID} .tm-boost-time { flex:0 0 auto; color:#f0d493; font-size:15px; font-weight:900; font-variant-numeric:tabular-nums; text-align:right; }
       #${PANEL_ID} .tm-boost-action { flex:0 0 auto; min-height:38px; padding:8px 12px; border:1px solid #c6a15b; border-radius:11px; background:linear-gradient(135deg,#f0d493,#bd9148); color:#21180b; font-size:11px; font-weight:900; }
       body.light-theme #profile #${PANEL_ID} { background:linear-gradient(125deg,#fffaf0,#f5eddd); color:#292319; border-color:#d8c08e; }
+      #profile #rewindSwipeBtn { display:block; width:100%; min-height:40px; margin:8px 0 16px; border:1px solid rgba(213,179,109,.38); border-radius:12px; background:transparent; color:#d8b76f; font-weight:700; }
+      body.light-theme #profile #rewindSwipeBtn { color:#80602b; border-color:#d8c08e; }
       body.light-theme #${PANEL_ID} .tm-boost-title { color:#292319; }
       body.light-theme #${PANEL_ID} .tm-boost-description { color:#655b49; }
       body.light-theme #${PANEL_ID} .tm-boost-time { color:#8a682e; }
@@ -55,6 +57,8 @@
       <button class="tm-boost-action" type="button" data-boost-action>Boost profile</button>
     `;
     toolbar.insertAdjacentElement("afterend", panel);
+    const rewindButton = document.getElementById("rewindSwipeBtn");
+    if (rewindButton) panel.insertAdjacentElement("afterend", rewindButton);
     panel.querySelector("[data-boost-action]").addEventListener("click", () => {
       document.getElementById("profileBoostBtn")?.click();
     });
@@ -82,7 +86,7 @@
 
     if (!activeEndsAt) {
       title.textContent = "Give your profile a lift";
-      description.textContent = "Activate a Profile Boost for priority placement in Discover. Duration depends on your Boost type.";
+      description.textContent = "Use a Profile Boost you have purchased from the Coin Store to get priority placement in Discover.";
       time.textContent = "";
       action.textContent = "Boost profile";
       action.hidden = false;

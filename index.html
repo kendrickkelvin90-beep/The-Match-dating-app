@@ -5771,16 +5771,19 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
   display:inline-flex!important;
   align-items:center!important;
   justify-content:center!important;
+  box-sizing:border-box!important;
   width:44px!important;
   height:44px!important;
+  min-width:44px!important;
+  padding:0!important;
   overflow:visible!important;
   line-height:1!important;
 }
 #openNotifications #notificationBadge {
   position:absolute!important;
   transform:none!important;
-  top:-5px!important;
-  right:-5px!important;
+  top:-2px!important;
+  right:-2px!important;
   left:auto!important;
   display:none;
   align-items:center!important;
@@ -8064,14 +8067,9 @@ async function loadNotificationBadge() {
 
     const unread = count || 0;
     badge.textContent = unread > 99 ? "99+" : String(unread);
-    badge.style.cssText = unread
-      ? "position:absolute;top:0;right:0;transform:translate(35%,-25%);" +
-        "display:inline-flex;align-items:center;justify-content:center;" +
-        "min-width:18px;height:18px;box-sizing:border-box;padding:0 5px;" +
-        "border-radius:999px;background:#ef4444;color:#fff;" +
-        "font-size:10px;font-weight:800;line-height:1;" +
-        "white-space:nowrap;pointer-events:none;z-index:2;"
-      : "display:none";
+    // Keep visual placement in CSS so the badge stays anchored to the heart
+    // in both themes and is not pushed into the status-bar area by inline styles.
+    badge.style.display = unread > 0 ? "inline-flex" : "none";
   } catch (error) {
     console.error("Notification badge failed:", error);
   }
@@ -10207,8 +10205,9 @@ async function updateAccountCounts() {
 
     if (likesBadge) {
       likesBadge.textContent = likesCount > 99 ? "99+" : String(likesCount);
-      likesBadge.style.display =
-        likesCount > 0 ? "inline-block" : "none";
+      // Show the live total (including 0) so the Likes control always
+      // communicates that its count is available.
+      likesBadge.style.display = "inline-flex";
     }
 
     if (messagesBadge) {

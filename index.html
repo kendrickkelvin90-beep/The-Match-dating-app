@@ -11576,7 +11576,13 @@ superLike.onclick=async()=>{
       requestAnimationFrame(() => {
         if (document.scrollingElement) document.scrollingElement.scrollTop = discoverScrollPosition;
         window.scrollTo(0, discoverScrollPosition);
-        scheduleDiscoverCardFit();
+        // Android WebView may apply restored scroll after this animation frame.
+        // Measure only after that movement settles so the card is not left short.
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            setTimeout(scheduleDiscoverCardFit, 140);
+          });
+        });
       });
       window.addEventListener("resize", scheduleDiscoverCardFit, { passive: true });
       // Do not refit on ordinary page scrolling: changing card height while its

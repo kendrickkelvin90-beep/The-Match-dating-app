@@ -11069,6 +11069,7 @@ if (isNewHere) {
 
 
       const photoCount=document.createElement("div");
+      photoCount.className="discover-photo-count";
       photoCount.style.cssText="position:absolute;top:14px;right:14px;z-index:5;background:rgba(0,0,0,.78);color:#fff;padding:9px 13px;border:1px solid rgba(255,255,255,.34);border-radius:999px;font-size:13px;font-weight:800;letter-spacing:.2px;backdrop-filter:blur(8px);box-shadow:0 4px 16px rgba(0,0,0,.28);";
       photoCount.textContent="Loading photos...";
       photoBox.appendChild(photoCount);
@@ -11112,6 +11113,7 @@ if (isNewHere) {
       const createPhotoArrow = (direction, label, glyph) => {
         const button = document.createElement("button");
         button.type = "button";
+        button.className = direction < 0 ? "discover-photo-arrow discover-photo-arrow-previous" : "discover-photo-arrow discover-photo-arrow-next";
         button.textContent = glyph;
         button.setAttribute("aria-label", label);
         button.disabled = photoUrls.length < 2;
@@ -20740,6 +20742,200 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
 }
 /* Boost status now lives with the member's own profile tools, not in Discover. */
 #profile #tm-discover-boost-status { margin:12px 0 16px!important; }
+</style>
+
+
+<style id="premium-discover-profile-card">
+/* Discover: let the member photo lead, with a quieter and more deliberate card layout. */
+#discover #profileList {
+  width:100%!important;
+  max-width:560px!important;
+  margin:14px auto 10px!important;
+  padding:0!important;
+  gap:14px!important;
+}
+#discover #profileList > .discover-option3-card {
+  width:100%!important;
+  max-width:560px!important;
+  height:clamp(520px,calc(100svh - 390px),780px)!important;
+  min-height:520px!important;
+  max-height:780px!important;
+  margin:0 auto!important;
+  padding:0!important;
+  overflow:hidden!important;
+  border:1px solid rgba(213,179,109,.55)!important;
+  border-radius:25px!important;
+  background:#080808!important;
+  box-shadow:0 18px 42px rgba(0,0,0,.42),0 0 0 1px rgba(213,179,109,.08)!important;
+}
+#discover .discover-option3-photo {
+  inset:0!important;
+  border-radius:24px!important;
+  background:#090909!important;
+}
+#discover .discover-option3-image {
+  object-fit:cover!important;
+  object-position:center 30%!important;
+  transform:scale(1.005);
+}
+#discover #profileList > .discover-option3-card .discover-profile-overlay {
+  padding:118px 20px 20px!important;
+  background:linear-gradient(
+    180deg,
+    rgba(0,0,0,0) 0%,
+    rgba(0,0,0,.05) 24%,
+    rgba(0,0,0,.48) 48%,
+    rgba(0,0,0,.88) 72%,
+    #050505 100%
+  )!important;
+  pointer-events:none!important;
+}
+#discover #profileList > .discover-option3-card .discover-profile-overlay h2 {
+  display:flex!important;
+  flex-wrap:wrap!important;
+  align-items:center!important;
+  gap:3px!important;
+  padding:0!important;
+  margin:0 0 5px!important;
+  color:#fff!important;
+  font-size:clamp(23px,5.5vw,29px)!important;
+  font-weight:800!important;
+  line-height:1.15!important;
+  letter-spacing:-.45px!important;
+  text-shadow:0 2px 16px rgba(0,0,0,.8)!important;
+}
+#discover #profileList > .discover-option3-card .discover-profile-overlay .distance {
+  margin:0 0 12px!important;
+  padding:0!important;
+  color:#e6c987!important;
+  font-size:12px!important;
+  font-weight:650!important;
+  letter-spacing:.15px!important;
+  text-shadow:0 1px 10px rgba(0,0,0,.8)!important;
+}
+#discover #profileList > .discover-option3-card .discover-profile-overlay > button[aria-expanded] {
+  align-self:flex-start!important;
+  width:auto!important;
+  min-width:0!important;
+  min-height:36px!important;
+  margin:0 0 6px!important;
+  padding:7px 13px!important;
+  border:1px solid rgba(226,194,126,.55)!important;
+  border-radius:999px!important;
+  background:rgba(12,11,9,.55)!important;
+  color:#f1d99e!important;
+  font-size:12px!important;
+  font-weight:750!important;
+  letter-spacing:.1px!important;
+  box-shadow:0 4px 14px rgba(0,0,0,.16)!important;
+  backdrop-filter:blur(12px)!important;
+  pointer-events:auto!important;
+}
+#discover #profileList > .discover-option3-card .discover-profile-overlay > div[style*="display: none"],
+#discover #profileList > .discover-option3-card .discover-profile-overlay > div[style*="display:none"],
+#discover #profileList > .discover-option3-card .discover-profile-overlay > div[style*="display: block"],
+#discover #profileList > .discover-option3-card .discover-profile-overlay > div[style*="display:block"] {
+  max-height:30svh!important;
+  margin:6px 0 8px!important;
+  padding:10px 12px!important;
+  border:1px solid rgba(226,194,126,.18)!important;
+  border-radius:14px!important;
+  background:rgba(7,7,7,.78)!important;
+  color:#eee8dc!important;
+  backdrop-filter:blur(14px)!important;
+  pointer-events:auto!important;
+}
+#discover .discover-floating-actions {
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:clamp(13px,4vw,22px)!important;
+  width:100%!important;
+  margin:10px 0 0!important;
+  padding:0!important;
+  pointer-events:auto!important;
+}
+#discover .discover-floating-actions > button {
+  flex:0 0 clamp(62px,18vw,76px)!important;
+  width:clamp(62px,18vw,76px)!important;
+  height:clamp(62px,18vw,76px)!important;
+  min-height:clamp(62px,18vw,76px)!important;
+  max-width:76px!important;
+  margin:0!important;
+  padding:0!important;
+  border-radius:50%!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  line-height:1!important;
+  transition:transform .16s ease,filter .16s ease!important;
+  pointer-events:auto!important;
+}
+#discover .discover-floating-actions > button:active {
+  transform:scale(.94)!important;
+}
+#discover .discover-floating-actions > button[aria-label="Pass on this profile"] {
+  border:1px solid rgba(255,255,255,.32)!important;
+  background:linear-gradient(145deg,#252525,#101010)!important;
+  color:#f5f1e8!important;
+  font-size:31px!important;
+  box-shadow:0 7px 18px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.08)!important;
+}
+#discover .discover-floating-actions > button.discover-super-like {
+  border:1px solid rgba(245,220,165,.82)!important;
+  background:linear-gradient(145deg,#f3dfad,#c49a52)!important;
+  color:#241a0a!important;
+  font-size:31px!important;
+  box-shadow:0 7px 18px rgba(194,151,71,.2),inset 0 1px 0 rgba(255,255,255,.5)!important;
+}
+#discover .discover-floating-actions > button[aria-label="Like this profile"] {
+  border:1px solid rgba(245,220,165,.9)!important;
+  background:linear-gradient(145deg,#f6e6bd,#d3ad65)!important;
+  color:#24190a!important;
+  font-size:30px!important;
+  box-shadow:0 7px 18px rgba(194,151,71,.22),inset 0 1px 0 rgba(255,255,255,.55)!important;
+}
+#discover .discover-option3-photo .discover-photo-count {
+  top:13px!important;
+  right:13px!important;
+  padding:6px 10px!important;
+  border:1px solid rgba(255,255,255,.2)!important;
+  border-radius:999px!important;
+  background:rgba(8,8,8,.58)!important;
+  color:#fff!important;
+  font-size:11px!important;
+  font-weight:700!important;
+  backdrop-filter:blur(12px)!important;
+  box-shadow:none!important;
+}
+#discover .discover-option3-photo .discover-photo-arrow {
+  width:38px!important;
+  height:38px!important;
+  border:1px solid rgba(255,255,255,.24)!important;
+  background:rgba(8,8,8,.45)!important;
+  color:#fff!important;
+  font-size:26px!important;
+  box-shadow:none!important;
+  backdrop-filter:blur(10px)!important;
+}
+#discover .discover-option3-photo .discover-photo-arrow-previous { left:9px!important; }
+#discover .discover-option3-photo .discover-photo-arrow-next { right:9px!important; }
+#discover .discover-option3-card .discover-option3-overlay button,
+#discover .discover-option3-card .discover-floating-actions button {
+  cursor:pointer!important;
+}
+@media(max-width:380px) {
+  #discover #profileList > .discover-option3-card {
+    height:clamp(500px,calc(100svh - 370px),720px)!important;
+    min-height:500px!important;
+    border-radius:21px!important;
+  }
+  #discover #profileList > .discover-option3-card .discover-profile-overlay { padding:105px 15px 16px!important; }
+  #discover .discover-floating-actions { gap:12px!important; }
+}
+@media(min-width:700px) {
+  #discover #profileList > .discover-option3-card { height:min(760px,78vh)!important; }
+}
 </style>
 
 </body>

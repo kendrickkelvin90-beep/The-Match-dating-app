@@ -11530,14 +11530,15 @@ superLike.onclick=async()=>{
       photoBox.appendChild(infoOverlay);
       card.appendChild(photoBox);
       list.replaceChildren(card);
-      // The profile list can render while Discover is still hidden. Wait for
-      // the panel/navigation visibility transition, then size against their
-      // measured viewport rectangles. Refit on scrolling and viewport changes.
+      // Discover's card is rendered before Android WebView has necessarily
+      // completed its scroll restoration. Do not measure until the viewport
+      // scroll position has settled; otherwise the stored card height is short
+      // by the amount of the later scroll adjustment.
       let discoverCardFitFrame = 0;
       let discoverCardFitObserver = null;
+      let discoverInitialFitReady = false;
       const cleanupDiscoverCardFit = () => {
         window.removeEventListener("resize", scheduleDiscoverCardFit);
-        window.removeEventListener("scroll", scheduleDiscoverCardFit);
         window.visualViewport?.removeEventListener("resize", scheduleDiscoverCardFit);
         discoverCardFitObserver?.disconnect();
         discoverCardFitObserver = null;
@@ -11567,34 +11568,58 @@ superLike.onclick=async()=>{
         card.style.setProperty("max-height", "none", "important");
       };
       const scheduleDiscoverCardFit = () => {
+        if (!discoverInitialFitReady) return;
         if (discoverCardFitFrame) cancelAnimationFrame(discoverCardFitFrame);
         discoverCardFitFrame = requestAnimationFrame(() => {
           discoverCardFitFrame = 0;
           fitDiscoverCardToViewport();
         });
       };
+      const waitForDiscoverScrollToSettle = () => {
+        let previousX = window.scrollX;
+        let previousY = window.scrollY;
+        let stableFrames = 0;
+        let checkedFrames = 0;
+        const checkScrollStability = () => {
+          if (!card.isConnected) return;
+          checkedFrames += 1;
+          const currentX = window.scrollX;
+          const currentY = window.scrollY;
+          if (Math.abs(currentX - previousX) < 1 &&
+              Math.abs(currentY - previousY) < 1) {
+            stableFrames += 1;
+          } else {
+            stableFrames = 0;
+          }
+          previousX = currentX;
+          previousY = currentY;
+          // Require several consecutive stable frames, with a bounded wait
+          // for WebViews that keep reporting tiny scroll-position changes.
+          if (stableFrames >= 5 || checkedFrames >= 90) {
+            discoverInitialFitReady = true;
+            scheduleDiscoverCardFit();
+            return;
+          }
+          requestAnimationFrame(checkScrollStability);
+        };
+        requestAnimationFrame(checkScrollStability);
+      };
       requestAnimationFrame(() => {
         if (document.scrollingElement) document.scrollingElement.scrollTop = discoverScrollPosition;
         window.scrollTo(0, discoverScrollPosition);
-        // Android WebView may apply restored scroll after this animation frame.
-        // Measure only after that movement settles so the card is not left short.
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            setTimeout(scheduleDiscoverCardFit, 140);
-          });
-        });
+        // Let WebView finish restoring scroll and applying its layout/anchor pass
+        // before starting the stable-frame check.
+        setTimeout(waitForDiscoverScrollToSettle, 450);
       });
       window.addEventListener("resize", scheduleDiscoverCardFit, { passive: true });
-      // Do not refit on ordinary page scrolling: changing card height while its
-      // top edge moves creates a feedback loop that makes the card grow.
+      // After the initial fit, only viewport resizing can change card height.
+      // Ordinary document scrolling must never make the card grow or shrink.
       window.visualViewport?.addEventListener("resize", scheduleDiscoverCardFit, { passive: true });
       discoverCardFitObserver = new MutationObserver(scheduleDiscoverCardFit);
       const discoverPanelForFit = document.getElementById("discover");
       const navForFit = document.getElementById("bottomNavigation");
       if (discoverPanelForFit) discoverCardFitObserver.observe(discoverPanelForFit, { attributes: true, attributeFilter: ["class", "style"] });
       if (navForFit) discoverCardFitObserver.observe(navForFit, { attributes: true, attributeFilter: ["class", "style"] });
-      // Retry after the current render even when the panel was initially hidden.
-      scheduleDiscoverCardFit();
 
       let startX=0;
       let startY=0;

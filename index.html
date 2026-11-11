@@ -5763,6 +5763,87 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
 }
 </style>
 
+
+<style id="story-likes-and-notification-badge-visibility-fix">
+/* Keep the notification total attached to the header heart on every theme. */
+#openNotifications {
+  position:absolute!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:44px!important;
+  height:44px!important;
+  overflow:visible!important;
+  line-height:1!important;
+}
+#openNotifications #notificationBadge {
+  position:absolute!important;
+  top:-5px!important;
+  right:-5px!important;
+  left:auto!important;
+  display:none;
+  align-items:center!important;
+  justify-content:center!important;
+  min-width:23px!important;
+  width:auto!important;
+  height:23px!important;
+  padding:0 6px!important;
+  box-sizing:border-box!important;
+  border:2px solid #080808!important;
+  border-radius:999px!important;
+  background:#C6A66B!important;
+  color:#17120A!important;
+  font-size:11px!important;
+  font-weight:900!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+  text-align:center!important;
+  box-shadow:0 2px 8px rgba(0,0,0,.48)!important;
+  z-index:20!important;
+}
+body.light-theme #openNotifications #notificationBadge {
+  border-color:#fff!important;
+  background:#C6A66B!important;
+  color:#17120A!important;
+}
+
+/* Make the Discover Likes total readable without covering the button label. */
+#discover .discover-likes-shortcut {
+  position:relative!important;
+  overflow:visible!important;
+  padding-right:16px!important;
+}
+#discover .discover-likes-shortcut #likesCount {
+  position:absolute!important;
+  top:-9px!important;
+  right:-8px!important;
+  left:auto!important;
+  display:none;
+  align-items:center!important;
+  justify-content:center!important;
+  min-width:22px!important;
+  height:22px!important;
+  padding:0 6px!important;
+  box-sizing:border-box!important;
+  border:2px solid #080808!important;
+  border-radius:999px!important;
+  background:#C6A66B!important;
+  color:#17120A!important;
+  font-size:10px!important;
+  font-weight:900!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+  text-align:center!important;
+  box-shadow:0 2px 8px rgba(0,0,0,.38)!important;
+  z-index:5!important;
+}
+body.light-theme #discover .discover-likes-shortcut #likesCount {
+  border-color:#fff!important;
+  background:#C6A66B!important;
+  color:#17120A!important;
+}
+</style>
+
 </head>
 <body>
 <div id="stars" aria-hidden="true"></div>

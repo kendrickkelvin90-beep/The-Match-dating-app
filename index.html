@@ -5942,10 +5942,13 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
   <section class="panel hidden" id="discover">
 <div class="discover-page-heading">
   <div><h2>Discover</h2><p class="small">Find people you'd like to meet.</p></div>
-  <button type="button" id="openLikesFromDiscover" class="discover-likes-shortcut" aria-label="Open likes">
-    <span aria-hidden="true">♡</span> Likes
-    <span id="likesCount" class="nav-badge" style="display:none;">0</span>
-  </button>
+  <div class="discover-header-actions">
+    <button type="button" id="openEventsFromDiscover" class="discover-events-shortcut">Events</button>
+    <button type="button" id="openLikesFromDiscover" class="discover-likes-shortcut" aria-label="Open likes">
+      <span aria-hidden="true">♡</span> Likes
+      <span id="likesCount" class="nav-badge" style="display:none;">0</span>
+    </button>
+  </div>
 </div>
     
 <div id="storiesSection" class="stories-section">
@@ -5966,8 +5969,6 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
   <p id="storiesStatus" class="status"></p>
 </div>
 
-
-<div class="events-discover-entry"><div><strong>Meet beyond the swipe</strong><p class="small">Discover LGBTQ+ gatherings and shared experiences with members of The Match.</p></div><button class="btn secondary" id="openEventsFromDiscover" type="button">Explore events</button></div>
 
 <p class="small">Discover people, one swipe at a time.</p>
 <div class="discover-premium-tools" style="display:flex;gap:9px;flex-wrap:wrap;margin:12px 0;align-items:center"><button class="btn secondary" id="rewindSwipeBtn" type="button">↶ Rewind</button><button class="btn secondary" id="profileBoostBtn" type="button">✦ Boost my profile</button><span id="dailyLikesStatus" class="small" aria-live="polite"></span></div><button class="btn secondary" id="refreshNearby" type="button">Refresh profiles</button>
@@ -20693,6 +20694,22 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
 #discover > p.small:not(.discover-page-heading .small),
 #discover .discover-premium-tools {
   display:none!important;
+}
+#discover .discover-header-actions {
+  display:flex!important;
+  align-items:center!important;
+  gap:7px!important;
+  flex:0 0 auto!important;
+}
+#discover .discover-events-shortcut {
+  min-height:38px!important;
+  padding:0 10px!important;
+  border:1px solid rgba(214,180,110,.48)!important;
+  border-radius:20px!important;
+  background:transparent!important;
+  color:#d9b96f!important;
+  font-size:12px!important;
+  font-weight:700!important;
 }
 #discover #refreshNearby {
   display:block!important;

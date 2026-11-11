@@ -5,6 +5,8 @@
   const PANEL_ID = "tm-discover-boost-status";
   let countdownTimer = null;
   let refreshTimer = null;
+  let activeEndsAt = null;
+  let statusLoaded = false;
 
   function addStyles() {
     if (document.getElementById(STYLE_ID)) return;
@@ -69,55 +71,62 @@
       : minutes + "m " + String(seconds).padStart(2, "0") + "s";
   }
 
+  function renderCountdown() {
+    const panel = ensurePanel();
+    if (!panel || !statusLoaded) return;
+    const title = panel.querySelector(".tm-boost-title");
+    const description = panel.querySelector(".tm-boost-description");
+    const time = panel.querySelector("[data-boost-time]");
+    const action = panel.querySelector("[data-boost-action]");
+    panel.hidden = false;
+
+    if (!activeEndsAt) {
+      title.textContent = "Give your profile a lift";
+      description.textContent = "Activate a 24-hour Boost to get priority placement in Discover.";
+      time.textContent = "";
+      action.textContent = "Boost profile";
+      action.hidden = false;
+      return;
+    }
+
+    const remaining = activeEndsAt - Date.now();
+    if (remaining > 0) {
+      title.textContent = "Your Profile Boost is active";
+      description.textContent = "Your profile is receiving priority placement in Discover.";
+      time.textContent = formatRemaining(remaining);
+      action.hidden = true;
+    } else {
+      title.textContent = "Your Profile Boost has ended";
+      description.textContent = "Your profile has returned to normal Discover placement.";
+      time.textContent = "Expired";
+      action.textContent = "Boost again";
+      action.hidden = false;
+    }
+  }
+
   async function refreshBoostStatus() {
     const panel = ensurePanel();
     if (!panel || !window.db?.auth) return;
     try {
       const { data: authData, error: authError } = await window.db.auth.getUser();
       if (authError || !authData?.user) {
+        activeEndsAt = null;
+        statusLoaded = false;
         panel.hidden = true;
         return;
       }
-      const now = new Date();
       const { data, error } = await window.db.rpc("get_my_active_profile_boost");
       if (error) throw error;
       const activeBoost = Array.isArray(data) ? data[0] : data;
-      const title = panel.querySelector(".tm-boost-title");
-      const description = panel.querySelector(".tm-boost-description");
-      const time = panel.querySelector("[data-boost-time]");
-      const action = panel.querySelector("[data-boost-action]");
-      panel.hidden = false;
-
-      if (!activeBoost?.ends_at) {
-        title.textContent = "Give your profile a lift";
-        description.textContent = "Activate a 24-hour Boost to get priority placement in Discover.";
-        time.textContent = "";
-        action.textContent = "Boost profile";
-        action.hidden = false;
-        return;
-      }
-
-      title.textContent = "Your Profile Boost is active";
-      description.textContent = "Your profile is receiving priority placement in Discover.";
-      action.hidden = true;
-      const remaining = new Date(activeBoost.ends_at).getTime() - Date.now();
-      time.textContent = remaining > 0 ? formatRemaining(remaining) : "Expired";
-      if (remaining <= 0) {
-        title.textContent = "Your Profile Boost has ended";
-        description.textContent = "Your profile has returned to normal Discover placement.";
-        action.hidden = false;
-        action.textContent = "Boost again";
-      }
+      activeEndsAt = activeBoost?.ends_at ? new Date(activeBoost.ends_at).getTime() : null;
+      statusLoaded = true;
+      renderCountdown();
     } catch (error) {
       // Keep the existing Discover flow working if boost status cannot be read.
       console.warn("Profile Boost status is temporarily unavailable:", error);
-      const title = panel.querySelector(".tm-boost-title");
-      const description = panel.querySelector(".tm-boost-description");
-      const time = panel.querySelector("[data-boost-time]");
-      if (title) title.textContent = "Profile Boost";
-      if (description) description.textContent = "Priority placement is available with an active Boost.";
-      if (time) time.textContent = "";
-      panel.hidden = false;
+      statusLoaded = true;
+      activeEndsAt = null;
+      renderCountdown();
     }
   }
 
@@ -126,7 +135,8 @@
     ensurePanel();
     refreshBoostStatus();
     if (countdownTimer) clearInterval(countdownTimer);
-    countdownTimer = setInterval(refreshBoostStatus, 1000);
+    // Update the visible clock locally; do not poll Supabase every second.
+    countdownTimer = setInterval(renderCountdown, 1000);
     const boostButton = document.getElementById("profileBoostBtn");
     if (boostButton && !boostButton.dataset.boostStatusRefreshBound) {
       boostButton.dataset.boostStatusRefreshBound = "true";

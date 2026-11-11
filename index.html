@@ -11530,36 +11530,47 @@ superLike.onclick=async()=>{
       photoBox.appendChild(infoOverlay);
       card.appendChild(photoBox);
       list.replaceChildren(card);
-      // Fill the real remaining viewport below the Stories/refresh area.
-      // Measure after layout and keep the card fitted when the phone viewport changes.
+      // Fit the card to the actual visible gap between its top edge and the
+      // fixed bottom navigation. Both measurements use getBoundingClientRect()
+      // so they share the same coordinate system on Android WebView and browsers.
+      let discoverCardFitFrame = 0;
       const fitDiscoverCardToViewport = () => {
         if (!card.isConnected) {
-          window.removeEventListener("resize", fitDiscoverCardToViewport);
-          window.visualViewport?.removeEventListener("resize", fitDiscoverCardToViewport);
+          window.removeEventListener("resize", scheduleDiscoverCardFit);
+          window.visualViewport?.removeEventListener("resize", scheduleDiscoverCardFit);
           return;
         }
         const discover = document.getElementById("discover");
         if (!discover || discover.classList.contains("hidden")) return;
         const nav = document.getElementById("bottomNavigation");
-        const viewportHeight = window.visualViewport?.height || window.innerHeight;
         const cardTop = card.getBoundingClientRect().top;
-        const navTop = nav ? nav.getBoundingClientRect().top : viewportHeight - 84;
-        const usableBottom = Math.min(navTop, viewportHeight) - 8;
-        const availableHeight = Math.max(360, Math.floor(usableBottom - cardTop));
+        const navRect = nav?.getBoundingClientRect();
+        const navTop = navRect && navRect.height > 0
+          ? navRect.top
+          : window.innerHeight - (nav?.offsetHeight || 84);
+        const availableHeight = Math.max(0, Math.floor(navTop - cardTop - 8));
         card.style.setProperty("width", "100vw", "important");
+        card.style.setProperty("min-width", "100vw", "important");
         card.style.setProperty("max-width", "none", "important");
         card.style.setProperty("margin-left", "calc(50% - 50vw)", "important");
         card.style.setProperty("height", availableHeight + "px", "important");
         card.style.setProperty("min-height", "0", "important");
         card.style.setProperty("max-height", "none", "important");
       };
+      const scheduleDiscoverCardFit = () => {
+        if (discoverCardFitFrame) cancelAnimationFrame(discoverCardFitFrame);
+        discoverCardFitFrame = requestAnimationFrame(() => {
+          discoverCardFitFrame = 0;
+          fitDiscoverCardToViewport();
+        });
+      };
       requestAnimationFrame(() => {
         if (document.scrollingElement) document.scrollingElement.scrollTop = discoverScrollPosition;
         window.scrollTo(0, discoverScrollPosition);
-        requestAnimationFrame(fitDiscoverCardToViewport);
+        scheduleDiscoverCardFit();
       });
-      window.addEventListener("resize", fitDiscoverCardToViewport, { passive: true });
-      window.visualViewport?.addEventListener("resize", fitDiscoverCardToViewport, { passive: true });
+      window.addEventListener("resize", scheduleDiscoverCardFit, { passive: true });
+      window.visualViewport?.addEventListener("resize", scheduleDiscoverCardFit, { passive: true });
 
       let startX=0;
       let startY=0;

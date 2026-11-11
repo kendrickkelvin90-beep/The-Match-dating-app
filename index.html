@@ -11043,6 +11043,18 @@ photo.alt="Profile photo";
 
 photo.className="discover-option3-image";
 photo.style.cssText="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 32%;background:#080808;display:none;z-index:1;";
+// Enforce full-card cropping at runtime so older/global CSS cannot restore letterboxing.
+photo.style.setProperty("position","absolute","important");
+photo.style.setProperty("inset","0","important");
+photo.style.setProperty("width","100%","important");
+photo.style.setProperty("height","100%","important");
+photo.style.setProperty("max-width","none","important");
+photo.style.setProperty("object-fit","cover","important");
+photo.style.setProperty("object-position","center center","important");
+photoBox.style.setProperty("position","absolute","important");
+photoBox.style.setProperty("inset","0","important");
+photoBox.style.setProperty("width","100%","important");
+photoBox.style.setProperty("height","100%","important");
 
 photoBox.appendChild(photo);
       

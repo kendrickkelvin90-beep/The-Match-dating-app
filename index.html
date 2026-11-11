@@ -11491,7 +11491,7 @@ const actions = document.createElement("div");
 actions.className = "discover-floating-actions";
 actions.style.cssText =
   "display:flex;justify-content:center;align-items:center;" +
-  "gap:12px;margin:8px 12px 12px;padding:0;";
+  "gap:clamp(10px,4vw,18px);width:100%;margin:8px 0 0;padding:0;";
 
       
 
@@ -11761,12 +11761,17 @@ superLike.onclick=async()=>{
         }
         const discover = document.getElementById("discover");
         const nav = document.getElementById("bottomNavigation");
-        if (!discover || discover.classList.contains("hidden") ||
-            !nav || nav.classList.contains("hidden")) return;
+        if (!discover || discover.classList.contains("hidden") || !nav) return;
         const cardRect = card.getBoundingClientRect();
         const navRect = nav.getBoundingClientRect();
-        if (!cardRect.width || !navRect.height) return;
-        const availableHeight = Math.max(0, Math.floor(navRect.top - cardRect.top - 8));
+        if (!cardRect.width) return;
+        const viewportHeight = window.visualViewport?.height || window.innerHeight;
+        const viewportOffsetTop = window.visualViewport?.offsetTop || 0;
+        const navVisible = navRect.height > 0 && getComputedStyle(nav).display !== "none";
+        const bottomEdge = navVisible
+          ? Math.min(navRect.top, viewportOffsetTop + viewportHeight - navRect.height)
+          : viewportOffsetTop + viewportHeight;
+        const availableHeight = Math.max(360, Math.floor(bottomEdge - cardRect.top - 10));
         card.style.setProperty("box-sizing", "border-box", "important");
         card.style.setProperty("width", "calc(100vw - 28px)", "important");
         card.style.setProperty("min-width", "0", "important");
@@ -11823,6 +11828,16 @@ superLike.onclick=async()=>{
         // Let WebView finish restoring scroll and applying its layout/anchor pass
         // before starting the stable-frame check.
         setTimeout(waitForDiscoverScrollToSettle, 450);
+        // Android WebViews can report the final visual viewport after the first
+        // scroll-settle pass. Refit after that layout pass as well.
+        setTimeout(() => {
+          discoverInitialFitReady = true;
+          scheduleDiscoverCardFit();
+        }, 900);
+        setTimeout(() => {
+          discoverInitialFitReady = true;
+          scheduleDiscoverCardFit();
+        }, 1500);
       });
       window.addEventListener("resize", scheduleDiscoverCardFit, { passive: true });
       // After the initial fit, only viewport resizing can change card height.
@@ -21593,6 +21608,66 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
     padding-top:clamp(72px,13vh,100px)!important;
     padding-left:13px!important;
     padding-right:13px!important;
+  }
+}
+/* Final Option 3 fit: keep the full photo and all swipe controls inside the visible card. */
+#discover #profileList {
+  min-height:0!important;
+  overflow:visible!important;
+}
+#discover #profileList > .discover-option3-card {
+  min-height:360px!important;
+  overflow:hidden!important;
+}
+#discover #profileList > .discover-option3-card .discover-option3-overlay {
+  box-sizing:border-box!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:flex-end!important;
+  max-height:100%!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain!important;
+  padding:clamp(64px,11vh,104px) 16px max(12px,env(safe-area-inset-bottom))!important;
+}
+#discover #profileList > .discover-option3-card .discover-option3-overlay h2 {
+  font-size:clamp(22px,5.8vw,31px)!important;
+  line-height:1.1!important;
+  margin:0 0 5px!important;
+}
+#discover #profileList > .discover-option3-card .discover-option3-overlay .distance {
+  margin:0 0 8px!important;
+}
+#discover #profileList > .discover-option3-card .discover-option3-overlay button[aria-expanded] {
+  min-height:46px!important;
+  margin:0 0 4px!important;
+}
+#discover #profileList > .discover-option3-card .discover-floating-actions {
+  flex:0 0 auto!important;
+  gap:clamp(10px,4vw,18px)!important;
+  margin:8px 0 0!important;
+}
+#discover #profileList > .discover-option3-card .discover-floating-actions > button {
+  flex:0 0 clamp(68px,20vw,78px)!important;
+  width:clamp(68px,20vw,78px)!important;
+  min-width:clamp(68px,20vw,78px)!important;
+  height:clamp(68px,20vw,78px)!important;
+  min-height:clamp(68px,20vw,78px)!important;
+  max-width:clamp(68px,20vw,78px)!important;
+  padding:0!important;
+}
+@media(max-height:700px) {
+  #discover #profileList > .discover-option3-card .discover-option3-overlay {
+    padding-top:60px!important;
+    padding-left:12px!important;
+    padding-right:12px!important;
+  }
+  #discover #profileList > .discover-option3-card .discover-floating-actions > button {
+    flex-basis:64px!important;
+    width:64px!important;
+    min-width:64px!important;
+    height:64px!important;
+    min-height:64px!important;
+    max-width:64px!important;
   }
 }
 </style>

@@ -11126,22 +11126,27 @@ async function loadNearby(){
     const allSavedPreferences = await getCurrentAccountDiscoveryPreferences();
     // City/area discovery is available to every member. Other advanced filters
     // remain Premium-only.
-    const savedPreferences = viewerPremium ? allSavedPreferences : {
-      location: allSavedPreferences.location || "",
-      showMe: allSavedPreferences.showMe || "everyone",
-      lookingFor: allSavedPreferences.lookingFor || ""
-    };
+    const straightMode = currentMemberOrientation === "Straight / heterosexual";
+    const savedPreferences = straightMode
+      ? { ...allSavedPreferences, ...(allSavedPreferences.straight || {}) }
+      : viewerPremium ? allSavedPreferences : {
+          location: allSavedPreferences.location || "",
+          showMe: allSavedPreferences.showMe || "everyone",
+          lookingFor: allSavedPreferences.lookingFor || ""
+        };
     const preferredLocation = (savedPreferences.location || "").trim();
     // Discover is intentionally wide-ranging by default. A Premium member's
     // explicitly selected distance remains respected; Nearby stays separate at 50 km.
     // When a member selects a city/area, that regional selection is the
     // Discover boundary. Do not additionally clip it around the member's
     // current GPS point (which could hide the very city they selected).
-    const maxDistance = preferredLocation
-      ? 20050
-      : viewerPremium && Number(savedPreferences.distance) > 0
-        ? Math.min(Number(savedPreferences.distance), 20050)
-        : 20050;
+    const maxDistance = straightMode
+      ? (preferredLocation ? 20050 : Math.min(Number(savedPreferences.distance || 50), viewerPremium ? 200 : 50))
+      : preferredLocation
+        ? 20050
+        : viewerPremium && Number(savedPreferences.distance) > 0
+          ? Math.min(Number(savedPreferences.distance), 20050)
+          : 20050;
     const minAge = viewerPremium ? (Number(savedPreferences.minAge) || 18) : 18;
     const maxAge = viewerPremium
       ? Math.min(Number(savedPreferences.maxAge) || 79, 99)
@@ -11156,6 +11161,23 @@ async function loadNearby(){
     // Refresh the shared device location before querying Discover. If permission is
 // unavailable, the secure RPC may still use the last fresh saved location.
 await refreshNearbyCurrentLocation();
+const { data: eligibleRows, error: eligibilityError } = await db.rpc(
+  "matchmaking_eligible_candidate_ids",
+  {
+    p_max_distance_km: maxDistance,
+    p_min_age: minAge,
+    p_max_age: maxAge,
+    p_city: preferredLocation || null,
+    p_show_me: showMe,
+    p_role_preferences: rolePreferences,
+    p_verified_only: viewerPremium && !!savedPreferences.verifiedOnly,
+    p_connection_goal: lookingFor || null,
+    p_max_results: 100
+  }
+);
+if (eligibilityError) throw eligibilityError;
+const eligibleIds = new Set((eligibleRows || []).map(row => row.user_id));
+
 const { data: peopleData, error } = await db.rpc(
   "discover_profiles_secure",
   {
@@ -11169,7 +11191,7 @@ const { data: peopleData, error } = await db.rpc(
 if (error) throw error;
 
 const viewerCityForDistance = ($("city")?.value || "").trim();
-let people = (peopleData || []).map(p => {
+let people = (peopleData || []).filter(person => eligibleIds.has(person.id)).map(p => {
   const gpsDistance = p.distance_km == null ? null : Number(p.distance_km);
   const cityDistance = gpsDistance == null
     ? approximateDiscoverCityDistanceKm(viewerCityForDistance, p.city)
@@ -11219,7 +11241,6 @@ let people = (peopleData || []).map(p => {
       const expected = showMe === "nonbinary" ? "non-binary" : showMe;
       people = people.filter(person => String(person.gender_identity || "").toLowerCase().includes(expected));
     }
-    if (lookingFor) people = people.filter(person => String(person.interested_in || "").toLowerCase() === lookingFor.toLowerCase());
     if (viewerPremium && savedPreferences.verifiedOnly) people = people.filter(person => person.is_verified || ["basic","enhanced"].includes(person.verification_level));
     if (viewerPremium && savedPreferences.recentlyActive) people = people.filter(person => isUserOnline(person.id));
 
@@ -11270,7 +11291,23 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
 
   if (expandedError) throw expandedError;
 
-  people = (expandedData || []).map(p => {
+  const { data: expandedEligibleRows, error: expandedEligibilityError } = await db.rpc(
+    "matchmaking_eligible_candidate_ids",
+    {
+      p_max_distance_km: 200,
+      p_min_age: minAge,
+      p_max_age: maxAge,
+      p_city: null,
+      p_show_me: showMe,
+      p_role_preferences: rolePreferences,
+      p_verified_only: viewerPremium && !!savedPreferences.verifiedOnly,
+      p_connection_goal: lookingFor || null,
+      p_max_results: 100
+    }
+  );
+  if (expandedEligibilityError) throw expandedEligibilityError;
+  const expandedEligibleIds = new Set((expandedEligibleRows || []).map(row => row.user_id));
+  people = (expandedData || []).filter(person => expandedEligibleIds.has(person.id)).map(p => {
     const gpsDistance = p.distance_km == null ? null : Number(p.distance_km);
     const cityDistance = gpsDistance == null
       ? approximateDiscoverCityDistanceKm(viewerCityForDistance, p.city)
@@ -11324,7 +11361,6 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
     const expected = showMe === "nonbinary" ? "non-binary" : showMe;
     people = people.filter(person => String(person.gender_identity || "").toLowerCase().includes(expected));
   }
-  if (lookingFor) people = people.filter(person => String(person.interested_in || "").toLowerCase() === lookingFor.toLowerCase());
   if (viewerPremium && savedPreferences.verifiedOnly) people = people.filter(person => person.is_verified || ["basic","enhanced"].includes(person.verification_level));
   if (viewerPremium && savedPreferences.recentlyActive) people = people.filter(person => isUserOnline(person.id));
 

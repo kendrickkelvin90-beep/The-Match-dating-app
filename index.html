@@ -11098,6 +11098,44 @@ window.showPerson = async function () {
   return loadNearby();
 };
 
+async function attachSharedDatingDetails(people) {
+  if (!currentUser?.id || !Array.isArray(people) || !people.length) return people;
+  const ids = people.map(person => person.id).filter(Boolean);
+  if (!ids.length) return people;
+  const { data, error } = await db.rpc("get_shared_dating_details", { p_user_ids: ids.slice(0, 100) });
+  if (error) throw error;
+  const byId = new Map((data || []).map(row => [row.user_id, row]));
+  return people.map(person => ({
+    ...person,
+    shared_dating_details: byId.get(person.id) || null
+  }));
+}
+
+function appendSharedDatingDetails(panel, details) {
+  if (!panel || !details) return;
+  if (Array.isArray(details.interests) && details.interests.length) {
+    const interests = document.createElement("p");
+    interests.className = "small";
+    interests.textContent = "✨ Interests: " + details.interests.join(" · ");
+    interests.style.cssText = "font-size:12px;line-height:1.5;margin:7px 0;";
+    panel.appendChild(interests);
+  }
+  const lifestyle = [
+    details.smoking && details.smoking !== "Prefer not to say" ? "Smoking: " + details.smoking : "",
+    details.drinking && details.drinking !== "Prefer not to say" ? "Drinking: " + details.drinking : "",
+    details.activity_level && details.activity_level !== "Prefer not to say" ? "Activity: " + details.activity_level : "",
+    details.pets && details.pets !== "Prefer not to say" ? "Pets: " + details.pets : "",
+    details.children && details.children !== "Prefer not to say" ? "Children: " + details.children : ""
+  ].filter(Boolean);
+  if (lifestyle.length) {
+    const lifestyleLine = document.createElement("p");
+    lifestyleLine.className = "small";
+    lifestyleLine.textContent = "🌿 " + lifestyle.join(" · ");
+    lifestyleLine.style.cssText = "font-size:12px;line-height:1.5;margin:7px 0;";
+    panel.appendChild(lifestyleLine);
+  }
+}
+
 async function loadNearby(){
   if(!currentUser)return;
 
@@ -11203,6 +11241,7 @@ let people = (peopleData || []).filter(person => eligibleIds.has(person.id)).map
   };
 });
     
+    people = await attachSharedDatingDetails(people);
     const discoverIds = people.map(p => p.id);
 
     if (discoverIds.length) {
@@ -11319,6 +11358,7 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
     };
   });
 
+  people = await attachSharedDatingDetails(people);
   const expandedIds = people.map(p => p.id);
 
   if (expandedIds.length) {
@@ -11708,6 +11748,7 @@ details.textContent = [
 details.style.cssText =
   "font-size:14px;line-height:1.5;margin:4px 0 10px;";
 detailsPanel.appendChild(details);
+appendSharedDatingDetails(detailsPanel, p.shared_dating_details);
 
 if (Array.isArray(p.sexual_roles) && p.sexual_roles.length) {
   const roles = document.createElement("p");

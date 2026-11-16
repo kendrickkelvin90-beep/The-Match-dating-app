@@ -271,14 +271,14 @@ do $$
 begin
   if has_function_privilege(
     'anon',
-    'public.matchmaking_eligible_candidate_ids(double precision,integer,integer,text,text,text[],boolean,integer)',
+    'public.matchmaking_eligible_candidate_ids(double precision,integer,integer,text,text,text[],boolean,text,integer)',
     'EXECUTE'
   ) then
     raise exception 'Anonymous role must not execute the eligibility function';
   end if;
   if not has_function_privilege(
     'authenticated',
-    'public.matchmaking_eligible_candidate_ids(double precision,integer,integer,text,text,text[],boolean,integer)',
+    'public.matchmaking_eligible_candidate_ids(double precision,integer,integer,text,text,text[],boolean,text,integer)',
     'EXECUTE'
   ) then
     raise exception 'Authenticated role must be able to execute the eligibility function';

@@ -17,7 +17,7 @@ The RPC public.matchmaking_eligible_candidate_ids(...):
 - Rechecks reciprocal blocks directly rather than relying on the current live can_interact_with_member definition.
 - Excludes candidates who are currently suspended or permanently banned.
 - Requires each candidate to have a complete profile and at least two profile photos.
-- Applies supported gender and role filters.
+- Applies supported gender and role filters, plus mutual compatibility: the viewer's stated dating preference must accept the candidate's gender, and the candidate's stated dating preference must accept the viewer's gender.
 - Applies the verified-only filter only for active Premium members.
 - Returns only candidate IDs, with a hard maximum of 100 rows.
 - Denies execution to anonymous and public roles.
@@ -31,7 +31,7 @@ The current live schema does not contain a separate profile-visibility/private-p
 Some Discover behavior is still frontend-only. In particular:
 - The current Recently active filter relies on browser-side presence and is not included in this server-side gate.
 - The current connection-intention preference does not map cleanly to profiles.interested_in: the UI stores relationship intentions, while that profile column stores who a member wants to meet. It is intentionally not guessed or applied here.
-- The current role filter checks the first item in sexual_roles; this RPC mirrors that behavior for compatibility.
+- The current role filter checks the first item in sexual_roles; this RPC mirrors that behavior for compatibility. Sexual roles are now optional profile information and are not part of profile-completeness validation.
 - The existing Discover RPC remains responsible for city, distance, and age filtering. Its current behavior is preserved rather than rewritten.
 
 These limits must be resolved before claiming the backend exactly reproduces every frontend Discover preference.
@@ -47,7 +47,7 @@ This RPC is not permission to read another member's interests. A later, separate
 6. Return no raw interest lists to the browser; send only the minimum derived compatibility signal needed for ranking.
 7. Never expose the matchmaking service token or Supabase service-role key to the browser.
 
-The Python ranking prototype remains disconnected from live member data.
+The onboarding sexual-orientation answer is stored in member_onboarding.answers, not in the public profiles table. It is identity information and is not used as a substitute for explicit dating preferences. The Python ranking prototype remains disconnected from live member data.
 
 ## Verification and rollout
 
@@ -60,4 +60,4 @@ Before any staging or production use:
 - Run Supabase security and performance advisors.
 - Obtain separate approval before applying any migration to the live project.
 
-No production migration or frontend change is included in this PR.
+This feature branch includes an optional-role profile migration and limited onboarding/profile/public-copy changes. The eligibility RPC is still not integrated into the live Discover flow, and no production migration has been applied.

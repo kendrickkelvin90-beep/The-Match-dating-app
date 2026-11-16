@@ -166,7 +166,7 @@ async def test_supabase_rejects_invalid_member_token(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_supabase_denies_blocked_or_moderated_candidate(monkeypatch):
+async def test_supabase_denies_candidate_when_interaction_rpc_returns_false(monkeypatch):
     monkeypatch.setenv("SUPABASE_URL", "https://match-project.supabase.co")
     monkeypatch.setenv("SUPABASE_ANON_KEY", "publishable-test-key")
     calls = 0

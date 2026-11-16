@@ -9,6 +9,7 @@ on:
   push:
     branches:
       - feat/server-matchmaking-eligibility-gate
+      - test/matchmaking-eligibility-live-schema-parity
     paths:
       - "supabase/migrations/20261116130000_server_matchmaking_eligibility_gate.sql"
       - "supabase/tests/server_matchmaking_eligibility*.sql"

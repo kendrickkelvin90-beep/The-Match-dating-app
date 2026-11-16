@@ -8,6 +8,7 @@ on:
       - "supabase/migrations/20261116160000_mutual_discovery_preference_eligibility.sql"
       - "supabase/migrations/20261116170000_member_dating_interests_lifestyle.sql"
       - "supabase/migrations/20261116180000_interest_match_scores.sql"
+      - "supabase/migrations/20261116190000_adult_age_enforcement.sql"
       - "index.html"
       - "supabase/tests/server_matchmaking_eligibility*.sql"
       - ".github/workflows/server-matchmaking-eligibility.yml"
@@ -21,7 +22,7 @@ on:
       - "supabase/migrations/20261116150000_general_dating_optional_roles.sql"
       - "supabase/migrations/20261116160000_mutual_discovery_preference_eligibility.sql"
       - "supabase/migrations/20261116170000_member_dating_interests_lifestyle.sql"
-      - "supabase/migrations/20261116180000_interest_match_scores.sql"
+      - "supabase/migrations/20261116190000_adult_age_enforcement.sql"
       - "index.html"
       - "supabase/tests/server_matchmaking_eligibility*.sql"
       - ".github/workflows/server-matchmaking-eligibility.yml"
@@ -98,6 +99,8 @@ jobs:
             -f supabase/migrations/20261116170000_member_dating_interests_lifestyle.sql
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/migrations/20261116180000_interest_match_scores.sql
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/migrations/20261116190000_adult_age_enforcement.sql
       - name: Run moderation, block, completeness, and preference assertions
         env:
           PGPASSWORD: postgres

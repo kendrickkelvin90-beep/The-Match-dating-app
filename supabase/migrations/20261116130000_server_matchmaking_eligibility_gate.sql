@@ -64,13 +64,7 @@ begin
     select 1
     from public.profiles viewer
     where viewer.id = v_viewer_id
-      and viewer.age between 18 and 120
-      and nullif(pg_catalog.btrim(viewer.display_name), '') is not null
-      and nullif(pg_catalog.btrim(viewer.gender_identity), '') is not null
-      and nullif(pg_catalog.btrim(viewer.interested_in), '') is not null
-      and nullif(pg_catalog.btrim(viewer.city), '') is not null
-      and nullif(pg_catalog.btrim(viewer.bio), '') is not null
-      and coalesce(pg_catalog.cardinality(viewer.sexual_roles), 0) > 0
+      and public.is_match_profile_complete(viewer.id)
       and (
         select pg_catalog.count(*)
         from public.profile_photos own_photo
@@ -104,13 +98,7 @@ begin
     ) discovered
     join public.profiles candidate on candidate.id = discovered.id
     where exists (select 1 from viewer_is_eligible)
-      and candidate.age between 18 and 120
-      and nullif(pg_catalog.btrim(candidate.display_name), '') is not null
-      and nullif(pg_catalog.btrim(candidate.gender_identity), '') is not null
-      and nullif(pg_catalog.btrim(candidate.interested_in), '') is not null
-      and nullif(pg_catalog.btrim(candidate.city), '') is not null
-      and nullif(pg_catalog.btrim(candidate.bio), '') is not null
-      and coalesce(pg_catalog.cardinality(candidate.sexual_roles), 0) > 0
+      and public.is_match_profile_complete(candidate.id)
       and (
         select pg_catalog.count(*)
         from public.profile_photos candidate_photo

@@ -16,7 +16,7 @@ create table if not exists public.member_dating_details (
     check (pets in ('Have pets','Love pets','Want pets','Not for me','Prefer not to say')),
   children text not null default 'Prefer not to say'
     check (children in ('Have children','Want children','Do not want children','Not sure','Prefer not to say')),
-  share_interests boolean not null default true,
+  share_interests boolean not null default false,
   share_lifestyle boolean not null default false,
   updated_at timestamptz not null default pg_catalog.now()
 );

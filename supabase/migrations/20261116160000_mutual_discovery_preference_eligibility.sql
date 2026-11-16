@@ -45,8 +45,11 @@ revoke all on function private.match_preference_accepts_gender(text, text)
 
 -- Server-side eligibility gate for future interest-based matchmaking.
 -- Returns candidate IDs only; it never exposes profile rows or interest data.
--- This is additive and does not change the existing Discover RPC or frontend.
-
+-- Replace the earlier default-heavy overload so Postgres/Supabase RPC calls
+-- cannot become ambiguous when the newer connection-goal argument is omitted.
+drop function if exists public.matchmaking_eligible_candidate_ids(
+  double precision, integer, integer, text, text, text[], boolean, integer
+);
 
 create or replace function public.matchmaking_eligible_candidate_ids(
   p_max_distance_km double precision default 20050,

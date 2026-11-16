@@ -489,7 +489,7 @@ values (
   )
 );
 
-do $
+do $$
 begin
   if not exists (
     select 1 from realtime.messages
@@ -523,7 +523,7 @@ begin
     raise exception 'A blocked pair unexpectedly passed typing-channel authorization';
   end if;
 end;
-$;
+$$;
 reset role;
 
 select 'server matchmaking eligibility tests passed' as result;

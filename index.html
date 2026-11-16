@@ -6237,7 +6237,7 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
     <label for="datingChildren">Children</label>
     <select id="datingChildren"><option>Prefer not to say</option><option>Have children</option><option>Want children</option><option>Do not want children</option><option>Not sure</option></select>
   </div>
-  <label><input type="checkbox" id="shareDatingInterests" checked> Show my selected interests on my profile</label>
+  <label><input type="checkbox" id="shareDatingInterests"> Show my selected interests on my profile</label>
   <label><input type="checkbox" id="shareDatingLifestyle"> Show my lifestyle details on my profile</label>
   <p class="small">Your lifestyle answers stay private unless you turn on sharing. You can change these choices anytime.</p>
 </div>
@@ -10864,7 +10864,7 @@ async function loadMyDatingDetails() {
   $("datingActivity").value = saved.activity_level || "Prefer not to say";
   $("datingPets").value = saved.pets || "Prefer not to say";
   $("datingChildren").value = saved.children || "Prefer not to say";
-  $("shareDatingInterests").checked = saved.share_interests !== false;
+  $("shareDatingInterests").checked = saved.share_interests === true;
   $("shareDatingLifestyle").checked = saved.share_lifestyle === true;
 }
 

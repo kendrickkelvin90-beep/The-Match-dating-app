@@ -433,12 +433,13 @@ begin
   ])
   where user_id = '00000000-0000-4000-8000-000000000002';
 
-  if extras_row.relationship_intention <> 'Long-term relationship'
-     or extras_row.communication_style <> 'Deep conversations'
+  if extras_row.relationship_intention is distinct from 'Long-term relationship'
+     or extras_row.communication_style is distinct from 'Deep conversations'
      or extras_row.languages is distinct from array['English','Yoruba']::text[]
-     or extras_row.occupation <> 'Designer'
-     or extras_row.favorite_food <> 'Jollof rice' then
-    raise exception 'Opted-in dating profile extras were not returned correctly';
+     or extras_row.occupation is distinct from 'Designer'
+     or extras_row.favorite_food is distinct from 'Jollof rice' then
+    raise exception 'Opted-in dating profile extras were not returned correctly: %',
+      pg_catalog.row_to_json(extras_row);
   end if;
 
   if (select count(*) from public.get_shared_profile_extras(array[

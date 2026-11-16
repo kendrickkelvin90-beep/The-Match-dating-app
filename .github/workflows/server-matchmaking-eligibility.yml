@@ -10,6 +10,7 @@ on:
       - "supabase/migrations/20261116180000_interest_match_scores.sql"
       - "supabase/migrations/20261116190000_adult_age_enforcement.sql"
       - "supabase/migrations/20261116200000_member_profile_extras.sql"
+      - "supabase/migrations/20261116220000_dating_compatibility_scores.sql"
       - "supabase/migrations/20261116210000_secure_chat_typing_broadcasts.sql"
       - "index.html"
       - "supabase/tests/server_matchmaking_eligibility*.sql"
@@ -28,6 +29,8 @@ on:
       - "supabase/migrations/20261116180000_interest_match_scores.sql"
       - "supabase/migrations/20261116190000_adult_age_enforcement.sql"
       - "supabase/migrations/20261116200000_member_profile_extras.sql"
+      - "supabase/migrations/20261116210000_secure_chat_typing_broadcasts.sql"
+      - "supabase/migrations/20261116220000_dating_compatibility_scores.sql"
       - "index.html"
       - "supabase/tests/server_matchmaking_eligibility*.sql"
       - ".github/workflows/server-matchmaking-eligibility.yml"
@@ -87,6 +90,9 @@ jobs:
           if "handleChatTypingInput" not in html or "chatTypingStatus" not in html:
               raise SystemExit("Chat typing indicator UI or input handler is missing")
           print("Verified that chat typing uses a private Realtime channel")
+          if 'get_dating_compatibility_scores' not in html or 'discover-compatibility-badge' not in html:
+              raise SystemExit("Discover compatibility score integration is missing")
+          print("Verified that Discover displays opt-in compatibility scores")
 
       - name: Prepare isolated Discover schema and synthetic fixtures
         env:
@@ -115,6 +121,8 @@ jobs:
             -f supabase/migrations/20261116200000_member_profile_extras.sql
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/migrations/20261116210000_secure_chat_typing_broadcasts.sql
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/migrations/20261116220000_dating_compatibility_scores.sql
       - name: Run moderation, block, completeness, and preference assertions
         env:
           PGPASSWORD: postgres

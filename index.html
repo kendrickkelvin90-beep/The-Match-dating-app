@@ -4757,6 +4757,10 @@ body.light-theme #eventsPage .events-filters input,body.light-theme #eventsPage 
 #eventsPage .event-admin-actions button{flex:1;padding:10px;border-radius:10px;border:1px solid #9b793d;background:#c6a15b;color:#17130b;font-weight:700;font-size:11px}
 #eventsPage .event-admin-actions button:last-child{background:transparent;color:#e5b1a8;border-color:#744b44}
 @media(max-width:420px){#eventsPage .events-date-grid{grid-template-columns:1fr}}
+.dating-interest-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:10px}
+#datingLifestyleSection .dating-interest-grid label{display:flex;align-items:center;gap:7px;font-size:13px;margin:0;padding:9px 10px;border:1px solid #b99a5d33;border-radius:10px}
+#datingLifestyleSection select{width:100%;min-height:46px;margin:5px 0 10px}
+@media(min-width:520px){.dating-interest-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 </style>
 <style id="discoveryPreferencesPolish">
 #discoveryPreferencesPage.discovery-preferences-page{max-width:760px;margin:0 auto;padding:18px 14px 120px;box-sizing:border-box;color:#f5f1e8}
@@ -6148,6 +6152,61 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
   <label><input type="radio" name="sexualRole" value="Prefer not to say"> Prefer not to say</label>
 </div>
 
+<div class="member-card" id="datingLifestyleSection">
+  <h2>What makes you, you? ✨</h2>
+  <p class="small">Choose a few interests and lifestyle details. These are optional, and you control what other members can see.</p>
+  <div class="member-card" style="margin-top:12px">
+    <strong>Things I enjoy</strong>
+    <p class="small">Choose up to 10 interests.</p>
+    <div class="dating-interest-grid">
+      <label><input type="checkbox" name="datingInterest" value="Music"> Music</label>
+      <label><input type="checkbox" name="datingInterest" value="Movies & TV"> Movies & TV</label>
+      <label><input type="checkbox" name="datingInterest" value="Travel"> Travel</label>
+      <label><input type="checkbox" name="datingInterest" value="Food & cooking"> Food & cooking</label>
+      <label><input type="checkbox" name="datingInterest" value="Fitness"> Fitness</label>
+      <label><input type="checkbox" name="datingInterest" value="Gym"> Gym</label>
+      <label><input type="checkbox" name="datingInterest" value="Football"> Football</label>
+      <label><input type="checkbox" name="datingInterest" value="Basketball"> Basketball</label>
+      <label><input type="checkbox" name="datingInterest" value="Gaming"> Gaming</label>
+      <label><input type="checkbox" name="datingInterest" value="Reading"> Reading</label>
+      <label><input type="checkbox" name="datingInterest" value="Art & design"> Art & design</label>
+      <label><input type="checkbox" name="datingInterest" value="Photography"> Photography</label>
+      <label><input type="checkbox" name="datingInterest" value="Fashion"> Fashion</label>
+      <label><input type="checkbox" name="datingInterest" value="Nature & hiking"> Nature & hiking</label>
+      <label><input type="checkbox" name="datingInterest" value="Dancing"> Dancing</label>
+      <label><input type="checkbox" name="datingInterest" value="Nightlife"> Nightlife</label>
+      <label><input type="checkbox" name="datingInterest" value="Volunteering"> Volunteering</label>
+      <label><input type="checkbox" name="datingInterest" value="Technology"> Technology</label>
+      <label><input type="checkbox" name="datingInterest" value="Business"> Business</label>
+      <label><input type="checkbox" name="datingInterest" value="Spirituality"> Spirituality</label>
+      <label><input type="checkbox" name="datingInterest" value="Pets"> Pets</label>
+      <label><input type="checkbox" name="datingInterest" value="Beach & outdoors"> Beach & outdoors</label>
+      <label><input type="checkbox" name="datingInterest" value="Comedy"> Comedy</label>
+      <label><input type="checkbox" name="datingInterest" value="Podcasts"> Podcasts</label>
+      <label><input type="checkbox" name="datingInterest" value="Cars"> Cars</label>
+      <label><input type="checkbox" name="datingInterest" value="Board games"> Board games</label>
+      <label><input type="checkbox" name="datingInterest" value="Live events"> Live events</label>
+      <label><input type="checkbox" name="datingInterest" value="Gardening"> Gardening</label>
+    </div>
+  </div>
+  <div class="member-card" style="margin-top:12px">
+    <strong>My lifestyle (optional)</strong>
+    <label for="datingSmoking">Smoking</label>
+    <select id="datingSmoking"><option>Prefer not to say</option><option>Never</option><option>Occasionally</option><option>Socially</option><option>Regularly</option></select>
+    <label for="datingDrinking">Drinking</label>
+    <select id="datingDrinking"><option>Prefer not to say</option><option>Never</option><option>Occasionally</option><option>Socially</option><option>Regularly</option></select>
+    <label for="datingActivity">Activity level</label>
+    <select id="datingActivity"><option>Prefer not to say</option><option>Very active</option><option>Moderately active</option><option>Not very active</option></select>
+    <label for="datingPets">Pets</label>
+    <select id="datingPets"><option>Prefer not to say</option><option>Have pets</option><option>Love pets</option><option>Want pets</option><option>Not for me</option></select>
+    <label for="datingChildren">Children</label>
+    <select id="datingChildren"><option>Prefer not to say</option><option>Have children</option><option>Want children</option><option>Do not want children</option><option>Not sure</option></select>
+  </div>
+  <label><input type="checkbox" id="shareDatingInterests" checked> Show my selected interests on my profile</label>
+  <label><input type="checkbox" id="shareDatingLifestyle"> Show my lifestyle details on my profile</label>
+  <p class="small">Your lifestyle answers stay private unless you turn on sharing. You can change these choices anytime.</p>
+</div>
+
 <div class="member-card" id="genderPresentationSection">
   <h2>My presentation ✨</h2>
   <p class="small">Optional. Select the words that best describe your presentation. These labels are self-described and are not inferred from appearance or orientation.</p>
@@ -6960,9 +7019,29 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
   <header class="discovery-hero">
     <span class="discovery-kicker">MAKE IT YOURS</span>
     <h2>Discovery preferences</h2>
-    <p>Shape the people you see on The Match. You can update these choices whenever you like.</p>
+    <p>Choose who you want to meet. Your choices are private and can be changed anytime.</p>
   </header>
 
+  <div id="straightDiscoveryPreferences" class="discovery-preference-card" hidden>
+    <div class="discovery-card-heading"><span class="discovery-card-icon">♡</span><div><h3>Your dating preferences</h3><p>A simple way to shape your Discover feed.</p></div></div>
+    <label for="straightShowMe">Who would you like to see?</label>
+    <select id="straightShowMe"><option value="women">Women</option><option value="men">Men</option><option value="everyone">Both men and women</option></select>
+    <div class="discovery-two-column">
+      <div><label for="straightAgeMin">Minimum age</label><input id="straightAgeMin" type="number" min="18" max="99" value="18"></div>
+      <div><label for="straightAgeMax">Maximum age</label><input id="straightAgeMax" type="number" min="18" max="99" value="79"></div>
+    </div>
+    <label for="straightLocation">City or area (optional)</label>
+    <input id="straightLocation" type="text" maxlength="100" placeholder="e.g. Lagos, Ikeja or Abeokuta">
+    <div class="discovery-distance-heading"><label for="straightDistance">Maximum distance</label><strong id="straightDistanceValue">50 km</strong></div>
+    <input id="straightDistance" class="discovery-range" type="range" min="1" max="50" step="1" value="50">
+    <label for="straightLookingFor">What kind of connection?</label>
+    <select id="straightLookingFor"><option value="">No preference</option><option value="relationship">A relationship</option><option value="dating">Dating</option><option value="friendship">Friendship</option><option value="casual">Something casual</option><option value="exploring">Still figuring it out</option></select>
+    <p class="discovery-helper">Straight members are matched with other members who have also identified as straight, and only when both people's preferences are compatible.</p>
+    <div class="discovery-save-actions"><button class="btn primary" id="saveStraightDiscoveryPreferences" type="button">Save preferences</button></div>
+    <p class="status" id="straightDiscoveryPreferencesStatus" role="status" aria-live="polite"></p>
+  </div>
+
+  <div id="queerDiscoveryPreferences">
   <div class="discovery-preference-card">
     <div class="discovery-card-heading"><span class="discovery-card-icon">⌖</span><div><h3>Location &amp; distance</h3><p>Choose the area you'd like to explore.</p></div></div>
     <label for="discoveryLocation">Preferred city or area</label>
@@ -7033,6 +7112,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     <p class="discovery-save-note">Your preferences are saved on this device and used by Discover.</p>
     <div class="discovery-save-actions"><button class="btn secondary" id="resetDiscoveryPreferences" type="button">Reset</button><button class="btn primary" id="saveDiscoveryPreferences" type="button">Save preferences</button></div>
     <p class="status" id="discoveryPreferencesStatus" role="status" aria-live="polite"></p>
+  </div>
   </div>
 </section>
 

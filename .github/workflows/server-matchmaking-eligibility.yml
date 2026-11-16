@@ -1,0 +1,65 @@
+name: Server matchmaking eligibility tests
+
+on:
+  pull_request:
+    paths:
+      - "supabase/migrations/20261116130000_server_matchmaking_eligibility_gate.sql"
+      - "supabase/tests/server_matchmaking_eligibility*.sql"
+      - ".github/workflows/server-matchmaking-eligibility.yml"
+  push:
+    branches:
+      - feat/server-matchmaking-eligibility-gate
+    paths:
+      - "supabase/migrations/20261116130000_server_matchmaking_eligibility_gate.sql"
+      - "supabase/tests/server_matchmaking_eligibility*.sql"
+      - ".github/workflows/server-matchmaking-eligibility.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  postgres-eligibility:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: match_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d match_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Prepare isolated Discover schema and synthetic fixtures
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/tests/server_matchmaking_eligibility_setup.sql
+
+      - name: Apply eligibility migration to disposable PostgreSQL
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/migrations/20261116130000_server_matchmaking_eligibility_gate.sql
+
+      - name: Run moderation, block, completeness, and preference assertions
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/tests/server_matchmaking_eligibility.sql

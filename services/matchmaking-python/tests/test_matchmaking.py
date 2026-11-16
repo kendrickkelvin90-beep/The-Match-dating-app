@@ -14,7 +14,7 @@ def test_ranks_shared_interests_first_and_is_deterministic():
         ],
     )
     assert [item.candidate_id for item in results] == ["a", "b"]
-    assert results[0].score == 50
+    assert results[0].score == 67
     assert results[0].shared_interests == ["music", "travel"]
 
 

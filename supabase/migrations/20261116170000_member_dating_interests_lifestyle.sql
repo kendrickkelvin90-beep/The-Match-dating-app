@@ -43,7 +43,12 @@ declare
     'Football','Basketball','Gaming','Reading','Art & design','Photography',
     'Fashion','Nature & hiking','Dancing','Nightlife','Volunteering',
     'Technology','Business','Spirituality','Pets','Beach & outdoors',
-    'Comedy','Podcasts','Cars','Board games','Live events','Gardening'
+    'Comedy','Podcasts','Cars','Board games','Live events','Gardening',
+    'Running','Swimming','Cycling','Yoga','Volleyball','Tennis','Badminton',
+    'Boxing & martial arts','Cooking & baking','Street food','Cafés',
+    'Concerts & festivals','Anime & manga','Writing & poetry','Languages',
+    'Camping','Road trips','Fashion & beauty','Home decor','DIY & crafts',
+    'History & museums','Startups & entrepreneurship'
   ];
 begin
   if coalesce(cardinality(new.interests), 0) > 10 then

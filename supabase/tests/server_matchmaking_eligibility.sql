@@ -284,7 +284,7 @@ begin
 end;
 $$;
 
-do $
+do $$
 declare
   score_row record;
   score_count integer;
@@ -324,7 +324,7 @@ begin
     raise exception 'Lifestyle-only sharing must not enable interest matching scores';
   end if;
 end;
-$;
+$$;
 
 -- Insert the viewer's moderation row explicitly; the fixture initially only
 -- contains moderation rows for the suspended and banned candidate accounts.
@@ -380,7 +380,7 @@ begin
 end;
 $$;
 
-do $
+do $$
 begin
   if has_function_privilege(
     'anon',
@@ -397,6 +397,6 @@ begin
     raise exception 'Authenticated role must execute interest compatibility scoring';
   end if;
 end;
-$;
+$$;
 
 select 'server matchmaking eligibility tests passed' as result;

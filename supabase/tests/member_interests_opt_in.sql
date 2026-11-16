@@ -148,7 +148,7 @@ begin
 
   if v_enabled is distinct from false or v_version is not null or v_consented_at is not null then
     raise exception 'Opt-out must clear sharing consent fields';
-  end;
+  end if;
 
   -- Catalog is read-only to clients.
   begin

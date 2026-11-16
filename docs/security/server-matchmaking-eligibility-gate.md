@@ -22,7 +22,7 @@ The RPC public.matchmaking_eligible_candidate_ids(...):
 - Returns only candidate IDs, with a hard maximum of 100 rows.
 - Denies execution to anonymous and public roles.
 
-Moderation uses the live member_moderation schema: permanent bans are always excluded; suspensions are excluded only while expires_at is in the future.
+The function is deliberately VOLATILE so repeated calls in a transaction can re-read current moderation and membership state rather than reuse a statement-level stable snapshot. Moderation uses the live member_moderation schema: permanent bans are always excluded; suspensions are excluded only while expires_at is in the future.
 
 ## Important limits discovered in the current app
 

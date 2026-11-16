@@ -6133,6 +6133,19 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
 <option>Men</option><option>Women</option><option>Men and women</option><option>All genders</option>
 <option>Non-binary people</option><option>Not sure yet</option>
 </select>
+<label for="sexualOrientation">Sexual orientation (private)</label>
+<select id="sexualOrientation">
+  <option value="Prefer not to say">Prefer not to say</option>
+  <option value="Straight / heterosexual">Straight / heterosexual</option>
+  <option value="Gay">Gay</option>
+  <option value="Lesbian">Lesbian</option>
+  <option value="Bisexual">Bisexual</option>
+  <option value="Pansexual">Pansexual</option>
+  <option value="Queer">Queer</option>
+  <option value="Asexual">Asexual</option>
+  <option value="Another orientation">Another orientation</option>
+</select>
+<p class="small">This is private and is used to tailor discovery. It is not shown on your public profile.</p>
 
 <div class="member-card" id="queerRolePreferencesSection">
   <h2>Optional role preferences</h2>
@@ -10815,7 +10828,8 @@ async function loadCurrentMemberOrientation() {
   const { data, error } = await db.from("member_onboarding")
     .select("answers").eq("user_id", currentUser.id).maybeSingle();
   if (error) throw error;
-  currentMemberOrientation = String(data?.answers?.sexual_orientation || "");
+  currentMemberOrientation = String(data?.answers?.sexual_orientation || "Prefer not to say");
+  if ($("sexualOrientation")) $("sexualOrientation").value = currentMemberOrientation;
   return currentMemberOrientation;
 }
 
@@ -11081,6 +11095,22 @@ const { error: datingDetailsError } = await db.from("member_dating_details").ups
   share_lifestyle: $("shareDatingLifestyle").checked
 }, { onConflict: "user_id" });
 if (datingDetailsError) throw datingDetailsError;
+
+const newOrientation = $("sexualOrientation")?.value || currentMemberOrientation;
+if (newOrientation && newOrientation !== currentMemberOrientation) {
+  const { data: onboardingRecord, error: onboardingReadError } = await db.from("member_onboarding")
+    .select("answers").eq("user_id", currentUser.id).maybeSingle();
+  if (onboardingReadError) throw onboardingReadError;
+  if (!onboardingRecord) throw Error("Your private orientation settings could not be saved. Please contact support.");
+  const updatedAnswers = { ...(onboardingRecord.answers || {}), sexual_orientation: newOrientation };
+  const { error: onboardingUpdateError } = await db.from("member_onboarding")
+    .update({ answers: updatedAnswers, updated_at: new Date().toISOString() })
+    .eq("user_id", currentUser.id);
+  if (onboardingUpdateError) throw onboardingUpdateError;
+  currentMemberOrientation = newOrientation;
+  const roleSection = $("queerRolePreferencesSection");
+  if (roleSection) roleSection.hidden = currentMemberOrientation === "Straight / heterosexual";
+}
 
 await loadNearby();
 await loadStories();

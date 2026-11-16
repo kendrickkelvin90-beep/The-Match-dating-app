@@ -9,7 +9,7 @@ values
   ('00000000-0000-4000-8000-000000000004', 'Suspended', 'Man', 'Men', 'A complete candidate profile', 'Lagos', 27, false, array['Top'], 'none'),
   ('00000000-0000-4000-8000-000000000005', 'Banned', 'Man', 'Men', 'A complete candidate profile', 'Lagos', 27, false, array['Top'], 'none'),
   ('00000000-0000-4000-8000-000000000006', 'Incomplete', 'Man', 'Men', '', 'Lagos', 27, false, array['Top'], 'none'),
-  ('00000000-0000-4000-8000-000000000007', 'Verified', 'Woman', 'Men', 'A complete verified profile', 'Lagos', 28, true, array['Bottom'], 'basic'),
+  ('00000000-0000-4000-8000-000000000007', 'Verified', 'Woman', 'Men', 'A complete verified profile', 'Abuja', 28, true, array['Bottom'], 'basic'),
   ('00000000-0000-4000-8000-000000000008', 'Member', 'Man', 'Men', 'A placeholder profile bio', 'Lagos', 28, false, array['Top'], 'none'),
   ('00000000-0000-4000-8000-000000000009', 'No Primary Photo', 'Man', 'Men', 'A complete profile without its primary photo', 'Lagos', 28, false, array['Top'], 'none');
 

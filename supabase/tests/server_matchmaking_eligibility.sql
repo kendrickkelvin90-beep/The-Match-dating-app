@@ -414,7 +414,7 @@ set relationship_intention = 'Long-term relationship',
 where user_id = '00000000-0000-4000-8000-000000000002';
 
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
-do $
+do $$
 declare
   extras_row record;
 begin
@@ -442,9 +442,9 @@ begin
     raise exception 'Only the member who opted in should expose profile extras';
   end if;
 end;
-$;
+$$;
 
-do $
+do $$
 begin
   begin
     update public.member_dating_details
@@ -455,9 +455,9 @@ begin
     null;
   end;
 end;
-$;
+$$;
 
-do $
+do $$
 begin
   if has_function_privilege('anon','public.get_shared_profile_extras(uuid[])','EXECUTE') then
     raise exception 'Anonymous role must not execute shared profile extras RPC';
@@ -466,6 +466,6 @@ begin
     raise exception 'Authenticated role must execute shared profile extras RPC';
   end if;
 end;
-$;
+$$;
 
 select 'server matchmaking eligibility tests passed' as result;

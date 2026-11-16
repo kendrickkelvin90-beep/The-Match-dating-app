@@ -196,10 +196,11 @@ select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001'
 insert into public.member_dating_details
   (user_id, interests, smoking, drinking, activity_level, pets, children, share_interests, share_lifestyle)
 values
+  ('00000000-0000-4000-8000-000000000001', array['Music','Travel','Football'], 'Prefer not to say', 'Prefer not to say', 'Prefer not to say', 'Prefer not to say', 'Prefer not to say', false, false),
   ('00000000-0000-4000-8000-000000000002', array['Music','Travel'], 'Never', 'Socially', 'Very active', 'Love pets', 'Not sure', true, false),
   ('00000000-0000-4000-8000-000000000003', array['Gaming'], 'Never', 'Never', 'Moderately active', 'Not for me', 'Not sure', true, false),
   ('00000000-0000-4000-8000-000000000007', array['Football'], 'Socially', 'Occasionally', 'Moderately active', 'Have pets', 'Have children', true, true),
-  ('00000000-0000-4000-8000-000000000010', array['Travel'], 'Never', 'Never', 'Moderately active', 'Prefer not to say', 'Not sure', true, false),
+  ('00000000-0000-4000-8000-000000000010', array['Travel'], 'Never', 'Never', 'Moderately active', 'Prefer not to say', 'Not sure', false, true),
   ('00000000-0000-4000-8000-000000000011', array['Gaming'], 'Never', 'Never', 'Moderately active', 'Prefer not to say', 'Not sure', true, false),
   ('00000000-0000-4000-8000-000000000012', array['Music'], 'Never', 'Never', 'Moderately active', 'Prefer not to say', 'Not sure', true, false);
 
@@ -269,6 +270,48 @@ begin
   end if;
 end;
 $$;
+
+do $
+declare
+  score_row record;
+  score_count integer;
+begin
+  select count(*) into score_count
+  from public.get_interest_match_scores(array[
+    '00000000-0000-4000-8000-000000000002'::uuid,
+    '00000000-0000-4000-8000-000000000003'::uuid,
+    '00000000-0000-4000-8000-000000000007'::uuid,
+    '00000000-0000-4000-8000-000000000010'::uuid,
+    '00000000-0000-4000-8000-000000000011'::uuid,
+    '00000000-0000-4000-8000-000000000012'::uuid
+  ]);
+  if score_count <> 2 then
+    raise exception 'Only visible members who opted into interest sharing should receive scores; got %', score_count;
+  end if;
+
+  select * into score_row
+  from public.get_interest_match_scores(array['00000000-0000-4000-8000-000000000002'::uuid])
+  where user_id = '00000000-0000-4000-8000-000000000002';
+  if score_row.shared_interest_count <> 2 or score_row.interest_match_percent <> 67 then
+    raise exception 'Expected 2 shared interests and 67 percent overlap; got % / %',
+      score_row.shared_interest_count, score_row.interest_match_percent;
+  end if;
+
+  select * into score_row
+  from public.get_interest_match_scores(array['00000000-0000-4000-8000-000000000007'::uuid])
+  where user_id = '00000000-0000-4000-8000-000000000007';
+  if score_row.shared_interest_count <> 1 or score_row.interest_match_percent <> 33 then
+    raise exception 'Expected 1 shared interest and 33 percent overlap; got % / %',
+      score_row.shared_interest_count, score_row.interest_match_percent;
+  end if;
+
+  if exists (
+    select 1 from public.get_interest_match_scores(array['00000000-0000-4000-8000-000000000010'::uuid])
+  ) then
+    raise exception 'Lifestyle-only sharing must not enable interest matching scores';
+  end if;
+end;
+$;
 
 -- Insert the viewer's moderation row explicitly; the fixture initially only
 -- contains moderation rows for the suspended and banned candidate accounts.

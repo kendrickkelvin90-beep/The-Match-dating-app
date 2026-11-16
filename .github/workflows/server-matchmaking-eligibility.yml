@@ -7,6 +7,7 @@ on:
       - "supabase/migrations/20261116150000_general_dating_optional_roles.sql"
       - "supabase/migrations/20261116160000_mutual_discovery_preference_eligibility.sql"
       - "supabase/migrations/20261116170000_member_dating_interests_lifestyle.sql"
+      - "index.html"
       - "supabase/tests/server_matchmaking_eligibility*.sql"
       - ".github/workflows/server-matchmaking-eligibility.yml"
   push:
@@ -18,6 +19,8 @@ on:
       - "supabase/migrations/20261116130000_server_matchmaking_eligibility_gate.sql"
       - "supabase/migrations/20261116150000_general_dating_optional_roles.sql"
       - "supabase/migrations/20261116160000_mutual_discovery_preference_eligibility.sql"
+      - "supabase/migrations/20261116170000_member_dating_interests_lifestyle.sql"
+      - "index.html"
       - "supabase/tests/server_matchmaking_eligibility*.sql"
       - ".github/workflows/server-matchmaking-eligibility.yml"
 

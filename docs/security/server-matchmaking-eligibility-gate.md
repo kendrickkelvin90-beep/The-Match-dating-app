@@ -74,3 +74,8 @@ The browser receives only:
 It does not receive another member's raw interest array through this scoring RPC. Discover can use the score to order profiles when the member enables the shared-interest priority preference, and the card labels the figure as interest overlap rather than an overall compatibility guarantee.
 
 The profile editor also displays a live 10-interest selection counter and disables additional unselected options once the limit is reached. The database trigger remains the authoritative validation boundary.
+
+
+## Adults-only write enforcement
+
+The database migration `20261116190000_adult_age_enforcement.sql` adds a trigger that rejects profile inserts or age updates below 18. It does not rewrite existing profile rows; the server-side completeness and Discover gates independently exclude any legacy under-18 record. The browser age check is only a convenience and is not the security boundary.

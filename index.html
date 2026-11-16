@@ -8088,9 +8088,6 @@ function profileDetailsAreComplete() {
   const interest = $("interest")?.value?.trim();
   const city = $("city")?.value?.trim();
   const bio = $("bio")?.value?.trim();
-  const roles = document.querySelectorAll(
-    'input[name="sexualRole"]:checked'
-  );
 
   const invalid = ["", "not listed", "unknown", "member"];
 
@@ -8103,7 +8100,7 @@ function profileDetailsAreComplete() {
     !invalid.includes((city || "").toLowerCase()) &&
     !!bio &&
     bio.toLowerCase() !== "no description added yet." &&
-    roles.length > 0
+    true
   );
 }
 

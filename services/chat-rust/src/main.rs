@@ -37,8 +37,8 @@ struct SupabaseUser {
     id: Uuid,
 }
 
-fn error(status: StatusCode, message: &'static str) -> impl IntoResponse {
-    (status, Json(ErrorResponse { error: message }))
+fn error(status: StatusCode, message: &'static str) -> axum::response::Response {
+    (status, Json(ErrorResponse { error: message })).into_response()
 }
 
 fn bearer_token(headers: &HeaderMap) -> Option<&str> {

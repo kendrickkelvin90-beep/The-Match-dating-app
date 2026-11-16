@@ -52,6 +52,11 @@ create table public.premium_memberships (
   premium_until timestamptz not null
 );
 
+create table public.member_onboarding (
+  user_id uuid primary key,
+  answers jsonb not null default '{}'::jsonb
+);
+
 create function public.is_match_profile_complete(target_user_id uuid)
 returns boolean
 language sql

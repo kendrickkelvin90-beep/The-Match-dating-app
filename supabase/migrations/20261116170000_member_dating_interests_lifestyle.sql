@@ -98,6 +98,11 @@ begin
   end if;
 
   return query
+  with visible_members as (
+    select visible.id
+    from public.discover_profiles_secure(20050, 18, 99, null) visible
+    where visible.id = any(coalesce(p_user_ids, '{}'::uuid[]))
+  )
   select
     d.user_id,
     case when d.share_interests then d.interests else null end,
@@ -107,6 +112,7 @@ begin
     case when d.share_lifestyle then d.pets else null end,
     case when d.share_lifestyle then d.children else null end
   from public.member_dating_details d
+  join visible_members visible on visible.id = d.user_id
   where d.user_id = any(coalesce(p_user_ids, '{}'::uuid[]))
     and (d.share_interests or d.share_lifestyle);
 end;

@@ -117,14 +117,20 @@ security invoker
 set search_path = ''
 as $function$
 begin
-  if new.share_for_matching then
-    if tg_op = 'INSERT' or not old.share_for_matching then
+  if tg_op = 'INSERT' then
+    if new.share_for_matching then
       new.consent_version := 'v1';
       new.consented_at := pg_catalog.now();
     else
-      new.consent_version := old.consent_version;
-      new.consented_at := old.consented_at;
+      new.consent_version := null;
+      new.consented_at := null;
     end if;
+  elsif new.share_for_matching and not old.share_for_matching then
+    new.consent_version := 'v1';
+    new.consented_at := pg_catalog.now();
+  elsif new.share_for_matching then
+    new.consent_version := old.consent_version;
+    new.consented_at := old.consented_at;
   else
     new.consent_version := null;
     new.consented_at := null;

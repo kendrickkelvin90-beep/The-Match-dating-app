@@ -14,7 +14,8 @@ values
   ('00000000-0000-4000-8000-000000000009', 'No Primary Photo', 'Man', 'Men', 'A complete profile without its primary photo', 'Lagos', 28, false, array['Top'], 'none'),
   ('00000000-0000-4000-8000-000000000010', 'No Role', 'Man', 'All genders', 'A complete profile with no role selected', 'Lagos', 29, false, array[]::text[], 'none'),
   ('00000000-0000-4000-8000-000000000011', 'One-way mismatch A', 'Man', 'Women', 'A complete profile with a one-way preference', 'Lagos', 29, false, array['Top'], 'none'),
-  ('00000000-0000-4000-8000-000000000012', 'One-way mismatch B', 'Woman', 'Women', 'A complete profile with a one-way preference', 'Lagos', 29, false, array['Bottom'], 'none');
+  ('00000000-0000-4000-8000-000000000012', 'One-way mismatch B', 'Woman', 'Women', 'A complete profile with a one-way preference', 'Lagos', 29, false, array['Bottom'], 'none'),
+  ('00000000-0000-4000-8000-000000000013', 'Underage test account', 'Man', 'Women', 'An underage account must never become discoverable', 'Lagos', 17, false, array[]::text[], 'none');
 
 insert into public.member_onboarding (user_id, answers)
 values
@@ -29,7 +30,8 @@ values
   ('00000000-0000-4000-8000-000000000009', '{"sexual_orientation":"Straight / heterosexual","relationship_goal":"A relationship"}'),
   ('00000000-0000-4000-8000-000000000010', '{"sexual_orientation":"Bisexual","relationship_goal":"A relationship"}'),
   ('00000000-0000-4000-8000-000000000011', '{"sexual_orientation":"Straight / heterosexual","relationship_goal":"A relationship"}'),
-  ('00000000-0000-4000-8000-000000000012', '{"sexual_orientation":"Straight / heterosexual","relationship_goal":"A relationship"}');
+  ('00000000-0000-4000-8000-000000000012', '{"sexual_orientation":"Straight / heterosexual","relationship_goal":"A relationship"}'),
+  ('00000000-0000-4000-8000-000000000013', '{"sexual_orientation":"Straight / heterosexual","relationship_goal":"A relationship"}');
 
 insert into public.profile_photos (user_id, storage_path, position)
 select ids.user_id, ids.user_id::text || '-' || photo_no::text,
@@ -46,7 +48,8 @@ from (values
   ('00000000-0000-4000-8000-000000000009'::uuid),
   ('00000000-0000-4000-8000-000000000010'::uuid),
   ('00000000-0000-4000-8000-000000000011'::uuid),
-  ('00000000-0000-4000-8000-000000000012'::uuid)
+  ('00000000-0000-4000-8000-000000000012'::uuid),
+  ('00000000-0000-4000-8000-000000000013'::uuid)
 ) ids(user_id)
 cross join generate_series(1,2) photo_no;
 
@@ -72,6 +75,10 @@ begin
 
   if not public.is_match_profile_complete('00000000-0000-4000-8000-000000000001') then
     raise exception 'A viewer with no role preference must still have a complete profile';
+  end if;
+
+  if public.is_match_profile_complete('00000000-0000-4000-8000-000000000013') then
+    raise exception 'An account under 18 must never qualify as a complete dating profile';
   end if;
 
   select array_agg(user_id order by user_id)

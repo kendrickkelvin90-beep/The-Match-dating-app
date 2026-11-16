@@ -399,4 +399,73 @@ begin
 end;
 $$;
 
+
+-- Optional dating profile extras remain private unless the member opts in.
+update public.member_dating_details
+set relationship_intention = 'Long-term relationship',
+    communication_style = 'Deep conversations',
+    languages = array['English','Yoruba'],
+    education_level = 'Undergraduate',
+    occupation = 'Designer',
+    favorite_music = 'Afrobeats',
+    favorite_movies = 'Comedy',
+    favorite_food = 'Jollof rice',
+    share_profile_extras = true
+where user_id = '00000000-0000-4000-8000-000000000002';
+
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
+do $
+declare
+  extras_row record;
+begin
+  select * into extras_row
+  from public.get_shared_profile_extras(array[
+    '00000000-0000-4000-8000-000000000002'::uuid,
+    '00000000-0000-4000-8000-000000000003'::uuid,
+    '00000000-0000-4000-8000-000000000010'::uuid
+  ])
+  where user_id = '00000000-0000-4000-8000-000000000002';
+
+  if extras_row.relationship_intention <> 'Long-term relationship'
+     or extras_row.communication_style <> 'Deep conversations'
+     or extras_row.languages is distinct from array['English','Yoruba']::text[]
+     or extras_row.occupation <> 'Designer'
+     or extras_row.favorite_food <> 'Jollof rice' then
+    raise exception 'Opted-in dating profile extras were not returned correctly';
+  end if;
+
+  if (select count(*) from public.get_shared_profile_extras(array[
+    '00000000-0000-4000-8000-000000000002'::uuid,
+    '00000000-0000-4000-8000-000000000003'::uuid,
+    '00000000-0000-4000-8000-000000000010'::uuid
+  ])) <> 1 then
+    raise exception 'Only the member who opted in should expose profile extras';
+  end if;
+end;
+$;
+
+do $
+begin
+  begin
+    update public.member_dating_details
+    set languages = array['English','Yoruba','Igbo','Hausa','French','Spanish','Arabic','German','Portuguese']
+    where user_id = '00000000-0000-4000-8000-000000000002';
+    raise exception 'More than eight languages unexpectedly passed validation';
+  exception when sqlstate '22023' then
+    null;
+  end;
+end;
+$;
+
+do $
+begin
+  if has_function_privilege('anon','public.get_shared_profile_extras(uuid[])','EXECUTE') then
+    raise exception 'Anonymous role must not execute shared profile extras RPC';
+  end if;
+  if not has_function_privilege('authenticated','public.get_shared_profile_extras(uuid[])','EXECUTE') then
+    raise exception 'Authenticated role must execute shared profile extras RPC';
+  end if;
+end;
+$;
+
 select 'server matchmaking eligibility tests passed' as result;

@@ -16,6 +16,21 @@ values
   ('00000000-0000-4000-8000-000000000011', 'One-way mismatch A', 'Man', 'Women', 'A complete profile with a one-way preference', 'Lagos', 29, false, array['Top'], 'none'),
   ('00000000-0000-4000-8000-000000000012', 'One-way mismatch B', 'Woman', 'Women', 'A complete profile with a one-way preference', 'Lagos', 29, false, array['Bottom'], 'none');
 
+insert into public.member_onboarding (user_id, answers)
+values
+  ('00000000-0000-4000-8000-000000000001', '{"sexual_orientation":"Straight / heterosexual"}'),
+  ('00000000-0000-4000-8000-000000000002', '{"sexual_orientation":"Straight / heterosexual"}'),
+  ('00000000-0000-4000-8000-000000000003', '{"sexual_orientation":"Straight / heterosexual"}'),
+  ('00000000-0000-4000-8000-000000000004', '{"sexual_orientation":"Straight / heterosexual"}'),
+  ('00000000-0000-4000-8000-000000000005', '{"sexual_orientation":"Straight / heterosexual"}'),
+  ('00000000-0000-4000-8000-000000000006', '{"sexual_orientation":"Straight / heterosexual"}'),
+  ('00000000-0000-4000-8000-000000000007', '{"sexual_orientation":"Straight / heterosexual"}'),
+  ('00000000-0000-4000-8000-000000000008', '{"sexual_orientation":"Straight / heterosexual"}'),
+  ('00000000-0000-4000-8000-000000000009', '{"sexual_orientation":"Straight / heterosexual"}'),
+  ('00000000-0000-4000-8000-000000000010', '{"sexual_orientation":"Bisexual"}'),
+  ('00000000-0000-4000-8000-000000000011', '{"sexual_orientation":"Straight / heterosexual"}'),
+  ('00000000-0000-4000-8000-000000000012', '{"sexual_orientation":"Straight / heterosexual"}');
+
 insert into public.profile_photos (user_id, storage_path, position)
 select ids.user_id, ids.user_id::text || '-' || photo_no::text,
        case when ids.user_id = '00000000-0000-4000-8000-000000000009'::uuid then photo_no else photo_no - 1 end
@@ -65,8 +80,7 @@ begin
 
   if found_ids is distinct from array[
     '00000000-0000-4000-8000-000000000002'::uuid,
-    '00000000-0000-4000-8000-000000000007'::uuid,
-    '00000000-0000-4000-8000-000000000010'::uuid
+    '00000000-0000-4000-8000-000000000007'::uuid
   ] then
     raise exception 'Expected only complete, active, unblocked candidates; got %', found_ids;
   end if;
@@ -105,6 +119,24 @@ begin
   if found_ids is distinct from array['00000000-0000-4000-8000-000000000002'::uuid] then
     raise exception 'Distance filter did not preserve the production Discover result: %', found_ids;
   end if;
+  -- A bisexual viewer can discover straight and bisexual members; the
+  -- straight-only audience gate is not applied to bisexual members.
+  update public.member_onboarding
+  set answers = jsonb_set(answers, '{sexual_orientation}', '"Bisexual"')
+  where user_id = '00000000-0000-4000-8000-000000000001';
+
+  select array_agg(user_id order by user_id)
+    into found_ids
+  from public.matchmaking_eligible_candidate_ids();
+
+  if found_ids is distinct from array[
+    '00000000-0000-4000-8000-000000000002'::uuid,
+    '00000000-0000-4000-8000-000000000007'::uuid,
+    '00000000-0000-4000-8000-000000000010'::uuid
+  ] then
+    raise exception 'Bisexual members should retain access to compatible straight and bisexual members: %', found_ids;
+  end if;
+
   if not private.match_preference_accepts_gender('Men', 'Trans man')
      or private.match_preference_accepts_gender('Men', 'Woman')
      or not private.match_preference_accepts_gender('Women', 'Trans woman')

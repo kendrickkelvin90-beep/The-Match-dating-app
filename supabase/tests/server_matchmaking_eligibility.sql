@@ -15,7 +15,7 @@ values
   ('00000000-0000-4000-8000-000000000010', 'No Role', 'Man', 'All genders', 'A complete profile with no role selected', 'Lagos', 29, false, array[]::text[], 'none'),
   ('00000000-0000-4000-8000-000000000011', 'One-way mismatch A', 'Man', 'Women', 'A complete profile with a one-way preference', 'Lagos', 29, false, array['Top'], 'none'),
   ('00000000-0000-4000-8000-000000000012', 'One-way mismatch B', 'Woman', 'Women', 'A complete profile with a one-way preference', 'Lagos', 29, false, array['Bottom'], 'none'),
-  ('00000000-0000-4000-8000-000000000013', 'Underage test account', 'Man', 'Women', 'An underage account must never become discoverable', 'Lagos', 17, false, array[]::text[], 'none');
+  ('00000000-0000-4000-8000-000000000013', 'Underage test account', 'Man', 'Women', 'An underage account must never become discoverable', 'Lagos', null, false, array[]::text[], 'none');
 
 insert into public.member_onboarding (user_id, answers)
 values
@@ -75,6 +75,19 @@ begin
 
   if not public.is_match_profile_complete('00000000-0000-4000-8000-000000000001') then
     raise exception 'A viewer with no role preference must still have a complete profile';
+  end if;
+
+  begin
+    update public.profiles
+    set age = 17
+    where id = '00000000-0000-4000-8000-000000000013';
+    raise exception 'The database unexpectedly accepted an under-18 profile age';
+  exception when check_violation then
+    null;
+  end;
+
+  if (select age from public.profiles where id = '00000000-0000-4000-8000-000000000013') is not null then
+    raise exception 'The under-18 profile age was persisted despite the database guard';
   end if;
 
   if public.is_match_profile_complete('00000000-0000-4000-8000-000000000013') then

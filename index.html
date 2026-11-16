@@ -11106,13 +11106,23 @@ async function attachSharedDatingDetails(people) {
   if (!currentUser?.id || !Array.isArray(people) || !people.length) return people;
   const ids = people.map(person => person.id).filter(Boolean);
   if (!ids.length) return people;
-  const { data, error } = await db.rpc("get_shared_dating_details", { p_user_ids: ids.slice(0, 100) });
+  const [{ data, error }, ownResult] = await Promise.all([
+    db.rpc("get_shared_dating_details", { p_user_ids: ids.slice(0, 100) }),
+    db.from("member_dating_details").select("interests").eq("user_id", currentUser.id).maybeSingle()
+  ]);
   if (error) throw error;
+  if (ownResult.error) throw ownResult.error;
+  const ownInterests = new Set(ownResult.data?.interests || []);
   const byId = new Map((data || []).map(row => [row.user_id, row]));
-  return people.map(person => ({
-    ...person,
-    shared_dating_details: byId.get(person.id) || null
-  }));
+  return people.map(person => {
+    const shared = byId.get(person.id) || null;
+    const sharedInterests = Array.isArray(shared?.interests) ? shared.interests : [];
+    return {
+      ...person,
+      shared_dating_details: shared,
+      _sharedInterestCount: sharedInterests.filter(interest => ownInterests.has(interest)).length
+    };
+  });
 }
 
 function appendSharedDatingDetails(panel, details) {
@@ -11292,6 +11302,9 @@ let people = (peopleData || []).filter(person => eligibleIds.has(person.id)).map
       const j = Math.floor(Math.random() * (i + 1));
       [people[i], people[j]] = [people[j], people[i]];
     }
+    if (savedPreferences.prioritiseSharedInterests) {
+      people.sort((a, b) => (b._sharedInterestCount || 0) - (a._sharedInterestCount || 0));
+    }
 
 
 
@@ -11416,6 +11429,9 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
   for (let i = people.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [people[i], people[j]] = [people[j], people[i]];
+  }
+  if (savedPreferences.prioritiseSharedInterests) {
+    people.sort((a, b) => (b._sharedInterestCount || 0) - (a._sharedInterestCount || 0));
   }
 }
 

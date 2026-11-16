@@ -10,6 +10,7 @@ on:
       - "supabase/migrations/20261116180000_interest_match_scores.sql"
       - "supabase/migrations/20261116190000_adult_age_enforcement.sql"
       - "supabase/migrations/20261116200000_member_profile_extras.sql"
+      - "supabase/migrations/20261116210000_secure_chat_typing_broadcasts.sql"
       - "index.html"
       - "supabase/tests/server_matchmaking_eligibility*.sql"
       - ".github/workflows/server-matchmaking-eligibility.yml"
@@ -81,6 +82,11 @@ jobs:
           if "sexual_roles:" not in html or ": []" not in html:
               raise SystemExit("Profile save must support an empty sexual_roles array")
           print("Verified that sexual-role selection is optional in the frontend")
+          if 'config: { private: true, broadcast: { self: false } }' not in html:
+              raise SystemExit("Chat typing must use a private Realtime channel")
+          if "handleChatTypingInput" not in html or "chatTypingStatus" not in html:
+              raise SystemExit("Chat typing indicator UI or input handler is missing")
+          print("Verified that chat typing uses a private Realtime channel")
 
       - name: Prepare isolated Discover schema and synthetic fixtures
         env:
@@ -107,6 +113,8 @@ jobs:
             -f supabase/migrations/20261116190000_adult_age_enforcement.sql
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/migrations/20261116200000_member_profile_extras.sql
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/migrations/20261116210000_secure_chat_typing_broadcasts.sql
       - name: Run moderation, block, completeness, and preference assertions
         env:
           PGPASSWORD: postgres

@@ -169,6 +169,23 @@ begin
 end;
 $;
 
+-- Direct table access must remain owner-only; shared data is exposed only
+-- through the explicit opt-in RPC tested below.
+set role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
+do $
+begin
+  if exists (
+    select 1 from public.member_dating_details
+    where user_id = '00000000-0000-4000-8000-000000000002'
+  ) then
+    raise exception 'A member can directly read another member''s private dating details';
+  end if;
+end;
+$;
+reset role;
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
+
 insert into public.member_dating_details
   (user_id, interests, smoking, drinking, activity_level, pets, children, share_interests, share_lifestyle)
 values

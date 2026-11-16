@@ -1,0 +1,32 @@
+name: Rust chat service checks
+
+on:
+  pull_request:
+    paths:
+      - "services/chat-rust/**"
+      - ".github/workflows/rust-chat-service.yml"
+  push:
+    branches:
+      - "feat/rust-chat-service-foundation"
+    paths:
+      - "services/chat-rust/**"
+      - ".github/workflows/rust-chat-service.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  rust-checks:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/chat-rust
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --check
+      - run: cargo test --locked
+      - run: cargo clippy --all-targets --all-features -- -D warnings

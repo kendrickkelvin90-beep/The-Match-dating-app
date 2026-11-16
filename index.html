@@ -9461,61 +9461,27 @@ const onboardingQuestions = [
     safety: true
   },
   {
-    key: "respect_boundaries",
-    title: "Will you respect other members' boundaries, consent, and privacy?",
+    key: "safety_commitment",
+    title: "Will you respect consent, boundaries, privacy and other members?",
+    help: "Harassment, threats, impersonation, scams and sharing private information without permission are not allowed.",
     options: ["Yes, I agree", "No, I don't agree"],
     values: ["yes", "no"],
     safety: true
   },
   {
-    key: "community_safety",
-    title: "Will you avoid harassment, threats, impersonation, scams, and sharing private information without permission?",
-    options: ["Yes, I agree", "No, I don't agree"],
-    values: ["yes", "no"],
-    safety: true
-  },
-  {
-    key: "terms_accepted",
-    title: "Do you agree to The Match Community Guidelines and Terms of Service after reviewing the linked documents?",
-    options: ["Yes, I agree", "No, I don't agree"],
-    values: ["yes", "no"],
-    safety: true
-  },
-  {
-    key: "privacy_acknowledged",
-    title: "Have you read The Match Privacy Policy and understood how your information may be used?",
-    options: ["Yes, I have read and understood it", "No, I have not"],
-    values: ["yes", "no"],
-    safety: true
-  },
-  {
-    key: "sensitive_data_consent",
-    title: "Do you explicitly consent to The Match processing sensitive information you choose to provide, including information that may reveal sexual orientation or sex life, as explained in the Privacy Policy, to provide dating, matching and safety features?",
-    help: "You can review the Privacy Policy before answering. This consent is recorded with your onboarding answers.",
-    options: ["Yes, I explicitly consent", "No, I do not consent"],
-    values: ["yes", "no"],
-    safety: true
-  },
-  {
-    key: "gender_identity",
-    title: "How do you describe your gender identity?",
-    options: ["Man", "Woman", "Trans man", "Trans woman", "Non-binary", "Another identity", "Prefer not to say"]
-  },
-  {
-    key: "sexual_orientation",
-    title: "How do you describe your sexual orientation?",
-    options: ["Straight / heterosexual", "Gay", "Lesbian", "Bisexual", "Pansexual", "Queer", "Asexual", "Another orientation", "Prefer not to say"]
-  },
-  {
-    key: "interested_in",
-    title: "Who would you like to meet?",
-    help: "Choose the option that best describes your preference.",
-    options: ["Men", "Women", "Men and women", "All genders", "I'll decide later"]
+    key: "legal_consents",
+    title: "A few important things before you join",
+    help: "Please review the Terms and Privacy Policy. Each item below requires your own agreement.",
+    checklist: [
+      { key: "terms_accepted", label: "I agree to the Terms of Service and Community Guidelines." },
+      { key: "privacy_acknowledged", label: "I have read and understood the Privacy Policy." },
+      { key: "sensitive_data_consent", label: "I explicitly consent to the use of sensitive information I choose to provide, including information about sexual orientation, for the dating and safety features explained in the Privacy Policy." }
+    ]
   },
   {
     key: "relationship_goal",
-    title: "What are you looking for?",
-    options: ["A relationship", "Dating", "Friendship", "Still figuring it out"]
+    title: "What kind of connection are you looking for?",
+    options: ["A relationship", "Dating", "Friendship", "Something casual", "Still figuring it out"]
   },
   {
     key: "phone_number",
@@ -9545,7 +9511,7 @@ window.addEventListener("message", event => {
   onboardingAnswers.terms_accepted = decision;
   const termsModal = $("termsReviewModal");
   if (termsModal) termsModal.classList.add("hidden");
-  if (onboardingQuestions[onboardingIndex]?.key === "terms_accepted") {
+  if (onboardingQuestions[onboardingIndex]?.key === "legal_consents") {
     renderOnboardingQuestion();
   }
   status("onboardingStatus",
@@ -9560,9 +9526,7 @@ function renderOnboardingQuestion() {
   const q = onboardingQuestions[onboardingIndex];
   if (!q) return;
 
-  $("onboardingStepLabel").textContent =
-    onboardingIndex < 4 ? "Step 1 of 3" :
-    onboardingIndex < 8 ? "Step 2 of 3" : "Step 3 of 3";
+  $("onboardingStepLabel").textContent = "Quick account setup";
 
   $("onboardingProgressText").textContent =
     `Question ${onboardingIndex + 1} of ${onboardingQuestions.length}`;
@@ -9574,7 +9538,25 @@ function renderOnboardingQuestion() {
   $("onboardingHelp").textContent = q.help || "";
   $("onboardingAnswers").replaceChildren();
 
-  if (q.input) {
+  if (Array.isArray(q.checklist)) {
+    q.checklist.forEach(item => {
+      const label = document.createElement("label");
+      label.style.cssText = "display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid rgba(210,173,104,.28);border-radius:12px;line-height:1.5;";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = onboardingAnswers[item.key] === "yes";
+      checkbox.style.cssText = "margin-top:4px;flex:0 0 auto;";
+      checkbox.addEventListener("change", () => {
+        onboardingAnswers[item.key] = checkbox.checked ? "yes" : "no";
+        $("onboardingNext").disabled =
+          !q.checklist.every(entry => onboardingAnswers[entry.key] === "yes");
+      });
+      const text = document.createElement("span");
+      text.textContent = item.label;
+      label.append(checkbox, text);
+      $("onboardingAnswers").appendChild(label);
+    });
+  } else if (q.input) {
     const input = document.createElement("input");
     input.type = q.key === "recovery_email" ? "email" : "tel";
     input.autocomplete = q.key === "phone_number" ? "tel" : "email";
@@ -9620,9 +9602,11 @@ input.addEventListener("input", () => {
       : "Continue";
 
   $("onboardingNext").disabled =
-    q.input
-      ? (!q.optional && !onboardingAnswers[q.key])
-      : !onboardingAnswers[q.key];
+    Array.isArray(q.checklist)
+      ? !q.checklist.every(item => onboardingAnswers[item.key] === "yes")
+      : q.input
+        ? (!q.optional && !onboardingAnswers[q.key])
+        : !onboardingAnswers[q.key];
 
   status("onboardingStatus", "");
 }
@@ -9662,10 +9646,20 @@ $("onboardingNext").onclick = () => {
     onboardingAnswers[q.key] = value;
   }
 
+  if (Array.isArray(q.checklist) &&
+      !q.checklist.every(item => onboardingAnswers[item.key] === "yes")) {
+    status("onboardingStatus", "Please confirm each item to continue.", true);
+    return;
+  }
+
   if (q.safety && onboardingAnswers[q.key] !== "yes") {
     status("onboardingStatus",
       "You must agree to this requirement to continue.", true);
     return;
+  }
+  if (q.key === "safety_commitment") {
+    onboardingAnswers.respect_boundaries = "yes";
+    onboardingAnswers.community_safety = "yes";
   }
 
   if (onboardingIndex < onboardingQuestions.length - 1) {

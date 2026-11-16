@@ -6,7 +6,7 @@ This isolated, stateless prototype ranks a caller-supplied set of eligible candi
 
 - `GET /health` provides a basic health response.
 - `POST /v1/matchmaking/rank` ranks 1–100 candidate records using up to 30 explicit interests per member.
-- Results include shared-interest explanations.
+- Results include shared-interest explanations. Scores use the Jaccard formula: shared interests divided by the union of both interest lists, expressed as a percentage.
 - The engine is deterministic and does not store requests or member data.
 
 ## Privacy and safety boundaries

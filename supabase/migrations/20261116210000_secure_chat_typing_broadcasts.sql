@@ -2,6 +2,34 @@
 -- named in the conversation topic. No message text or typing history is stored.
 begin;
 
+create or replace function public.can_use_match_typing_channel(
+  p_member_a uuid,
+  p_member_b uuid
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+  select auth.uid() is not null
+    and p_member_a is not null
+    and p_member_b is not null
+    and p_member_a <> p_member_b
+    and auth.uid() in (p_member_a, p_member_b)
+    and not exists (
+      select 1
+      from public.member_blocks block_record
+      where (block_record.blocker_id = p_member_a and block_record.blocked_id = p_member_b)
+         or (block_record.blocker_id = p_member_b and block_record.blocked_id = p_member_a)
+    );
+$function$;
+
+revoke all on function public.can_use_match_typing_channel(uuid, uuid)
+  from public, anon;
+grant execute on function public.can_use_match_typing_channel(uuid, uuid)
+  to authenticated;
+
 do $migration$
 begin
   if to_regclass('realtime.messages') is null then
@@ -20,16 +48,9 @@ begin
           split_part(realtime.topic(), ':', 2),
           split_part(realtime.topic(), ':', 3)
         )
-        and not exists (
-          select 1
-          from public.member_blocks block_record
-          where (
-            block_record.blocker_id::text = split_part(realtime.topic(), ':', 2)
-            and block_record.blocked_id::text = split_part(realtime.topic(), ':', 3)
-          ) or (
-            block_record.blocker_id::text = split_part(realtime.topic(), ':', 3)
-            and block_record.blocked_id::text = split_part(realtime.topic(), ':', 2)
-          )
+        and public.can_use_match_typing_channel(
+          split_part(realtime.topic(), ':', 2)::uuid,
+          split_part(realtime.topic(), ':', 3)::uuid
         )
       )
     $policy$;
@@ -50,16 +71,9 @@ begin
         )
         and payload -> 'payload' ->> 'user_id' = auth.uid()::text
         and payload -> 'payload' ->> 'is_typing' in ('true','false')
-        and not exists (
-          select 1
-          from public.member_blocks block_record
-          where (
-            block_record.blocker_id::text = split_part(realtime.topic(), ':', 2)
-            and block_record.blocked_id::text = split_part(realtime.topic(), ':', 3)
-          ) or (
-            block_record.blocker_id::text = split_part(realtime.topic(), ':', 3)
-            and block_record.blocked_id::text = split_part(realtime.topic(), ':', 2)
-          )
+        and public.can_use_match_typing_channel(
+          split_part(realtime.topic(), ':', 2)::uuid,
+          split_part(realtime.topic(), ':', 3)::uuid
         )
       )
     $policy$;

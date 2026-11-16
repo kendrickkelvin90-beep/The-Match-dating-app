@@ -400,6 +400,13 @@ end;
 $$;
 
 
+-- The viewer's own dating preferences remain private while scoring candidates.
+update public.member_dating_details
+set relationship_intention = 'Long-term relationship',
+    communication_style = 'Deep conversations',
+    languages = array['English','Yoruba']
+where user_id = '00000000-0000-4000-8000-000000000001';
+
 -- Optional dating profile extras remain private unless the member opts in.
 update public.member_dating_details
 set relationship_intention = 'Long-term relationship',
@@ -457,7 +464,61 @@ begin
 end;
 $$;
 
-do $$
+do $
+declare
+  compatibility_row record;
+begin
+  select * into compatibility_row
+  from public.get_dating_compatibility_scores(array[
+    '00000000-0000-4000-8000-000000000002'::uuid,
+    '00000000-0000-4000-8000-000000000007'::uuid,
+    '00000000-0000-4000-8000-000000000010'::uuid
+  ])
+  where user_id = '00000000-0000-4000-8000-000000000002';
+
+  if compatibility_row.compatibility_percent <> 83
+     or compatibility_row.scored_dimensions <> 4
+     or compatibility_row.shared_interest_count <> 2
+     or compatibility_row.interest_match_percent <> 67
+     or compatibility_row.relationship_intention_match is distinct from true
+     or compatibility_row.communication_style_match is distinct from true
+     or compatibility_row.shared_language_count <> 2 then
+    raise exception 'Explainable compatibility score did not match the opted-in fixture data';
+  end if;
+
+  select * into compatibility_row
+  from public.get_dating_compatibility_scores(array[
+    '00000000-0000-4000-8000-000000000007'::uuid
+  ])
+  where user_id = '00000000-0000-4000-8000-000000000007';
+
+  if compatibility_row.scored_dimensions <> 1
+     or compatibility_row.compatibility_percent <> 33 then
+    raise exception 'Interest-only compatibility should use only the available opted-in dimension';
+  end if;
+
+  if exists (
+    select 1 from public.get_dating_compatibility_scores(array[
+      '00000000-0000-4000-8000-000000000010'::uuid
+    ])
+  ) then
+    raise exception 'Lifestyle-only consent must not expose or score unshared profile details';
+  end if;
+end;
+$;
+
+do $
+begin
+  if has_function_privilege('anon','public.get_dating_compatibility_scores(uuid[])','EXECUTE') then
+    raise exception 'Anonymous role must not execute compatibility scoring';
+  end if;
+  if not has_function_privilege('authenticated','public.get_dating_compatibility_scores(uuid[])','EXECUTE') then
+    raise exception 'Authenticated role must execute compatibility scoring';
+  end if;
+end;
+$;
+
+do $
 begin
   if has_function_privilege('anon','public.get_shared_profile_extras(uuid[])','EXECUTE') then
     raise exception 'Anonymous role must not execute shared profile extras RPC';

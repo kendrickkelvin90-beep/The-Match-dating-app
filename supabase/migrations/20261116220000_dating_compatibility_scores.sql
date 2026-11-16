@@ -155,10 +155,10 @@ begin
           then 10.0 * metrics.shared_language_count / metrics.language_union_count else 0 end
       ) as weighted_score,
       (
-        (metrics.interest_weight > 0)::integer
-        + (metrics.intention_weight > 0)::integer
-        + (metrics.communication_weight > 0)::integer
-        + (metrics.language_weight > 0)::integer
+        case when metrics.interest_weight > 0 then 1 else 0 end
+        + case when metrics.intention_weight > 0 then 1 else 0 end
+        + case when metrics.communication_weight > 0 then 1 else 0 end
+        + case when metrics.language_weight > 0 then 1 else 0 end
       ) as dimension_count
     from raw_metrics metrics
   )

@@ -47,6 +47,24 @@ create table public.member_blocks (
   blocker_id uuid not null,
   blocked_id uuid not null
 );
+
+-- Minimal Supabase Realtime authorization surface for the disposable CI DB.
+create schema realtime;
+create table realtime.messages (
+  topic text not null,
+  extension text not null,
+  payload jsonb not null
+);
+create function realtime.topic()
+returns text
+language sql
+stable
+as $
+  select nullif(current_setting('request.realtime.topic', true), '')
+$;
+alter table realtime.messages enable row level security;
+grant usage on schema realtime to authenticated;
+grant select, insert on realtime.messages to authenticated;
 create table public.premium_memberships (
   user_id uuid primary key,
   premium_until timestamptz not null

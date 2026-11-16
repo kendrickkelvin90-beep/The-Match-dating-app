@@ -6171,6 +6171,7 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
   <div class="member-card" style="margin-top:12px">
     <strong>Things I enjoy</strong>
     <p class="small">Choose up to 10 interests.</p>
+    <p id="datingInterestCount" class="small" aria-live="polite">0 of 10 selected</p>
     <div class="dating-interest-grid">
       <label><input type="checkbox" name="datingInterest" value="Music"> Music</label>
       <label><input type="checkbox" name="datingInterest" value="Movies & TV"> Movies & TV</label>
@@ -10866,7 +10867,25 @@ async function loadMyDatingDetails() {
   $("datingChildren").value = saved.children || "Prefer not to say";
   $("shareDatingInterests").checked = saved.share_interests === true;
   $("shareDatingLifestyle").checked = saved.share_lifestyle === true;
+  refreshDatingInterestCounter();
 }
+
+function refreshDatingInterestCounter() {
+  const inputs = Array.from(document.querySelectorAll('input[name="datingInterest"]'));
+  const selectedCount = inputs.filter(input => input.checked).length;
+  const counter = $("datingInterestCount");
+  if (counter) {
+    counter.textContent = selectedCount + " of 10 selected";
+    counter.style.color = selectedCount > 10 ? "#d97777" : "";
+  }
+  inputs.forEach(input => {
+    input.disabled = !input.checked && selectedCount >= 10;
+  });
+}
+
+document.querySelectorAll('input[name="datingInterest"]').forEach(input => {
+  input.addEventListener("change", refreshDatingInterestCounter);
+});
 
 async function showProfile(user, restoreToDiscover = false){
 if (!(await enforceMemberModeration(user))) return;

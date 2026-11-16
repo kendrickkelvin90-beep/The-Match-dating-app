@@ -7036,6 +7036,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     <input id="straightDistance" class="discovery-range" type="range" min="1" max="50" step="1" value="50">
     <label for="straightLookingFor">What kind of connection?</label>
     <select id="straightLookingFor"><option value="">No preference</option><option value="relationship">A relationship</option><option value="dating">Dating</option><option value="friendship">Friendship</option><option value="casual">Something casual</option><option value="exploring">Still figuring it out</option></select>
+    <label class="discovery-toggle-row" for="straightPrioritiseSharedInterests"><span><strong>Prioritise shared interests</strong><small>Show people with hobbies in common nearer the top.</small></span><input id="straightPrioritiseSharedInterests" type="checkbox"></label>
     <p class="discovery-helper">Straight members are matched with other members who have also identified as straight, and only when both people's preferences are compatible.</p>
     <div class="discovery-save-actions"><button class="btn primary" id="saveStraightDiscoveryPreferences" type="button">Save preferences</button></div>
     <p class="status" id="straightDiscoveryPreferencesStatus" role="status" aria-live="polite"></p>
@@ -7099,6 +7100,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     </select>
     <label for="discoveryInterests">Interests &amp; hobbies <span class="discovery-optional">OPTIONAL</span></label>
     <input id="discoveryInterests" type="text" placeholder="Music, movies, travel..." maxlength="160">
+    <label class="discovery-toggle-row" for="prioritiseSharedInterests"><span><strong>Prioritise shared interests</strong><small>Show people with hobbies in common nearer the top.</small></span><input id="prioritiseSharedInterests" type="checkbox"></label>
   </div>
 
   <div class="discovery-preference-card">
@@ -14636,7 +14638,8 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
         maxAge,
         location: $("straightLocation").value.trim(),
         distance: Math.min(Number($("straightDistance").value), premium ? 200 : 50),
-        lookingFor: $("straightLookingFor").value
+        lookingFor: $("straightLookingFor").value,
+        prioritiseSharedInterests: $("straightPrioritiseSharedInterests").checked
       };
       const interestedIn = saved.straight.showMe === "men" ? "Men"
         : saved.straight.showMe === "women" ? "Women" : "Men and women";
@@ -14670,6 +14673,8 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
     showMe: $("discoveryShowMe").value,
     lookingFor: $("discoveryLookingFor").value,
     interests: $("discoveryInterests").value.trim(),
+    prioritiseSharedInterests: $("prioritiseSharedInterests").checked,
+    straight: (await getCurrentAccountDiscoveryPreferences()).straight || {},
     verifiedOnly: premium && $("discoveryVerifiedOnly").checked,
     recentlyActive: premium && $("discoveryRecentlyActive").checked,
     expandRange: premium && $("discoveryExpandRange").checked,
@@ -14743,6 +14748,8 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
     $("straightLocation").value = straightSaved.location ?? "";
     $("straightShowMe").value = straightSaved.showMe || defaultStraightShowMe;
     $("straightLookingFor").value = straightSaved.lookingFor ?? "";
+    $("straightPrioritiseSharedInterests").checked = !!straightSaved.prioritiseSharedInterests;
+    $("prioritiseSharedInterests").checked = !!saved.prioritiseSharedInterests;
 
     const distance = $("discoveryDistance");
     distance.max = premium ? "200" : "50";

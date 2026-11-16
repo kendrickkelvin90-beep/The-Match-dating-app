@@ -1,10 +1,11 @@
 use axum::{
     extract::State,
-    http::{header::AUTHORIZATION, HeaderMap, StatusCode},
+    http::{header::{AUTHORIZATION, CONTENT_TYPE}, HeaderMap, HeaderValue, Method, StatusCode},
     response::IntoResponse,
     routing::{get, post},
     Json, Router,
 };
+use tower_http::{cors::{AllowOrigin, CorsLayer}, limit::RequestBodyLimitLayer};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::{env, net::SocketAddr, sync::Arc, time::Duration};
@@ -145,6 +146,23 @@ async fn main() {
         .expect("SUPABASE_URL must be configured");
     let supabase_anon_key = env::var("SUPABASE_ANON_KEY")
         .expect("SUPABASE_ANON_KEY must be configured");
+    let allowed_origins = env::var("APP_ORIGINS")
+        .expect("APP_ORIGINS must list the exact allowed web origins")
+        .split(',')
+        .map(str::trim)
+        .filter(|origin| !origin.is_empty())
+        .map(|origin| {
+            if origin == "*" {
+                panic!("APP_ORIGINS must not contain a wildcard origin");
+            }
+            origin.parse::<HeaderValue>()
+                .expect("APP_ORIGINS contains an invalid origin")
+        })
+        .collect::<Vec<_>>();
+    if allowed_origins.is_empty() {
+        panic!("APP_ORIGINS must contain at least one allowed origin");
+    }
+
     let port: u16 = env::var("PORT")
         .unwrap_or_else(|_| "8080".into())
         .parse()
@@ -164,6 +182,14 @@ async fn main() {
     let app = Router::new()
         .route("/health", get(health))
         .route("/v1/chat/authorize", post(authorize_chat))
+        .layer(RequestBodyLimitLayer::new(4 * 1024))
+        .layer(
+            CorsLayer::new()
+                .allow_origin(AllowOrigin::list(allowed_origins))
+                .allow_methods([Method::GET, Method::POST])
+                .allow_headers([AUTHORIZATION, CONTENT_TYPE])
+                .max_age(Duration::from_secs(600)),
+        )
         .with_state(state);
 
     let address = SocketAddr::from(([0, 0, 0, 0], port));

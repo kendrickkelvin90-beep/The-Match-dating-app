@@ -4,12 +4,14 @@ on:
   pull_request:
     paths:
       - "supabase/migrations/20261116130000_server_matchmaking_eligibility_gate.sql"
+      - "supabase/migrations/20261116150000_general_dating_optional_roles.sql"
       - "supabase/tests/server_matchmaking_eligibility*.sql"
       - ".github/workflows/server-matchmaking-eligibility.yml"
   push:
     branches:
       - feat/server-matchmaking-eligibility-gate
       - test/matchmaking-eligibility-live-schema-parity
+      - feat/general-inclusive-dating
     paths:
       - "supabase/migrations/20261116130000_server_matchmaking_eligibility_gate.sql"
       - "supabase/tests/server_matchmaking_eligibility*.sql"
@@ -57,6 +59,8 @@ jobs:
         run: |
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/migrations/20261116130000_server_matchmaking_eligibility_gate.sql
+        run: psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+          -f supabase/migrations/20261116150000_general_dating_optional_roles.sql
 
       - name: Run moderation, block, completeness, and preference assertions
         env:

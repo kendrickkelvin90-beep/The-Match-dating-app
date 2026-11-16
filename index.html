@@ -14638,6 +14638,12 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
         distance: Math.min(Number($("straightDistance").value), premium ? 200 : 50),
         lookingFor: $("straightLookingFor").value
       };
+      const interestedIn = saved.straight.showMe === "men" ? "Men"
+        : saved.straight.showMe === "women" ? "Women" : "Men and women";
+      const { error: profilePreferenceError } = await db.from("profiles")
+        .update({ interested_in: interestedIn }).eq("id", currentUser.id);
+      if (profilePreferenceError) throw profilePreferenceError;
+      if ($("interest")) $("interest").value = interestedIn;
       localStorage.setItem(getDiscoveryPreferencesStorageKey(), JSON.stringify(saved));
       status("straightDiscoveryPreferencesStatus", "Your dating preferences have been saved.");
     } catch (error) {

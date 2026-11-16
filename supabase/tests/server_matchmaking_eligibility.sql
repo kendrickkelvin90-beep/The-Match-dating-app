@@ -191,7 +191,10 @@ insert into public.member_dating_details
 values
   ('00000000-0000-4000-8000-000000000002', array['Music','Travel'], 'Never', 'Socially', 'Very active', 'Love pets', 'Not sure', true, false),
   ('00000000-0000-4000-8000-000000000003', array['Gaming'], 'Never', 'Never', 'Moderately active', 'Not for me', 'Not sure', true, false),
-  ('00000000-0000-4000-8000-000000000007', array['Football'], 'Socially', 'Occasionally', 'Moderately active', 'Have pets', 'Have children', true, true);
+  ('00000000-0000-4000-8000-000000000007', array['Football'], 'Socially', 'Occasionally', 'Moderately active', 'Have pets', 'Have children', true, true),
+  ('00000000-0000-4000-8000-000000000010', array['Travel'], 'Never', 'Never', 'Moderately active', 'Prefer not to say', 'Not sure', true, false),
+  ('00000000-0000-4000-8000-000000000011', array['Gaming'], 'Never', 'Never', 'Moderately active', 'Prefer not to say', 'Not sure', true, false),
+  ('00000000-0000-4000-8000-000000000012', array['Music'], 'Never', 'Never', 'Moderately active', 'Prefer not to say', 'Not sure', true, false);
 
 do $$
 declare
@@ -200,10 +203,38 @@ begin
   if (select count(*) from public.get_shared_dating_details(array[
         '00000000-0000-4000-8000-000000000002'::uuid,
         '00000000-0000-4000-8000-000000000003'::uuid,
-        '00000000-0000-4000-8000-000000000007'::uuid
-      ])) <> 2 then
-    raise exception 'Blocked members must not expose shared dating details';
+        '00000000-0000-4000-8000-000000000007'::uuid,
+        '00000000-0000-4000-8000-000000000010'::uuid,
+        '00000000-0000-4000-8000-000000000011'::uuid,
+        '00000000-0000-4000-8000-000000000012'::uuid
+      ])) <> 3 then
+    raise exception 'Only mutually compatible, unblocked members may expose shared dating details';
   end if;
+
+  if exists (
+    select 1 from public.get_shared_dating_details(array[
+      '00000000-0000-4000-8000-000000000011'::uuid,
+      '00000000-0000-4000-8000-000000000012'::uuid
+    ])
+  ) then
+    raise exception 'One-way gender-preference mismatches must not expose shared dating details';
+  end if;
+
+  update public.member_onboarding
+  set answers = jsonb_set(answers, '{sexual_orientation}', '"Straight / heterosexual"')
+  where user_id = '00000000-0000-4000-8000-000000000001';
+
+  if exists (
+    select 1 from public.get_shared_dating_details(array[
+      '00000000-0000-4000-8000-000000000010'::uuid
+    ])
+  ) then
+    raise exception 'Straight members must not receive shared details from non-straight candidates';
+  end if;
+
+  update public.member_onboarding
+  set answers = jsonb_set(answers, '{sexual_orientation}', '"Bisexual"')
+  where user_id = '00000000-0000-4000-8000-000000000001';
 
   select * into shared_row
   from public.get_shared_dating_details(array[

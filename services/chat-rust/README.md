@@ -16,6 +16,7 @@ Set these environment variables in the hosting service:
 
 - `SUPABASE_URL`: existing Supabase project URL.
 - `SUPABASE_ANON_KEY`: Supabase publishable/anon key (not a service-role key).
+- `APP_ORIGINS`: comma-separated exact browser origins allowed to call the service, e.g. `https://match.beyondthebinarymedia.online`. Do not use `*`; include a staging origin only when needed.
 - `PORT`: optional; defaults to `8080`.
 - `RUST_LOG`: optional; defaults to an informational log level.
 
@@ -55,4 +56,4 @@ A successful response is `200 { "authorized": true }`. Invalid sessions return 4
 
 Deploy as a separate service (for example, a separate Render Web Service using this Dockerfile). Do not change the existing website service, its start command, its domain, or its environment. Do not route production chat traffic to this service until the endpoint has been tested against a staging project and a controlled test account.
 
-Before browser integration, configure a strict CORS allowlist for the production app origin and add request throttling. The current service is not yet intended for direct browser integration.
+The service now enforces an exact `APP_ORIGINS` CORS allowlist and rejects request bodies larger than 4 KiB. Before browser integration, also configure request throttling at the hosting or edge layer and test CORS with the actual production and staging origins. The current service is not yet intended for direct browser integration.

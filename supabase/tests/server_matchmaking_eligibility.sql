@@ -137,7 +137,10 @@ begin
     raise exception 'Bisexual members should retain access to compatible straight and bisexual members: %', found_ids;
   end if;
 
-  if not private.match_preference_accepts_gender('Men', 'Trans man')
+  if not private.match_preference_accepts_gender('Men and women', 'Man')
+     or not private.match_preference_accepts_gender('Men and women', 'Woman')
+     or private.match_preference_accepts_gender('Men and women', 'Non-binary')
+     or not private.match_preference_accepts_gender('Men', 'Trans man')
      or private.match_preference_accepts_gender('Men', 'Woman')
      or not private.match_preference_accepts_gender('Women', 'Trans woman')
      or private.match_preference_accepts_gender('Women', 'Man')
@@ -145,6 +148,43 @@ begin
      or not private.match_preference_accepts_gender('Non-binary people', 'Non-binary')
      or private.match_preference_accepts_gender('Men', 'Genderqueer') then
     raise exception 'Mutual gender-preference helper returned an unexpected result';
+  end if;
+end;
+$;
+
+insert into public.member_dating_details
+  (user_id, interests, smoking, drinking, activity_level, pets, children, share_interests, share_lifestyle)
+values
+  ('00000000-0000-4000-8000-000000000002', array['Music','Travel'], 'Never', 'Socially', 'Very active', 'Love pets', 'Not sure', true, false),
+  ('00000000-0000-4000-8000-000000000007', array['Football'], 'Socially', 'Occasionally', 'Moderately active', 'Have pets', 'Have children', true, true);
+
+do $
+declare
+  shared_row record;
+begin
+  select * into shared_row
+  from public.get_shared_dating_details(array[
+    '00000000-0000-4000-8000-000000000002'::uuid,
+    '00000000-0000-4000-8000-000000000007'::uuid
+  ])
+  where user_id = '00000000-0000-4000-8000-000000000002';
+
+  if shared_row.interests is distinct from array['Music','Travel']::text[]
+     or shared_row.smoking is not null
+     or shared_row.drinking is not null then
+    raise exception 'Interest-only sharing must not expose lifestyle details';
+  end if;
+
+  select * into shared_row
+  from public.get_shared_dating_details(array[
+    '00000000-0000-4000-8000-000000000007'::uuid
+  ])
+  where user_id = '00000000-0000-4000-8000-000000000007';
+
+  if shared_row.interests is distinct from array['Football']::text[]
+     or shared_row.smoking is distinct from 'Socially'
+     or shared_row.children is distinct from 'Have children' then
+    raise exception 'Opted-in lifestyle details were not returned correctly';
   end if;
 end;
 $;

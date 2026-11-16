@@ -49,6 +49,7 @@ create or replace function public.matchmaking_eligible_candidate_ids(
   p_show_me text default 'everyone',
   p_role_preferences text[] default '{}'::text[],
   p_verified_only boolean default false,
+  p_connection_goal text default null,
   p_max_results integer default 100
 )
 returns table(user_id uuid)
@@ -72,6 +73,11 @@ begin
 
   if coalesce(p_show_me, 'everyone') not in ('everyone', 'men', 'women', 'nonbinary') then
     raise exception 'Invalid gender discovery filter' using errcode = '22023';
+  end if;
+
+  if p_connection_goal is not null
+     and p_connection_goal not in ('relationship', 'dating', 'friendship', 'casual', 'exploring') then
+    raise exception 'Invalid connection goal filter' using errcode = '22023';
   end if;
 
   if coalesce(cardinality(p_role_preferences), 0) > 12
@@ -169,6 +175,25 @@ begin
       -- A straight member is shown only other members who explicitly selected
       -- Straight / heterosexual. No orientation is inferred from gender.
       and (
+        p_connection_goal is null
+        or exists (
+          select 1
+          from public.member_onboarding goal_onboarding
+          where goal_onboarding.user_id = candidate.id
+            and case pg_catalog.lower(coalesce(goal_onboarding.answers ->> 'relationship_goal', ''))
+              when 'a relationship' then 'relationship'
+              when 'relationship' then 'relationship'
+              when 'dating' then 'dating'
+              when 'friendship' then 'friendship'
+              when 'something casual' then 'casual'
+              when 'casual' then 'casual'
+              when 'still figuring it out' then 'exploring'
+              when 'exploring' then 'exploring'
+              else ''
+            end = p_connection_goal
+        )
+      )
+      and (
         coalesce((
           select viewer_onboarding.answers ->> 'sexual_orientation'
           from public.member_onboarding viewer_onboarding
@@ -218,14 +243,14 @@ end;
 $function$;
 
 revoke all on function public.matchmaking_eligible_candidate_ids(
-  double precision, integer, integer, text, text, text[], boolean, integer
+  double precision, integer, integer, text, text, text[], boolean, text, integer
 ) from public, anon;
 grant execute on function public.matchmaking_eligible_candidate_ids(
-  double precision, integer, integer, text, text, text[], boolean, integer
+  double precision, integer, integer, text, text, text[], boolean, text, integer
 ) to authenticated;
 
 comment on function public.matchmaking_eligible_candidate_ids(
-  double precision, integer, integer, text, text, text[], boolean, integer
+  double precision, integer, integer, text, text, text[], boolean, text, integer
 ) is
   'Returns only IDs from the existing Discover candidate pool after server-side profile-completeness, photo-count, moderation, reciprocal-block, mutual gender-preference compatibility, and supported preference checks. Does not expose member interests.';
 

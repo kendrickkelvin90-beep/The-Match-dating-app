@@ -58,7 +58,7 @@ language sql
 stable
 security definer
 set search_path = ''
-as $
+as $$
   select exists (
     select 1
     from public.profiles p
@@ -80,7 +80,7 @@ as $
         where ph.user_id = p.id and ph.position = 0
       )
   );
-$;
+$$;
 
 create function public.discover_profiles_secure(
   p_max_distance_km double precision default 20050,

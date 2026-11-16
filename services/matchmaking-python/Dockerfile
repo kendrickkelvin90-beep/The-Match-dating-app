@@ -9,4 +9,4 @@ COPY app ./app
 RUN useradd --create-home --uid 10001 appuser
 USER appuser
 EXPOSE 8080
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port \u0024{PORT:-8080}"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]

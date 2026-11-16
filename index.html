@@ -22126,6 +22126,66 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
     max-width:64px!important;
   }
 }
+
+/* The Match — refined, accessible Discover profile card */
+#discover #profileList > .discover-option3-card {
+  position:relative!important; isolation:isolate!important; overflow:hidden!important;
+  border:1px solid rgba(218,185,112,.72)!important; border-radius:24px!important;
+  background:#080808!important;
+  box-shadow:0 18px 46px rgba(0,0,0,.38),0 0 0 1px rgba(218,185,112,.08)!important;
+}
+#discover #profileList > .discover-option3-card > .discover-option3-photo,
+#discover #profileList > .discover-option3-card > .discover-option3-photo > .discover-option3-image {
+  border-radius:inherit!important;
+}
+#discover #profileList > .discover-option3-card > .discover-option3-photo {background:#080808!important}
+#discover #profileList > .discover-option3-card > .discover-option3-photo > .discover-option3-image {
+  object-fit:cover!important; object-position:center 32%!important; transform:scale(1.001);
+}
+#discover #profileList > .discover-option3-card .discover-option3-overlay {
+  box-sizing:border-box!important; padding:104px 18px max(18px,env(safe-area-inset-bottom))!important;
+  background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.08) 20%,rgba(0,0,0,.68) 54%,rgba(0,0,0,.94) 100%)!important;
+  text-shadow:0 1px 12px rgba(0,0,0,.45);
+}
+#discover #profileList > .discover-option3-card .discover-option3-overlay h2 {
+  margin:0 0 7px!important; color:#fffaf0!important; font-size:clamp(27px,6.5vw,36px)!important;
+  font-weight:850!important; line-height:1.12!important; letter-spacing:-.55px!important; overflow-wrap:anywhere!important;
+}
+#discover #profileList > .discover-option3-card .discover-option3-overlay .distance {
+  display:flex!important; align-items:center!important; gap:6px!important; color:#f0d28e!important;
+  font-size:13px!important; font-weight:750!important; margin:0 0 10px!important;
+}
+#discover #profileList > .discover-option3-card .discover-option3-overlay > button[aria-expanded] {
+  min-height:44px!important; border:1px solid rgba(231,203,145,.58)!important; border-radius:13px!important;
+  background:rgba(16,15,13,.78)!important; color:#f5dfad!important; font-size:13px!important;
+  font-weight:750!important; backdrop-filter:blur(12px);
+}
+#discover #profileList > .discover-option3-card .discover-photo-count {
+  top:14px!important; right:14px!important; padding:8px 11px!important;
+  border:1px solid rgba(235,213,169,.42)!important; border-radius:999px!important;
+  background:rgba(8,8,8,.66)!important; color:#fff8e8!important; font-size:11px!important;
+  font-weight:750!important; backdrop-filter:blur(12px);
+}
+#discover #profileList > .discover-option3-card .discover-photo-arrow {
+  width:42px!important; height:42px!important; border:1px solid rgba(255,255,255,.42)!important;
+  background:rgba(8,8,8,.58)!important; backdrop-filter:blur(10px);
+}
+#discover .discover-floating-actions > button {
+  min-width:58px!important; min-height:58px!important; width:58px!important; height:58px!important;
+  box-shadow:0 8px 24px rgba(0,0,0,.32)!important;
+}
+body.light-theme #discover #profileList > .discover-option3-card {
+  border-color:#d8bd83!important; box-shadow:0 14px 36px rgba(60,44,15,.16)!important;
+}
+@media(max-width:380px) {
+  #discover #profileList > .discover-option3-card .discover-option3-overlay {padding-left:13px!important;padding-right:13px!important}
+  #discover .discover-floating-actions > button {min-width:54px!important;width:54px!important;height:54px!important;min-height:54px!important}
+}
+@media(prefers-reduced-motion:reduce) {
+  #discover #profileList > .discover-option3-card,
+  #discover #profileList > .discover-option3-card * {animation:none!important;transition:none!important}
+}
+
 </style>
 </body>
 </html>

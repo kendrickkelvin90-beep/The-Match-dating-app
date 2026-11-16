@@ -75,6 +75,20 @@ begin
   if found_ids is distinct from array['00000000-0000-4000-8000-000000000007'::uuid] then
     raise exception 'Verified-only filter did not return the expected candidate: %', found_ids;
   end if;
+
+  select array_agg(user_id)
+    into found_ids
+  from public.matchmaking_eligible_candidate_ids(p_city => 'Abuja');
+  if found_ids is distinct from array['00000000-0000-4000-8000-000000000007'::uuid] then
+    raise exception 'City filter did not preserve the production Discover result: %', found_ids;
+  end if;
+
+  select array_agg(user_id)
+    into found_ids
+  from public.matchmaking_eligible_candidate_ids(p_max_distance_km => 5);
+  if found_ids is distinct from array['00000000-0000-4000-8000-000000000002'::uuid] then
+    raise exception 'Distance filter did not preserve the production Discover result: %', found_ids;
+  end if;
 end;
 $$;
 

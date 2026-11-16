@@ -167,7 +167,7 @@ begin
     raise exception 'Mutual gender-preference helper returned an unexpected result';
   end if;
 end;
-$;
+$$;
 
 -- Direct table access must remain owner-only; shared data is exposed only
 -- through the explicit opt-in RPC tested below.
@@ -182,7 +182,7 @@ begin
     raise exception 'A member can directly read another member''s private dating details';
   end if;
 end;
-$;
+$$;
 reset role;
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
 
@@ -261,7 +261,7 @@ begin
     raise exception 'Opted-in lifestyle details were not returned correctly';
   end if;
 end;
-$;
+$$;
 
 -- Insert the viewer's moderation row explicitly; the fixture initially only
 -- contains moderation rows for the suspended and banned candidate accounts.

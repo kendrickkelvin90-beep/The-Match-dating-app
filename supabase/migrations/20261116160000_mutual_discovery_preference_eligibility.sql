@@ -40,7 +40,6 @@ revoke all on function private.match_preference_accepts_gender(text, text)
 -- Returns candidate IDs only; it never exposes profile rows or interest data.
 -- This is additive and does not change the existing Discover RPC or frontend.
 
-begin;
 
 create or replace function public.matchmaking_eligible_candidate_ids(
   p_max_distance_km double precision default 20050,

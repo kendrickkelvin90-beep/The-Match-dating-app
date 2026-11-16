@@ -9,10 +9,13 @@ values
   ('00000000-0000-4000-8000-000000000004', 'Suspended', 'Man', 'Men', 'A complete candidate profile', 'Lagos', 27, false, array['Top'], 'none'),
   ('00000000-0000-4000-8000-000000000005', 'Banned', 'Man', 'Men', 'A complete candidate profile', 'Lagos', 27, false, array['Top'], 'none'),
   ('00000000-0000-4000-8000-000000000006', 'Incomplete', 'Man', 'Men', '', 'Lagos', 27, false, array['Top'], 'none'),
-  ('00000000-0000-4000-8000-000000000007', 'Verified', 'Woman', 'Men', 'A complete verified profile', 'Lagos', 28, true, array['Bottom'], 'basic');
+  ('00000000-0000-4000-8000-000000000007', 'Verified', 'Woman', 'Men', 'A complete verified profile', 'Lagos', 28, true, array['Bottom'], 'basic'),
+  ('00000000-0000-4000-8000-000000000008', 'Member', 'Man', 'Men', 'A placeholder profile bio', 'Lagos', 28, false, array['Top'], 'none'),
+  ('00000000-0000-4000-8000-000000000009', 'No Primary Photo', 'Man', 'Men', 'A complete profile without its primary photo', 'Lagos', 28, false, array['Top'], 'none');
 
-insert into public.profile_photos (user_id, storage_path)
-select ids.user_id, ids.user_id::text || '-' || photo_no::text
+insert into public.profile_photos (user_id, storage_path, position)
+select ids.user_id, ids.user_id::text || '-' || photo_no::text,
+       case when ids.user_id = '00000000-0000-4000-8000-000000000009'::uuid then photo_no else photo_no - 1 end
 from (values
   ('00000000-0000-4000-8000-000000000001'::uuid),
   ('00000000-0000-4000-8000-000000000002'::uuid),
@@ -20,15 +23,17 @@ from (values
   ('00000000-0000-4000-8000-000000000004'::uuid),
   ('00000000-0000-4000-8000-000000000005'::uuid),
   ('00000000-0000-4000-8000-000000000006'::uuid),
-  ('00000000-0000-4000-8000-000000000007'::uuid)
+  ('00000000-0000-4000-8000-000000000007'::uuid),
+  ('00000000-0000-4000-8000-000000000008'::uuid),
+  ('00000000-0000-4000-8000-000000000009'::uuid)
 ) ids(user_id)
 cross join generate_series(1,2) photo_no;
 
 insert into public.member_blocks values
   ('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000003');
-insert into public.member_moderation values
-  ('00000000-0000-4000-8000-000000000004','suspended',now()+interval '1 day'),
-  ('00000000-0000-4000-8000-000000000005','banned',null);
+insert into public.member_moderation (user_id, status, reason, expires_at) values
+  ('00000000-0000-4000-8000-000000000004','suspended','Test suspension',now()+interval '1 day'),
+  ('00000000-0000-4000-8000-000000000005','banned','Test permanent ban',null);
 insert into public.premium_memberships values
   ('00000000-0000-4000-8000-000000000001',now()+interval '30 days');
 
@@ -75,10 +80,11 @@ $$;
 
 -- Insert the viewer's moderation row explicitly; the fixture initially only
 -- contains moderation rows for the suspended and banned candidate accounts.
-insert into public.member_moderation (user_id, status, expires_at)
+insert into public.member_moderation (user_id, status, reason, expires_at)
 values (
   '00000000-0000-4000-8000-000000000001',
   'suspended',
+  'Test viewer suspension',
   now()+interval '1 day'
 )
 on conflict (user_id) do update

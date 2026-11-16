@@ -1,8 +1,14 @@
+import pytest
 from fastapi.testclient import TestClient
+
 from app.engine import rank_candidates
 from app.main import app
 
 client = TestClient(app)
+VALID_PAYLOAD = {
+    "viewer_interests": ["Music", "Travel"],
+    "candidates": [{"candidate_id": "member-1", "interests": ["music", "travel"]}],
+}
 
 
 def test_ranks_shared_interests_first_and_is_deterministic():
@@ -30,30 +36,68 @@ def test_health_endpoint():
     assert response.json()["service"] == "matchmaking-python"
 
 
-def test_rank_endpoint_returns_explainable_result():
-    response = client.post("/v1/matchmaking/rank", json={
-        "viewer_interests": ["Music", "Travel"],
-        "candidates": [{"candidate_id": "member-1", "interests": ["music", "travel"]}],
-    })
+def test_rank_endpoint_requires_service_token(monkeypatch):
+    monkeypatch.setenv("MATCHMAKING_SERVICE_TOKEN", "test-secret")
+    response = client.post("/v1/matchmaking/rank", json=VALID_PAYLOAD)
+    assert response.status_code == 401
+
+
+def test_rank_endpoint_rejects_wrong_service_token(monkeypatch):
+    monkeypatch.setenv("MATCHMAKING_SERVICE_TOKEN", "test-secret")
+    response = client.post(
+        "/v1/matchmaking/rank",
+        json=VALID_PAYLOAD,
+        headers={"Authorization": "Bearer wrong-secret"},
+    )
+    assert response.status_code == 401
+
+
+def test_rank_endpoint_fails_closed_when_service_token_is_unconfigured(monkeypatch):
+    monkeypatch.delenv("MATCHMAKING_SERVICE_TOKEN", raising=False)
+    response = client.post(
+        "/v1/matchmaking/rank",
+        json=VALID_PAYLOAD,
+        headers={"Authorization": "Bearer test-secret"},
+    )
+    assert response.status_code == 503
+
+
+def test_rank_endpoint_returns_explainable_result_with_service_token(monkeypatch):
+    monkeypatch.setenv("MATCHMAKING_SERVICE_TOKEN", "test-secret")
+    response = client.post(
+        "/v1/matchmaking/rank",
+        json=VALID_PAYLOAD,
+        headers={"Authorization": "Bearer test-secret"},
+    )
     assert response.status_code == 200
     assert response.json()["results"][0]["score"] == 100
 
 
-def test_duplicate_candidate_ids_are_rejected():
-    response = client.post("/v1/matchmaking/rank", json={
-        "viewer_interests": ["Music"],
-        "candidates": [
-            {"candidate_id": "same", "interests": ["music"]},
-            {"candidate_id": "same", "interests": ["travel"]},
-        ],
-    })
+def test_duplicate_candidate_ids_are_rejected(monkeypatch):
+    monkeypatch.setenv("MATCHMAKING_SERVICE_TOKEN", "test-secret")
+    response = client.post(
+        "/v1/matchmaking/rank",
+        headers={"Authorization": "Bearer test-secret"},
+        json={
+            "viewer_interests": ["Music"],
+            "candidates": [
+                {"candidate_id": "same", "interests": ["music"]},
+                {"candidate_id": "same", "interests": ["travel"]},
+            ],
+        },
+    )
     assert response.status_code == 422
 
 
-def test_unexpected_fields_are_rejected():
-    response = client.post("/v1/matchmaking/rank", json={
-        "viewer_interests": ["Music"],
-        "viewer_location": {"latitude": 6.5, "longitude": 3.4},
-        "candidates": [{"candidate_id": "member-1", "interests": ["music"]}],
-    })
+def test_unexpected_fields_are_rejected(monkeypatch):
+    monkeypatch.setenv("MATCHMAKING_SERVICE_TOKEN", "test-secret")
+    response = client.post(
+        "/v1/matchmaking/rank",
+        headers={"Authorization": "Bearer test-secret"},
+        json={
+            "viewer_interests": ["Music"],
+            "viewer_location": {"latitude": 6.5, "longitude": 3.4},
+            "candidates": [{"candidate_id": "member-1", "interests": ["music"]}],
+        },
+    )
     assert response.status_code == 422

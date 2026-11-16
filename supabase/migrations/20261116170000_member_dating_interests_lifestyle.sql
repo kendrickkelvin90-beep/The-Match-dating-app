@@ -98,10 +98,74 @@ begin
   end if;
 
   return query
-  with visible_members as (
-    select visible.id
+  with viewer_profile as (
+    select viewer.id, viewer.gender_identity, viewer.interested_in
+    from public.profiles viewer
+    where viewer.id = auth.uid()
+      and public.is_match_profile_complete(viewer.id)
+      and (
+        select pg_catalog.count(*)
+        from public.profile_photos own_photo
+        where own_photo.user_id = viewer.id
+      ) >= 2
+      and not exists (
+        select 1
+        from public.member_moderation own_moderation
+        where own_moderation.user_id = viewer.id
+          and (
+            own_moderation.status = 'banned'
+            or (
+              own_moderation.status = 'suspended'
+              and own_moderation.expires_at > pg_catalog.now()
+            )
+          )
+      )
+  ),
+  visible_members as (
+    select candidate.id
     from public.discover_profiles_secure(20050, 18, 99, null) visible
-    where visible.id = any(coalesce(p_user_ids, '{}'::uuid[]))
+    join public.profiles candidate on candidate.id = visible.id
+    cross join viewer_profile viewer
+    where candidate.id = any(coalesce(p_user_ids, '{}'::uuid[]))
+      and public.is_match_profile_complete(candidate.id)
+      and (
+        select pg_catalog.count(*)
+        from public.profile_photos candidate_photo
+        where candidate_photo.user_id = candidate.id
+      ) >= 2
+      and not exists (
+        select 1
+        from public.member_moderation candidate_moderation
+        where candidate_moderation.user_id = candidate.id
+          and (
+            candidate_moderation.status = 'banned'
+            or (
+              candidate_moderation.status = 'suspended'
+              and candidate_moderation.expires_at > pg_catalog.now()
+            )
+          )
+      )
+      and not exists (
+        select 1
+        from public.member_blocks block_record
+        where (block_record.blocker_id = viewer.id and block_record.blocked_id = candidate.id)
+           or (block_record.blocker_id = candidate.id and block_record.blocked_id = viewer.id)
+      )
+      and private.match_preference_accepts_gender(viewer.interested_in, candidate.gender_identity)
+      and private.match_preference_accepts_gender(candidate.interested_in, viewer.gender_identity)
+      and (
+        coalesce((
+          select viewer_onboarding.answers ->> 'sexual_orientation'
+          from public.member_onboarding viewer_onboarding
+          where viewer_onboarding.user_id = viewer.id
+        ), '') <> 'Straight / heterosexual'
+        or exists (
+          select 1
+          from public.member_onboarding candidate_onboarding
+          where candidate_onboarding.user_id = candidate.id
+            and candidate_onboarding.answers ->> 'sexual_orientation' = 'Straight / heterosexual'
+        )
+      )
   )
   select
     d.user_id,

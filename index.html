@@ -14797,9 +14797,21 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
 
     const straightSaved = saved.straight || {};
     const ownGender = String($("gender")?.value || "").toLowerCase();
-    const defaultStraightShowMe = ownGender.includes("woman")
-      ? "men"
-      : (ownGender.includes("man") && !ownGender.includes("woman") ? "women" : "everyone");
+    const isWoman = ownGender.includes("woman");
+    const isMan = ownGender.includes("man") && !isWoman;
+    const defaultStraightShowMe = isWoman ? "men" : (isMan ? "women" : "everyone");
+    const straightShowMe = $("straightShowMe");
+    const straightOptions = isWoman
+      ? [{ value: "men", label: "Men" }, { value: "everyone", label: "Both men and women" }]
+      : isMan
+        ? [{ value: "women", label: "Women" }, { value: "everyone", label: "Both men and women" }]
+        : [{ value: "men", label: "Men" }, { value: "women", label: "Women" }, { value: "everyone", label: "All genders" }];
+    straightShowMe.replaceChildren(...straightOptions.map(option => {
+      const element = document.createElement("option");
+      element.value = option.value;
+      element.textContent = option.label;
+      return element;
+    }));
     const straightDistance = $("straightDistance");
     straightDistance.max = premium ? "200" : "50";
     straightDistance.value = Math.min(Number(straightSaved.distance || 50), premium ? 200 : 50);
@@ -14809,7 +14821,9 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
     $("straightAgeMin").value = straightSaved.minAge ?? 18;
     $("straightAgeMax").value = Math.min(Number(straightSaved.maxAge ?? 79), premium ? 99 : 79);
     $("straightLocation").value = straightSaved.location ?? "";
-    $("straightShowMe").value = straightSaved.showMe || defaultStraightShowMe;
+    $("straightShowMe").value = straightOptions.some(option => option.value === straightSaved.showMe)
+      ? straightSaved.showMe
+      : defaultStraightShowMe;
     $("straightLookingFor").value = straightSaved.lookingFor ?? "";
     $("straightPrioritiseSharedInterests").checked = !!straightSaved.prioritiseSharedInterests;
     $("prioritiseSharedInterests").checked = !!saved.prioritiseSharedInterests;

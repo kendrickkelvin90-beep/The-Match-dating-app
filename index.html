@@ -6243,6 +6243,35 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
   <p class="small">Your lifestyle answers stay private unless you turn on sharing. You can change these choices anytime.</p>
 </div>
 
+<div class="member-card" id="datingProfileExtras">
+  <h2>More about my dating style ✨</h2>
+  <p class="small">Optional details that help people understand what kind of connection you're looking for. Nothing here is shared unless you enable sharing.</p>
+  <label for="datingRelationshipIntention">What are you looking for?</label>
+  <select id="datingRelationshipIntention">
+    <option>Still figuring it out</option><option>Long-term relationship</option><option>Dating</option><option>Friendship</option><option>Casual dating</option><option>Prefer not to say</option>
+  </select>
+  <label for="datingCommunicationStyle">Your communication style</label>
+  <select id="datingCommunicationStyle">
+    <option>Prefer not to say</option><option>Deep conversations</option><option>Humour and playful</option><option>Quality time</option><option>Acts of service</option><option>Texting</option><option>Phone or video calls</option>
+  </select>
+  <label for="datingLanguages">Languages you speak (comma-separated, up to 8)</label>
+  <input id="datingLanguages" maxlength="350" placeholder="English, Yoruba, Igbo">
+  <label for="datingEducation">Education</label>
+  <select id="datingEducation">
+    <option>Prefer not to say</option><option>Secondary school</option><option>Trade or professional training</option><option>Undergraduate</option><option>Graduate</option><option>Postgraduate</option>
+  </select>
+  <label for="datingOccupation">Occupation (optional)</label>
+  <input id="datingOccupation" maxlength="80" placeholder="What do you do?">
+  <label for="datingFavoriteMusic">Music you enjoy</label>
+  <input id="datingFavoriteMusic" maxlength="100" placeholder="Afrobeats, R&B, gospel...">
+  <label for="datingFavoriteMovies">Movies and shows you enjoy</label>
+  <input id="datingFavoriteMovies" maxlength="100" placeholder="Comedy, action, documentaries...">
+  <label for="datingFavoriteFood">Favourite food</label>
+  <input id="datingFavoriteFood" maxlength="100" placeholder="What do you love eating?">
+  <label><input type="checkbox" id="shareDatingProfileExtras"> Show these dating details on my profile</label>
+  <p class="small">These details are private by default. You can turn sharing off at any time.</p>
+</div>
+
 <div class="member-card" id="genderPresentationSection">
   <h2>My presentation ✨</h2>
   <p class="small">Optional. Select the words that best describe your presentation. These labels are self-described and are not inferred from appearance or orientation.</p>
@@ -10853,7 +10882,7 @@ async function loadCurrentMemberOrientation() {
 async function loadMyDatingDetails() {
   if (!currentUser?.id) return;
   const { data, error } = await db.from("member_dating_details")
-    .select("interests,smoking,drinking,activity_level,pets,children,share_interests,share_lifestyle")
+    .select("interests,smoking,drinking,activity_level,pets,children,share_interests,share_lifestyle,relationship_intention,communication_style,languages,education_level,occupation,favorite_music,favorite_movies,favorite_food,share_profile_extras")
     .eq("user_id", currentUser.id).maybeSingle();
   if (error) throw error;
   const saved = data || {};
@@ -10867,6 +10896,15 @@ async function loadMyDatingDetails() {
   $("datingChildren").value = saved.children || "Prefer not to say";
   $("shareDatingInterests").checked = saved.share_interests === true;
   $("shareDatingLifestyle").checked = saved.share_lifestyle === true;
+  $("datingRelationshipIntention").value = saved.relationship_intention || "Still figuring it out";
+  $("datingCommunicationStyle").value = saved.communication_style || "Prefer not to say";
+  $("datingLanguages").value = Array.isArray(saved.languages) ? saved.languages.join(", ") : "";
+  $("datingEducation").value = saved.education_level || "Prefer not to say";
+  $("datingOccupation").value = saved.occupation || "";
+  $("datingFavoriteMusic").value = saved.favorite_music || "";
+  $("datingFavoriteMovies").value = saved.favorite_movies || "";
+  $("datingFavoriteFood").value = saved.favorite_food || "";
+  $("shareDatingProfileExtras").checked = saved.share_profile_extras === true;
   refreshDatingInterestCounter();
 }
 
@@ -11127,7 +11165,16 @@ const { error: datingDetailsError } = await db.from("member_dating_details").ups
   pets: $("datingPets").value,
   children: $("datingChildren").value,
   share_interests: $("shareDatingInterests").checked,
-  share_lifestyle: $("shareDatingLifestyle").checked
+  share_lifestyle: $("shareDatingLifestyle").checked,
+  relationship_intention: $("datingRelationshipIntention").value,
+  communication_style: $("datingCommunicationStyle").value,
+  languages: Array.from(new Set($("datingLanguages").value.split(",").map(value => value.trim()).filter(Boolean))).slice(0, 8),
+  education_level: $("datingEducation").value,
+  occupation: $("datingOccupation").value.trim(),
+  favorite_music: $("datingFavoriteMusic").value.trim(),
+  favorite_movies: $("datingFavoriteMovies").value.trim(),
+  favorite_food: $("datingFavoriteFood").value.trim(),
+  share_profile_extras: $("shareDatingProfileExtras").checked
 }, { onConflict: "user_id" });
 if (datingDetailsError) throw datingDetailsError;
 
@@ -11171,20 +11218,24 @@ async function attachSharedDatingDetails(people) {
   if (!currentUser?.id || !Array.isArray(people) || !people.length) return people;
   const ids = people.map(person => person.id).filter(Boolean);
   if (!ids.length) return people;
-  const [{ data, error }, { data: scoreRows, error: scoreError }] = await Promise.all([
+  const [{ data, error }, { data: scoreRows, error: scoreError }, { data: profileExtrasRows, error: profileExtrasError }] = await Promise.all([
     db.rpc("get_shared_dating_details", { p_user_ids: ids.slice(0, 100) }),
-    db.rpc("get_interest_match_scores", { p_user_ids: ids.slice(0, 100) })
+    db.rpc("get_interest_match_scores", { p_user_ids: ids.slice(0, 100) }),
+    db.rpc("get_shared_profile_extras", { p_user_ids: ids.slice(0, 100) })
   ]);
   if (error) throw error;
   if (scoreError) throw scoreError;
+  if (profileExtrasError) throw profileExtrasError;
   const byId = new Map((data || []).map(row => [row.user_id, row]));
   const scoreById = new Map((scoreRows || []).map(row => [row.user_id, row]));
+  const profileExtrasById = new Map((profileExtrasRows || []).map(row => [row.user_id, row]));
   return people.map(person => {
     const shared = byId.get(person.id) || null;
     const score = scoreById.get(person.id) || null;
     return {
       ...person,
       shared_dating_details: shared,
+      shared_profile_extras: profileExtrasById.get(person.id) || null,
       _sharedInterestCount: Number(score?.shared_interest_count || 0),
       _interestMatchPercent: Number(score?.interest_match_percent || 0)
     };
@@ -11213,6 +11264,26 @@ function appendSharedDatingDetails(panel, details) {
     lifestyleLine.textContent = "🌿 " + lifestyle.join(" · ");
     lifestyleLine.style.cssText = "font-size:12px;line-height:1.5;margin:7px 0;";
     panel.appendChild(lifestyleLine);
+  }
+  const extras = details.profile_extras || null;
+  if (extras) {
+    const extraParts = [
+      extras.relationship_intention && extras.relationship_intention !== "Prefer not to say" ? "Looking for: " + extras.relationship_intention : "",
+      extras.communication_style && extras.communication_style !== "Prefer not to say" ? "Communication: " + extras.communication_style : "",
+      Array.isArray(extras.languages) && extras.languages.length ? "Languages: " + extras.languages.join(", ") : "",
+      extras.education_level && extras.education_level !== "Prefer not to say" ? "Education: " + extras.education_level : "",
+      extras.occupation ? "Work: " + extras.occupation : "",
+      extras.favorite_music ? "Music: " + extras.favorite_music : "",
+      extras.favorite_movies ? "Movies: " + extras.favorite_movies : "",
+      extras.favorite_food ? "Food: " + extras.favorite_food : ""
+    ].filter(Boolean);
+    if (extraParts.length) {
+      const extraLine = document.createElement("p");
+      extraLine.className = "small";
+      extraLine.textContent = "💬 " + extraParts.join(" · ");
+      extraLine.style.cssText = "font-size:12px;line-height:1.5;margin:7px 0;";
+      panel.appendChild(extraLine);
+    }
   }
 }
 
@@ -11852,7 +11923,7 @@ details.textContent = [
 details.style.cssText =
   "font-size:14px;line-height:1.5;margin:4px 0 10px;";
 detailsPanel.appendChild(details);
-appendSharedDatingDetails(detailsPanel, p.shared_dating_details);
+appendSharedDatingDetails(detailsPanel, { ...(p.shared_dating_details || {}), profile_extras: p.shared_profile_extras });
 
       if (currentMemberOrientation !== "Straight / heterosexual" && Array.isArray(p.sexual_roles) && p.sexual_roles.length) {
   const roles = document.createElement("p");

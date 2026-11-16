@@ -5,6 +5,7 @@ on:
     paths:
       - "supabase/migrations/20261116130000_server_matchmaking_eligibility_gate.sql"
       - "supabase/migrations/20261116150000_general_dating_optional_roles.sql"
+      - "supabase/migrations/20261116150000_general_dating_optional_roles.sql"
       - "supabase/tests/server_matchmaking_eligibility*.sql"
       - ".github/workflows/server-matchmaking-eligibility.yml"
   push:
@@ -14,6 +15,7 @@ on:
       - feat/general-inclusive-dating
     paths:
       - "supabase/migrations/20261116130000_server_matchmaking_eligibility_gate.sql"
+      - "supabase/migrations/20261116150000_general_dating_optional_roles.sql"
       - "supabase/migrations/20261116150000_general_dating_optional_roles.sql"
       - "supabase/tests/server_matchmaking_eligibility*.sql"
       - ".github/workflows/server-matchmaking-eligibility.yml"

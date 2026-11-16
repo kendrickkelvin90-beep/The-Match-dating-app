@@ -82,6 +82,48 @@ as $$
   );
 $$;
 
+
+-- Mirror the production location table and distance helper so the eligibility
+-- RPC is exercised against the same Discover contract as the live database.
+create schema private;
+create table private.profile_locations (
+  user_id uuid primary key,
+  discovery_latitude double precision,
+  discovery_longitude double precision,
+  discovery_updated_at timestamptz,
+  discovery_sharing boolean not null default false,
+  nearby_latitude double precision,
+  nearby_longitude double precision,
+  nearby_updated_at timestamptz,
+  updated_at timestamptz not null default now()
+);
+
+create function public.calculate_distance_km(
+  lat1 double precision, lon1 double precision,
+  lat2 double precision, lon2 double precision
+)
+returns double precision
+language sql
+immutable
+parallel safe
+strict
+set search_path = ''
+as $$
+  select 6371.0 * 2.0 * asin(
+    sqrt(
+      least(
+        1.0,
+        greatest(
+          0.0,
+          sin(radians(lat2 - lat1) / 2.0)^2
+          + cos(radians(lat1)) * cos(radians(lat2))
+          * sin(radians(lon2 - lon1) / 2.0)^2
+        )
+      )
+    )
+  );
+$$;
+
 create function public.discover_profiles_secure(
   p_max_distance_km double precision default 20050,
   p_min_age integer default 18,
@@ -106,21 +148,78 @@ stable
 security definer
 set search_path = ''
 as $$
-  select p.id, p.display_name, p.age, p.gender_identity, p.interested_in,
-         p.bio, p.city, p.is_verified, p.sexual_roles, p.verification_level,
-         null::double precision
+  select
+    p.id,
+    p.display_name,
+    p.age,
+    p.gender_identity,
+    p.interested_in,
+    p.bio,
+    p.city,
+    p.is_verified,
+    p.sexual_roles,
+    p.verification_level,
+    case
+      when coalesce(my_loc.discovery_sharing, false)
+        and my_loc.discovery_latitude is not null
+        and my_loc.discovery_longitude is not null
+        and coalesce(other_loc.discovery_sharing, false)
+        and other_loc.discovery_latitude is not null
+        and other_loc.discovery_longitude is not null
+      then public.calculate_distance_km(
+        my_loc.discovery_latitude,
+        my_loc.discovery_longitude,
+        other_loc.discovery_latitude,
+        other_loc.discovery_longitude
+      )
+      else null
+    end as distance_km
   from public.profiles p
-  where p.id <> auth.uid()
+  left join private.profile_locations my_loc on my_loc.user_id = auth.uid()
+  left join private.profile_locations other_loc on other_loc.user_id = p.id
+  where auth.uid() is not null
+    and p.id <> auth.uid()
+    and not exists (
+      select 1
+      from public.member_blocks mb
+      where (mb.blocker_id = auth.uid() and mb.blocked_id = p.id)
+         or (mb.blocker_id = p.id and mb.blocked_id = auth.uid())
+    )
+    and p.age is not null
     and p.age between greatest(18, coalesce(p_min_age, 18))
       and least(
-        case when exists (
-          select 1 from public.premium_memberships pm
-          where pm.user_id = auth.uid() and pm.premium_until > now()
-        ) then 99 else 79 end,
+        case
+          when exists (
+            select 1 from public.premium_memberships pm
+            where pm.user_id = auth.uid() and pm.premium_until > now()
+          ) then 99 else 79
+        end,
         greatest(coalesce(p_min_age, 18), coalesce(p_max_age, 79))
       )
     and (
       nullif(btrim(coalesce(p_city, '')), '') is null
-      or lower(p.city) like '%' || lower(btrim(p_city)) || '%'
+      or regexp_replace(lower(coalesce(p.city, '')), '[^a-z0-9]+', ' ', 'g')
+         like '%' || regexp_replace(lower(btrim(p_city)), '[^a-z0-9]+', ' ', 'g') || '%'
     )
+    and (
+      not coalesce(my_loc.discovery_sharing, false)
+      or my_loc.discovery_latitude is null
+      or my_loc.discovery_longitude is null
+      or not coalesce(other_loc.discovery_sharing, false)
+      or other_loc.discovery_latitude is null
+      or other_loc.discovery_longitude is null
+      or public.calculate_distance_km(
+        my_loc.discovery_latitude,
+        my_loc.discovery_longitude,
+        other_loc.discovery_latitude,
+        other_loc.discovery_longitude
+      ) <= greatest(1, least(coalesce(p_max_distance_km, 20050), 20050))
+    );
 $$;
+
+insert into private.profile_locations
+  (user_id, discovery_latitude, discovery_longitude, discovery_sharing)
+values
+  ('00000000-0000-4000-8000-000000000001', 6.5244, 3.3792, true),
+  ('00000000-0000-4000-8000-000000000002', 6.5250, 3.3800, true),
+  ('00000000-0000-4000-8000-000000000007', 9.0765, 7.3986, true);

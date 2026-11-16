@@ -1,9 +1,12 @@
 """HTTP wrapper around the isolated matchmaking ranking engine."""
 
+import hmac
 import os
-from fastapi import FastAPI, HTTPException
+
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
 from app.engine import rank_candidates
 
 
@@ -43,8 +46,17 @@ class RankingRequest(BaseModel):
         return values
 
 
-app = FastAPI(title="The Match — Matchmaking Service", version="0.1.0", docs_url=None, redoc_url=None)
-allowed_origins = [item.strip() for item in os.getenv("APP_ORIGINS", "").split(",") if item.strip()]
+app = FastAPI(
+    title="The Match — Matchmaking Service",
+    version="0.1.0",
+    docs_url=None,
+    redoc_url=None,
+)
+allowed_origins = [
+    item.strip()
+    for item in os.getenv("APP_ORIGINS", "").split(",")
+    if item.strip()
+]
 if "*" in allowed_origins:
     raise RuntimeError("Wildcard CORS origins are not allowed")
 if allowed_origins:
@@ -63,12 +75,44 @@ async def health() -> dict[str, str]:
     return {"status": "ok", "service": "matchmaking-python"}
 
 
+def require_service_token(authorization: str | None) -> None:
+    """Require a backend-held service token; never expose it to browser clients."""
+    expected = os.getenv("MATCHMAKING_SERVICE_TOKEN", "")
+    if not expected:
+        raise HTTPException(
+            status_code=503,
+            detail="Matchmaking service authentication is not configured",
+        )
+
+    scheme, separator, supplied = (authorization or "").partition(" ")
+    if (
+        not separator
+        or scheme.casefold() != "bearer"
+        or not supplied.strip()
+        or not hmac.compare_digest(supplied.strip(), expected)
+    ):
+        raise HTTPException(status_code=401, detail="Service authentication required")
+
+
 @app.post("/v1/matchmaking/rank")
-async def rank(request: RankingRequest) -> dict[str, object]:
+async def rank(
+    request: RankingRequest,
+    authorization: str | None = Header(default=None),
+) -> dict[str, object]:
+    require_service_token(authorization)
     if not request.viewer_interests:
         raise HTTPException(status_code=422, detail="At least one viewer interest is required")
-    results = rank_candidates(request.viewer_interests, [item.model_dump() for item in request.candidates])
-    return {"results": [
-        {"candidate_id": item.candidate_id, "score": item.score, "shared_interests": item.shared_interests}
-        for item in results
-    ]}
+    results = rank_candidates(
+        request.viewer_interests,
+        [item.model_dump() for item in request.candidates],
+    )
+    return {
+        "results": [
+            {
+                "candidate_id": item.candidate_id,
+                "score": item.score,
+                "shared_interests": item.shared_interests,
+            }
+            for item in results
+        ]
+    }

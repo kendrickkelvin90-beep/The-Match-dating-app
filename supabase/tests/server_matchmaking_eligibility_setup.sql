@@ -24,14 +24,24 @@ create table public.profiles (
   verification_level text not null default 'none'
 );
 create table public.profile_photos (
-  id bigint generated always as identity primary key,
+  id uuid primary key default gen_random_uuid(),
   user_id uuid not null,
-  storage_path text not null
+  storage_path text not null unique,
+  position integer not null default 0 check (position between 0 and 4),
+  created_at timestamptz not null default now()
 );
 create table public.member_moderation (
   user_id uuid primary key,
-  status text not null,
-  expires_at timestamptz
+  status text not null check (status in ('suspended', 'banned', 'restored')),
+  reason text not null check (char_length(btrim(reason)) between 3 and 500),
+  expires_at timestamptz,
+  updated_by uuid,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (
+    (status = 'suspended' and expires_at is not null)
+    or (status in ('banned', 'restored') and expires_at is null)
+  )
 );
 create table public.member_blocks (
   blocker_id uuid not null,
@@ -41,6 +51,36 @@ create table public.premium_memberships (
   user_id uuid primary key,
   premium_until timestamptz not null
 );
+
+create function public.is_match_profile_complete(target_user_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $
+  select exists (
+    select 1
+    from public.profiles p
+    where p.id = target_user_id
+      and p.age between 18 and 120
+      and nullif(btrim(coalesce(p.display_name, '')), '') is not null
+      and lower(btrim(coalesce(p.display_name, ''))) not in ('not listed', 'unknown', 'member')
+      and nullif(btrim(coalesce(p.gender_identity, '')), '') is not null
+      and lower(btrim(coalesce(p.gender_identity, ''))) <> 'not listed'
+      and nullif(btrim(coalesce(p.interested_in, '')), '') is not null
+      and lower(btrim(coalesce(p.interested_in, ''))) <> 'not listed'
+      and nullif(btrim(coalesce(p.city, '')), '') is not null
+      and lower(btrim(coalesce(p.city, ''))) <> 'not listed'
+      and nullif(btrim(coalesce(p.bio, '')), '') is not null
+      and lower(btrim(coalesce(p.bio, ''))) not in ('not listed', 'no description added yet.')
+      and coalesce(array_length(p.sexual_roles, 1), 0) > 0
+      and exists (
+        select 1 from public.profile_photos ph
+        where ph.user_id = p.id and ph.position = 0
+      )
+  );
+$;
 
 create function public.discover_profiles_secure(
   p_max_distance_km double precision default 20050,

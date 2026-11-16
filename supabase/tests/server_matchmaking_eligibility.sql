@@ -367,4 +367,23 @@ begin
 end;
 $$;
 
+do $
+begin
+  if has_function_privilege(
+    'anon',
+    'public.get_interest_match_scores(uuid[])',
+    'EXECUTE'
+  ) then
+    raise exception 'Anonymous role must not execute interest compatibility scoring';
+  end if;
+  if not has_function_privilege(
+    'authenticated',
+    'public.get_interest_match_scores(uuid[])',
+    'EXECUTE'
+  ) then
+    raise exception 'Authenticated role must execute interest compatibility scoring';
+  end if;
+end;
+$;
+
 select 'server matchmaking eligibility tests passed' as result;

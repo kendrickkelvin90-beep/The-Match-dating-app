@@ -464,7 +464,7 @@ begin
 end;
 $$;
 
-do $
+do $$
 declare
   compatibility_row record;
 begin
@@ -505,9 +505,9 @@ begin
     raise exception 'Lifestyle-only consent must not expose or score unshared profile details';
   end if;
 end;
-$;
+$$;
 
-do $
+do $$
 begin
   if has_function_privilege('anon','public.get_dating_compatibility_scores(uuid[])','EXECUTE') then
     raise exception 'Anonymous role must not execute compatibility scoring';
@@ -516,9 +516,9 @@ begin
     raise exception 'Authenticated role must execute compatibility scoring';
   end if;
 end;
-$;
+$$;
 
-do $
+do $$
 begin
   if has_function_privilege('anon','public.get_shared_profile_extras(uuid[])','EXECUTE') then
     raise exception 'Anonymous role must not execute shared profile extras RPC';

@@ -16,7 +16,7 @@ create or replace function public.matchmaking_eligible_candidate_ids(
 )
 returns table(user_id uuid)
 language plpgsql
-stable
+volatile
 security definer
 set search_path = ''
 as $function$

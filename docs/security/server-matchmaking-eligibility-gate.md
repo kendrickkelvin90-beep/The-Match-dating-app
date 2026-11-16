@@ -61,3 +61,16 @@ Before any staging or production use:
 - Obtain separate approval before applying any migration to the live project.
 
 This feature branch includes an optional-role profile migration and limited onboarding/profile/public-copy changes. The eligibility RPC is still not integrated into the live Discover flow, and no production migration has been applied.
+
+
+## Shared-interest compatibility scoring
+
+The general-dating branch adds `public.get_interest_match_scores(uuid[])`. It calls the existing shared-details RPC inside a trusted security-definer boundary, so a candidate is scored only when that member is currently visible through Discover and has explicitly opted in to sharing interests. Lifestyle-only sharing does not enable interest scoring.
+
+The browser receives only:
+- the number of interests in common; and
+- a Jaccard overlap percentage (shared interests divided by the union of the two selected-interest sets).
+
+It does not receive another member's raw interest array through this scoring RPC. Discover can use the score to order profiles when the member enables the shared-interest priority preference, and the card labels the figure as interest overlap rather than an overall compatibility guarantee.
+
+The profile editor also displays a live 10-interest selection counter and disables additional unselected options once the limit is reached. The database trigger remains the authoritative validation boundary.

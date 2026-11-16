@@ -6943,6 +6943,8 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
 
   <div id="chatPartnerLocation"
     style="font-size:12px;color:#bbb;margin-top:3px;">Loading location…</div>
+  <div id="chatTypingStatus" role="status" aria-live="polite"
+    style="min-height:15px;font-size:11px;color:#d2ad68;margin-top:2px;"></div>
 </div>
 
   
@@ -7836,6 +7838,10 @@ let onlinePresenceUserId = null;
 let onlinePresenceState = {};
 let incomingMessagesChannel = null;
 let conversationPreviewRefreshTimer = null;
+let chatTypingChannel = null;
+let chatTypingPartnerId = null;
+let chatTypingStopTimer = null;
+let chatTypingLastSentAt = 0;
 
 function subscribeToIncomingMessages(user) {
   if (!user?.id) return;
@@ -7944,6 +7950,113 @@ function updateChatOnlineStatus(userId) {
   statusLabel.textContent = isOnline ? "Online" : "Offline";
   statusLabel.style.color = isOnline ? "#52e39a" : "#aaa";
   statusDot.style.background = isOnline ? "#52e39a" : "#777";
+}
+
+// Typing indicators use short-lived Realtime broadcasts only. No message text
+// or typing history is stored in the database.
+function sendChatTyping(isTyping) {
+  if (!chatTypingChannel || !currentUser?.id || !chatTypingPartnerId) return;
+  chatTypingChannel.send({
+    type: "broadcast",
+    event: "typing",
+    payload: { user_id: currentUser.id, is_typing: !!isTyping }
+  }).catch(error => console.warn("Typing indicator update failed:", error));
+}
+
+async function closeChatTypingChannel() {
+  if (chatTypingStopTimer) {
+    clearTimeout(chatTypingStopTimer);
+    chatTypingStopTimer = null;
+  }
+  const channel = chatTypingChannel;
+  chatTypingChannel = null;
+  chatTypingPartnerId = null;
+  chatTypingLastSentAt = 0;
+  if (channel) {
+    try {
+      if (currentUser?.id) {
+        await channel.send({
+          type: "broadcast",
+          event: "typing",
+          payload: { user_id: currentUser.id, is_typing: false }
+        });
+      }
+    } catch (error) {
+      console.warn("Could not clear typing indicator:", error);
+    }
+    try { await db.removeChannel(channel); } catch (error) {
+      console.warn("Could not close typing channel:", error);
+    }
+  }
+  const status = $("chatTypingStatus");
+  if (status) status.textContent = "";
+}
+
+async function subscribeToChatTyping(partnerId) {
+  await closeChatTypingChannel();
+  if (!currentUser?.id || !partnerId || partnerId === currentUser.id) return;
+
+  const memberIds = [currentUser.id, partnerId].sort();
+  const topic = "match-typing-" + memberIds.join("-");
+  const channel = db.channel(topic, {
+    config: { broadcast: { self: false } }
+  });
+  chatTypingChannel = channel;
+  chatTypingPartnerId = partnerId;
+
+  channel.on("broadcast", { event: "typing" }, ({ payload }) => {
+    if (
+      chatTypingChannel !== channel ||
+      currentUser?.id == null ||
+      activeChatUserId !== partnerId ||
+      payload?.user_id !== partnerId
+    ) return;
+
+    const status = $("chatTypingStatus");
+    if (!status) return;
+    if (payload.is_typing === true) {
+      status.textContent = "Typing…";
+      if (chatTypingStopTimer) clearTimeout(chatTypingStopTimer);
+      chatTypingStopTimer = setTimeout(() => {
+        chatTypingStopTimer = null;
+        if (chatTypingChannel === channel && activeChatUserId === partnerId) {
+          status.textContent = "";
+        }
+      }, 2800);
+    } else {
+      if (chatTypingStopTimer) clearTimeout(chatTypingStopTimer);
+      chatTypingStopTimer = null;
+      status.textContent = "";
+    }
+  });
+
+  channel.subscribe(state => {
+    if (state === "SUBSCRIBED" && chatTypingChannel === channel) {
+      chatTypingLastSentAt = 0;
+    }
+  });
+}
+
+function handleChatTypingInput() {
+  if (!currentUser?.id || !activeChatUserId || !chatTypingChannel) return;
+  const hasText = !!$("chatMessageInput")?.value?.trim();
+  if (!hasText) {
+    sendChatTyping(false);
+    if (chatTypingStopTimer) clearTimeout(chatTypingStopTimer);
+    chatTypingStopTimer = null;
+    return;
+  }
+
+  const now = Date.now();
+  if (now - chatTypingLastSentAt >= 1400) {
+    sendChatTyping(true);
+    chatTypingLastSentAt = now;
+  }
+  if (chatTypingStopTimer) clearTimeout(chatTypingStopTimer);
+  chatTypingStopTimer = setTimeout(() => {
+    chatTypingStopTimer = null;
+    sendChatTyping(false);
+  }, 2200);
 }
 
 async function startOnlinePresence(user) {
@@ -8355,6 +8468,7 @@ async function leaveChatPage() {
     conversationListNode.appendChild(activeConversationNode);
     activeConversationNode.classList.add("hidden");
   }
+  await closeChatTypingChannel();
   activeChatUserId = null;
   window.activeChatUserId = null;
 }
@@ -16768,6 +16882,9 @@ $("chatPageStatus").textContent = "";
 $("chatMessages").replaceChildren();
     activeChatUserId = userId;
     window.activeChatUserId = userId;
+    subscribeToChatTyping(userId).catch(error =>
+      console.warn("Could not start chat typing indicator:", error)
+    );
     
     // MATCH_LIVEKIT_CALL_UI_V1: voice-only controls, kept inside the chat header.
     ensureVoiceCallUI();
@@ -17633,6 +17750,7 @@ window.addEventListener("match:gift-sent", event => {
   input.style.height="auto";
   input.style.height=Math.min(input.scrollHeight,120)+"px";
   $("chatPageStatus").textContent="";
+  handleChatTypingInput();
 });
   
 $("chatEmojiToggle").addEventListener("click", event => {
@@ -17817,6 +17935,9 @@ if (file) {
 
 input.value = "";
 input.style.height = "auto";
+sendChatTyping(false);
+if (chatTypingStopTimer) clearTimeout(chatTypingStopTimer);
+chatTypingStopTimer = null;
 
 if (fileInput) fileInput.value = "";
 await loadChatMessages();

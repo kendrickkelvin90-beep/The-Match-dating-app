@@ -26,6 +26,13 @@ as $function$
       in ('women', 'woman')
       then pg_catalog.lower(coalesce(p_gender_identity, '')) like '%woman%'
     when pg_catalog.lower(pg_catalog.btrim(coalesce(p_preference, '')))
+      in ('men and women', 'both men and women')
+      then (
+        (pg_catalog.lower(coalesce(p_gender_identity, '')) like '%man%'
+          and pg_catalog.lower(coalesce(p_gender_identity, '')) not like '%woman%')
+        or pg_catalog.lower(coalesce(p_gender_identity, '')) like '%woman%'
+      )
+    when pg_catalog.lower(pg_catalog.btrim(coalesce(p_preference, '')))
       in ('non-binary people', 'nonbinary people', 'non-binary', 'nonbinary')
       then pg_catalog.lower(coalesce(p_gender_identity, '')) like '%non-binary%'
         or pg_catalog.lower(coalesce(p_gender_identity, '')) like '%nonbinary%'

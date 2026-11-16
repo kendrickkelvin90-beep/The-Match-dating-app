@@ -421,7 +421,12 @@ set relationship_intention = 'Long-term relationship',
 where user_id = '00000000-0000-4000-8000-000000000002';
 
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
-do $$
+select 'profile-extra-consent' as debug_label, user_id, share_interests, share_lifestyle, share_profile_extras
+from public.member_dating_details
+where user_id = '00000000-0000-4000-8000-000000000002';
+select 'profile-extra-visibility' as debug_label, user_id
+from public.get_shared_dating_details(array['00000000-0000-4000-8000-000000000002'::uuid]);
+do $
 declare
   extras_row record;
 begin

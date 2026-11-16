@@ -166,6 +166,21 @@ begin
           and private.match_preference_accepts_gender(viewer.interested_in, candidate.gender_identity)
           and private.match_preference_accepts_gender(candidate.interested_in, viewer.gender_identity)
       )
+      -- A straight member is shown only other members who explicitly selected
+      -- Straight / heterosexual. No orientation is inferred from gender.
+      and (
+        coalesce((
+          select viewer_onboarding.answers ->> 'sexual_orientation'
+          from public.member_onboarding viewer_onboarding
+          where viewer_onboarding.user_id = v_viewer_id
+        ), '') <> 'Straight / heterosexual'
+        or exists (
+          select 1
+          from public.member_onboarding candidate_onboarding
+          where candidate_onboarding.user_id = candidate.id
+            and candidate_onboarding.answers ->> 'sexual_orientation' = 'Straight / heterosexual'
+        )
+      )
       and (
         coalesce(p_show_me, 'everyone') = 'everyone'
         or (

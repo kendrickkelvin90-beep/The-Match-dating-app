@@ -42,9 +42,9 @@ This RPC is not permission to read another member's interests. A later, separate
 1. Authenticate the member making the request.
 2. Obtain candidate IDs through this eligibility gate, not from browser-supplied arbitrary IDs.
 3. Re-check eligibility at the moment of interest access.
-4. Require both members to have explicitly opted in to interest sharing.
-5. Read interests only inside a trusted backend boundary.
-6. Return no raw interest lists to the browser; send only the minimum derived compatibility signal needed for ranking.
+4. Require the candidate to have explicitly opted in before their interests are shared or scored. The viewer's own selected interests may be used privately for that viewer's comparison and are never exposed to the candidate.
+5. Read candidate interests only through the trusted shared-details boundary, which rechecks current Discover visibility, moderation, blocks, mutual gender preferences, straight-only audience rules, and candidate sharing consent.
+6. The profile-details RPC may return candidate interest labels only because the candidate explicitly opted in to showing them; the separate interest-scoring RPC returns only a shared count and overlap percentage, never raw arrays.
 7. Never expose the matchmaking service token or Supabase service-role key to the browser.
 
 The onboarding sexual-orientation answer is stored in member_onboarding.answers, not in the public profiles table. It is identity information and is not used as a substitute for explicit dating preferences. The Python ranking prototype remains disconnected from live member data.

@@ -3,7 +3,7 @@
 insert into public.profiles
   (id, display_name, gender_identity, interested_in, bio, city, age, is_verified, sexual_roles, verification_level)
 values
-  ('00000000-0000-4000-8000-000000000001', 'Viewer', 'Man', 'Men', 'A complete viewer profile', 'Lagos', 30, false, array['Bottom'], 'none'),
+  ('00000000-0000-4000-8000-000000000001', 'Viewer', 'Man', 'All genders', 'A complete viewer profile', 'Lagos', 30, false, array['Bottom'], 'none'),
   ('00000000-0000-4000-8000-000000000002', 'Candidate', 'Man', 'Men', 'A complete candidate profile', 'Lagos', 27, false, array['Top'], 'none'),
   ('00000000-0000-4000-8000-000000000003', 'Blocked', 'Man', 'Men', 'A complete candidate profile', 'Lagos', 27, false, array['Top'], 'none'),
   ('00000000-0000-4000-8000-000000000004', 'Suspended', 'Man', 'Men', 'A complete candidate profile', 'Lagos', 27, false, array['Top'], 'none'),
@@ -12,7 +12,9 @@ values
   ('00000000-0000-4000-8000-000000000007', 'Verified', 'Woman', 'Men', 'A complete verified profile', 'Abuja', 28, true, array['Bottom'], 'basic'),
   ('00000000-0000-4000-8000-000000000008', 'Member', 'Man', 'Men', 'A placeholder profile bio', 'Lagos', 28, false, array['Top'], 'none'),
   ('00000000-0000-4000-8000-000000000009', 'No Primary Photo', 'Man', 'Men', 'A complete profile without its primary photo', 'Lagos', 28, false, array['Top'], 'none'),
-  ('00000000-0000-4000-8000-000000000010', 'No Role', 'Man', 'Women', 'A complete profile with no role selected', 'Lagos', 29, false, array[]::text[], 'none');
+  ('00000000-0000-4000-8000-000000000010', 'No Role', 'Man', 'All genders', 'A complete profile with no role selected', 'Lagos', 29, false, array[]::text[], 'none'),
+  ('00000000-0000-4000-8000-000000000011', 'One-way mismatch A', 'Man', 'Women', 'A complete profile with a one-way preference', 'Lagos', 29, false, array['Top'], 'none'),
+  ('00000000-0000-4000-8000-000000000012', 'One-way mismatch B', 'Woman', 'Women', 'A complete profile with a one-way preference', 'Lagos', 29, false, array['Bottom'], 'none');
 
 insert into public.profile_photos (user_id, storage_path, position)
 select ids.user_id, ids.user_id::text || '-' || photo_no::text,
@@ -27,7 +29,9 @@ from (values
   ('00000000-0000-4000-8000-000000000007'::uuid),
   ('00000000-0000-4000-8000-000000000008'::uuid),
   ('00000000-0000-4000-8000-000000000009'::uuid),
-  ('00000000-0000-4000-8000-000000000010'::uuid)
+  ('00000000-0000-4000-8000-000000000010'::uuid),
+  ('00000000-0000-4000-8000-000000000011'::uuid),
+  ('00000000-0000-4000-8000-000000000012'::uuid)
 ) ids(user_id)
 cross join generate_series(1,2) photo_no;
 

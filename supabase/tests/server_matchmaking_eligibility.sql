@@ -50,6 +50,15 @@ do $$
 declare
   found_ids uuid[];
 begin
+  -- Empty role selections must be valid for both viewers and candidates.
+  update public.profiles
+  set sexual_roles = '{}'::text[]
+  where id = '00000000-0000-4000-8000-000000000001';
+
+  if not public.is_match_profile_complete('00000000-0000-4000-8000-000000000001') then
+    raise exception 'A viewer with no role preference must still have a complete profile';
+  end if;
+
   select array_agg(user_id order by user_id)
     into found_ids
   from public.matchmaking_eligible_candidate_ids();
@@ -96,8 +105,17 @@ begin
   if found_ids is distinct from array['00000000-0000-4000-8000-000000000002'::uuid] then
     raise exception 'Distance filter did not preserve the production Discover result: %', found_ids;
   end if;
+  if not private.match_preference_accepts_gender('Men', 'Trans man')
+     or private.match_preference_accepts_gender('Men', 'Woman')
+     or not private.match_preference_accepts_gender('Women', 'Trans woman')
+     or private.match_preference_accepts_gender('Women', 'Man')
+     or not private.match_preference_accepts_gender('All genders', 'Non-binary')
+     or not private.match_preference_accepts_gender('Non-binary people', 'Non-binary')
+     or private.match_preference_accepts_gender('Men', 'Genderqueer') then
+    raise exception 'Mutual gender-preference helper returned an unexpected result';
+  end if;
 end;
-$$;
+$;
 
 -- Insert the viewer's moderation row explicitly; the fixture initially only
 -- contains moderation rows for the suspended and banned candidate accounts.

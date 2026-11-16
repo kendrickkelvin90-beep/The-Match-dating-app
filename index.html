@@ -11214,7 +11214,8 @@ async function loadNearby(){
       : viewerPremium ? allSavedPreferences : {
           location: allSavedPreferences.location || "",
           showMe: allSavedPreferences.showMe || "everyone",
-          lookingFor: allSavedPreferences.lookingFor || ""
+          lookingFor: allSavedPreferences.lookingFor || "",
+          prioritiseSharedInterests: !!allSavedPreferences.prioritiseSharedInterests
         };
     const preferredLocation = (savedPreferences.location || "").trim();
     // Discover is intentionally wide-ranging by default. A Premium member's

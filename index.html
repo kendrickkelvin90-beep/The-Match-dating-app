@@ -11152,21 +11152,22 @@ async function attachSharedDatingDetails(people) {
   if (!currentUser?.id || !Array.isArray(people) || !people.length) return people;
   const ids = people.map(person => person.id).filter(Boolean);
   if (!ids.length) return people;
-  const [{ data, error }, ownResult] = await Promise.all([
+  const [{ data, error }, { data: scoreRows, error: scoreError }] = await Promise.all([
     db.rpc("get_shared_dating_details", { p_user_ids: ids.slice(0, 100) }),
-    db.from("member_dating_details").select("interests").eq("user_id", currentUser.id).maybeSingle()
+    db.rpc("get_interest_match_scores", { p_user_ids: ids.slice(0, 100) })
   ]);
   if (error) throw error;
-  if (ownResult.error) throw ownResult.error;
-  const ownInterests = new Set(ownResult.data?.interests || []);
+  if (scoreError) throw scoreError;
   const byId = new Map((data || []).map(row => [row.user_id, row]));
+  const scoreById = new Map((scoreRows || []).map(row => [row.user_id, row]));
   return people.map(person => {
     const shared = byId.get(person.id) || null;
-    const sharedInterests = Array.isArray(shared?.interests) ? shared.interests : [];
+    const score = scoreById.get(person.id) || null;
     return {
       ...person,
       shared_dating_details: shared,
-      _sharedInterestCount: sharedInterests.filter(interest => ownInterests.has(interest)).length
+      _sharedInterestCount: Number(score?.shared_interest_count || 0),
+      _interestMatchPercent: Number(score?.interest_match_percent || 0)
     };
   });
 }
@@ -11350,7 +11351,7 @@ let people = (peopleData || []).filter(person => eligibleIds.has(person.id)).map
       [people[i], people[j]] = [people[j], people[i]];
     }
     if (savedPreferences.prioritiseSharedInterests) {
-      people.sort((a, b) => (b._sharedInterestCount || 0) - (a._sharedInterestCount || 0));
+      people.sort((a, b) => (b._interestMatchPercent || 0) - (a._interestMatchPercent || 0) || (b._sharedInterestCount || 0) - (a._sharedInterestCount || 0));
     }
 
 
@@ -11478,7 +11479,7 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
     [people[i], people[j]] = [people[j], people[i]];
   }
   if (savedPreferences.prioritiseSharedInterests) {
-    people.sort((a, b) => (b._sharedInterestCount || 0) - (a._sharedInterestCount || 0));
+    people.sort((a, b) => (b._interestMatchPercent || 0) - (a._interestMatchPercent || 0) || (b._sharedInterestCount || 0) - (a._sharedInterestCount || 0));
   }
 }
 
@@ -11780,6 +11781,23 @@ if (p.has_special_badge) {
 }
 infoOverlay.appendChild(name);
 if (newMemberBadge) infoOverlay.appendChild(newMemberBadge);
+
+if (p._sharedInterestCount > 0) {
+  const interestMatchBadge = document.createElement("div");
+  interestMatchBadge.className = "discover-interest-match-badge";
+  const overlapPercent = Math.max(0, Math.min(100, Math.round(Number(p._interestMatchPercent) || 0)));
+  interestMatchBadge.textContent = "✨ " + p._sharedInterestCount +
+    (p._sharedInterestCount === 1 ? " interest in common" : " interests in common") +
+    (overlapPercent ? " · " + overlapPercent + "% overlap" : "");
+  interestMatchBadge.setAttribute("aria-label", interestMatchBadge.textContent);
+  interestMatchBadge.style.cssText =
+    "display:inline-flex;align-self:flex-start;align-items:center;max-width:100%;" +
+    "margin:0 0 9px;padding:7px 11px;border:1px solid rgba(232,202,139,.62);" +
+    "border-radius:999px;background:rgba(18,15,10,.78);color:#f4d995;" +
+    "font-size:12px;font-weight:800;line-height:1.25;backdrop-filter:blur(10px);" +
+    "box-shadow:0 3px 12px rgba(0,0,0,.2);";
+  infoOverlay.appendChild(interestMatchBadge);
+}
 
 const distance=document.createElement("div");
 distance.className="distance";

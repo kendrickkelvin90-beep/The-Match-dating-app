@@ -59,9 +59,9 @@ create function realtime.topic()
 returns text
 language sql
 stable
-as $
+as $$
   select nullif(current_setting('request.realtime.topic', true), '')
-$;
+$$;
 alter table realtime.messages enable row level security;
 grant usage on schema realtime to authenticated;
 grant select, insert on realtime.messages to authenticated;

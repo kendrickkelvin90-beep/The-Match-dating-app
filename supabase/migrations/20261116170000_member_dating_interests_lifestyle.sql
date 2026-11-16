@@ -50,13 +50,13 @@ begin
     raise exception 'Choose no more than 10 interests' using errcode = '22023';
   end if;
   if exists (
-    select 1 from unnest(coalesce(new.interests, '{}'::text[])) item
-    where not (item = any(allowed_interests))
+    select 1 from unnest(coalesce(new.interests, '{}'::text[])) as interests(value)
+    where not (value = any(allowed_interests))
   ) then
     raise exception 'One or more interests are not supported' using errcode = '22023';
   end if;
   if coalesce(cardinality(new.interests), 0) <>
-     (select count(distinct item) from unnest(coalesce(new.interests, '{}'::text[])) item) then
+     (select count(distinct value) from unnest(coalesce(new.interests, '{}'::text[])) as interests(value)) then
     raise exception 'Interests cannot contain duplicates' using errcode = '22023';
   end if;
   new.updated_at := pg_catalog.now();

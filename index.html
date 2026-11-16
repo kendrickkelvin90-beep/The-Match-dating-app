@@ -11338,26 +11338,40 @@ async function attachSharedDatingDetails(people) {
   if (!currentUser?.id || !Array.isArray(people) || !people.length) return people;
   const ids = people.map(person => person.id).filter(Boolean);
   if (!ids.length) return people;
-  const [{ data, error }, { data: scoreRows, error: scoreError }, { data: profileExtrasRows, error: profileExtrasError }] = await Promise.all([
+  const [
+    { data, error },
+    { data: scoreRows, error: scoreError },
+    { data: profileExtrasRows, error: profileExtrasError },
+    { data: compatibilityRows, error: compatibilityError }
+  ] = await Promise.all([
     db.rpc("get_shared_dating_details", { p_user_ids: ids.slice(0, 100) }),
     db.rpc("get_interest_match_scores", { p_user_ids: ids.slice(0, 100) }),
-    db.rpc("get_shared_profile_extras", { p_user_ids: ids.slice(0, 100) })
+    db.rpc("get_shared_profile_extras", { p_user_ids: ids.slice(0, 100) }),
+    db.rpc("get_dating_compatibility_scores", { p_user_ids: ids.slice(0, 100) })
   ]);
   if (error) throw error;
   if (scoreError) throw scoreError;
   if (profileExtrasError) throw profileExtrasError;
+  if (compatibilityError) throw compatibilityError;
   const byId = new Map((data || []).map(row => [row.user_id, row]));
   const scoreById = new Map((scoreRows || []).map(row => [row.user_id, row]));
   const profileExtrasById = new Map((profileExtrasRows || []).map(row => [row.user_id, row]));
+  const compatibilityById = new Map((compatibilityRows || []).map(row => [row.user_id, row]));
   return people.map(person => {
     const shared = byId.get(person.id) || null;
     const score = scoreById.get(person.id) || null;
+    const compatibility = compatibilityById.get(person.id) || null;
     return {
       ...person,
       shared_dating_details: shared,
       shared_profile_extras: profileExtrasById.get(person.id) || null,
       _sharedInterestCount: Number(score?.shared_interest_count || 0),
-      _interestMatchPercent: Number(score?.interest_match_percent || 0)
+      _interestMatchPercent: Number(score?.interest_match_percent || 0),
+      _compatibilityPercent: Number(compatibility?.compatibility_percent || 0),
+      _compatibilityDimensions: Number(compatibility?.scored_dimensions || 0),
+      _compatibilityIntentionMatch: compatibility?.relationship_intention_match ?? null,
+      _compatibilityCommunicationMatch: compatibility?.communication_style_match ?? null,
+      _compatibilitySharedLanguageCount: Number(compatibility?.shared_language_count || 0)
     };
   });
 }
@@ -11991,6 +12005,20 @@ if (p.has_special_badge) {
 }
 infoOverlay.appendChild(name);
 if (newMemberBadge) infoOverlay.appendChild(newMemberBadge);
+
+if (p._compatibilityDimensions >= 2 && p._compatibilityPercent > 0) {
+  const compatibilityBadge = document.createElement("div");
+  compatibilityBadge.className = "discover-compatibility-badge";
+  compatibilityBadge.textContent = "💛 " + Math.max(0, Math.min(100, Math.round(p._compatibilityPercent))) + "% compatibility";
+  compatibilityBadge.title = "Based on the interests, dating intentions, communication style and languages that members chose to share.";
+  compatibilityBadge.setAttribute("aria-label", compatibilityBadge.textContent);
+  compatibilityBadge.style.cssText =
+    "display:inline-flex;align-self:flex-start;align-items:center;max-width:100%;" +
+    "margin:0 0 8px;padding:7px 11px;border:1px solid rgba(210,173,104,.55);" +
+    "border-radius:999px;background:rgba(18,15,10,.82);color:#f6dda5;" +
+    "font-size:12px;font-weight:800;line-height:1.35;";
+  infoOverlay.appendChild(compatibilityBadge);
+}
 
 if (p._sharedInterestCount > 0) {
   const interestMatchBadge = document.createElement("div");

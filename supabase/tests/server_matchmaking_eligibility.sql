@@ -73,10 +73,17 @@ begin
 end;
 $$;
 
--- Use a separate SQL command so the moderation assertion sees a fresh statement snapshot.
-update public.member_moderation
-set status = 'suspended', expires_at = now()+interval '1 day'
-where user_id = '00000000-0000-4000-8000-000000000001';
+-- Insert the viewer's moderation row explicitly; the fixture initially only
+-- contains moderation rows for the suspended and banned candidate accounts.
+insert into public.member_moderation (user_id, status, expires_at)
+values (
+  '00000000-0000-4000-8000-000000000001',
+  'suspended',
+  now()+interval '1 day'
+)
+on conflict (user_id) do update
+set status = excluded.status,
+    expires_at = excluded.expires_at;
 
 do $$
 declare

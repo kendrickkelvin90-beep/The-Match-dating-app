@@ -11156,6 +11156,12 @@ const selectedDatingInterests = Array.from(
 if (selectedDatingInterests.length > 10) {
   throw Error("Please choose no more than 10 interests.");
 }
+const selectedDatingLanguages = Array.from(new Set(
+  $("datingLanguages").value.split(",").map(value => value.trim()).filter(Boolean)
+));
+if (selectedDatingLanguages.length > 8) {
+  throw Error("Please choose no more than 8 languages.");
+}
 const { error: datingDetailsError } = await db.from("member_dating_details").upsert({
   user_id: currentUser.id,
   interests: selectedDatingInterests,
@@ -11168,7 +11174,7 @@ const { error: datingDetailsError } = await db.from("member_dating_details").ups
   share_lifestyle: $("shareDatingLifestyle").checked,
   relationship_intention: $("datingRelationshipIntention").value,
   communication_style: $("datingCommunicationStyle").value,
-  languages: Array.from(new Set($("datingLanguages").value.split(",").map(value => value.trim()).filter(Boolean))).slice(0, 8),
+  languages: selectedDatingLanguages,
   education_level: $("datingEducation").value,
   occupation: $("datingOccupation").value.trim(),
   favorite_music: $("datingFavoriteMusic").value.trim(),

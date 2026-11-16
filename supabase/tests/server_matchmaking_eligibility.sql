@@ -190,12 +190,21 @@ insert into public.member_dating_details
   (user_id, interests, smoking, drinking, activity_level, pets, children, share_interests, share_lifestyle)
 values
   ('00000000-0000-4000-8000-000000000002', array['Music','Travel'], 'Never', 'Socially', 'Very active', 'Love pets', 'Not sure', true, false),
+  ('00000000-0000-4000-8000-000000000003', array['Gaming'], 'Never', 'Never', 'Moderately active', 'Not for me', 'Not sure', true, false),
   ('00000000-0000-4000-8000-000000000007', array['Football'], 'Socially', 'Occasionally', 'Moderately active', 'Have pets', 'Have children', true, true);
 
 do $
 declare
   shared_row record;
 begin
+  if (select count(*) from public.get_shared_dating_details(array[
+        '00000000-0000-4000-8000-000000000002'::uuid,
+        '00000000-0000-4000-8000-000000000003'::uuid,
+        '00000000-0000-4000-8000-000000000007'::uuid
+      ])) <> 2 then
+    raise exception 'Blocked members must not expose shared dating details';
+  end if;
+
   select * into shared_row
   from public.get_shared_dating_details(array[
     '00000000-0000-4000-8000-000000000002'::uuid,

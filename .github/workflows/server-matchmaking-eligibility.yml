@@ -14,6 +14,7 @@ on:
       - feat/general-inclusive-dating
     paths:
       - "supabase/migrations/20261116130000_server_matchmaking_eligibility_gate.sql"
+      - "supabase/migrations/20261116150000_general_dating_optional_roles.sql"
       - "supabase/tests/server_matchmaking_eligibility*.sql"
       - ".github/workflows/server-matchmaking-eligibility.yml"
 
@@ -53,15 +54,14 @@ jobs:
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/tests/server_matchmaking_eligibility_setup.sql
 
-      - name: Apply eligibility migration to disposable PostgreSQL
+      - name: Apply eligibility and general-dating migrations to disposable PostgreSQL
         env:
           PGPASSWORD: postgres
         run: |
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/migrations/20261116130000_server_matchmaking_eligibility_gate.sql
-        run: psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
-          -f supabase/migrations/20261116150000_general_dating_optional_roles.sql
-
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/migrations/20261116150000_general_dating_optional_roles.sql
       - name: Run moderation, block, completeness, and preference assertions
         env:
           PGPASSWORD: postgres

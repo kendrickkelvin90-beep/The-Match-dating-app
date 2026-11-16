@@ -35,7 +35,7 @@ The current Discover functions and frontend have separate filtering responsibili
 4. As member B, verify member B cannot select, insert, update, or delete member A's rows or preference.
 5. Verify anonymous requests cannot read the catalog or member tables.
 6. Verify the catalog returns active choices only and clients cannot insert or edit catalog entries.
-7. Verify a member can select 20 interests but the 21st distinct interest is rejected, including concurrent insert attempts.
+7. Verify a member can select 20 interests but the 21st distinct interest is rejected. The trigger uses a per-member transaction lock; a separate concurrent-session probe is still required before staging.
 8. Verify duplicate interests are rejected by the primary key.
 9. Verify opt-in defaults to false, the consent timestamp/version are written on opt-in, and both are cleared on opt-out.
 10. Verify deleting a member account cascades their own preference and interest rows.

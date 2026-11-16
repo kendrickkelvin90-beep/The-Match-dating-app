@@ -15,7 +15,6 @@ begin
       to authenticated
       using (
         extension = 'broadcast'
-        and payload ->> 'event' = 'typing'
         and realtime.topic() ~ '^match-typing:[0-9a-fA-F-]{36}:[0-9a-fA-F-]{36}$'
         and auth.uid()::text in (
           split_part(realtime.topic(), ':', 2),

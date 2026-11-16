@@ -173,7 +173,7 @@ $;
 -- through the explicit opt-in RPC tested below.
 set role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
-do $
+do $$
 begin
   if exists (
     select 1 from public.member_dating_details
@@ -193,7 +193,7 @@ values
   ('00000000-0000-4000-8000-000000000003', array['Gaming'], 'Never', 'Never', 'Moderately active', 'Not for me', 'Not sure', true, false),
   ('00000000-0000-4000-8000-000000000007', array['Football'], 'Socially', 'Occasionally', 'Moderately active', 'Have pets', 'Have children', true, true);
 
-do $
+do $$
 declare
   shared_row record;
 begin

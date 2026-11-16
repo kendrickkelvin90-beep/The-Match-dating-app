@@ -5,7 +5,6 @@ on:
     paths:
       - "supabase/migrations/20261116130000_server_matchmaking_eligibility_gate.sql"
       - "supabase/migrations/20261116150000_general_dating_optional_roles.sql"
-      - "supabase/migrations/20261116150000_general_dating_optional_roles.sql"
       - "supabase/tests/server_matchmaking_eligibility*.sql"
       - ".github/workflows/server-matchmaking-eligibility.yml"
   push:
@@ -15,7 +14,6 @@ on:
       - feat/general-inclusive-dating
     paths:
       - "supabase/migrations/20261116130000_server_matchmaking_eligibility_gate.sql"
-      - "supabase/migrations/20261116150000_general_dating_optional_roles.sql"
       - "supabase/migrations/20261116150000_general_dating_optional_roles.sql"
       - "supabase/tests/server_matchmaking_eligibility*.sql"
       - ".github/workflows/server-matchmaking-eligibility.yml"
@@ -48,6 +46,22 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client
+
+      - name: Check inline JavaScript syntax
+        run: |
+          python3 - <<'PY'
+          import pathlib, re, subprocess, tempfile
+          html = pathlib.Path("index.html").read_text(encoding="utf-8")
+          scripts = re.findall(r"<script\\b[^>]*>(.*?)</script>", html, flags=re.I | re.S)
+          inline_scripts = [script for script in scripts if script.strip()]
+          if not inline_scripts:
+              raise SystemExit("No inline JavaScript blocks found")
+          with tempfile.TemporaryDirectory() as directory:
+              for number, script in enumerate(inline_scripts, start=1):
+                  path = pathlib.Path(directory) / f"inline-{number}.js"
+                  path.write_text(script, encoding="utf-8")
+                  subprocess.run(["node", "--check", str(path)], check=True)
+          print(f"Checked {len(inline_scripts)} inline JavaScript blocks")
 
       - name: Prepare isolated Discover schema and synthetic fixtures
         env:

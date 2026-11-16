@@ -468,4 +468,62 @@ begin
 end;
 $$;
 
+-- Private Realtime typing is limited to the two members in the topic.
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
+select set_config(
+  'request.realtime.topic',
+  'match-typing:00000000-0000-4000-8000-000000000001:00000000-0000-4000-8000-000000000002',
+  false
+);
+set role authenticated;
+insert into realtime.messages(topic, extension, payload)
+values (
+  'match-typing:00000000-0000-4000-8000-000000000001:00000000-0000-4000-8000-000000000002',
+  'broadcast',
+  jsonb_build_object(
+    'event','typing',
+    'payload',jsonb_build_object(
+      'user_id','00000000-0000-4000-8000-000000000001',
+      'is_typing',true
+    )
+  )
+);
+
+do $
+begin
+  if not exists (
+    select 1 from realtime.messages
+    where topic = realtime.topic()
+  ) then
+    raise exception 'An authorised member could not read their conversation typing channel';
+  end if;
+
+  begin
+    insert into realtime.messages(topic, extension, payload)
+    values (
+      realtime.topic(),
+      'broadcast',
+      jsonb_build_object(
+        'event','typing',
+        'payload',jsonb_build_object(
+          'user_id','00000000-0000-4000-8000-000000000002',
+          'is_typing',true
+        )
+      )
+    );
+    raise exception 'A member unexpectedly spoofed the other member typing state';
+  exception when insufficient_privilege then
+    null;
+  end;
+
+  if public.can_use_match_typing_channel(
+    '00000000-0000-4000-8000-000000000001',
+    '00000000-0000-4000-8000-000000000003'
+  ) then
+    raise exception 'A blocked pair unexpectedly passed typing-channel authorization';
+  end if;
+end;
+$;
+reset role;
+
 select 'server matchmaking eligibility tests passed' as result;

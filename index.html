@@ -14528,6 +14528,7 @@ $("profileBoostBtn")?.addEventListener("click", async () => {
 });
 
 $("openDiscoveryPreferencesTop").addEventListener("click", async () => {
+  try { await loadCurrentMemberOrientation(); } catch (error) { console.warn("Orientation unavailable for discovery layout:", error); }
   await loadDiscoveryPreferences();
   show("discoveryPreferencesPage");
 });
@@ -14537,6 +14538,34 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
   $("discoveryDistance").addEventListener("input", event => {
   $("discoveryDistanceValue").textContent = event.target.value + " km";
 });
+  $("straightDistance").addEventListener("input", event => {
+    $("straightDistanceValue").textContent = event.target.value + " km";
+  });
+  $("saveStraightDiscoveryPreferences").addEventListener("click", async () => {
+    const premium = await matchHasAdvancedFilters();
+    const minAge = Number($("straightAgeMin").value);
+    const maxAge = Number($("straightAgeMax").value);
+    if (minAge < 18 || maxAge > (premium ? 99 : 79) || minAge > maxAge) {
+      status("straightDiscoveryPreferencesStatus", "Please enter a valid age range.", true);
+      return;
+    }
+    try {
+      const saved = await getCurrentAccountDiscoveryPreferences();
+      saved.straight = {
+        showMe: $("straightShowMe").value,
+        minAge,
+        maxAge,
+        location: $("straightLocation").value.trim(),
+        distance: Math.min(Number($("straightDistance").value), premium ? 200 : 50),
+        lookingFor: $("straightLookingFor").value
+      };
+      localStorage.setItem(getDiscoveryPreferencesStorageKey(), JSON.stringify(saved));
+      status("straightDiscoveryPreferencesStatus", "Your dating preferences have been saved.");
+    } catch (error) {
+      console.error("Straight discovery preference save failed:", error);
+      status("straightDiscoveryPreferencesStatus", "Could not save preferences. Please try again.", true);
+    }
+  });
   $("saveDiscoveryPreferences").addEventListener("click", async () => {
   const premium = await matchHasAdvancedFilters();
   const minAge = Number($("discoveryAgeMin").value);
@@ -14609,6 +14638,27 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
     if (!currentUser?.id) throw new Error("Please sign in to load discovery preferences.");
     const premium = await matchHasAdvancedFilters();
     const saved = await getCurrentAccountDiscoveryPreferences();
+    const straightMode = currentMemberOrientation === "Straight / heterosexual";
+    $("straightDiscoveryPreferences").hidden = !straightMode;
+    $("queerDiscoveryPreferences").hidden = straightMode;
+
+    const straightSaved = saved.straight || {};
+    const ownGender = String($("gender")?.value || "").toLowerCase();
+    const defaultStraightShowMe = ownGender.includes("woman")
+      ? "men"
+      : (ownGender.includes("man") && !ownGender.includes("woman") ? "women" : "everyone");
+    const straightDistance = $("straightDistance");
+    straightDistance.max = premium ? "200" : "50";
+    straightDistance.value = Math.min(Number(straightSaved.distance || 50), premium ? 200 : 50);
+    $("straightDistanceValue").textContent = straightDistance.value + " km";
+    $("straightAgeMin").max = premium ? "99" : "79";
+    $("straightAgeMax").max = premium ? "99" : "79";
+    $("straightAgeMin").value = straightSaved.minAge ?? 18;
+    $("straightAgeMax").value = Math.min(Number(straightSaved.maxAge ?? 79), premium ? 99 : 79);
+    $("straightLocation").value = straightSaved.location ?? "";
+    $("straightShowMe").value = straightSaved.showMe || defaultStraightShowMe;
+    $("straightLookingFor").value = straightSaved.lookingFor ?? "";
+
     const distance = $("discoveryDistance");
     distance.max = premium ? "200" : "50";
     distance.value = Math.min(Number(saved.distance || 50), premium ? 200 : 50);

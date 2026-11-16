@@ -5943,7 +5943,7 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
 <div class="eyebrow">YOUR NEXT CHAPTER STARTS HERE</div>
 <h1>Find your kind<br>of <span>love.</span></h1>
   <p class="eyebrow" style="font-weight:800;font-size:14px;letter-spacing:1.5px;color:#ff3c79;text-align:center;margin:12px 0;">
-  OPEN TO STRAIGHT & LGBTQ+ ADULTS
+  MEET PEOPLE. FIND YOUR CONNECTION.
   </p>
 <p class="intro">A welcoming dating community for adults 18 and above, across all genders and sexual orientations. Discover genuine connections nearby.</p>
 </section>
@@ -6040,7 +6040,7 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
 <section class="panel hidden" id="auth">
 <h2 id="authTitle">Create your account</h2>
 <p class="small" style="font-weight:700;">Start your journey with The Match.</p>
-<p style="font-weight:800;font-size:14px;color:#ff3c79;text-align:center;letter-spacing:0.5px;">OPEN TO STRAIGHT & LGBTQ+ ADULTS · 18+</p>
+<p style="font-weight:800;font-size:14px;color:#ff3c79;text-align:center;letter-spacing:0.5px;">DATING FOR ADULTS 18+</p>
 <form id="authForm">
 <label for="email">Email address</label>
 <input id="email" type="email" autocomplete="email" required placeholder="you@example.com">
@@ -6130,11 +6130,11 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
 <label for="interest">Interested in *</label>
 <select id="interest" required>
 <option value="">Choose who you'd like to meet</option>
-<option>Men</option><option>Women</option><option>All genders</option>
+<option>Men</option><option>Women</option><option>Men and women</option><option>All genders</option>
 <option>Non-binary people</option><option>Not sure yet</option>
 </select>
 
-<div class="member-card">
+<div class="member-card" id="queerRolePreferencesSection">
   <h2>Optional role preferences</h2>
   <p class="small">Only share a role if it is relevant to how you date. You can leave this blank.</p>
   <label><input type="radio" name="sexualRole" value="Top"> Top</label>
@@ -9495,7 +9495,7 @@ const onboardingQuestions = [
     key: "interested_in",
     title: "Who would you like to meet?",
     help: "Choose the option that best describes your preference.",
-    options: ["Men", "Women", "All genders", "I'll decide later"]
+    options: ["Men", "Women", "Men and women", "All genders", "I'll decide later"]
   },
   {
     key: "relationship_goal",
@@ -10845,6 +10845,8 @@ try {
   console.warn("Member orientation could not be loaded; retaining the existing discovery experience.", orientationError);
   currentMemberOrientation = "";
 }
+const queerRoleSection = $("queerRolePreferencesSection");
+if (queerRoleSection) queerRoleSection.hidden = currentMemberOrientation === "Straight / heterosexual";
 
   if (window.matchModerationInterval) clearInterval(window.matchModerationInterval);
   window.matchModerationInterval = setInterval(() => {
@@ -11750,7 +11752,7 @@ details.style.cssText =
 detailsPanel.appendChild(details);
 appendSharedDatingDetails(detailsPanel, p.shared_dating_details);
 
-if (Array.isArray(p.sexual_roles) && p.sexual_roles.length) {
+      if (currentMemberOrientation !== "Straight / heterosexual" && Array.isArray(p.sexual_roles) && p.sexual_roles.length) {
   const roles = document.createElement("p");
   roles.className = "small";
   roles.textContent = "🏳️‍🌈 Role: " + p.sexual_roles[0];

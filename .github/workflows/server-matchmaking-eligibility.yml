@@ -9,6 +9,7 @@ on:
       - "supabase/migrations/20261116170000_member_dating_interests_lifestyle.sql"
       - "supabase/migrations/20261116180000_interest_match_scores.sql"
       - "supabase/migrations/20261116190000_adult_age_enforcement.sql"
+      - "supabase/migrations/20261116200000_member_profile_extras.sql"
       - "index.html"
       - "supabase/tests/server_matchmaking_eligibility*.sql"
       - ".github/workflows/server-matchmaking-eligibility.yml"
@@ -17,6 +18,7 @@ on:
       - feat/server-matchmaking-eligibility-gate
       - test/matchmaking-eligibility-live-schema-parity
       - feat/general-inclusive-dating
+      - feat/match-2-complete-dating
     paths:
       - "supabase/migrations/20261116130000_server_matchmaking_eligibility_gate.sql"
       - "supabase/migrations/20261116150000_general_dating_optional_roles.sql"

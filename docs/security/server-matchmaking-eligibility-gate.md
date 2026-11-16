@@ -11,7 +11,7 @@ It does not change the existing Discover RPC, Discover frontend, profile cards, 
 The RPC public.matchmaking_eligible_candidate_ids(...):
 
 - Requires an authenticated caller.
-- Requires the viewer to have a complete profile and at least two profile photos.
+- Uses the live `is_match_profile_complete(user_id)` helper for the exact canonical profile-completeness rules, then requires at least two profile-photo records.
 - Excludes a viewer who is currently suspended or permanently banned.
 - Starts with the existing discover_profiles_secure candidate pool, preserving its age, city, distance, and reciprocal-block behavior.
 - Rechecks reciprocal blocks directly rather than relying on the current live can_interact_with_member definition.
@@ -51,7 +51,7 @@ The Python ranking prototype remains disconnected from live member data.
 
 ## Verification and rollout
 
-CI runs the migration and assertions against a disposable PostgreSQL 17 database with synthetic accounts. This is not a Supabase staging test.
+CI runs the migration and assertions against a disposable PostgreSQL 17 database with synthetic accounts. Its setup now mirrors the live moderation constraints and photo column types, and includes regression cases for placeholder profile data and missing primary photos. This is still not a Supabase staging test.
 
 Before any staging or production use:
 - Verify the function against the exact live migration state in an isolated Supabase environment.

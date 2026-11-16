@@ -400,6 +400,10 @@ end;
 $$;
 
 
+-- Restore the viewer after the suspended-viewer eligibility test above.
+delete from public.member_moderation
+where user_id = '00000000-0000-4000-8000-000000000001';
+
 -- The viewer's own dating preferences remain private while scoring candidates.
 update public.member_dating_details
 set relationship_intention = 'Long-term relationship',

@@ -30,11 +30,6 @@ alter table public.member_dating_details
   add constraint member_dating_details_languages_check
     check (
       pg_catalog.cardinality(languages) <= 8
-      and not exists (
-        select 1 from pg_catalog.unnest(languages) as language(value)
-        where pg_catalog.char_length(pg_catalog.btrim(language.value)) < 2
-           or pg_catalog.char_length(pg_catalog.btrim(language.value)) > 40
-      )
     );
 
 create or replace function public.get_shared_dating_details(p_user_ids uuid[])
@@ -144,6 +139,37 @@ begin
     and (d.share_interests or d.share_lifestyle or d.share_profile_extras);
 end;
 $function$;
+
+
+create or replace function private.validate_member_profile_extras()
+returns trigger
+language plpgsql
+set search_path = ''
+as $function$
+begin
+  if coalesce(cardinality(new.languages), 0) > 8 then
+    raise exception 'Choose no more than 8 languages' using errcode = '22023';
+  end if;
+  if exists (
+    select 1 from pg_catalog.unnest(coalesce(new.languages, '{}'::text[])) as language(value)
+    where pg_catalog.char_length(pg_catalog.btrim(language.value)) < 2
+       or pg_catalog.char_length(pg_catalog.btrim(language.value)) > 40
+  ) then
+    raise exception 'Each language must contain between 2 and 40 characters' using errcode = '22023';
+  end if;
+  new.languages := coalesce(new.languages, '{}'::text[]);
+  new.occupation := pg_catalog.btrim(coalesce(new.occupation, ''));
+  new.favorite_music := pg_catalog.btrim(coalesce(new.favorite_music, ''));
+  new.favorite_movies := pg_catalog.btrim(coalesce(new.favorite_movies, ''));
+  new.favorite_food := pg_catalog.btrim(coalesce(new.favorite_food, ''));
+  return new;
+end;
+$function$;
+
+drop trigger if exists validate_member_profile_extras on public.member_dating_details;
+create trigger validate_member_profile_extras
+  before insert or update on public.member_dating_details
+  for each row execute function private.validate_member_profile_extras();
 
 create or replace function public.get_shared_profile_extras(p_user_ids uuid[])
 returns table(

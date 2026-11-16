@@ -7997,9 +7997,9 @@ async function subscribeToChatTyping(partnerId) {
   if (!currentUser?.id || !partnerId || partnerId === currentUser.id) return;
 
   const memberIds = [currentUser.id, partnerId].sort();
-  const topic = "match-typing-" + memberIds.join("-");
+  const topic = "match-typing:" + memberIds.join(":");
   const channel = db.channel(topic, {
-    config: { broadcast: { self: false } }
+    config: { private: true, broadcast: { self: false } }
   });
   chatTypingChannel = channel;
   chatTypingPartnerId = partnerId;

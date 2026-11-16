@@ -75,6 +75,13 @@ begin
     raise exception 'Member B can read member A interests';
   end if;
 
+  delete from public.member_interests
+  where user_id = '00000000-0000-4000-8000-000000000001';
+  get diagnostics v_rows = row_count;
+  if v_rows <> 0 then
+    raise exception 'Member B deleted member A interests';
+  end if;
+
   select count(*) into v_count
   from public.member_interest_sharing
   where user_id = '00000000-0000-4000-8000-000000000001';

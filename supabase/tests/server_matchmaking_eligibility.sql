@@ -11,7 +11,8 @@ values
   ('00000000-0000-4000-8000-000000000006', 'Incomplete', 'Man', 'Men', '', 'Lagos', 27, false, array['Top'], 'none'),
   ('00000000-0000-4000-8000-000000000007', 'Verified', 'Woman', 'Men', 'A complete verified profile', 'Abuja', 28, true, array['Bottom'], 'basic'),
   ('00000000-0000-4000-8000-000000000008', 'Member', 'Man', 'Men', 'A placeholder profile bio', 'Lagos', 28, false, array['Top'], 'none'),
-  ('00000000-0000-4000-8000-000000000009', 'No Primary Photo', 'Man', 'Men', 'A complete profile without its primary photo', 'Lagos', 28, false, array['Top'], 'none');
+  ('00000000-0000-4000-8000-000000000009', 'No Primary Photo', 'Man', 'Men', 'A complete profile without its primary photo', 'Lagos', 28, false, array['Top'], 'none'),
+  ('00000000-0000-4000-8000-000000000010', 'No Role', 'Man', 'Women', 'A complete profile with no role selected', 'Lagos', 29, false, array[]::text[], 'none');
 
 insert into public.profile_photos (user_id, storage_path, position)
 select ids.user_id, ids.user_id::text || '-' || photo_no::text,
@@ -50,7 +51,8 @@ begin
 
   if found_ids is distinct from array[
     '00000000-0000-4000-8000-000000000002'::uuid,
-    '00000000-0000-4000-8000-000000000007'::uuid
+    '00000000-0000-4000-8000-000000000007'::uuid,
+    '00000000-0000-4000-8000-000000000010'::uuid
   ] then
     raise exception 'Expected only complete, active, unblocked candidates; got %', found_ids;
   end if;

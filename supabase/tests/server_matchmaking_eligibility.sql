@@ -32,12 +32,13 @@ insert into public.member_moderation values
 insert into public.premium_memberships values
   ('00000000-0000-4000-8000-000000000001',now()+interval '30 days');
 
+-- Keep the synthetic JWT claim at session scope across separate SQL commands.
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
+
 do $$
 declare
   found_ids uuid[];
 begin
-  perform set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',true);
-
   select array_agg(user_id order by user_id)
     into found_ids
   from public.matchmaking_eligible_candidate_ids();
@@ -51,43 +52,45 @@ begin
 
   select array_agg(user_id)
     into found_ids
-  from public.matchmaking_eligible_candidate_ids(
-    p_show_me => 'women'
-  );
+  from public.matchmaking_eligible_candidate_ids(p_show_me => 'women');
   if found_ids is distinct from array['00000000-0000-4000-8000-000000000007'::uuid] then
     raise exception 'Gender filter did not return the expected candidate: %', found_ids;
   end if;
 
   select array_agg(user_id)
     into found_ids
-  from public.matchmaking_eligible_candidate_ids(
-    p_role_preferences => array['Bottom']
-  );
+  from public.matchmaking_eligible_candidate_ids(p_role_preferences => array['Bottom']);
   if found_ids is distinct from array['00000000-0000-4000-8000-000000000007'::uuid] then
     raise exception 'Role filter did not return the expected candidate: %', found_ids;
   end if;
 
   select array_agg(user_id)
     into found_ids
-  from public.matchmaking_eligible_candidate_ids(
-    p_verified_only => true
-  );
+  from public.matchmaking_eligible_candidate_ids(p_verified_only => true);
   if found_ids is distinct from array['00000000-0000-4000-8000-000000000007'::uuid] then
     raise exception 'Verified-only filter did not return the expected candidate: %', found_ids;
   end if;
+end;
+$$;
 
-  update public.member_moderation
-  set status = 'suspended', expires_at = now()+interval '1 day'
-  where user_id = '00000000-0000-4000-8000-000000000001';
+-- Use a separate SQL command so the moderation assertion sees a fresh statement snapshot.
+update public.member_moderation
+set status = 'suspended', expires_at = now()+interval '1 day'
+where user_id = '00000000-0000-4000-8000-000000000001';
 
+do $$
+declare
+  found_ids uuid[];
+begin
   select array_agg(user_id)
     into found_ids
   from public.matchmaking_eligible_candidate_ids();
+
   if found_ids is not null then
     raise exception 'Suspended viewer must not receive candidates: %', found_ids;
   end if;
 
-  perform set_config('request.jwt.claim.sub','',true);
+  perform set_config('request.jwt.claim.sub','',false);
   begin
     perform * from public.matchmaking_eligible_candidate_ids();
     raise exception 'Unauthenticated call unexpectedly succeeded';

@@ -10803,9 +10803,48 @@ function profileBioHasPhoneNumber(value) {
   return sanitizeProfileBio(value) !== String(value || "");
 }
 
+let currentMemberOrientation = "";
+
+async function loadCurrentMemberOrientation() {
+  if (!currentUser?.id) {
+    currentMemberOrientation = "";
+    return currentMemberOrientation;
+  }
+  const { data, error } = await db.from("member_onboarding")
+    .select("answers").eq("user_id", currentUser.id).maybeSingle();
+  if (error) throw error;
+  currentMemberOrientation = String(data?.answers?.sexual_orientation || "");
+  return currentMemberOrientation;
+}
+
+async function loadMyDatingDetails() {
+  if (!currentUser?.id) return;
+  const { data, error } = await db.from("member_dating_details")
+    .select("interests,smoking,drinking,activity_level,pets,children,share_interests,share_lifestyle")
+    .eq("user_id", currentUser.id).maybeSingle();
+  if (error) throw error;
+  const saved = data || {};
+  document.querySelectorAll('input[name="datingInterest"]').forEach(input => {
+    input.checked = Array.isArray(saved.interests) && saved.interests.includes(input.value);
+  });
+  $("datingSmoking").value = saved.smoking || "Prefer not to say";
+  $("datingDrinking").value = saved.drinking || "Prefer not to say";
+  $("datingActivity").value = saved.activity_level || "Prefer not to say";
+  $("datingPets").value = saved.pets || "Prefer not to say";
+  $("datingChildren").value = saved.children || "Prefer not to say";
+  $("shareDatingInterests").checked = saved.share_interests !== false;
+  $("shareDatingLifestyle").checked = saved.share_lifestyle === true;
+}
+
 async function showProfile(user, restoreToDiscover = false){
 if (!(await enforceMemberModeration(user))) return;
 currentUser=user;
+try {
+  await loadCurrentMemberOrientation();
+} catch (orientationError) {
+  console.warn("Member orientation could not be loaded; retaining the existing discovery experience.", orientationError);
+  currentMemberOrientation = "";
+}
 
   if (window.matchModerationInterval) clearInterval(window.matchModerationInterval);
   window.matchModerationInterval = setInterval(() => {
@@ -10920,6 +10959,12 @@ status("profileStatus","Your profile is loaded. Check your details and save when
 }
 }catch(e){status("profileStatus","Could not load profile: "+friendly(e),true);}
   
+  try {
+    await loadMyDatingDetails();
+  } catch (datingDetailsError) {
+    console.warn("Optional dating interests could not be loaded:", datingDetailsError);
+  }
+
   await loadMyPhotos();
 
   // Members can access The Match only after both requirements are met:
@@ -11013,6 +11058,26 @@ if (approxLocation && discoveryLocationEnabled) {
 
 let r=await db.from("profiles").upsert(p,{onConflict:"id"});
 if(r.error)throw r.error;
+
+const selectedDatingInterests = Array.from(
+  document.querySelectorAll('input[name="datingInterest"]:checked')
+).map(input => input.value);
+if (selectedDatingInterests.length > 10) {
+  throw Error("Please choose no more than 10 interests.");
+}
+const { error: datingDetailsError } = await db.from("member_dating_details").upsert({
+  user_id: currentUser.id,
+  interests: selectedDatingInterests,
+  smoking: $("datingSmoking").value,
+  drinking: $("datingDrinking").value,
+  activity_level: $("datingActivity").value,
+  pets: $("datingPets").value,
+  children: $("datingChildren").value,
+  share_interests: $("shareDatingInterests").checked,
+  share_lifestyle: $("shareDatingLifestyle").checked
+}, { onConflict: "user_id" });
+if (datingDetailsError) throw datingDetailsError;
+
 await loadNearby();
 await loadStories();
 show("discover");

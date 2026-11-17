@@ -8463,12 +8463,20 @@ function profileDetailsAreComplete() {
 
 function show(id, addToHistory = true) {
   const publicPages = ["welcome", "onboarding", "auth", "reset"];
+  // Legacy members must choose a community before community-dependent discovery,
+  // but account management and existing connections remain available.
+  const accountSafePages = [
+    "profile", "settings", "matches", "messages", "chatPage",
+    "notificationsPage", "blockedMembers", "verificationPage",
+    "premium", "coinWalletPage", "referralsPage", "callHistoryPage"
+  ];
+  const requiresCommunityChoice = !publicPages.includes(id) &&
+    !accountSafePages.includes(id);
 
   if (
     currentUser &&
     !["lgbtq", "straight"].includes(currentMemberCommunity) &&
-    id !== "profile" &&
-    !publicPages.includes(id)
+    requiresCommunityChoice
   ) {
     id = "profile";
     setTimeout(() => {
@@ -8485,7 +8493,8 @@ function show(id, addToHistory = true) {
     currentUser &&
     (!hasRequiredProfilePhotos || !profileDetailsAreComplete()) &&
     id !== "profile" &&
-    !publicPages.includes(id)
+    !publicPages.includes(id) &&
+    !accountSafePages.includes(id)
   ) {
     id = "profile";
     setTimeout(() => {

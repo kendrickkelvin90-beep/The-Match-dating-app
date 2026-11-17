@@ -512,7 +512,8 @@ begin
 
   -- Lifestyle dimensions contribute only when the candidate opted into lifestyle sharing.
   update public.member_dating_details
-  set smoking = 'Socially',
+  set interests = array['Football'],
+      smoking = 'Socially',
       drinking = 'Occasionally',
       activity_level = 'Moderately active',
       pets = 'Have pets',
@@ -525,7 +526,7 @@ begin
   ])
   where user_id = '00000000-0000-4000-8000-000000000007';
 
-  if compatibility_row.scored_dimensions <> 5
+  if compatibility_row.scored_dimensions <> 6
      or compatibility_row.compatibility_percent <> 100 then
     raise exception 'Opted-in lifestyle dimensions were not included in compatibility scoring';
   end if;

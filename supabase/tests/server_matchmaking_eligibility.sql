@@ -935,11 +935,15 @@ begin
     raise exception 'Compatibility score did not reflect the shared details: %', row_to_json(score_row);
   end if;
 
+  -- The fixture owner changes the candidate's consent flags; switch back
+  -- to the database owner because authenticated RLS correctly forbids this.
+  reset role;
   update public.member_dating_details
   set share_interests = false,
       share_lifestyle = false,
       share_profile_extras = false
   where user_id = '00000000-0000-4000-8000-000000000002';
+  set role authenticated;
 
   if exists (
     select 1

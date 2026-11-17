@@ -122,6 +122,11 @@ jobs:
           if 'get_dating_compatibility_scores' not in html or 'discover-compatibility-badge' not in html:
               raise SystemExit("Discover compatibility score integration is missing")
           print("Verified that Discover displays opt-in compatibility scores")
+          if "_discoverWeightedRank" not in html or "const discoverRank" not in html:
+              raise SystemExit("Discover must rank candidates using compatibility and selected preference weights")
+          if "education_level" not in html or "occupation" not in html:
+              raise SystemExit("Lifestyle ranking must include consent-shared education and occupation matches")
+          print("Verified weighted Discover ranking and shared profile-extra signals")
           if "reply_to_message_id" not in html or "toggle_chat_message_reaction" not in html:
               raise SystemExit("Chat replies and reactions are not connected to the UI")
           print("Verified chat reply and reaction UI integration")

@@ -725,6 +725,35 @@ begin
 end;
 $test$;
 
+-- Discover boost status is limited to currently eligible candidate IDs.
+insert into public.profile_boosts(user_id, starts_at, ends_at)
+values
+  ('00000000-0000-4000-8000-000000000002', now() - interval '1 minute', now() + interval '29 minutes'),
+  ('00000000-0000-4000-8000-000000000003', now() - interval '1 minute', now() + interval '29 minutes');
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
+set role authenticated;
+do $test$
+declare
+  boosted_ids uuid[];
+begin
+  select array_agg(boosted_id order by boosted_id)
+    into boosted_ids
+  from public.get_active_discover_boost_ids(array[
+    '00000000-0000-4000-8000-000000000002'::uuid,
+    '00000000-0000-4000-8000-000000000003'::uuid
+  ]) boosted_id;
+
+  if boosted_ids is distinct from array['00000000-0000-4000-8000-000000000002'::uuid] then
+    raise exception 'Discover boost status exposed a blocked/non-eligible member or missed an eligible boost: %', boosted_ids;
+  end if;
+
+  if has_function_privilege('anon', 'public.get_active_discover_boost_ids(uuid[])', 'EXECUTE') then
+    raise exception 'Anonymous users must not call the Discover boost status RPC';
+  end if;
+end;
+$test$;
+reset role;
+
 -- Reciprocal partner deal-breakers remain private and are enforced by the server helper.
 insert into public.member_dating_details(user_id, smoking, drinking, partner_preferences)
 values

@@ -6134,8 +6134,10 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
 <p class="small">Complete your profile to meet people. Location is optional.</p>
 <form id="profileForm">
 <div id="datingCommunityRequiredNotice" role="alert" aria-live="polite" class="member-card" style="display:none;border:1px solid rgba(210,173,104,.75);background:rgba(210,173,104,.09);padding:14px;margin:12px 0">
-  <strong style="color:var(--tm-gold-bright)">One important account setting is missing</strong>
-  <p class="small" style="margin:7px 0 0">To protect everyone’s privacy, we now keep the LGBTQ+ and Straight dating communities separate. Please choose your community below and save your profile. Your choice is private and is never guessed from your orientation.</p>
+  <strong style="color:var(--tm-gold-bright)">Finish your private dating-community setup</strong>
+  <p class="small" style="margin:7px 0 0">Your account needs one private choice before Discover, Nearby, likes and community stories can work. Choose LGBTQ+ or Straight yourself below, then save your profile. This choice is never inferred from your gender or orientation and is not shown publicly.</p>
+  <p class="small" id="datingCommunityRecoveryStatus" style="margin:8px 0 0">Your existing profile and photos are kept. You only need to confirm your dating community.</p>
+  <button type="button" class="btn secondary" id="openDatingCommunitySetup" style="margin-top:10px">Choose my dating community</button>
 </div>
 <div class="profile-onboarding-progress" id="profileOnboardingProgress" aria-label="Profile setup progress"><div class="profile-onboarding-top"><span id="profileStepLabel">STEP 1 OF 3</span><span id="profileStepPercent">33%</span></div><div class="profile-onboarding-track"><span id="profileStepProgress" style="width:33%"></span></div><p id="profileStepHint">Start with the basics so members know who you are.</p></div>
 <section class="profile-onboarding-step" data-profile-step="1" aria-label="Basic profile"><div class="profile-step-heading"><span>01</span><div><h3>About you</h3><p>Let’s start with the essentials.</p></div></div>
@@ -7435,6 +7437,19 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
           <p class="admin-metric-value" id="adminReportsCount">—</p><span class="admin-metric-foot">Require moderation</span>
         </article>
       </div>
+
+      <div class="admin-section-heading admin-queue-heading" style="margin-top:18px">
+        <div><p class="admin-eyebrow">MEMBER ACTIVATION</p><h3>Dating-community readiness</h3></div>
+        <span class="admin-data-note">Private choices · aggregate counts only</span>
+      </div>
+      <div class="admin-metrics-grid">
+        <article class="admin-metric-card"><p class="admin-metric-label">LGBTQ+ community</p><p class="admin-metric-value" id="adminLgbtqCommunityCount">—</p><span class="admin-metric-foot">Members who selected LGBTQ+</span></article>
+        <article class="admin-metric-card"><p class="admin-metric-label">Straight community</p><p class="admin-metric-value" id="adminStraightCommunityCount">—</p><span class="admin-metric-foot">Members who selected Straight</span></article>
+        <article class="admin-metric-card admin-metric-attention"><p class="admin-metric-label">Need community choice</p><p class="admin-metric-value" id="adminCommunitySetupNeeded">—</p><span class="admin-metric-foot">Legacy accounts needing their own choice</span></article>
+        <article class="admin-metric-card"><p class="admin-metric-label">Fresh Nearby locations</p><p class="admin-metric-value" id="adminFreshNearbyCount">—</p><span class="admin-metric-foot">Consent-based updates in last 7 days</span></article>
+        <article class="admin-metric-card admin-metric-attention"><p class="admin-metric-label">Legacy profiles with fresh GPS</p><p class="admin-metric-value" id="adminLegacyFreshLocationCount">—</p><span class="admin-metric-foot">Need to choose a dating community</span></article>
+      </div>
+      <p class="admin-data-note">Members who have not chosen a community are not included in either dating feed. Never assign a community on their behalf.</p>
 
       <div class="admin-section-heading admin-queue-heading">
         <div><p class="admin-eyebrow">ACTION CENTRE</p><h3>Requests &amp; moderation</h3></div>
@@ -9463,6 +9478,16 @@ async function loadAdminDashboard() {
         String(result.count ?? 0);
     }
 
+    const { data: readinessRows, error: readinessError } =
+      await db.rpc("get_admin_community_readiness");
+    if (readinessError) throw readinessError;
+    const readiness = Array.isArray(readinessRows) ? readinessRows[0] : readinessRows;
+    $("adminLgbtqCommunityCount").textContent = String(readiness?.lgbtq_members ?? 0);
+    $("adminStraightCommunityCount").textContent = String(readiness?.straight_members ?? 0);
+    $("adminCommunitySetupNeeded").textContent = String(readiness?.community_selection_needed ?? 0);
+    $("adminFreshNearbyCount").textContent = String(readiness?.fresh_nearby_locations ?? 0);
+    $("adminLegacyFreshLocationCount").textContent = String(readiness?.legacy_members_with_fresh_location ?? 0);
+
     
 await Promise.all([
   loadAdminVerificationRequests(),
@@ -11110,6 +11135,9 @@ async function loadCurrentMemberOrientation() {
   currentMemberCommunity = String(data?.answers?.dating_community || "");
   if ($("sexualOrientation")) $("sexualOrientation").value = currentMemberOrientation;
   if ($("datingCommunity")) $("datingCommunity").value = currentMemberCommunity;
+  const communityNotice = $("datingCommunityRequiredNotice");
+  if (communityNotice) communityNotice.style.display =
+    ["lgbtq", "straight"].includes(currentMemberCommunity) ? "none" : "block";
   syncDatingCommunityFields();
   return currentMemberOrientation;
 }
@@ -11142,6 +11170,19 @@ $("datingCommunity")?.addEventListener("change", () => {
   // The select is an unsaved draft. Keep the persisted community unchanged
   // until the profile save and onboarding upsert both succeed.
   syncDatingCommunityFields();
+  const recoveryStatus = $("datingCommunityRecoveryStatus");
+  const nextCommunity = $("datingCommunity")?.value;
+  if (recoveryStatus) {
+    recoveryStatus.textContent = ["lgbtq", "straight"].includes(nextCommunity)
+      ? "Choice selected. Tap Save profile below to restore access to member discovery."
+      : "Choose the dating community you personally identify with. Your choice stays private.";
+  }
+});
+$("openDatingCommunitySetup")?.addEventListener("click", () => {
+  const selector = $("datingCommunity");
+  if (!selector) return;
+  selector.scrollIntoView({ behavior: "smooth", block: "center" });
+  selector.focus({ preventScroll: true });
 });
 
 async function loadMyDatingDetails() {
@@ -11653,6 +11694,14 @@ function appendSharedDatingDetails(panel, details) {
 
 async function loadNearby(){
   if(!currentUser)return;
+
+  // Re-read the signed-in member's private community before every feed load.
+  // This prevents a stale in-memory blank value from locking a valid account.
+  try {
+    await loadCurrentMemberOrientation();
+  } catch (communityLoadError) {
+    console.warn("Could not refresh private dating-community choice:", communityLoadError);
+  }
 
   const list=$("profileList");
   list.replaceChildren();
@@ -13265,6 +13314,15 @@ async function renderNearbyMapMarkers(center) {
 
 async function loadPremiumNearby(){
   if(!currentUser||premiumNearbyLoadInProgress)return;
+  try {
+    await loadCurrentMemberOrientation();
+  } catch (communityLoadError) {
+    console.warn("Could not refresh private dating-community choice before Nearby:", communityLoadError);
+  }
+  if (!["lgbtq", "straight"].includes(currentMemberCommunity)) {
+    status("nearbyMembersStatus", "Choose your private dating community in My Profile before using Nearby.", true);
+    return;
+  }
   premiumNearbyLoadInProgress=true;
   const list=$("nearbyMembersList");
   list.replaceChildren();

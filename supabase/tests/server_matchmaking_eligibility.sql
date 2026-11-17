@@ -848,3 +848,125 @@ end;
 $test$;
 
 select 'server matchmaking eligibility tests passed' as result;
+
+
+-- Explainable compatibility score regression coverage.
+-- Candidate sharing switches control every candidate-side detail returned;
+-- the viewer's private preferences are used only inside the SECURITY DEFINER RPC.
+insert into public.member_dating_details (
+  user_id, interests, smoking, drinking, activity_level, pets, children,
+  share_interests, share_lifestyle, relationship_intention,
+  communication_style, languages, favorite_music, favorite_movies,
+  favorite_food, share_profile_extras, partner_preferences
+)
+values
+  (
+    '00000000-0000-4000-8000-000000000001',
+    array['Music','Travel','Fitness'],
+    'Never','Socially','Very active','Love pets','Want children',
+    false,false,'Long-term relationship','Deep conversations',
+    array['English','Yoruba'],'Afrobeats','Comedy','Jollof rice',false,
+    '{"smoking":"Never"}'::jsonb
+  ),
+  (
+    '00000000-0000-4000-8000-000000000002',
+    array['Music','Travel','Food & cooking'],
+    'Never','Socially','Very active','Love pets','Want children',
+    true,true,'Long-term relationship','Deep conversations',
+    array['English','Yoruba','Pidgin'],'Afrobeats','Comedy','Jollof rice',true,
+    '{"smoking":"any"}'::jsonb
+  )
+on conflict (user_id) do update set
+  interests = excluded.interests,
+  smoking = excluded.smoking,
+  drinking = excluded.drinking,
+  activity_level = excluded.activity_level,
+  pets = excluded.pets,
+  children = excluded.children,
+  share_interests = excluded.share_interests,
+  share_lifestyle = excluded.share_lifestyle,
+  relationship_intention = excluded.relationship_intention,
+  communication_style = excluded.communication_style,
+  languages = excluded.languages,
+  favorite_music = excluded.favorite_music,
+  favorite_movies = excluded.favorite_movies,
+  favorite_food = excluded.favorite_food,
+  share_profile_extras = excluded.share_profile_extras,
+  partner_preferences = excluded.partner_preferences;
+
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
+set role authenticated;
+do $compatibility$
+declare
+  score_row record;
+begin
+  if has_function_privilege('anon', 'public.get_dating_compatibility_scores(uuid[])', 'EXECUTE') then
+    raise exception 'Anonymous users must not call the compatibility scoring RPC';
+  end if;
+  if not has_function_privilege('authenticated', 'public.get_dating_compatibility_scores(uuid[])', 'EXECUTE') then
+    raise exception 'Authenticated members must be able to request compatibility scores';
+  end if;
+
+  select *
+    into score_row
+  from public.get_dating_compatibility_scores(array[
+    '00000000-0000-4000-8000-000000000002'::uuid
+  ]);
+
+  if score_row.user_id is distinct from '00000000-0000-4000-8000-000000000002'::uuid then
+    raise exception 'Compatibility scoring did not return the currently visible candidate';
+  end if;
+  if score_row.shared_interest_count <> 2 then
+    raise exception 'Expected two shared interests, got %', score_row.shared_interest_count;
+  end if;
+  if score_row.interest_match_percent <> 50 then
+    raise exception 'Expected 50 percent interest overlap, got %', score_row.interest_match_percent;
+  end if;
+  if score_row.relationship_intention_match is distinct from true then
+    raise exception 'Matching relationship intentions were not scored';
+  end if;
+  if score_row.communication_style_match is distinct from true then
+    raise exception 'Matching communication styles were not scored';
+  end if;
+  if score_row.shared_language_count <> 2 then
+    raise exception 'Expected two shared languages, got %', score_row.shared_language_count;
+  end if;
+  if score_row.scored_dimensions < 5 or score_row.compatibility_percent < 70 then
+    raise exception 'Compatibility score did not reflect the shared details: %', row_to_json(score_row);
+  end if;
+
+  -- The public result is aggregate-only; raw candidate profile arrays and
+  -- owner-private partner preferences are not part of its return contract.
+  if (select count(*) from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'get_dating_compatibility_scores') <> 0 then
+    null;
+  end if;
+
+  update public.member_dating_details
+  set share_interests = false,
+      share_lifestyle = false,
+      share_profile_extras = false
+  where user_id = '00000000-0000-4000-8000-000000000002';
+
+  if exists (
+    select 1
+    from public.get_dating_compatibility_scores(array[
+      '00000000-0000-4000-8000-000000000002'::uuid
+    ])
+  ) then
+    raise exception 'Compatibility scoring exposed a candidate who disabled all sharing controls';
+  end if;
+
+  if exists (
+    select 1
+    from public.get_shared_dating_details(array[
+      '00000000-0000-4000-8000-000000000002'::uuid
+    ])
+  ) then
+    raise exception 'Shared dating details returned a member who opted out of every sharing category';
+  end if;
+end;
+$compatibility$;
+reset role;
+

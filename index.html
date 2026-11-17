@@ -6117,6 +6117,10 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
 <h2 id="greeting">Welcome ❤️</h2>
 <p class="small">Complete your profile to meet people. Location is optional.</p>
 <form id="profileForm">
+<div id="datingCommunityRequiredNotice" role="alert" aria-live="polite" class="member-card" style="display:none;border:1px solid rgba(210,173,104,.75);background:rgba(210,173,104,.09);padding:14px;margin:12px 0">
+  <strong style="color:var(--tm-gold-bright)">One important account setting is missing</strong>
+  <p class="small" style="margin:7px 0 0">To protect everyone’s privacy, we now keep the LGBTQ+ and Straight dating communities separate. Please choose your community below and save your profile. Your choice is private and is never guessed from your orientation.</p>
+</div>
 <div class="profile-onboarding-progress" id="profileOnboardingProgress" aria-label="Profile setup progress"><div class="profile-onboarding-top"><span id="profileStepLabel">STEP 1 OF 3</span><span id="profileStepPercent">33%</span></div><div class="profile-onboarding-track"><span id="profileStepProgress" style="width:33%"></span></div><p id="profileStepHint">Start with the basics so members know who you are.</p></div>
 <section class="profile-onboarding-step" data-profile-step="1" aria-label="Basic profile"><div class="profile-step-heading"><span>01</span><div><h3>About you</h3><p>Let’s start with the essentials.</p></div></div>
 <label for="displayName">Display name *</label>
@@ -8408,6 +8412,23 @@ function profileDetailsAreComplete() {
 
 function show(id, addToHistory = true) {
   const publicPages = ["welcome", "onboarding", "auth", "reset"];
+
+  if (
+    currentUser &&
+    !["lgbtq", "straight"].includes(currentMemberCommunity) &&
+    id !== "profile" &&
+    !publicPages.includes(id)
+  ) {
+    id = "profile";
+    setTimeout(() => {
+      status(
+        "profileStatus",
+        "Please choose your private dating community (LGBTQ+ or Straight) and save your profile before using Discover and other member features.",
+        true
+      );
+      $("datingCommunity")?.focus();
+    }, 0);
+  }
 
   if (
     currentUser &&
@@ -11076,7 +11097,8 @@ function syncDatingCommunityFields() {
 }
 
 $("datingCommunity")?.addEventListener("change", () => {
-  currentMemberCommunity = $("datingCommunity").value;
+  // The select is an unsaved draft. Keep the persisted community unchanged
+  // until the profile save and onboarding upsert both succeed.
   syncDatingCommunityFields();
 });
 
@@ -11139,8 +11161,9 @@ currentUser=user;
 try {
   await loadCurrentMemberOrientation();
 } catch (orientationError) {
-  console.warn("Member orientation could not be loaded; retaining the existing discovery experience.", orientationError);
+  console.warn("Member community preferences could not be loaded; member discovery remains locked until they can be verified.", orientationError);
   currentMemberOrientation = "";
+  currentMemberCommunity = "";
 }
 const queerRoleSection = $("queerRolePreferencesSection");
 if (queerRoleSection) queerRoleSection.hidden = currentMemberCommunity !== "lgbtq";
@@ -11268,8 +11291,20 @@ status("profileStatus","Your profile is loaded. Check your details and save when
 
   // Members can access The Match only after both requirements are met:
   // at least two saved profile photos and all required profile details.
+  const hasSavedDatingCommunity = ["lgbtq", "straight"].includes(currentMemberCommunity);
+  const communityNotice = $("datingCommunityRequiredNotice");
+  if (communityNotice) communityNotice.style.display = hasSavedDatingCommunity ? "none" : "block";
+
   const savedProfileIsReady =
-    hasRequiredProfilePhotos && profileDetailsAreComplete();
+    hasRequiredProfilePhotos && profileDetailsAreComplete() && hasSavedDatingCommunity;
+
+  if (!hasSavedDatingCommunity) {
+    status(
+      "profileStatus",
+      "Welcome back. Please choose your private dating community and save your profile to continue.",
+      true
+    );
+  }
 
   if (savedProfileIsReady) {
     show("discover", false);
@@ -11431,6 +11466,8 @@ if (newOrientation !== currentMemberOrientation || newCommunity !== currentMembe
 
   currentMemberOrientation = newOrientation;
   currentMemberCommunity = newCommunity;
+  const communityNotice = $("datingCommunityRequiredNotice");
+  if (communityNotice) communityNotice.style.display = "none";
   syncDatingCommunityFields();
 }
 

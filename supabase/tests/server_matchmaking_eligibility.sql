@@ -399,4 +399,272 @@ begin
 end;
 $$;
 
+
+-- Restore the viewer after the suspended-viewer eligibility test above.
+delete from public.member_moderation
+where user_id = '00000000-0000-4000-8000-000000000001';
+
+-- The viewer's own dating preferences remain private while scoring candidates.
+update public.member_dating_details
+set relationship_intention = 'Long-term relationship',
+    communication_style = 'Deep conversations',
+    languages = array['English','Yoruba']
+where user_id = '00000000-0000-4000-8000-000000000001';
+
+-- Optional dating profile extras remain private unless the member opts in.
+update public.member_dating_details
+set relationship_intention = 'Long-term relationship',
+    communication_style = 'Deep conversations',
+    languages = array['English','Yoruba'],
+    education_level = 'Undergraduate',
+    occupation = 'Designer',
+    favorite_music = 'Afrobeats',
+    favorite_movies = 'Comedy',
+    favorite_food = 'Jollof rice',
+    share_profile_extras = true
+where user_id = '00000000-0000-4000-8000-000000000002';
+
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
+do $$
+declare
+  extras_row record;
+begin
+  select * into extras_row
+  from public.get_shared_profile_extras(array[
+    '00000000-0000-4000-8000-000000000002'::uuid,
+    '00000000-0000-4000-8000-000000000003'::uuid,
+    '00000000-0000-4000-8000-000000000010'::uuid
+  ])
+  where user_id = '00000000-0000-4000-8000-000000000002';
+
+  if extras_row.relationship_intention is distinct from 'Long-term relationship'
+     or extras_row.communication_style is distinct from 'Deep conversations'
+     or extras_row.languages is distinct from array['English','Yoruba']::text[]
+     or extras_row.occupation is distinct from 'Designer'
+     or extras_row.favorite_food is distinct from 'Jollof rice' then
+    raise exception 'Opted-in dating profile extras were not returned correctly: %',
+      pg_catalog.row_to_json(extras_row);
+  end if;
+
+  if (select count(*) from public.get_shared_profile_extras(array[
+    '00000000-0000-4000-8000-000000000002'::uuid,
+    '00000000-0000-4000-8000-000000000003'::uuid,
+    '00000000-0000-4000-8000-000000000010'::uuid
+  ])) <> 1 then
+    raise exception 'Only the member who opted in should expose profile extras';
+  end if;
+end;
+$$;
+
+do $$
+begin
+  begin
+    update public.member_dating_details
+    set languages = array['English','Yoruba','Igbo','Hausa','French','Spanish','Arabic','German','Portuguese']
+    where user_id = '00000000-0000-4000-8000-000000000002';
+    raise exception 'More than eight languages unexpectedly passed validation';
+  exception when sqlstate '22023' then
+    null;
+  end;
+end;
+$$;
+
+do $$
+declare
+  compatibility_row record;
+begin
+  select * into compatibility_row
+  from public.get_dating_compatibility_scores(array[
+    '00000000-0000-4000-8000-000000000002'::uuid,
+    '00000000-0000-4000-8000-000000000007'::uuid,
+    '00000000-0000-4000-8000-000000000010'::uuid
+  ])
+  where user_id = '00000000-0000-4000-8000-000000000002';
+
+  if compatibility_row.compatibility_percent <> 83
+     or compatibility_row.scored_dimensions <> 4
+     or compatibility_row.shared_interest_count <> 2
+     or compatibility_row.interest_match_percent <> 67
+     or compatibility_row.relationship_intention_match is distinct from true
+     or compatibility_row.communication_style_match is distinct from true
+     or compatibility_row.shared_language_count <> 2 then
+    raise exception 'Explainable compatibility score did not match the opted-in fixture data';
+  end if;
+
+  select * into compatibility_row
+  from public.get_dating_compatibility_scores(array[
+    '00000000-0000-4000-8000-000000000007'::uuid
+  ])
+  where user_id = '00000000-0000-4000-8000-000000000007';
+
+  if compatibility_row.scored_dimensions <> 1
+     or compatibility_row.compatibility_percent <> 33 then
+    raise exception 'Interest-only compatibility should use only the available opted-in dimension';
+  end if;
+
+  if exists (
+    select 1 from public.get_dating_compatibility_scores(array[
+      '00000000-0000-4000-8000-000000000010'::uuid
+    ])
+  ) then
+    raise exception 'Lifestyle-only consent must not expose or score unshared profile details';
+  end if;
+end;
+$$;
+
+do $$
+begin
+  if has_function_privilege('anon','public.get_dating_compatibility_scores(uuid[])','EXECUTE') then
+    raise exception 'Anonymous role must not execute compatibility scoring';
+  end if;
+  if not has_function_privilege('authenticated','public.get_dating_compatibility_scores(uuid[])','EXECUTE') then
+    raise exception 'Authenticated role must execute compatibility scoring';
+  end if;
+end;
+$$;
+
+do $$
+begin
+  if has_function_privilege('anon','public.get_shared_profile_extras(uuid[])','EXECUTE') then
+    raise exception 'Anonymous role must not execute shared profile extras RPC';
+  end if;
+  if not has_function_privilege('authenticated','public.get_shared_profile_extras(uuid[])','EXECUTE') then
+    raise exception 'Authenticated role must execute shared profile extras RPC';
+  end if;
+end;
+$$;
+
+-- Private Realtime typing is limited to the two members in the topic.
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
+select set_config(
+  'request.realtime.topic',
+  'match-typing:00000000-0000-4000-8000-000000000001:00000000-0000-4000-8000-000000000002',
+  false
+);
+set role authenticated;
+insert into realtime.messages(topic, extension, payload)
+values (
+  'match-typing:00000000-0000-4000-8000-000000000001:00000000-0000-4000-8000-000000000002',
+  'broadcast',
+  jsonb_build_object(
+    'event','typing',
+    'payload',jsonb_build_object(
+      'user_id','00000000-0000-4000-8000-000000000001',
+      'is_typing',true
+    )
+  )
+);
+
+do $$
+begin
+  if not exists (
+    select 1 from realtime.messages
+    where topic = realtime.topic()
+  ) then
+    raise exception 'An authorised member could not read their conversation typing channel';
+  end if;
+
+  begin
+    insert into realtime.messages(topic, extension, payload)
+    values (
+      realtime.topic(),
+      'broadcast',
+      jsonb_build_object(
+        'event','typing',
+        'payload',jsonb_build_object(
+          'user_id','00000000-0000-4000-8000-000000000002',
+          'is_typing',true
+        )
+      )
+    );
+    raise exception 'A member unexpectedly spoofed the other member typing state';
+  exception when insufficient_privilege then
+    null;
+  end;
+
+  if public.can_use_match_typing_channel(
+    '00000000-0000-4000-8000-000000000001',
+    '00000000-0000-4000-8000-000000000003'
+  ) then
+    raise exception 'A blocked pair unexpectedly passed typing-channel authorization';
+  end if;
+end;
+$$;
+reset role;
+
+
+-- Reply and reaction regression coverage.
+insert into auth.users(id) values
+  ('00000000-0000-4000-8000-000000000001'),
+  ('00000000-0000-4000-8000-000000000002'),
+  ('00000000-0000-4000-8000-000000000003')
+on conflict do nothing;
+
+insert into public.messages(id,sender_id,receiver_id,body) values
+  ('10000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002','Hello'),
+  ('10000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000003','Other conversation');
+
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
+set role authenticated;
+do $test$
+declare
+  reaction_added boolean;
+begin
+  insert into public.messages(id,sender_id,receiver_id,body,reply_to_message_id)
+  values ('10000000-0000-4000-8000-000000000003',
+          '00000000-0000-4000-8000-000000000001',
+          '00000000-0000-4000-8000-000000000002',
+          'Thanks for your message',
+          '10000000-0000-4000-8000-000000000001');
+
+  if not exists (
+    select 1 from public.messages
+    where id = '10000000-0000-4000-8000-000000000003'
+      and reply_to_message_id = '10000000-0000-4000-8000-000000000001'
+  ) then
+    raise exception 'A valid in-conversation reply was not saved';
+  end if;
+
+  begin
+    insert into public.messages(sender_id,receiver_id,body,reply_to_message_id)
+    values ('00000000-0000-4000-8000-000000000001',
+            '00000000-0000-4000-8000-000000000002',
+            'Invalid cross-chat reply',
+            '10000000-0000-4000-8000-000000000002');
+    raise exception 'A cross-conversation reply unexpectedly passed validation';
+  exception when others then
+    if sqlerrm = 'A cross-conversation reply unexpectedly passed validation' then raise; end if;
+  end;
+
+  reaction_added := public.toggle_chat_message_reaction(
+    '10000000-0000-4000-8000-000000000001','❤️'
+  );
+  if reaction_added is distinct from true then
+    raise exception 'Adding a message reaction did not return true';
+  end if;
+  if not exists (
+    select 1 from public.message_reactions
+    where message_id = '10000000-0000-4000-8000-000000000001'
+      and user_id = auth.uid() and emoji = '❤️'
+  ) then
+    raise exception 'The reaction was not saved for the authenticated member';
+  end if;
+
+  reaction_added := public.toggle_chat_message_reaction(
+    '10000000-0000-4000-8000-000000000001','❤️'
+  );
+  if reaction_added is distinct from false then
+    raise exception 'Tapping the same reaction did not remove it';
+  end if;
+  if exists (
+    select 1 from public.message_reactions
+    where message_id = '10000000-0000-4000-8000-000000000001'
+      and user_id = auth.uid()
+  ) then
+    raise exception 'The reaction was not removed';
+  end if;
+end;
+$test$;
+reset role;
+
 select 'server matchmaking eligibility tests passed' as result;

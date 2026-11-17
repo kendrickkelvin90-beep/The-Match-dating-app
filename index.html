@@ -6243,6 +6243,35 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
   <p class="small">Your lifestyle answers stay private unless you turn on sharing. You can change these choices anytime.</p>
 </div>
 
+<div class="member-card" id="datingProfileExtras">
+  <h2>More about my dating style ✨</h2>
+  <p class="small">Optional details that help people understand what kind of connection you're looking for. Nothing here is shared unless you enable sharing.</p>
+  <label for="datingRelationshipIntention">What are you looking for?</label>
+  <select id="datingRelationshipIntention">
+    <option>Still figuring it out</option><option>Long-term relationship</option><option>Dating</option><option>Friendship</option><option>Casual dating</option><option>Prefer not to say</option>
+  </select>
+  <label for="datingCommunicationStyle">Your communication style</label>
+  <select id="datingCommunicationStyle">
+    <option>Prefer not to say</option><option>Deep conversations</option><option>Humour and playful</option><option>Quality time</option><option>Acts of service</option><option>Texting</option><option>Phone or video calls</option>
+  </select>
+  <label for="datingLanguages">Languages you speak (comma-separated, up to 8)</label>
+  <input id="datingLanguages" maxlength="350" placeholder="English, Yoruba, Igbo">
+  <label for="datingEducation">Education</label>
+  <select id="datingEducation">
+    <option>Prefer not to say</option><option>Secondary school</option><option>Trade or professional training</option><option>Undergraduate</option><option>Graduate</option><option>Postgraduate</option>
+  </select>
+  <label for="datingOccupation">Occupation (optional)</label>
+  <input id="datingOccupation" maxlength="80" placeholder="What do you do?">
+  <label for="datingFavoriteMusic">Music you enjoy</label>
+  <input id="datingFavoriteMusic" maxlength="100" placeholder="Afrobeats, R&B, gospel...">
+  <label for="datingFavoriteMovies">Movies and shows you enjoy</label>
+  <input id="datingFavoriteMovies" maxlength="100" placeholder="Comedy, action, documentaries...">
+  <label for="datingFavoriteFood">Favourite food</label>
+  <input id="datingFavoriteFood" maxlength="100" placeholder="What do you love eating?">
+  <label><input type="checkbox" id="shareDatingProfileExtras"> Show these dating details on my profile</label>
+  <p class="small">These details are private by default. You can turn sharing off at any time.</p>
+</div>
+
 <div class="member-card" id="genderPresentationSection">
   <h2>My presentation ✨</h2>
   <p class="small">Optional. Select the words that best describe your presentation. These labels are self-described and are not inferred from appearance or orientation.</p>
@@ -6914,6 +6943,8 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
 
   <div id="chatPartnerLocation"
     style="font-size:12px;color:#bbb;margin-top:3px;">Loading location…</div>
+  <div id="chatTypingStatus" role="status" aria-live="polite"
+    style="min-height:15px;font-size:11px;color:#d2ad68;margin-top:2px;"></div>
 </div>
 
   
@@ -6971,6 +7002,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
 
     
 
+<div id="chatReplyPreview" class="hidden" role="status" style="margin:6px 8px;padding:9px 12px;border-left:3px solid #d2ad68;border-radius:8px;background:#211c15;color:#f5e3bd;font-size:12px;"><span id="chatReplyPreviewText"></span><button id="chatReplyCancel" type="button" aria-label="Cancel reply" style="float:right;background:transparent;border:0;color:#f5e3bd;font-size:18px;">×</button></div>
 <div id="chatComposer">
   <button id="chatEmojiToggle" type="button" aria-label="Choose emoji">☺</button>
 
@@ -7794,6 +7826,7 @@ let loginMode=false,currentUser=null,approxLocation=null;
 Object.defineProperty(window,"currentUser",{configurable:true,get:()=>currentUser});
 let discoveryLocationEnabled=false;
 let activeChatUserId = null;
+let activeReplyToMessage = null;
   let chatLoadRequestId = 0;
 let chatRefreshTimer = null;
   let chatRefreshInProgress = false;
@@ -7807,6 +7840,10 @@ let onlinePresenceUserId = null;
 let onlinePresenceState = {};
 let incomingMessagesChannel = null;
 let conversationPreviewRefreshTimer = null;
+let chatTypingChannel = null;
+let chatTypingPartnerId = null;
+let chatTypingStopTimer = null;
+let chatTypingLastSentAt = 0;
 
 function subscribeToIncomingMessages(user) {
   if (!user?.id) return;
@@ -7915,6 +7952,113 @@ function updateChatOnlineStatus(userId) {
   statusLabel.textContent = isOnline ? "Online" : "Offline";
   statusLabel.style.color = isOnline ? "#52e39a" : "#aaa";
   statusDot.style.background = isOnline ? "#52e39a" : "#777";
+}
+
+// Typing indicators use short-lived Realtime broadcasts only. No message text
+// or typing history is stored in the database.
+function sendChatTyping(isTyping) {
+  if (!chatTypingChannel || !currentUser?.id || !chatTypingPartnerId) return;
+  chatTypingChannel.send({
+    type: "broadcast",
+    event: "typing",
+    payload: { user_id: currentUser.id, is_typing: !!isTyping }
+  }).catch(error => console.warn("Typing indicator update failed:", error));
+}
+
+async function closeChatTypingChannel() {
+  if (chatTypingStopTimer) {
+    clearTimeout(chatTypingStopTimer);
+    chatTypingStopTimer = null;
+  }
+  const channel = chatTypingChannel;
+  chatTypingChannel = null;
+  chatTypingPartnerId = null;
+  chatTypingLastSentAt = 0;
+  if (channel) {
+    try {
+      if (currentUser?.id) {
+        await channel.send({
+          type: "broadcast",
+          event: "typing",
+          payload: { user_id: currentUser.id, is_typing: false }
+        });
+      }
+    } catch (error) {
+      console.warn("Could not clear typing indicator:", error);
+    }
+    try { await db.removeChannel(channel); } catch (error) {
+      console.warn("Could not close typing channel:", error);
+    }
+  }
+  const status = $("chatTypingStatus");
+  if (status) status.textContent = "";
+}
+
+async function subscribeToChatTyping(partnerId) {
+  await closeChatTypingChannel();
+  if (!currentUser?.id || !partnerId || partnerId === currentUser.id) return;
+
+  const memberIds = [currentUser.id, partnerId].sort();
+  const topic = "match-typing:" + memberIds.join(":");
+  const channel = db.channel(topic, {
+    config: { private: true, broadcast: { self: false } }
+  });
+  chatTypingChannel = channel;
+  chatTypingPartnerId = partnerId;
+
+  channel.on("broadcast", { event: "typing" }, ({ payload }) => {
+    if (
+      chatTypingChannel !== channel ||
+      currentUser?.id == null ||
+      activeChatUserId !== partnerId ||
+      payload?.user_id !== partnerId
+    ) return;
+
+    const status = $("chatTypingStatus");
+    if (!status) return;
+    if (payload.is_typing === true) {
+      status.textContent = "Typing…";
+      if (chatTypingStopTimer) clearTimeout(chatTypingStopTimer);
+      chatTypingStopTimer = setTimeout(() => {
+        chatTypingStopTimer = null;
+        if (chatTypingChannel === channel && activeChatUserId === partnerId) {
+          status.textContent = "";
+        }
+      }, 2800);
+    } else {
+      if (chatTypingStopTimer) clearTimeout(chatTypingStopTimer);
+      chatTypingStopTimer = null;
+      status.textContent = "";
+    }
+  });
+
+  channel.subscribe(state => {
+    if (state === "SUBSCRIBED" && chatTypingChannel === channel) {
+      chatTypingLastSentAt = 0;
+    }
+  });
+}
+
+function handleChatTypingInput() {
+  if (!currentUser?.id || !activeChatUserId || !chatTypingChannel) return;
+  const hasText = !!$("chatMessageInput")?.value?.trim();
+  if (!hasText) {
+    sendChatTyping(false);
+    if (chatTypingStopTimer) clearTimeout(chatTypingStopTimer);
+    chatTypingStopTimer = null;
+    return;
+  }
+
+  const now = Date.now();
+  if (now - chatTypingLastSentAt >= 1400) {
+    sendChatTyping(true);
+    chatTypingLastSentAt = now;
+  }
+  if (chatTypingStopTimer) clearTimeout(chatTypingStopTimer);
+  chatTypingStopTimer = setTimeout(() => {
+    chatTypingStopTimer = null;
+    sendChatTyping(false);
+  }, 2200);
 }
 
 async function startOnlinePresence(user) {
@@ -8326,6 +8470,10 @@ async function leaveChatPage() {
     conversationListNode.appendChild(activeConversationNode);
     activeConversationNode.classList.add("hidden");
   }
+  await closeChatTypingChannel();
+  activeReplyToMessage = null;
+  $("chatReplyPreview")?.classList.add("hidden");
+  $("chatReplyPreviewText")?.replaceChildren();
   activeChatUserId = null;
   window.activeChatUserId = null;
 }
@@ -10853,7 +11001,7 @@ async function loadCurrentMemberOrientation() {
 async function loadMyDatingDetails() {
   if (!currentUser?.id) return;
   const { data, error } = await db.from("member_dating_details")
-    .select("interests,smoking,drinking,activity_level,pets,children,share_interests,share_lifestyle")
+    .select("interests,smoking,drinking,activity_level,pets,children,share_interests,share_lifestyle,relationship_intention,communication_style,languages,education_level,occupation,favorite_music,favorite_movies,favorite_food,share_profile_extras")
     .eq("user_id", currentUser.id).maybeSingle();
   if (error) throw error;
   const saved = data || {};
@@ -10867,6 +11015,15 @@ async function loadMyDatingDetails() {
   $("datingChildren").value = saved.children || "Prefer not to say";
   $("shareDatingInterests").checked = saved.share_interests === true;
   $("shareDatingLifestyle").checked = saved.share_lifestyle === true;
+  $("datingRelationshipIntention").value = saved.relationship_intention || "Still figuring it out";
+  $("datingCommunicationStyle").value = saved.communication_style || "Prefer not to say";
+  $("datingLanguages").value = Array.isArray(saved.languages) ? saved.languages.join(", ") : "";
+  $("datingEducation").value = saved.education_level || "Prefer not to say";
+  $("datingOccupation").value = saved.occupation || "";
+  $("datingFavoriteMusic").value = saved.favorite_music || "";
+  $("datingFavoriteMovies").value = saved.favorite_movies || "";
+  $("datingFavoriteFood").value = saved.favorite_food || "";
+  $("shareDatingProfileExtras").checked = saved.share_profile_extras === true;
   refreshDatingInterestCounter();
 }
 
@@ -11118,6 +11275,12 @@ const selectedDatingInterests = Array.from(
 if (selectedDatingInterests.length > 10) {
   throw Error("Please choose no more than 10 interests.");
 }
+const selectedDatingLanguages = Array.from(new Set(
+  $("datingLanguages").value.split(",").map(value => value.trim()).filter(Boolean)
+));
+if (selectedDatingLanguages.length > 8) {
+  throw Error("Please choose no more than 8 languages.");
+}
 const { error: datingDetailsError } = await db.from("member_dating_details").upsert({
   user_id: currentUser.id,
   interests: selectedDatingInterests,
@@ -11127,7 +11290,16 @@ const { error: datingDetailsError } = await db.from("member_dating_details").ups
   pets: $("datingPets").value,
   children: $("datingChildren").value,
   share_interests: $("shareDatingInterests").checked,
-  share_lifestyle: $("shareDatingLifestyle").checked
+  share_lifestyle: $("shareDatingLifestyle").checked,
+  relationship_intention: $("datingRelationshipIntention").value,
+  communication_style: $("datingCommunicationStyle").value,
+  languages: selectedDatingLanguages,
+  education_level: $("datingEducation").value,
+  occupation: $("datingOccupation").value.trim(),
+  favorite_music: $("datingFavoriteMusic").value.trim(),
+  favorite_movies: $("datingFavoriteMovies").value.trim(),
+  favorite_food: $("datingFavoriteFood").value.trim(),
+  share_profile_extras: $("shareDatingProfileExtras").checked
 }, { onConflict: "user_id" });
 if (datingDetailsError) throw datingDetailsError;
 
@@ -11171,22 +11343,40 @@ async function attachSharedDatingDetails(people) {
   if (!currentUser?.id || !Array.isArray(people) || !people.length) return people;
   const ids = people.map(person => person.id).filter(Boolean);
   if (!ids.length) return people;
-  const [{ data, error }, { data: scoreRows, error: scoreError }] = await Promise.all([
+  const [
+    { data, error },
+    { data: scoreRows, error: scoreError },
+    { data: profileExtrasRows, error: profileExtrasError },
+    { data: compatibilityRows, error: compatibilityError }
+  ] = await Promise.all([
     db.rpc("get_shared_dating_details", { p_user_ids: ids.slice(0, 100) }),
-    db.rpc("get_interest_match_scores", { p_user_ids: ids.slice(0, 100) })
+    db.rpc("get_interest_match_scores", { p_user_ids: ids.slice(0, 100) }),
+    db.rpc("get_shared_profile_extras", { p_user_ids: ids.slice(0, 100) }),
+    db.rpc("get_dating_compatibility_scores", { p_user_ids: ids.slice(0, 100) })
   ]);
   if (error) throw error;
   if (scoreError) throw scoreError;
+  if (profileExtrasError) throw profileExtrasError;
+  if (compatibilityError) throw compatibilityError;
   const byId = new Map((data || []).map(row => [row.user_id, row]));
   const scoreById = new Map((scoreRows || []).map(row => [row.user_id, row]));
+  const profileExtrasById = new Map((profileExtrasRows || []).map(row => [row.user_id, row]));
+  const compatibilityById = new Map((compatibilityRows || []).map(row => [row.user_id, row]));
   return people.map(person => {
     const shared = byId.get(person.id) || null;
     const score = scoreById.get(person.id) || null;
+    const compatibility = compatibilityById.get(person.id) || null;
     return {
       ...person,
       shared_dating_details: shared,
+      shared_profile_extras: profileExtrasById.get(person.id) || null,
       _sharedInterestCount: Number(score?.shared_interest_count || 0),
-      _interestMatchPercent: Number(score?.interest_match_percent || 0)
+      _interestMatchPercent: Number(score?.interest_match_percent || 0),
+      _compatibilityPercent: Number(compatibility?.compatibility_percent || 0),
+      _compatibilityDimensions: Number(compatibility?.scored_dimensions || 0),
+      _compatibilityIntentionMatch: compatibility?.relationship_intention_match ?? null,
+      _compatibilityCommunicationMatch: compatibility?.communication_style_match ?? null,
+      _compatibilitySharedLanguageCount: Number(compatibility?.shared_language_count || 0)
     };
   });
 }
@@ -11213,6 +11403,26 @@ function appendSharedDatingDetails(panel, details) {
     lifestyleLine.textContent = "🌿 " + lifestyle.join(" · ");
     lifestyleLine.style.cssText = "font-size:12px;line-height:1.5;margin:7px 0;";
     panel.appendChild(lifestyleLine);
+  }
+  const extras = details.profile_extras || null;
+  if (extras) {
+    const extraParts = [
+      extras.relationship_intention && extras.relationship_intention !== "Prefer not to say" ? "Looking for: " + extras.relationship_intention : "",
+      extras.communication_style && extras.communication_style !== "Prefer not to say" ? "Communication: " + extras.communication_style : "",
+      Array.isArray(extras.languages) && extras.languages.length ? "Languages: " + extras.languages.join(", ") : "",
+      extras.education_level && extras.education_level !== "Prefer not to say" ? "Education: " + extras.education_level : "",
+      extras.occupation ? "Work: " + extras.occupation : "",
+      extras.favorite_music ? "Music: " + extras.favorite_music : "",
+      extras.favorite_movies ? "Movies: " + extras.favorite_movies : "",
+      extras.favorite_food ? "Food: " + extras.favorite_food : ""
+    ].filter(Boolean);
+    if (extraParts.length) {
+      const extraLine = document.createElement("p");
+      extraLine.className = "small";
+      extraLine.textContent = "💬 " + extraParts.join(" · ");
+      extraLine.style.cssText = "font-size:12px;line-height:1.5;margin:7px 0;";
+      panel.appendChild(extraLine);
+    }
   }
 }
 
@@ -11801,6 +12011,20 @@ if (p.has_special_badge) {
 infoOverlay.appendChild(name);
 if (newMemberBadge) infoOverlay.appendChild(newMemberBadge);
 
+if (p._compatibilityDimensions >= 2 && p._compatibilityPercent > 0) {
+  const compatibilityBadge = document.createElement("div");
+  compatibilityBadge.className = "discover-compatibility-badge";
+  compatibilityBadge.textContent = "💛 " + Math.max(0, Math.min(100, Math.round(p._compatibilityPercent))) + "% compatibility";
+  compatibilityBadge.title = "Based on the interests, dating intentions, communication style and languages that members chose to share.";
+  compatibilityBadge.setAttribute("aria-label", compatibilityBadge.textContent);
+  compatibilityBadge.style.cssText =
+    "display:inline-flex;align-self:flex-start;align-items:center;max-width:100%;" +
+    "margin:0 0 8px;padding:7px 11px;border:1px solid rgba(210,173,104,.55);" +
+    "border-radius:999px;background:rgba(18,15,10,.82);color:#f6dda5;" +
+    "font-size:12px;font-weight:800;line-height:1.35;";
+  infoOverlay.appendChild(compatibilityBadge);
+}
+
 if (p._sharedInterestCount > 0) {
   const interestMatchBadge = document.createElement("div");
   interestMatchBadge.className = "discover-interest-match-badge";
@@ -11852,7 +12076,7 @@ details.textContent = [
 details.style.cssText =
   "font-size:14px;line-height:1.5;margin:4px 0 10px;";
 detailsPanel.appendChild(details);
-appendSharedDatingDetails(detailsPanel, p.shared_dating_details);
+appendSharedDatingDetails(detailsPanel, { ...(p.shared_dating_details || {}), profile_extras: p.shared_profile_extras });
 
       if (currentMemberOrientation !== "Straight / heterosexual" && Array.isArray(p.sexual_roles) && p.sexual_roles.length) {
   const roles = document.createElement("p");
@@ -16672,6 +16896,12 @@ function refreshMessagesAfterReconnect() {
 
 window.addEventListener("online", refreshMessagesAfterReconnect);
 
+$("chatReplyCancel")?.addEventListener("click", () => {
+  activeReplyToMessage = null;
+  $("chatReplyPreview")?.classList.add("hidden");
+  $("chatReplyPreviewText")?.replaceChildren();
+});
+
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
     refreshMessagesAfterReconnect();
@@ -16691,6 +16921,9 @@ $("chatPageStatus").textContent = "";
 $("chatMessages").replaceChildren();
     activeChatUserId = userId;
     window.activeChatUserId = userId;
+    subscribeToChatTyping(userId).catch(error =>
+      console.warn("Could not start chat typing indicator:", error)
+    );
     
     // MATCH_LIVEKIT_CALL_UI_V1: voice-only controls, kept inside the chat header.
     ensureVoiceCallUI();
@@ -16956,7 +17189,7 @@ async function loadChatMessages(){
 
             const {data,error} = await db
       .from("messages")
-      .select("id,sender_id,receiver_id,body,created_at,delivered_at,read_at,unsent_at")
+      .select("id,sender_id,receiver_id,body,reply_to_message_id,created_at,delivered_at,read_at,unsent_at")
       .or("and(sender_id.eq."+me+",receiver_id.eq."+them+"),and(sender_id.eq."+them+",receiver_id.eq."+me+")")
       .order("created_at",{ascending:false})
       .limit(100);
@@ -16982,6 +17215,20 @@ if (visiblePageMessageIds.length) {
 const hiddenMessageIds = new Set(
   hiddenRows.map(row => row.message_id)
 );
+let reactionRows = [];
+const reactionMessageIds = (data || []).map(message => message.id).filter(Boolean);
+if (reactionMessageIds.length) {
+  const { data: rows, error: reactionError } = await db.from("message_reactions")
+    .select("message_id,user_id,emoji")
+    .in("message_id", reactionMessageIds);
+  if (reactionError) throw reactionError;
+  reactionRows = rows || [];
+}
+const reactionsByMessage = new Map();
+for (const reaction of reactionRows) {
+  if (!reactionsByMessage.has(reaction.message_id)) reactionsByMessage.set(reaction.message_id, []);
+  reactionsByMessage.get(reaction.message_id).push(reaction);
+}
 
 if (data) {
   for (let i = data.length - 1; i >= 0; i--) {
@@ -17092,6 +17339,13 @@ const receiptResults = await Promise.all(
           overflowWrap:"anywhere"
         });
 
+        if (message.reply_to_message_id) {
+          const repliedMessage = (data || []).find(item => item.id === message.reply_to_message_id);
+          const quote = document.createElement("div");
+          quote.textContent = repliedMessage ? "↪ " + (repliedMessage.sender_id === me ? "You: " : "Them: ") + (repliedMessage.body || "Message") : "↪ Replied to a message";
+          quote.style.cssText = "padding:6px 8px;margin-bottom:7px;border-left:3px solid #d2ad68;background:#171717;border-radius:6px;color:#f2d89f;font-size:11px;";
+          bubble.appendChild(quote);
+        }
         const body = document.createElement("div");
         body.textContent = message.body;
 
@@ -17160,8 +17414,8 @@ cursor: "pointer"
 
 optionsButton.onclick = async () => {
 const choices = mine
-? "Choose an option:\n1. Copy message\n2. Delete for me\n3. Unsend for everyone"
-: "Choose an option:\n1. Copy message\n2. Delete for me";
+? "Choose an option:\n1. Copy message\n2. Delete for me\n3. Unsend for everyone\n4. Reply"
+: "Choose an option:\n1. Copy message\n2. Delete for me\n4. Reply";
 
 const choice = await matchPrompt(choices);
 if (!choice) return;
@@ -17180,6 +17434,14 @@ try {
 
     bubble.remove();
     status("chatPageStatus", "Message deleted from your chat.");
+  } else if (choice === "4") {
+    if (message.unsent_at) return;
+    activeReplyToMessage = { id: message.id, body: String(message.body || "").slice(0, 180), sender_id: message.sender_id };
+    const preview = $("chatReplyPreview");
+    const previewText = $("chatReplyPreviewText");
+    if (previewText) previewText.textContent = "Replying to " + (mine ? "your message: " : "their message: ") + activeReplyToMessage.body;
+    preview?.classList.remove("hidden");
+    $("chatMessageInput")?.focus();
   } else if (choice === "3" && mine) {
     if (!await matchConfirm("Unsend this message for everyone? This cannot be undone.")) return;
 
@@ -17201,6 +17463,40 @@ try {
 };
 
 bubble.appendChild(optionsButton);
+
+const reactionBar = document.createElement("div");
+reactionBar.style.cssText = "display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;justify-content:flex-end;";
+const messageReactions = reactionsByMessage.get(message.id) || [];
+for (const emoji of ["❤️","😂","😍","😮","😢","👍"]) {
+  const matching = messageReactions.filter(item => item.emoji === emoji);
+  if (!matching.length) continue;
+  const chip = document.createElement("button");
+  chip.type = "button";
+  chip.textContent = emoji + " " + matching.length;
+  chip.setAttribute("aria-label", emoji + " reaction, " + matching.length + " members");
+  chip.style.cssText = "border:1px solid #8e7446;border-radius:14px;padding:3px 7px;background:" + (matching.some(item => item.user_id === me) ? "#59451f" : "#171717") + ";color:#fff;font-size:11px;";
+  chip.onclick = async () => {
+    chip.disabled = true;
+    try { const { error } = await db.rpc("toggle_chat_message_reaction", { p_message_id: message.id, p_emoji: emoji }); if (error) throw error; await loadChatMessages(); }
+    catch (error) { status("chatPageStatus", "Could not update reaction: " + friendly(error), true); chip.disabled = false; }
+  };
+  reactionBar.appendChild(chip);
+}
+const addReaction = document.createElement("button");
+addReaction.type = "button";
+addReaction.textContent = "☺ React";
+addReaction.setAttribute("aria-label", "Add a reaction");
+addReaction.style.cssText = "border:1px solid #6f5b3c;border-radius:14px;padding:3px 8px;background:#171717;color:#f5e3bd;font-size:11px;";
+addReaction.onclick = async () => {
+  const selected = await matchPrompt("Choose a reaction: 1 ❤️  2 😂  3 😍  4 😮  5 😢  6 👍");
+  const emojis = { "1":"❤️", "2":"😂", "3":"😍", "4":"😮", "5":"😢", "6":"👍" };
+  if (!emojis[String(selected || "").trim()]) return;
+  addReaction.disabled = true;
+  try { const { error } = await db.rpc("toggle_chat_message_reaction", { p_message_id: message.id, p_emoji: emojis[String(selected).trim()] }); if (error) throw error; await loadChatMessages(); }
+  catch (error) { status("chatPageStatus", "Could not update reaction: " + friendly(error), true); addReaction.disabled = false; }
+};
+reactionBar.appendChild(addReaction);
+bubble.appendChild(reactionBar);
 }
 
 insertBubbleInTimeOrder(bubble, message.created_at);
@@ -17556,6 +17852,7 @@ window.addEventListener("match:gift-sent", event => {
   input.style.height="auto";
   input.style.height=Math.min(input.scrollHeight,120)+"px";
   $("chatPageStatus").textContent="";
+  handleChatTypingInput();
 });
   
 $("chatEmojiToggle").addEventListener("click", event => {
@@ -17691,7 +17988,8 @@ if (body) {
   const { error } = await db.from("messages").insert({
     sender_id: senderId,
     receiver_id: receiverId,
-    body: body
+    body: body,
+    reply_to_message_id: activeReplyToMessage?.id || null
   });
 
   if (error) throw error;
@@ -17740,6 +18038,12 @@ if (file) {
 
 input.value = "";
 input.style.height = "auto";
+activeReplyToMessage = null;
+$("chatReplyPreview")?.classList.add("hidden");
+$("chatReplyPreviewText")?.replaceChildren();
+sendChatTyping(false);
+if (chatTypingStopTimer) clearTimeout(chatTypingStopTimer);
+chatTypingStopTimer = null;
 
 if (fileInput) fileInput.value = "";
 await loadChatMessages();

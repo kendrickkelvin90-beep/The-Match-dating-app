@@ -1,2 +1,5 @@
 # The-Match-dating-app
-The Match is a premium LGBTQ+ dating platform for adults aged 18 and above. Designed with an elegant black-and-red theme, it aims to help people discover meaningful connections through profiles, likes, mutual matches, and private messaging. The platform focuses on inclusivity, privacy, and a romantic user experience.
+
+The Match is a dating platform for adults aged 18 and above, welcoming straight and LGBTQ+ members across all genders and sexual orientations. It helps people discover meaningful connections through profiles, likes, mutual matches, private messaging and community experiences.
+
+The platform prioritises consent, privacy, member safety and inclusive discovery.

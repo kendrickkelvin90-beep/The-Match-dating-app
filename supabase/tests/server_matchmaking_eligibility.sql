@@ -262,7 +262,7 @@ set interests = excluded.interests,
     share_interests = excluded.share_interests,
     share_lifestyle = excluded.share_lifestyle;
 
-do $
+do $$
 declare
   shared_row record;
 begin

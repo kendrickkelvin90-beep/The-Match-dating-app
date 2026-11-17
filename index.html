@@ -3181,21 +3181,37 @@ body.light-theme #messages .message-inbox-filter.active{background:#c6a15b;color
   font-size:13px!important; line-height:1.45!important;
 }
 #voiceCallStart { border-radius:14px!important; }
+/* Mobile navigation: reserve room for Android gesture/navigation bars and page content. */
+body {
+  padding-bottom:calc(118px + env(safe-area-inset-bottom, 0px))!important;
+  scroll-padding-bottom:calc(118px + env(safe-area-inset-bottom, 0px));
+}
 #bottomNavigation {
-  display:flex!important; justify-content:space-around!important; gap:3px!important;
-  padding:7px 4px max(7px,env(safe-area-inset-bottom))!important;
-  overflow-x:auto!important;
+  position:fixed!important;
+  left:0!important; right:0!important; bottom:0!important;
+  z-index:9999!important;
+  display:flex!important; justify-content:space-around!important; align-items:stretch!important;
+  gap:3px!important;
+  box-sizing:border-box!important;
+  min-height:calc(78px + env(safe-area-inset-bottom, 0px))!important;
+  padding:8px 5px calc(14px + env(safe-area-inset-bottom, 0px))!important;
+  overflow-x:auto!important; overflow-y:hidden!important;
+  background:rgba(8,8,8,.98)!important;
+  border-top:1px solid var(--tm-line,#303030)!important;
 }
 #bottomNavigation button {
-  min-width:0!important; flex:1 0 auto!important; min-height:48px!important;
+  min-width:0!important; min-height:52px!important; flex:1 1 0!important;
   display:flex!important; flex-direction:column!important; align-items:center!important;
-  justify-content:center!important; gap:3px!important; padding:5px 7px!important;
-  font-size:10px!important; font-weight:650!important; white-space:nowrap!important;
+  justify-content:center!important; gap:4px!important; padding:6px 3px!important;
+  font-size:10px!important; font-weight:650!important; line-height:1.2!important;
+  white-space:nowrap!important; overflow:visible!important;
 }
-#bottomNavigation .nav-icon { font-size:17px!important; line-height:1!important; }
+#bottomNavigation .nav-icon { font-size:18px!important; line-height:1!important; }
 @media(max-width:420px) {
-  #bottomNavigation button { font-size:9px!important; padding-left:4px!important; padding-right:4px!important; }
+  #bottomNavigation button { font-size:9px!important; padding-left:2px!important; padding-right:2px!important; }
 }
+body:has(#chatPage:not(.hidden)) { padding-bottom:0!important; }
+body:has(#chatPage:not(.hidden)) #bottomNavigation { display:none!important; }
 
 
 /* Discover — finished black-and-gold presentation (visual-only) */
@@ -11999,9 +12015,7 @@ if (discoverMemberIds.length) {
 if (!people.length) {
   status(
     "discoverStatus",
-    viewerPremium
-      ? "No profiles match your current Discover preferences. Try widening your filters or check again later."
-      : "There are no eligible profiles available within your normal discovery area right now. Your Discover settings are already set to show available members. Please check again soon."
+    "No eligible profiles are available in your private dating community right now. Optional filters have been relaxed, but members must choose the same dating community, complete their profiles and meet mutual matching preferences before they can appear. Resetting filters will not mix the LGBTQ+ and Straight communities."
   );
   return;
 }
@@ -13296,7 +13310,7 @@ async function loadPremiumNearby(){
     if(!nearbyViewerIsPremium){
       status("nearbyMembersStatus",mapCount
         ? "The Nearby map is ready. Subscribe to Premium to view profiles and cards."
-        : "The map is ready. No eligible nearby members are showing yet.");
+        : "No eligible members in your private dating community have shared a fresh location within 50 km yet.");
       return;
     }
     const {data:peopleData,error:peopleError}=await db.rpc("premium_nearby_profiles_secure",{p_max_distance_km:50});
@@ -13306,7 +13320,7 @@ async function loadPremiumNearby(){
     let people=[...uniquePeople.values()].map(p=>({...p,_distance:p.distance_km==null?null:Number(p.distance_km)}));
     for(let i=people.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[people[i],people[j]]=[people[j],people[i]];}
     if(!people.length){
-      status("nearbyMembersStatus",mapCount?"The map is ready. No member cards are available yet.":"No nearby members are available yet.");
+      status("nearbyMembersStatus",mapCount?"The map has eligible pins, but no member cards are available yet.":"No eligible members in your private dating community have shared a fresh location within 50 km yet.");
       return;
     }
     const nearbyMemberIds=people.map(person=>person.id);
@@ -15530,35 +15544,40 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
   }
   }
   $("resetDiscoveryPreferences").addEventListener("click", async () => {
-  $("discoveryLocation").value = "";
-  $("discoveryDistance").value = 50;
-  $("discoveryAgeMin").value = 18;
-  $("discoveryAgeMax").value = 79;
-  $("discoveryShowMe").value = "everyone";
-  $("discoveryLookingFor").value = "";
-  $("discoveryInterests").value = "";
-  $("discoveryVerifiedOnly").checked = false;
-  $("discoveryRecentlyActive").checked = false;
-  $("discoveryExpandRange").checked = true;
-  document.querySelectorAll('input[name="discoveryRolePreference"]').forEach(el=>el.checked=false);
-
-  $("discoveryDistanceValue").textContent = "50 km";
-
-  try {
-    if (!currentUser?.id) throw new Error("Please sign in before resetting discovery preferences.");
-    // Run the one-time admin-only migration first, then remove only this account's key.
-    await getCurrentAccountDiscoveryPreferences();
-    localStorage.removeItem(getDiscoveryPreferencesStorageKey());
-    await loadDiscoveryPreferences();
-    if(currentUser){
-      db.from("profiles").update({discovery_role_preferences:[]}).eq("id",currentUser.id)
-        .then(({error})=>{if(error)console.error("Could not reset account role preferences:",error);});
+    const resetButton = $("resetDiscoveryPreferences");
+    if (!currentUser?.id) {
+      status("discoveryPreferencesStatus", "Please sign in before resetting discovery preferences.", true);
+      return;
     }
-    status("discoveryPreferencesStatus", "Preferences reset to defaults.");
-  } catch (error) {
-    status("discoveryPreferencesStatus", "Could not reset saved preferences.", true);
-  }
-});
+    if (resetButton) resetButton.disabled = true;
+    status("discoveryPreferencesStatus", "Resetting your optional discovery filters…");
+    try {
+      // Write an explicit empty object for this account. This also prevents an
+      // obsolete shared-device preference key from being migrated back in.
+      localStorage.setItem(getDiscoveryPreferencesStorageKey(), JSON.stringify({}));
+      await loadDiscoveryPreferences();
+
+      // Clear the server-side legacy role filter before reporting success.
+      const { error: roleResetError } = await db.from("profiles")
+        .update({ discovery_role_preferences: [] })
+        .eq("id", currentUser.id);
+      if (roleResetError) throw roleResetError;
+
+      status(
+        "discoveryPreferencesStatus",
+        "Optional filters reset. Your private dating community and mutual matching rules still apply."
+      );
+    } catch (error) {
+      console.error("Could not completely reset discovery preferences:", error);
+      status(
+        "discoveryPreferencesStatus",
+        "We couldn't finish resetting every saved filter. Please try again.",
+        true
+      );
+    } finally {
+      if (resetButton) resetButton.disabled = false;
+    }
+  });
 async function loadProfilePauseSetting() {
   const toggle = $("profilePauseToggle");
   const statusEl = $("profilePauseStatus");

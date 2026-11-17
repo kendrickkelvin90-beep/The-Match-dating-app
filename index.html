@@ -7165,7 +7165,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     </select>
   </div>
 
-  <div class="discovery-preference-card">
+  <div class="discovery-preference-card" id="discoveryRolePreferenceCard">
     <div class="discovery-card-heading"><span class="discovery-card-icon">♡</span><div><h3>Who would you like to meet?</h3><p>Select one or more roles. Leave all unselected for no role filter.</p></div></div>
     <div class="discovery-role-grid">
       <label class="discovery-role-option"><input type="checkbox" name="discoveryRolePreference" value="Top"><span>Top</span></label>
@@ -11046,8 +11046,12 @@ function syncDatingCommunityFields() {
   const straight = community === "straight";
   const orientationSection = $("sexualOrientationSection");
   const roleSection = $("queerRolePreferencesSection");
+  const discoveryRoleCard = $("discoveryRolePreferenceCard");
   if (orientationSection) orientationSection.hidden = straight;
   if (roleSection) roleSection.hidden = community !== "lgbtq";
+  // Role-based discovery filters belong only to the LGBTQ+ community.
+  // Hide them by default until a member's private community is known.
+  if (discoveryRoleCard) discoveryRoleCard.hidden = community !== "lgbtq";
   if (straight && $("sexualOrientation")) {
     $("sexualOrientation").value = "Straight / heterosexual";
   } else if (community === "lgbtq" && $("sexualOrientation")?.value === "Straight / heterosexual") {
@@ -11396,12 +11400,17 @@ if (newOrientation !== currentMemberOrientation || newCommunity !== currentMembe
   const { data: onboardingRecord, error: onboardingReadError } = await db.from("member_onboarding")
     .select("answers").eq("user_id", currentUser.id).maybeSingle();
   if (onboardingReadError) throw onboardingReadError;
-  if (!onboardingRecord) throw Error("Your private dating community settings could not be saved. Please contact support.");
-  const updatedAnswers = { ...(onboardingRecord.answers || {}), sexual_orientation: newOrientation, dating_community: newCommunity };
-  const { error: onboardingUpdateError } = await db.from("member_onboarding")
-    .update({ answers: updatedAnswers, updated_at: new Date().toISOString() })
-    .eq("user_id", currentUser.id);
-  if (onboardingUpdateError) throw onboardingUpdateError;
+  const updatedAnswers = {
+    ...(onboardingRecord?.answers || {}),
+    sexual_orientation: newOrientation,
+    dating_community: newCommunity
+  };
+  const communitySave = await db.from("member_onboarding").upsert({
+    user_id: currentUser.id,
+    answers: updatedAnswers,
+    updated_at: new Date().toISOString()
+  }, { onConflict: "user_id" });
+  if (communitySave.error) throw communitySave.error;
   currentMemberOrientation = newOrientation;
   currentMemberCommunity = newCommunity;
   const roleSection = $("queerRolePreferencesSection");
@@ -22869,6 +22878,44 @@ body.light-theme #discover #profileList > .discover-option3-card {
 }
 
 </style>
+
+<style id="profile-full-width-layout-fix">
+/* Use the available mobile viewport instead of the narrow inset profile frame. */
+main { width:100%!important; max-width:none!important; padding-left:0!important; padding-right:0!important; }
+#profile {
+  box-sizing:border-box!important;
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:0 12px 28px!important;
+  border-left:0!important;
+  border-right:0!important;
+  border-radius:0!important;
+}
+#profile #profileForm {
+  box-sizing:border-box!important;
+  width:100%!important;
+  max-width:none!important;
+  margin-left:0!important;
+  margin-right:0!important;
+  border-left:0!important;
+  border-right:0!important;
+  border-radius:14px!important;
+}
+#profile .member-card,
+#profile .profile-onboarding-progress {
+  box-sizing:border-box!important;
+  width:100%!important;
+  max-width:none!important;
+}
+#profile [data-profile-step] { min-width:0!important; }
+#profile .profile-step-actions { width:100%!important; }
+@media(max-width:480px) {
+  #profile { padding-left:10px!important; padding-right:10px!important; }
+  #profile #profileForm { padding-left:12px!important; padding-right:12px!important; }
+}
+</style>
+
 </body>
 </html>
 

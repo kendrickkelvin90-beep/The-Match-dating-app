@@ -12055,6 +12055,100 @@ if (p._compatibilityDimensions >= 2 && p._compatibilityPercent > 0) {
     "border-radius:999px;background:rgba(18,15,10,.82);color:#f6dda5;" +
     "font-size:12px;font-weight:800;line-height:1.35;";
   infoOverlay.appendChild(compatibilityBadge);
+
+  const explainButton = document.createElement("button");
+  explainButton.type = "button";
+  explainButton.className = "discover-compatibility-explain";
+  explainButton.textContent = "Why this match?";
+  explainButton.setAttribute("aria-label", "Explain compatibility score");
+  explainButton.style.cssText =
+    "display:inline-flex;align-items:center;justify-content:center;align-self:flex-start;" +
+    "margin:0 0 10px;padding:8px 12px;border:1px solid rgba(210,173,104,.42);" +
+    "border-radius:10px;background:rgba(10,10,10,.78);color:#f6dda5;" +
+    "font-size:12px;font-weight:750;cursor:pointer;";
+  explainButton.addEventListener("click", () => {
+    const overlay = document.createElement("div");
+    overlay.setAttribute("role", "presentation");
+    overlay.style.cssText =
+      "position:fixed;inset:0;z-index:10050;display:flex;align-items:center;" +
+      "justify-content:center;padding:20px;background:rgba(0,0,0,.78);backdrop-filter:blur(8px);";
+    const panel = document.createElement("section");
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-modal", "true");
+    panel.setAttribute("aria-labelledby", "matchCompatibilityTitle");
+    panel.style.cssText =
+      "width:min(100%,420px);max-height:80vh;overflow:auto;padding:22px;" +
+      "border:1px solid rgba(210,173,104,.42);border-radius:20px;" +
+      "background:#111;color:#f7f2e8;box-shadow:0 20px 70px rgba(0,0,0,.55);";
+    const heading = document.createElement("h3");
+    heading.id = "matchCompatibilityTitle";
+    heading.textContent = "Why you may connect";
+    heading.style.cssText = "margin:0 0 8px;font-size:21px;color:#f6dda5;";
+    panel.appendChild(heading);
+    const scoreText = document.createElement("p");
+    scoreText.textContent =
+      Math.max(0, Math.min(100, Math.round(Number(p._compatibilityPercent) || 0))) +
+      "% compatibility across " + Number(p._compatibilityDimensions || 0) +
+      " shared profile dimensions";
+    scoreText.style.cssText = "margin:0 0 16px;color:#d8c9a8;font-size:13px;line-height:1.5;";
+    panel.appendChild(scoreText);
+
+    const reasons = [];
+    if (Number(p._sharedInterestCount) > 0) {
+      reasons.push("You have " + Number(p._sharedInterestCount) +
+        (Number(p._sharedInterestCount) === 1 ? " interest in common." : " interests in common."));
+    }
+    if (p._compatibilityIntentionMatch === true) {
+      reasons.push("You selected the same relationship intention.");
+    } else if (p._compatibilityIntentionMatch === false) {
+      reasons.push("Your stated relationship intentions are different, so talk about what each of you wants.");
+    }
+    if (p._compatibilityCommunicationMatch === true) {
+      reasons.push("You selected the same communication style.");
+    } else if (p._compatibilityCommunicationMatch === false) {
+      reasons.push("Your communication styles differ; understanding each other's preferences may help.");
+    }
+    if (Number(p._compatibilitySharedLanguageCount) > 0) {
+      reasons.push("You have " + Number(p._compatibilitySharedLanguageCount) +
+        (Number(p._compatibilitySharedLanguageCount) === 1 ? " language in common." : " languages in common."));
+    }
+    if (Number(p._compatibilityDimensions) > reasons.length) {
+      reasons.push("Opted-in lifestyle details also contribute to this score where available.");
+    }
+    if (!reasons.length) {
+      reasons.push("Your score is based on profile details both members chose to share.");
+    }
+    const list = document.createElement("ul");
+    list.style.cssText = "margin:0 0 18px;padding-left:20px;color:#eee7d9;line-height:1.65;font-size:14px;";
+    reasons.forEach(reason => {
+      const item = document.createElement("li");
+      item.textContent = reason;
+      item.style.marginBottom = "8px";
+      list.appendChild(item);
+    });
+    panel.appendChild(list);
+
+    const note = document.createElement("p");
+    note.textContent = "This is a guide, not a prediction or guarantee. Compatibility uses only information members chose to share; private partner preferences are never shown.";
+    note.style.cssText = "margin:0 0 18px;color:#aaa;font-size:12px;line-height:1.55;";
+    panel.appendChild(note);
+    const close = document.createElement("button");
+    close.type = "button";
+    close.textContent = "Got it";
+    close.style.cssText =
+      "width:100%;padding:12px;border:0;border-radius:12px;" +
+      "background:linear-gradient(90deg,#b58b45,#f0d18a);color:#17120a;font-weight:800;";
+    const dismiss = () => overlay.remove();
+    close.addEventListener("click", dismiss);
+    overlay.addEventListener("click", event => {
+      if (event.target === overlay) dismiss();
+    });
+    panel.appendChild(close);
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+    close.focus();
+  });
+  infoOverlay.appendChild(explainButton);
 }
 
 if (p._sharedInterestCount > 0) {

@@ -4,10 +4,17 @@
 begin;
 
 create or replace function private.member_dating_community(p_user_id uuid)
-returns text language sql stable security definer set search_path = ''
+returns text
+language sql
+stable
+security definer
+set search_path = ''
 as $function$
-  select case when onboarding.answers ->> 'dating_community' in ('straight', 'lgbtq')
-    then onboarding.answers ->> 'dating_community' else null end
+  select case
+    when onboarding.answers ->> 'dating_community' in ('straight', 'lgbtq')
+      then onboarding.answers ->> 'dating_community'
+    else null
+  end
   from public.member_onboarding onboarding
   where onboarding.user_id = p_user_id;
 $function$;
@@ -145,9 +152,11 @@ begin
         where viewer.id = v_viewer_id
           and private.match_preference_accepts_gender(viewer.interested_in, candidate.gender_identity)
           and private.match_preference_accepts_gender(candidate.interested_in, viewer.gender_identity)
+      and private.member_meets_partner_preferences(v_viewer_id, candidate.id)
+      and private.member_meets_partner_preferences(candidate.id, v_viewer_id)
       )
-      -- Only members who explicitly selected the same private dating community
-      -- can appear in one another's Discover results.
+      -- A straight member is shown only other members who explicitly selected
+      -- Straight / heterosexual. No orientation is inferred from gender.
       and (
         p_connection_goal is null
         or exists (
@@ -254,7 +263,10 @@ as $function$
 $function$;
 
 create or replace function private.enforce_same_dating_community_on_like()
-returns trigger language plpgsql security definer set search_path = ''
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
 as $function$
 declare
   v_liker_community text;
@@ -273,6 +285,7 @@ begin
   return new;
 end;
 $function$;
+
 drop trigger if exists enforce_same_dating_community_on_like on public.likes;
 create trigger enforce_same_dating_community_on_like
 before insert or update of liker_id, liked_id on public.likes
@@ -281,4 +294,7 @@ revoke all on function private.enforce_same_dating_community_on_like() from publ
 
 comment on function private.member_dating_community(uuid) is
   'Returns a member''s private self-selected dating community (straight or lgbtq); null means they have not selected one.';
+comment on function private.enforce_same_dating_community_on_like() is
+  'Blocks cross-community likes and requires both members to choose a community.';
+
 commit;

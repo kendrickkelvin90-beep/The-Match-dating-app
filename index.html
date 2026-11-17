@@ -6243,6 +6243,23 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
   <p class="small">Your lifestyle answers stay private unless you turn on sharing. You can change these choices anytime.</p>
 </div>
 
+<div class="member-card" id="datingPartnerPreferences">
+  <h2>Who would be a good match? 💛</h2>
+  <p class="small">Set optional preferences and deal-breakers. These answers stay private and are checked both ways before someone appears in Discover.</p>
+  <label for="partnerSmoking">Smoking</label>
+  <select id="partnerSmoking"><option value="any">No preference</option><option>Never</option><option>Occasionally</option><option>Socially</option><option>Regularly</option><option>Prefer not to say</option></select>
+  <label for="partnerDrinking">Drinking</label>
+  <select id="partnerDrinking"><option value="any">No preference</option><option>Never</option><option>Occasionally</option><option>Socially</option><option>Regularly</option><option>Prefer not to say</option></select>
+  <label for="partnerActivity">Activity level</label>
+  <select id="partnerActivity"><option value="any">No preference</option><option>Very active</option><option>Moderately active</option><option>Not very active</option><option>Prefer not to say</option></select>
+  <label for="partnerPets">Pets</label>
+  <select id="partnerPets"><option value="any">No preference</option><option>Have pets</option><option>Love pets</option><option>Want pets</option><option>Not for me</option><option>Prefer not to say</option></select>
+  <label for="partnerChildren">Children</label>
+  <select id="partnerChildren"><option value="any">No preference</option><option>Have children</option><option>Want children</option><option>Do not want children</option><option>Not sure</option><option>Prefer not to say</option></select>
+  <label for="partnerIntention">Relationship intention</label>
+  <select id="partnerIntention"><option value="any">No preference</option><option>Long-term relationship</option><option>Dating</option><option>Friendship</option><option>Casual dating</option><option>Still figuring it out</option><option>Prefer not to say</option></select>
+</div>
+
 <div class="member-card" id="datingProfileExtras">
   <h2>More about my dating style ✨</h2>
   <p class="small">Optional details that help people understand what kind of connection you're looking for. Nothing here is shared unless you enable sharing.</p>
@@ -11005,6 +11022,13 @@ async function loadMyDatingDetails() {
     .eq("user_id", currentUser.id).maybeSingle();
   if (error) throw error;
   const saved = data || {};
+  const partnerPreferences = saved.partner_preferences || {};
+  $("partnerSmoking").value = partnerPreferences.smoking || "any";
+  $("partnerDrinking").value = partnerPreferences.drinking || "any";
+  $("partnerActivity").value = partnerPreferences.activity_level || "any";
+  $("partnerPets").value = partnerPreferences.pets || "any";
+  $("partnerChildren").value = partnerPreferences.children || "any";
+  $("partnerIntention").value = partnerPreferences.relationship_intention || "any";
   document.querySelectorAll('input[name="datingInterest"]').forEach(input => {
     input.checked = Array.isArray(saved.interests) && saved.interests.includes(input.value);
   });
@@ -11299,7 +11323,15 @@ const { error: datingDetailsError } = await db.from("member_dating_details").ups
   favorite_music: $("datingFavoriteMusic").value.trim(),
   favorite_movies: $("datingFavoriteMovies").value.trim(),
   favorite_food: $("datingFavoriteFood").value.trim(),
-  share_profile_extras: $("shareDatingProfileExtras").checked
+  share_profile_extras: $("shareDatingProfileExtras").checked,
+  partner_preferences: {
+    smoking: $("partnerSmoking").value,
+    drinking: $("partnerDrinking").value,
+    activity_level: $("partnerActivity").value,
+    pets: $("partnerPets").value,
+    children: $("partnerChildren").value,
+    relationship_intention: $("partnerIntention").value
+  }
 }, { onConflict: "user_id" });
 if (datingDetailsError) throw datingDetailsError;
 

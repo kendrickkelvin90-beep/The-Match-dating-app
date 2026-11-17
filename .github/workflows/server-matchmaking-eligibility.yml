@@ -13,7 +13,8 @@ on:
       - "supabase/migrations/20261116220000_dating_compatibility_scores.sql"
       - "supabase/migrations/20261116210000_secure_chat_typing_broadcasts.sql"
       - "supabase/migrations/20261117190000_chat_replies_and_reactions.sql"
-          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+      - "supabase/migrations/20261117190000_chat_replies_and_reactions.sql"
+      - "supabase/migrations/20261117193000_reciprocal_partner_preferences.sql"
       - "supabase/migrations/20261117203000_lifestyle_compatibility_scoring.sql"
       - "index.html"
       - "supabase/tests/server_matchmaking_eligibility*.sql"

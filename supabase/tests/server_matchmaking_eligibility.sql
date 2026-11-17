@@ -631,6 +631,11 @@ do $test$
 declare
   reaction_added boolean;
 begin
+  if has_function_privilege('anon', 'public.validate_chat_message_reply()', 'EXECUTE')
+     or has_function_privilege('authenticated', 'public.validate_chat_message_reply()', 'EXECUTE') then
+    raise exception 'The trigger-only chat reply validator is directly executable through the API';
+  end if;
+
   insert into public.messages(id,sender_id,receiver_id,body,reply_to_message_id)
   values ('10000000-0000-4000-8000-000000000003',
           '00000000-0000-4000-8000-000000000001',

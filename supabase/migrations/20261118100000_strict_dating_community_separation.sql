@@ -146,8 +146,8 @@ begin
           and private.match_preference_accepts_gender(viewer.interested_in, candidate.gender_identity)
           and private.match_preference_accepts_gender(candidate.interested_in, viewer.gender_identity)
       )
-      -- A straight member is shown only other members who explicitly selected
-      -- Straight / heterosexual. No orientation is inferred from gender.
+      -- Only members who explicitly selected the same private dating community
+      -- can appear in one another's Discover results.
       and (
         p_connection_goal is null
         or exists (

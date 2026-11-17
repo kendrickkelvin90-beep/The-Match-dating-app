@@ -7172,7 +7172,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     </select>
   </div>
 
-  <div class="discovery-preference-card">
+  <div class="discovery-preference-card" id="discoveryRolePreferenceCard">
     <div class="discovery-card-heading"><span class="discovery-card-icon">♡</span><div><h3>Who would you like to meet?</h3><p>Select one or more roles. Leave all unselected for no role filter.</p></div></div>
     <div class="discovery-role-grid">
       <label class="discovery-role-option"><input type="checkbox" name="discoveryRolePreference" value="Top"><span>Top</span></label>
@@ -8388,6 +8388,8 @@ function profileDetailsAreComplete() {
   const interest = $("interest")?.value?.trim();
   const city = $("city")?.value?.trim();
   const bio = $("bio")?.value?.trim();
+  const community = $("datingCommunity")?.value || currentMemberCommunity;
+  const hasDatingCommunity = ["lgbtq", "straight"].includes(community);
 
   const invalid = ["", "not listed", "unknown", "member"];
 
@@ -8399,7 +8401,8 @@ function profileDetailsAreComplete() {
     !invalid.includes((interest || "").toLowerCase()) &&
     !invalid.includes((city || "").toLowerCase()) &&
     !!bio &&
-    bio.toLowerCase() !== "no description added yet."
+    bio.toLowerCase() !== "no description added yet." &&
+    hasDatingCommunity
   );
 }
 
@@ -11055,6 +11058,16 @@ function syncDatingCommunityFields() {
   const roleSection = $("queerRolePreferencesSection");
   if (orientationSection) orientationSection.hidden = straight;
   if (roleSection) roleSection.hidden = community !== "lgbtq";
+
+  // Do not default an unknown member into the LGBTQ+ discovery controls.
+  const straightDiscovery = $("straightDiscoveryPreferences");
+  const queerDiscovery = $("queerDiscoveryPreferences");
+  if (straightDiscovery) straightDiscovery.hidden = community !== "straight";
+  if (queerDiscovery) queerDiscovery.hidden = community !== "lgbtq";
+
+  const discoveryRoleCard = $("discoveryRolePreferenceCard");
+  if (discoveryRoleCard) discoveryRoleCard.hidden = community !== "lgbtq";
+
   if (straight && $("sexualOrientation")) {
     $("sexualOrientation").value = "Straight / heterosexual";
   } else if (community === "lgbtq" && $("sexualOrientation")?.value === "Straight / heterosexual") {
@@ -11403,16 +11416,22 @@ if (newOrientation !== currentMemberOrientation || newCommunity !== currentMembe
   const { data: onboardingRecord, error: onboardingReadError } = await db.from("member_onboarding")
     .select("answers").eq("user_id", currentUser.id).maybeSingle();
   if (onboardingReadError) throw onboardingReadError;
-  if (!onboardingRecord) throw Error("Your private dating community settings could not be saved. Please contact support.");
-  const updatedAnswers = { ...(onboardingRecord.answers || {}), sexual_orientation: newOrientation, dating_community: newCommunity };
-  const { error: onboardingUpdateError } = await db.from("member_onboarding")
-    .update({ answers: updatedAnswers, updated_at: new Date().toISOString() })
-    .eq("user_id", currentUser.id);
-  if (onboardingUpdateError) throw onboardingUpdateError;
+
+  const updatedAnswers = {
+    ...(onboardingRecord?.answers || {}),
+    sexual_orientation: newOrientation,
+    dating_community: newCommunity
+  };
+  const { error: onboardingSaveError } = await db.from("member_onboarding").upsert({
+    user_id: currentUser.id,
+    answers: updatedAnswers,
+    updated_at: new Date().toISOString()
+  }, { onConflict: "user_id" });
+  if (onboardingSaveError) throw onboardingSaveError;
+
   currentMemberOrientation = newOrientation;
   currentMemberCommunity = newCommunity;
-  const roleSection = $("queerRolePreferencesSection");
-  if (roleSection) roleSection.hidden = currentMemberCommunity !== "lgbtq";
+  syncDatingCommunityFields();
 }
 
 await loadNearby();
@@ -15307,8 +15326,17 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
     const premium = await matchHasAdvancedFilters();
     const saved = await getCurrentAccountDiscoveryPreferences();
     const straightMode = currentMemberCommunity === "straight";
+    const lgbtqMode = currentMemberCommunity === "lgbtq";
     $("straightDiscoveryPreferences").hidden = !straightMode;
-    $("queerDiscoveryPreferences").hidden = straightMode;
+    $("queerDiscoveryPreferences").hidden = !lgbtqMode;
+    if (!straightMode && !lgbtqMode) {
+      status(
+        "discoveryPreferencesStatus",
+        "Choose your dating community in your profile before setting discovery preferences.",
+        true
+      );
+      return;
+    }
 
     const straightSaved = saved.straight || {};
     const ownGender = String($("gender")?.value || "").toLowerCase();
@@ -22963,6 +22991,94 @@ body.light-theme #profile #profileForm > .profile-onboarding-step > textarea{bac
  showStep(1);
 })();
 </script>
+
+
+<style id="match-full-width-no-divider-layout">
+/* Full-width page canvas: keep the existing black-and-gold visual identity. */
+#profile,
+#discoveryPreferencesPage,
+#eventsPage {
+  box-sizing:border-box!important;
+  width:calc(100% + 32px)!important;
+  max-width:none!important;
+  margin-left:-16px!important;
+  margin-right:-16px!important;
+  border-left:0!important;
+  border-right:0!important;
+}
+#profile {
+  padding:0 12px 30px!important;
+  border-radius:0!important;
+}
+#profile #profileForm {
+  box-sizing:border-box!important;
+  width:100%!important;
+  max-width:none!important;
+  margin-left:0!important;
+  margin-right:0!important;
+  border-left:0!important;
+  border-right:0!important;
+}
+#discoveryPreferencesPage.discovery-preferences-page {
+  padding:18px 14px 120px!important;
+  border-radius:0!important;
+}
+#discoveryPreferencesPage .discovery-preference-card,
+#discoveryPreferencesPage .discovery-save-card {
+  width:100%!important;
+  max-width:none!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+#discoveryPreferencesPage .discovery-card-icon,
+#discoveryPreferencesPage .discovery-role-option {
+  border:0!important;
+}
+#discoveryPreferencesPage hr,
+#discoveryPreferencesPage .section-divider,
+#discoveryPreferencesPage .discovery-divider {
+  display:none!important;
+}
+#eventsPage {
+  padding:18px 12px 120px!important;
+  border-radius:0!important;
+}
+#eventsPage .events-shell {
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:0!important;
+}
+#eventsPage .events-heading,
+#eventsPage .events-filters,
+#eventsPage .events-discovery-note,
+#eventsPage .event-card,
+#eventsPage .events-host-card,
+#eventsPage .events-submission-card {
+  width:100%!important;
+  max-width:none!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+#eventsPage .event-card:before {
+  display:none!important;
+  content:none!important;
+}
+#eventsPage .event-card-bottom {
+  border-top:0!important;
+}
+#eventsPage hr,
+#eventsPage .section-divider,
+#eventsPage .event-divider,
+#eventsPage .events-divider {
+  display:none!important;
+}
+@media(max-width:480px) {
+  #profile { padding-left:10px!important;padding-right:10px!important; }
+  #discoveryPreferencesPage.discovery-preferences-page { padding-left:12px!important;padding-right:12px!important; }
+  #eventsPage { padding-left:10px!important;padding-right:10px!important; }
+}
+</style>
 
 </body>
 </html>

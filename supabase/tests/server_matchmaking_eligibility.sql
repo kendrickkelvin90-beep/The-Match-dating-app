@@ -509,6 +509,26 @@ begin
   ) then
     raise exception 'Lifestyle-only consent must not expose or score unshared profile details';
   end if;
+
+  -- Lifestyle dimensions contribute only when the candidate opted into lifestyle sharing.
+  update public.member_dating_details
+  set smoking = 'Socially',
+      drinking = 'Occasionally',
+      activity_level = 'Moderately active',
+      pets = 'Have pets',
+      children = 'Have children'
+  where user_id = '00000000-0000-4000-8000-000000000001';
+
+  select * into compatibility_row
+  from public.get_dating_compatibility_scores(array[
+    '00000000-0000-4000-8000-000000000007'::uuid
+  ])
+  where user_id = '00000000-0000-4000-8000-000000000007';
+
+  if compatibility_row.scored_dimensions <> 5
+     or compatibility_row.compatibility_percent <> 100 then
+    raise exception 'Opted-in lifestyle dimensions were not included in compatibility scoring';
+  end if;
 end;
 $$;
 

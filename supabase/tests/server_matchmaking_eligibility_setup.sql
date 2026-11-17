@@ -104,6 +104,14 @@ create trigger record_pass_swipe_history
   after insert on public.profile_passes
   for each row execute function public.record_match_swipe_history();
 
+-- Minimal active Discover boost fixture; only candidate-scoped IDs are returned.
+create table public.profile_boosts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  starts_at timestamptz not null,
+  ends_at timestamptz not null
+);
+
 -- Minimal chat tables/functions for reply and reaction regression coverage.
 create table public.messages (
   id uuid primary key default gen_random_uuid(),

@@ -7447,6 +7447,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
         <article class="admin-metric-card"><p class="admin-metric-label">Straight community</p><p class="admin-metric-value" id="adminStraightCommunityCount">—</p><span class="admin-metric-foot">Members who selected Straight</span></article>
         <article class="admin-metric-card admin-metric-attention"><p class="admin-metric-label">Need community choice</p><p class="admin-metric-value" id="adminCommunitySetupNeeded">—</p><span class="admin-metric-foot">Legacy accounts needing their own choice</span></article>
         <article class="admin-metric-card"><p class="admin-metric-label">Fresh Nearby locations</p><p class="admin-metric-value" id="adminFreshNearbyCount">—</p><span class="admin-metric-foot">Consent-based updates in last 7 days</span></article>
+        <article class="admin-metric-card admin-metric-attention"><p class="admin-metric-label">Legacy profiles with fresh GPS</p><p class="admin-metric-value" id="adminLegacyFreshLocationCount">—</p><span class="admin-metric-foot">Need to choose a dating community</span></article>
       </div>
       <p class="admin-data-note">Members who have not chosen a community are not included in either dating feed. Never assign a community on their behalf.</p>
 
@@ -9485,6 +9486,7 @@ async function loadAdminDashboard() {
     $("adminStraightCommunityCount").textContent = String(readiness?.straight_members ?? 0);
     $("adminCommunitySetupNeeded").textContent = String(readiness?.community_selection_needed ?? 0);
     $("adminFreshNearbyCount").textContent = String(readiness?.fresh_nearby_locations ?? 0);
+    $("adminLegacyFreshLocationCount").textContent = String(readiness?.legacy_members_with_fresh_location ?? 0);
 
     
 await Promise.all([

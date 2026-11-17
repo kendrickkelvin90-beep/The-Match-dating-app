@@ -592,4 +592,79 @@ end;
 $$;
 reset role;
 
+
+-- Reply and reaction regression coverage.
+insert into auth.users(id) values
+  ('00000000-0000-4000-8000-000000000001'),
+  ('00000000-0000-4000-8000-000000000002'),
+  ('00000000-0000-4000-8000-000000000003')
+on conflict do nothing;
+
+insert into public.messages(id,sender_id,receiver_id,body) values
+  ('10000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002','Hello'),
+  ('10000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000003','Other conversation');
+
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
+set role authenticated;
+do $
+declare
+  reaction_added boolean;
+begin
+  insert into public.messages(id,sender_id,receiver_id,body,reply_to_message_id)
+  values ('10000000-0000-4000-8000-000000000003',
+          '00000000-0000-4000-8000-000000000001',
+          '00000000-0000-4000-8000-000000000002',
+          'Thanks for your message',
+          '10000000-0000-4000-8000-000000000001');
+
+  if not exists (
+    select 1 from public.messages
+    where id = '10000000-0000-4000-8000-000000000003'
+      and reply_to_message_id = '10000000-0000-4000-8000-000000000001'
+  ) then
+    raise exception 'A valid in-conversation reply was not saved';
+  end if;
+
+  begin
+    insert into public.messages(sender_id,receiver_id,body,reply_to_message_id)
+    values ('00000000-0000-4000-8000-000000000001',
+            '00000000-0000-4000-8000-000000000002',
+            'Invalid cross-chat reply',
+            '10000000-0000-4000-8000-000000000002');
+    raise exception 'A cross-conversation reply unexpectedly passed validation';
+  exception when others then
+    if sqlerrm = 'A cross-conversation reply unexpectedly passed validation' then raise; end if;
+  end;
+
+  reaction_added := public.toggle_chat_message_reaction(
+    '10000000-0000-4000-8000-000000000001','❤️'
+  );
+  if reaction_added is distinct from true then
+    raise exception 'Adding a message reaction did not return true';
+  end if;
+  if not exists (
+    select 1 from public.message_reactions
+    where message_id = '10000000-0000-4000-8000-000000000001'
+      and user_id = auth.uid() and emoji = '❤️'
+  ) then
+    raise exception 'The reaction was not saved for the authenticated member';
+  end if;
+
+  reaction_added := public.toggle_chat_message_reaction(
+    '10000000-0000-4000-8000-000000000001','❤️'
+  );
+  if reaction_added is distinct from false then
+    raise exception 'Tapping the same reaction did not remove it';
+  end if;
+  if exists (
+    select 1 from public.message_reactions
+    where message_id = '10000000-0000-4000-8000-000000000001'
+      and user_id = auth.uid()
+  ) then
+    raise exception 'The reaction was not removed';
+  end if;
+end;
+$;
+reset role;
+
 select 'server matchmaking eligibility tests passed' as result;

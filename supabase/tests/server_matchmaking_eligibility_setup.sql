@@ -65,16 +65,14 @@ language sql
 stable
 security definer
 set search_path = ''
-as $
-  select auth.uid() is not null
+as 'select auth.uid() is not null
     and target_user_id is not null
     and target_user_id <> auth.uid()
     and not exists (
       select 1 from public.member_blocks mb
       where (mb.blocker_id = auth.uid() and mb.blocked_id = target_user_id)
          or (mb.blocker_id = target_user_id and mb.blocked_id = auth.uid())
-    );
-$;
+    )';
 
 -- Minimal Supabase Realtime authorization surface for the disposable CI DB.
 create schema realtime;

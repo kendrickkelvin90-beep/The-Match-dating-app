@@ -30,26 +30,36 @@ FOR EACH ROW EXECUTE FUNCTION private.enforce_same_dating_community_on_pass();
 
 REVOKE ALL ON FUNCTION private.enforce_same_dating_community_on_pass() FROM PUBLIC, anon, authenticated;
 
-DROP POLICY IF EXISTS "Members can record their own story views" ON public.story_views;
-CREATE POLICY "Members can record their own story views"
-ON public.story_views
-FOR INSERT
-TO authenticated
-WITH CHECK (
-  auth.uid() = viewer_id
-  AND EXISTS (
-    SELECT 1
-    FROM public.stories s
-    WHERE s.id = story_views.story_id
-      AND s.user_id <> auth.uid()
-      AND s.expires_at > now()
-      AND (
-        (s.audience = 'everyone' AND private.can_view_story_from_owner(s.user_id))
-        OR (
-          s.audience = 'matches'
-          AND public.can_interact_with_member(s.user_id)
-          AND public.are_users_mutual_matches(auth.uid(), s.user_id)
+-- Some isolated migration fixtures do not include Stories. Apply the
+-- production policy when the story_views table is present.
+DO $policy$
+BEGIN
+  IF pg_catalog.to_regclass('public.story_views') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS "Members can record their own story views" ON public.story_views';
+    EXECUTE $create$
+      CREATE POLICY "Members can record their own story views"
+      ON public.story_views
+      FOR INSERT
+      TO authenticated
+      WITH CHECK (
+        auth.uid() = viewer_id
+        AND EXISTS (
+          SELECT 1
+          FROM public.stories s
+          WHERE s.id = story_views.story_id
+            AND s.user_id <> auth.uid()
+            AND s.expires_at > now()
+            AND (
+              (s.audience = 'everyone' AND private.can_view_story_from_owner(s.user_id))
+              OR (
+                s.audience = 'matches'
+                AND public.can_interact_with_member(s.user_id)
+                AND public.are_users_mutual_matches(auth.uid(), s.user_id)
+              )
+            )
         )
       )
-  )
-);
+    $create$;
+  END IF;
+END;
+$policy$;

@@ -1,4 +1,4 @@
-name: Server matchmaking eligibility tests
+name: Server matchmaking eligibility and chat interaction tests
 
 on:
   pull_request:

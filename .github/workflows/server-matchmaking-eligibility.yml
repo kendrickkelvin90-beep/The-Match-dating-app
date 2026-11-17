@@ -13,6 +13,12 @@ on:
       - "supabase/migrations/20261116220000_dating_compatibility_scores.sql"
       - "supabase/migrations/20261116210000_secure_chat_typing_broadcasts.sql"
       - "supabase/migrations/20261117190000_chat_replies_and_reactions.sql"
+      - "supabase/migrations/20261117193000_reciprocal_partner_preferences.sql"
+      - "supabase/migrations/20261117203000_lifestyle_compatibility_scoring.sql"
+      - "supabase/migrations/20261117203000_lifestyle_compatibility_scoring.sql"
+      - "supabase/migrations/20261117210000_restrict_chat_reply_trigger_rpc.sql"
+      - "supabase/migrations/20261117220000_restrict_swipe_history_trigger_rpc.sql"
+      - "supabase/migrations/20261117230000_scope_discover_boost_visibility.sql"
       - "index.html"
       - "supabase/tests/server_matchmaking_eligibility*.sql"
       - ".github/workflows/server-matchmaking-eligibility.yml"
@@ -22,6 +28,7 @@ on:
       - test/matchmaking-eligibility-live-schema-parity
       - feat/general-inclusive-dating
       - feat/match-2-complete-dating
+      - feat/advanced-general-matchmaking
     paths:
       - "supabase/migrations/20261116130000_server_matchmaking_eligibility_gate.sql"
       - "supabase/migrations/20261116150000_general_dating_optional_roles.sql"
@@ -31,8 +38,12 @@ on:
       - "supabase/migrations/20261116190000_adult_age_enforcement.sql"
       - "supabase/migrations/20261116200000_member_profile_extras.sql"
       - "supabase/migrations/20261116210000_secure_chat_typing_broadcasts.sql"
-      - "supabase/migrations/20261117190000_chat_replies_and_reactions.sql"
       - "supabase/migrations/20261116220000_dating_compatibility_scores.sql"
+      - "supabase/migrations/20261117190000_chat_replies_and_reactions.sql"
+      - "supabase/migrations/20261117193000_reciprocal_partner_preferences.sql"
+      - "supabase/migrations/20261117210000_restrict_chat_reply_trigger_rpc.sql"
+      - "supabase/migrations/20261117220000_restrict_swipe_history_trigger_rpc.sql"
+      - "supabase/migrations/20261117230000_scope_discover_boost_visibility.sql"
       - "index.html"
       - "supabase/tests/server_matchmaking_eligibility*.sql"
       - ".github/workflows/server-matchmaking-eligibility.yml"
@@ -98,6 +109,12 @@ jobs:
           if "reply_to_message_id" not in html or "toggle_chat_message_reaction" not in html:
               raise SystemExit("Chat replies and reactions are not connected to the UI")
           print("Verified chat reply and reaction UI integration")
+          if 'id="datingPartnerPreferences"' not in html or 'partner_preferences:' not in html:
+              raise SystemExit("Private reciprocal partner-preference controls are missing")
+          for field in ("partnerSmoking", "partnerDrinking", "partnerActivity", "partnerPets", "partnerChildren", "partnerIntention"):
+              if f'id="{field}"' not in html:
+                  raise SystemExit(f"Missing partner-preference control: {field}")
+          print("Verified private partner-preference controls and save wiring")
 
       - name: Prepare isolated Discover schema and synthetic fixtures
         env:
@@ -130,6 +147,16 @@ jobs:
             -f supabase/migrations/20261116220000_dating_compatibility_scores.sql
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/migrations/20261117190000_chat_replies_and_reactions.sql
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/migrations/20261117210000_restrict_chat_reply_trigger_rpc.sql
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/migrations/20261117220000_restrict_swipe_history_trigger_rpc.sql
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/migrations/20261117193000_reciprocal_partner_preferences.sql
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/migrations/20261117203000_lifestyle_compatibility_scoring.sql
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/migrations/20261117230000_scope_discover_boost_visibility.sql
       - name: Run moderation, block, completeness, and preference assertions
         env:
           PGPASSWORD: postgres

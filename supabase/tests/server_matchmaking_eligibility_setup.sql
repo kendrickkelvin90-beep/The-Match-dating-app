@@ -49,6 +49,80 @@ create table public.member_blocks (
   blocked_id uuid not null
 );
 
+-- Minimal swipe-history fixture mirrors the production trigger contract.
+create table public.likes (
+  liker_id uuid not null,
+  liked_id uuid not null,
+  created_at timestamptz not null default now()
+);
+create table public.profile_passes (
+  passer_id uuid not null,
+  passed_id uuid not null,
+  created_at timestamptz not null default now()
+);
+create table public.match_swipe_history (
+  user_id uuid not null,
+  target_user_id uuid not null,
+  action text not null,
+  created_at timestamptz not null default now()
+);
+grant insert on public.likes, public.profile_passes to authenticated;
+
+create function public.record_match_swipe_history()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_user uuid;
+  v_target uuid;
+  v_action text;
+begin
+  if tg_table_name = 'likes' then
+    v_user := new.liker_id;
+    v_target := new.liked_id;
+    v_action := 'like';
+  else
+    v_user := new.passer_id;
+    v_target := new.passed_id;
+    v_action := 'pass';
+  end if;
+
+  if v_user is not null and v_target is not null and auth.uid() = v_user then
+    insert into public.match_swipe_history(user_id, target_user_id, action, created_at)
+    values (v_user, v_target, v_action, coalesce(new.created_at, now()));
+  end if;
+  return new;
+end;
+$function$;
+
+create trigger record_like_swipe_history
+  after insert on public.likes
+  for each row execute function public.record_match_swipe_history();
+create trigger record_pass_swipe_history
+  after insert on public.profile_passes
+  for each row execute function public.record_match_swipe_history();
+
+-- Minimal active Discover boost fixture; only candidate-scoped IDs are returned.
+create table public.profile_boosts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  starts_at timestamptz not null,
+  ends_at timestamptz not null
+);
+
+create function public.get_active_discover_boost_ids()
+returns setof uuid
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+  select distinct user_id from public.profile_boosts
+  where starts_at <= now() and ends_at > now();
+$function$;
+
 -- Minimal chat tables/functions for reply and reaction regression coverage.
 create table public.messages (
   id uuid primary key default gen_random_uuid(),

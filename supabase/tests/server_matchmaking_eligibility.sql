@@ -105,6 +105,42 @@ begin
     raise exception 'Expected only complete, active, unblocked candidates; got %', found_ids;
   end if;
 
+  -- Discover must enforce both sides' private partner preferences, not just the helper in isolation.
+  insert into public.member_dating_details(user_id, smoking, partner_preferences)
+  values
+    ('00000000-0000-4000-8000-000000000001','Never','{"smoking":"Never"}'::jsonb),
+    ('00000000-0000-4000-8000-000000000002','Never','{"smoking":"any"}'::jsonb),
+    ('00000000-0000-4000-8000-000000000007','Occasionally','{"smoking":"any"}'::jsonb)
+  on conflict (user_id) do update
+    set smoking = excluded.smoking,
+        partner_preferences = excluded.partner_preferences;
+
+  select array_agg(user_id order by user_id)
+    into found_ids
+  from public.matchmaking_eligible_candidate_ids();
+  if found_ids is distinct from array['00000000-0000-4000-8000-000000000002'::uuid] then
+    raise exception 'Discover did not enforce the viewer smoking preference: %', found_ids;
+  end if;
+
+  update public.member_dating_details
+  set partner_preferences = '{"smoking":"Socially"}'::jsonb
+  where user_id = '00000000-0000-4000-8000-000000000002';
+
+  select array_agg(user_id order by user_id)
+    into found_ids
+  from public.matchmaking_eligible_candidate_ids();
+  if found_ids is not null then
+    raise exception 'Discover did not enforce the candidate reciprocal smoking preference: %', found_ids;
+  end if;
+
+  update public.member_dating_details
+  set partner_preferences = '{"smoking":"any"}'::jsonb
+  where user_id in (
+    '00000000-0000-4000-8000-000000000001',
+    '00000000-0000-4000-8000-000000000002',
+    '00000000-0000-4000-8000-000000000007'
+  );
+
   select array_agg(user_id order by user_id)
     into found_ids
   from public.matchmaking_eligible_candidate_ids(p_connection_goal => 'relationship');
@@ -215,7 +251,16 @@ values
   ('00000000-0000-4000-8000-000000000007', array['Football'], 'Socially', 'Occasionally', 'Moderately active', 'Have pets', 'Have children', true, true),
   ('00000000-0000-4000-8000-000000000010', array['Travel'], 'Never', 'Never', 'Moderately active', 'Prefer not to say', 'Not sure', false, true),
   ('00000000-0000-4000-8000-000000000011', array['Gaming'], 'Never', 'Never', 'Moderately active', 'Prefer not to say', 'Not sure', true, false),
-  ('00000000-0000-4000-8000-000000000012', array['Music'], 'Never', 'Never', 'Moderately active', 'Prefer not to say', 'Not sure', true, false);
+  ('00000000-0000-4000-8000-000000000012', array['Music'], 'Never', 'Never', 'Moderately active', 'Prefer not to say', 'Not sure', true, false)
+on conflict (user_id) do update
+set interests = excluded.interests,
+    smoking = excluded.smoking,
+    drinking = excluded.drinking,
+    activity_level = excluded.activity_level,
+    pets = excluded.pets,
+    children = excluded.children,
+    share_interests = excluded.share_interests,
+    share_lifestyle = excluded.share_lifestyle;
 
 do $$
 declare
@@ -509,6 +554,27 @@ begin
   ) then
     raise exception 'Lifestyle-only consent must not expose or score unshared profile details';
   end if;
+
+  -- Lifestyle dimensions contribute only when the candidate opted into lifestyle sharing.
+  update public.member_dating_details
+  set interests = array['Football'],
+      smoking = 'Socially',
+      drinking = 'Occasionally',
+      activity_level = 'Moderately active',
+      pets = 'Have pets',
+      children = 'Have children'
+  where user_id = '00000000-0000-4000-8000-000000000001';
+
+  select * into compatibility_row
+  from public.get_dating_compatibility_scores(array[
+    '00000000-0000-4000-8000-000000000007'::uuid
+  ])
+  where user_id = '00000000-0000-4000-8000-000000000007';
+
+  if compatibility_row.scored_dimensions <> 6
+     or compatibility_row.compatibility_percent <> 100 then
+    raise exception 'Opted-in lifestyle dimensions were not included in compatibility scoring';
+  end if;
 end;
 $$;
 
@@ -610,6 +676,21 @@ do $test$
 declare
   reaction_added boolean;
 begin
+  if has_function_privilege('anon', 'public.validate_chat_message_reply()', 'EXECUTE')
+     or has_function_privilege('authenticated', 'public.validate_chat_message_reply()', 'EXECUTE') then
+    raise exception 'The trigger-only chat reply validator is directly executable through the API';
+  end if;
+
+  if has_function_privilege('anon', 'public.record_match_swipe_history()', 'EXECUTE')
+     or has_function_privilege('authenticated', 'public.record_match_swipe_history()', 'EXECUTE') then
+    raise exception 'The trigger-only swipe-history recorder is directly executable through the API';
+  end if;
+
+  insert into public.likes(liker_id, liked_id)
+  values (auth.uid(), '00000000-0000-4000-8000-000000000002');
+  insert into public.profile_passes(passer_id, passed_id)
+  values (auth.uid(), '00000000-0000-4000-8000-000000000003');
+
   insert into public.messages(id,sender_id,receiver_id,body,reply_to_message_id)
   values ('10000000-0000-4000-8000-000000000003',
           '00000000-0000-4000-8000-000000000001',
@@ -665,6 +746,223 @@ begin
   end if;
 end;
 $test$;
+
 reset role;
 
+do $test$
+begin
+  if not exists (
+    select 1 from public.match_swipe_history
+    where user_id = '00000000-0000-4000-8000-000000000001'
+      and target_user_id = '00000000-0000-4000-8000-000000000002'
+      and action = 'like'
+  ) then
+    raise exception 'The like trigger did not record swipe history after RPC execution was revoked';
+  end if;
+  if not exists (
+    select 1 from public.match_swipe_history
+    where user_id = '00000000-0000-4000-8000-000000000001'
+      and target_user_id = '00000000-0000-4000-8000-000000000003'
+      and action = 'pass'
+  ) then
+    raise exception 'The pass trigger did not record swipe history after RPC execution was revoked';
+  end if;
+end;
+$test$;
+
+-- Discover boost status is limited to currently eligible candidate IDs.
+insert into public.profile_boosts(user_id, starts_at, ends_at)
+values
+  ('00000000-0000-4000-8000-000000000002', now() - interval '1 minute', now() + interval '29 minutes'),
+  ('00000000-0000-4000-8000-000000000003', now() - interval '1 minute', now() + interval '29 minutes');
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
+set role authenticated;
+do $test$
+declare
+  boosted_ids uuid[];
+begin
+  select array_agg(boosted_id order by boosted_id)
+    into boosted_ids
+  from public.get_active_discover_boost_ids(array[
+    '00000000-0000-4000-8000-000000000002'::uuid,
+    '00000000-0000-4000-8000-000000000003'::uuid
+  ]) boosted_id;
+
+  if boosted_ids is distinct from array['00000000-0000-4000-8000-000000000002'::uuid] then
+    raise exception 'Discover boost status exposed a blocked/non-eligible member or missed an eligible boost: %', boosted_ids;
+  end if;
+
+  if has_function_privilege('anon', 'public.get_active_discover_boost_ids(uuid[])', 'EXECUTE') then
+    raise exception 'Anonymous users must not call the Discover boost status RPC';
+  end if;
+  if has_function_privilege('anon', 'public.get_active_discover_boost_ids()', 'EXECUTE')
+     or has_function_privilege('authenticated', 'public.get_active_discover_boost_ids()', 'EXECUTE') then
+    raise exception 'The legacy global Discover boost enumeration RPC must not be callable by app users';
+  end if;
+end;
+$test$;
+reset role;
+
+-- Reciprocal partner deal-breakers remain private and are enforced by the server helper.
+insert into public.member_dating_details(user_id, smoking, drinking, partner_preferences)
+values
+  ('00000000-0000-4000-8000-000000000001','Never','Never',
+   '{"smoking":"Never","drinking":"Never"}'::jsonb),
+  ('00000000-0000-4000-8000-000000000002','Occasionally','Socially',
+   '{"smoking":"any","drinking":"Socially"}'::jsonb)
+on conflict (user_id) do update
+set smoking = excluded.smoking,
+    drinking = excluded.drinking,
+    partner_preferences = excluded.partner_preferences;
+
+do $test$
+begin
+  if private.member_meets_partner_preferences(
+    '00000000-0000-4000-8000-000000000001',
+    '00000000-0000-4000-8000-000000000002'
+  ) then
+    raise exception 'A candidate who violates the viewer smoking deal-breaker was accepted';
+  end if;
+  if private.member_meets_partner_preferences(
+    '00000000-0000-4000-8000-000000000002',
+    '00000000-0000-4000-8000-000000000001'
+  ) then
+    raise exception 'A candidate who violates the viewer drinking deal-breaker was accepted';
+  end if;
+  if not private.member_meets_partner_preferences(
+    '00000000-0000-4000-8000-000000000001',
+    '00000000-0000-4000-8000-000000000001'
+  ) then
+    raise exception 'An unspecified/compatible partner preference was rejected';
+  end if;
+
+  begin
+    update public.member_dating_details
+    set partner_preferences = '{"unknown":"value"}'::jsonb
+    where user_id = '00000000-0000-4000-8000-000000000001';
+    raise exception 'An unsupported partner preference key was accepted';
+  exception when sqlstate '22023' then
+    null;
+  end;
+end;
+$test$;
+
 select 'server matchmaking eligibility tests passed' as result;
+
+
+-- Explainable compatibility score regression coverage.
+-- Candidate sharing switches control every candidate-side detail returned;
+-- the viewer's private preferences are used only inside the SECURITY DEFINER RPC.
+insert into public.member_dating_details (
+  user_id, interests, smoking, drinking, activity_level, pets, children,
+  share_interests, share_lifestyle, relationship_intention,
+  communication_style, languages, favorite_music, favorite_movies,
+  favorite_food, share_profile_extras, partner_preferences
+)
+values
+  (
+    '00000000-0000-4000-8000-000000000001',
+    array['Music','Travel','Fitness'],
+    'Never','Socially','Very active','Love pets','Want children',
+    false,false,'Long-term relationship','Deep conversations',
+    array['English','Yoruba'],'Afrobeats','Comedy','Jollof rice',false,
+    '{"smoking":"Never"}'::jsonb
+  ),
+  (
+    '00000000-0000-4000-8000-000000000002',
+    array['Music','Travel','Food & cooking'],
+    'Never','Socially','Very active','Love pets','Want children',
+    true,true,'Long-term relationship','Deep conversations',
+    array['English','Yoruba','Pidgin'],'Afrobeats','Comedy','Jollof rice',true,
+    '{"smoking":"any"}'::jsonb
+  )
+on conflict (user_id) do update set
+  interests = excluded.interests,
+  smoking = excluded.smoking,
+  drinking = excluded.drinking,
+  activity_level = excluded.activity_level,
+  pets = excluded.pets,
+  children = excluded.children,
+  share_interests = excluded.share_interests,
+  share_lifestyle = excluded.share_lifestyle,
+  relationship_intention = excluded.relationship_intention,
+  communication_style = excluded.communication_style,
+  languages = excluded.languages,
+  favorite_music = excluded.favorite_music,
+  favorite_movies = excluded.favorite_movies,
+  favorite_food = excluded.favorite_food,
+  share_profile_extras = excluded.share_profile_extras,
+  partner_preferences = excluded.partner_preferences;
+
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
+set role authenticated;
+do $compatibility$
+declare
+  score_row record;
+begin
+  if has_function_privilege('anon', 'public.get_dating_compatibility_scores(uuid[])', 'EXECUTE') then
+    raise exception 'Anonymous users must not call the compatibility scoring RPC';
+  end if;
+  if not has_function_privilege('authenticated', 'public.get_dating_compatibility_scores(uuid[])', 'EXECUTE') then
+    raise exception 'Authenticated members must be able to request compatibility scores';
+  end if;
+
+  select *
+    into score_row
+  from public.get_dating_compatibility_scores(array[
+    '00000000-0000-4000-8000-000000000002'::uuid
+  ]);
+
+  if score_row.user_id is distinct from '00000000-0000-4000-8000-000000000002'::uuid then
+    raise exception 'Compatibility scoring did not return the currently visible candidate';
+  end if;
+  if score_row.shared_interest_count <> 2 then
+    raise exception 'Expected two shared interests, got %', score_row.shared_interest_count;
+  end if;
+  if score_row.interest_match_percent <> 50 then
+    raise exception 'Expected 50 percent interest overlap, got %', score_row.interest_match_percent;
+  end if;
+  if score_row.relationship_intention_match is distinct from true then
+    raise exception 'Matching relationship intentions were not scored';
+  end if;
+  if score_row.communication_style_match is distinct from true then
+    raise exception 'Matching communication styles were not scored';
+  end if;
+  if score_row.shared_language_count <> 2 then
+    raise exception 'Expected two shared languages, got %', score_row.shared_language_count;
+  end if;
+  if score_row.scored_dimensions < 5 or score_row.compatibility_percent < 70 then
+    raise exception 'Compatibility score did not reflect the shared details: %', row_to_json(score_row);
+  end if;
+
+  -- The fixture owner changes the candidate's consent flags; switch back
+  -- to the database owner because authenticated RLS correctly forbids this.
+  reset role;
+  update public.member_dating_details
+  set share_interests = false,
+      share_lifestyle = false,
+      share_profile_extras = false
+  where user_id = '00000000-0000-4000-8000-000000000002';
+  set role authenticated;
+
+  if exists (
+    select 1
+    from public.get_dating_compatibility_scores(array[
+      '00000000-0000-4000-8000-000000000002'::uuid
+    ])
+  ) then
+    raise exception 'Compatibility scoring exposed a candidate who disabled all sharing controls';
+  end if;
+
+  if exists (
+    select 1
+    from public.get_shared_dating_details(array[
+      '00000000-0000-4000-8000-000000000002'::uuid
+    ])
+  ) then
+    raise exception 'Shared dating details returned a member who opted out of every sharing category';
+  end if;
+end;
+$compatibility$;
+reset role;
+

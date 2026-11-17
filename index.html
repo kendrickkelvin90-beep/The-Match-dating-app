@@ -4258,7 +4258,9 @@ textarea.match-dialog-input{min-height:112px;resize:vertical}
 #matchCelebrationPage .match-moment-spark-one{top:3%;left:12%;font-size:22px}
 #matchCelebrationPage .match-moment-spark-two{right:10%;bottom:4%;font-size:25px}
 #matchCelebrationPage .match-moment-actions{display:grid;gap:12px;width:100%;margin-top:auto}
-#matchCelebrationPage #matchSendMessage,#matchCelebrationPage #matchContinueDiscover{width:100%;min-height:58px;border-radius:999px;font-size:16px;font-weight:850}
+#matchCelebrationPage #matchSendMessage,#matchCelebrationPage #matchContinueDiscover,#matchCelebrationPage #matchChemistryStarter{width:100%;min-height:54px;border-radius:999px;font-size:15px;font-weight:850}
+#matchCelebrationPage #matchChemistryStarter{border:1px solid rgba(210,173,103,.65);background:rgba(22,18,12,.9);color:#f0d28e}
+#matchCelebrationPage #matchChemistryStarter:focus-visible{outline:3px solid #f0d28e;outline-offset:3px}
 #matchCelebrationPage #matchSendMessage{display:flex;align-items:center;justify-content:center;gap:10px;border:1px solid #f2d48f;background:linear-gradient(110deg,#f0d18c,#bd8b3e 58%,#e8c77f);color:#171109;box-shadow:0 8px 25px rgba(188,139,57,.2)}
 #matchCelebrationPage #matchSendMessage span{font-size:23px}
 #matchCelebrationPage #matchContinueDiscover{border:1px solid rgba(210,173,103,.65);background:linear-gradient(120deg,#17130d,#0a0907);color:#e7c984}
@@ -6243,6 +6245,23 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
   <p class="small">Your lifestyle answers stay private unless you turn on sharing. You can change these choices anytime.</p>
 </div>
 
+<div class="member-card" id="datingPartnerPreferences">
+  <h2>Who would be a good match? 💛</h2>
+  <p class="small">Set optional preferences and deal-breakers. These answers stay private and are checked both ways before someone appears in Discover.</p>
+  <label for="partnerSmoking">Smoking</label>
+  <select id="partnerSmoking"><option value="any">No preference</option><option>Never</option><option>Occasionally</option><option>Socially</option><option>Regularly</option><option>Prefer not to say</option></select>
+  <label for="partnerDrinking">Drinking</label>
+  <select id="partnerDrinking"><option value="any">No preference</option><option>Never</option><option>Occasionally</option><option>Socially</option><option>Regularly</option><option>Prefer not to say</option></select>
+  <label for="partnerActivity">Activity level</label>
+  <select id="partnerActivity"><option value="any">No preference</option><option>Very active</option><option>Moderately active</option><option>Not very active</option><option>Prefer not to say</option></select>
+  <label for="partnerPets">Pets</label>
+  <select id="partnerPets"><option value="any">No preference</option><option>Have pets</option><option>Love pets</option><option>Want pets</option><option>Not for me</option><option>Prefer not to say</option></select>
+  <label for="partnerChildren">Children</label>
+  <select id="partnerChildren"><option value="any">No preference</option><option>Have children</option><option>Want children</option><option>Do not want children</option><option>Not sure</option><option>Prefer not to say</option></select>
+  <label for="partnerIntention">Relationship intention</label>
+  <select id="partnerIntention"><option value="any">No preference</option><option>Long-term relationship</option><option>Dating</option><option>Friendship</option><option>Casual dating</option><option>Still figuring it out</option><option>Prefer not to say</option></select>
+</div>
+
 <div class="member-card" id="datingProfileExtras">
   <h2>More about my dating style ✨</h2>
   <p class="small">Optional details that help people understand what kind of connection you're looking for. Nothing here is shared unless you enable sharing.</p>
@@ -6906,6 +6925,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
       <span class="match-moment-spark match-moment-spark-two" aria-hidden="true">✧</span>
     </div>
     <div class="match-moment-actions">
+      <button class="btn secondary" id="matchChemistryStarter" type="button">✦ Find a conversation starter</button>
       <button class="btn primary" id="matchSendMessage" type="button"> <span aria-hidden="true">♡</span> Send a Message</button>
       <button class="btn secondary" id="matchContinueDiscover" type="button">Continue Discovering <span aria-hidden="true">→</span></button>
       <p class="status" id="matchCelebrationStatus" role="status" aria-live="polite"></p>
@@ -7169,6 +7189,8 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     <label for="discoveryInterests">Interests &amp; hobbies <span class="discovery-optional">OPTIONAL</span></label>
     <input id="discoveryInterests" type="text" placeholder="Music, movies, travel..." maxlength="160">
     <label class="discovery-toggle-row" for="prioritiseSharedInterests"><span><strong>Prioritise shared interests</strong><small>Show people with hobbies in common nearer the top.</small></span><input id="prioritiseSharedInterests" type="checkbox"></label>
+    <label class="discovery-toggle-row" for="lifestyleDiscoveryEnabled"><span><strong>✦ Lifestyle Discovery</strong><small>Bring people with shared hobbies, music, food, movies and activities to the top.</small></span><input id="lifestyleDiscoveryEnabled" type="checkbox"></label>
+    <p class="discovery-helper">Lifestyle Discovery uses only details members have chosen to share. Private answers and partner preferences are never exposed.</p>
   </div>
 
   <div class="discovery-preference-card">
@@ -11001,10 +11023,17 @@ async function loadCurrentMemberOrientation() {
 async function loadMyDatingDetails() {
   if (!currentUser?.id) return;
   const { data, error } = await db.from("member_dating_details")
-    .select("interests,smoking,drinking,activity_level,pets,children,share_interests,share_lifestyle,relationship_intention,communication_style,languages,education_level,occupation,favorite_music,favorite_movies,favorite_food,share_profile_extras")
+    .select("interests,smoking,drinking,activity_level,pets,children,share_interests,share_lifestyle,relationship_intention,communication_style,languages,education_level,occupation,favorite_music,favorite_movies,favorite_food,share_profile_extras,partner_preferences")
     .eq("user_id", currentUser.id).maybeSingle();
   if (error) throw error;
   const saved = data || {};
+  const partnerPreferences = saved.partner_preferences || {};
+  $("partnerSmoking").value = partnerPreferences.smoking || "any";
+  $("partnerDrinking").value = partnerPreferences.drinking || "any";
+  $("partnerActivity").value = partnerPreferences.activity_level || "any";
+  $("partnerPets").value = partnerPreferences.pets || "any";
+  $("partnerChildren").value = partnerPreferences.children || "any";
+  $("partnerIntention").value = partnerPreferences.relationship_intention || "any";
   document.querySelectorAll('input[name="datingInterest"]').forEach(input => {
     input.checked = Array.isArray(saved.interests) && saved.interests.includes(input.value);
   });
@@ -11299,7 +11328,15 @@ const { error: datingDetailsError } = await db.from("member_dating_details").ups
   favorite_music: $("datingFavoriteMusic").value.trim(),
   favorite_movies: $("datingFavoriteMovies").value.trim(),
   favorite_food: $("datingFavoriteFood").value.trim(),
-  share_profile_extras: $("shareDatingProfileExtras").checked
+  share_profile_extras: $("shareDatingProfileExtras").checked,
+  partner_preferences: {
+    smoking: $("partnerSmoking").value,
+    drinking: $("partnerDrinking").value,
+    activity_level: $("partnerActivity").value,
+    pets: $("partnerPets").value,
+    children: $("partnerChildren").value,
+    relationship_intention: $("partnerIntention").value
+  }
 }, { onConflict: "user_id" });
 if (datingDetailsError) throw datingDetailsError;
 
@@ -11378,6 +11415,33 @@ async function attachSharedDatingDetails(people) {
       _compatibilityCommunicationMatch: compatibility?.communication_style_match ?? null,
       _compatibilitySharedLanguageCount: Number(compatibility?.shared_language_count || 0)
     };
+  });
+}
+
+function applyLifestyleDiscoveryScores(people, viewerDetails) {
+  const normalize = value => String(value || "").toLowerCase().trim().replace(/\s+/g, " ");
+  const tokens = value => normalize(value).split(/[,;|/]+/).map(normalize).filter(Boolean);
+  const overlap = (viewerValue, candidateValue) => {
+    const viewer = new Set(tokens(viewerValue));
+    return tokens(candidateValue).some(value => viewer.has(value));
+  };
+  return (people || []).map(person => {
+    const shared = person.shared_dating_details || {};
+    const extras = person.shared_profile_extras || {};
+    const labels = [];
+    const ownInterests = Array.isArray(viewerDetails?.interests) ? viewerDetails.interests : [];
+    const theirInterests = Array.isArray(shared.interests) ? shared.interests : [];
+    const theirSet = new Set(theirInterests.map(normalize));
+    const common = ownInterests.filter(value => theirSet.has(normalize(value)));
+    if (common.length) labels.push("Interests: " + common.slice(0, 3).join(", "));
+    if (viewerDetails?.favorite_music && extras.favorite_music && overlap(viewerDetails.favorite_music, extras.favorite_music)) labels.push("Music");
+    if (viewerDetails?.favorite_food && extras.favorite_food && overlap(viewerDetails.favorite_food, extras.favorite_food)) labels.push("Food");
+    if (viewerDetails?.favorite_movies && extras.favorite_movies && overlap(viewerDetails.favorite_movies, extras.favorite_movies)) labels.push("Movies");
+    [["activity_level","Activity"],["pets","Pets"],["smoking","Smoking"],["drinking","Drinking"],["children","Family plans"]].forEach(([key,label]) => {
+      const own=normalize(viewerDetails?.[key]), theirs=normalize(shared[key]);
+      if (own && theirs && own!=="prefer not to say" && theirs!=="prefer not to say" && own===theirs) labels.push(label);
+    });
+    return {...person,_lifestyleMatchScore:common.length*3+labels.length,_lifestyleMatchCount:labels.length,_lifestyleMatchLabels:labels};
   });
 }
 
@@ -11461,7 +11525,8 @@ async function loadNearby(){
           location: allSavedPreferences.location || "",
           showMe: allSavedPreferences.showMe || "everyone",
           lookingFor: allSavedPreferences.lookingFor || "",
-          prioritiseSharedInterests: !!allSavedPreferences.prioritiseSharedInterests
+          prioritiseSharedInterests: !!allSavedPreferences.prioritiseSharedInterests,
+          lifestyleDiscovery: allSavedPreferences.lifestyleDiscovery === true
         };
     const preferredLocation = (savedPreferences.location || "").trim();
     // Discover is intentionally wide-ranging by default. A Premium member's
@@ -11533,6 +11598,17 @@ let people = (peopleData || []).filter(person => eligibleIds.has(person.id)).map
 });
     
     people = await attachSharedDatingDetails(people);
+     let viewerLifestyleDetails = null;
+     if (savedPreferences.lifestyleDiscovery) {
+       const { data: ownLifestyleDetails, error: ownLifestyleError } = await db
+         .from("member_dating_details")
+         .select("interests,smoking,drinking,activity_level,pets,children,favorite_music,favorite_movies,favorite_food")
+         .eq("user_id", currentUser.id)
+         .maybeSingle();
+       if (ownLifestyleError) throw ownLifestyleError;
+       viewerLifestyleDetails = ownLifestyleDetails || {};
+       people = applyLifestyleDiscoveryScores(people, viewerLifestyleDetails);
+     }
     const discoverIds = people.map(p => p.id);
 
     if (discoverIds.length) {
@@ -11579,8 +11655,10 @@ let people = (peopleData || []).filter(person => eligibleIds.has(person.id)).map
       const j = Math.floor(Math.random() * (i + 1));
       [people[i], people[j]] = [people[j], people[i]];
     }
-    if (savedPreferences.prioritiseSharedInterests) {
-      people.sort((a, b) => (b._interestMatchPercent || 0) - (a._interestMatchPercent || 0) || (b._sharedInterestCount || 0) - (a._sharedInterestCount || 0));
+    if (savedPreferences.lifestyleDiscovery) {
+        people.sort((a, b) => (b._lifestyleMatchScore || 0) - (a._lifestyleMatchScore || 0) || (b._lifestyleMatchCount || 0) - (a._lifestyleMatchCount || 0));
+    } else if (savedPreferences.prioritiseSharedInterests) {
+        people.sort((a, b) => (b._interestMatchPercent || 0) - (a._interestMatchPercent || 0) || (b._sharedInterestCount || 0) - (a._sharedInterestCount || 0));
     }
 
 
@@ -11653,6 +11731,9 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
   });
 
   people = await attachSharedDatingDetails(people);
+  if (savedPreferences.lifestyleDiscovery && viewerLifestyleDetails) {
+    people = applyLifestyleDiscoveryScores(people, viewerLifestyleDetails);
+  }
   const expandedIds = people.map(p => p.id);
 
   if (expandedIds.length) {
@@ -11707,7 +11788,9 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
     const j = Math.floor(Math.random() * (i + 1));
     [people[i], people[j]] = [people[j], people[i]];
   }
-  if (savedPreferences.prioritiseSharedInterests) {
+  if (savedPreferences.lifestyleDiscovery) {
+    people.sort((a, b) => (b._lifestyleMatchScore || 0) - (a._lifestyleMatchScore || 0) || (b._lifestyleMatchCount || 0) - (a._lifestyleMatchCount || 0));
+  } else if (savedPreferences.prioritiseSharedInterests) {
     people.sort((a, b) => (b._interestMatchPercent || 0) - (a._interestMatchPercent || 0) || (b._sharedInterestCount || 0) - (a._sharedInterestCount || 0));
   }
 }
@@ -11722,7 +11805,7 @@ if (discoverMemberIds.length) {
   if (activeBadgeError) throw activeBadgeError;
   const activeBadgeSet = new Set((activeBadgeRows || []).map(row => row.user_id));
   people = people.map(person => ({ ...person, has_special_badge: activeBadgeSet.has(person.id) }));
-  const { data: boostedRows, error: boostedError } = await db.rpc("get_active_discover_boost_ids");
+  const { data: boostedRows, error: boostedError } = await db.rpc("get_active_discover_boost_ids", { p_user_ids: discoverMemberIds });
   if (boostedError) throw boostedError;
   const boostedSet = new Set(boostedRows || []);
   people.sort((a,b) => Number(boostedSet.has(b.id)) - Number(boostedSet.has(a.id)));
@@ -12023,6 +12106,109 @@ if (p._compatibilityDimensions >= 2 && p._compatibilityPercent > 0) {
     "border-radius:999px;background:rgba(18,15,10,.82);color:#f6dda5;" +
     "font-size:12px;font-weight:800;line-height:1.35;";
   infoOverlay.appendChild(compatibilityBadge);
+
+  const explainButton = document.createElement("button");
+  explainButton.type = "button";
+  explainButton.className = "discover-compatibility-explain";
+  explainButton.textContent = "Why this match?";
+  explainButton.setAttribute("aria-label", "Explain compatibility score");
+  explainButton.style.cssText =
+    "display:inline-flex;align-items:center;justify-content:center;align-self:flex-start;" +
+    "margin:0 0 10px;padding:8px 12px;border:1px solid rgba(210,173,104,.42);" +
+    "border-radius:10px;background:rgba(10,10,10,.78);color:#f6dda5;" +
+    "font-size:12px;font-weight:750;cursor:pointer;";
+  explainButton.addEventListener("click", () => {
+    const overlay = document.createElement("div");
+    overlay.setAttribute("role", "presentation");
+    overlay.style.cssText =
+      "position:fixed;inset:0;z-index:10050;display:flex;align-items:center;" +
+      "justify-content:center;padding:20px;background:rgba(0,0,0,.78);backdrop-filter:blur(8px);";
+    const panel = document.createElement("section");
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-modal", "true");
+    panel.setAttribute("aria-labelledby", "matchCompatibilityTitle");
+    panel.style.cssText =
+      "width:min(100%,420px);max-height:80vh;overflow:auto;padding:22px;" +
+      "border:1px solid rgba(210,173,104,.42);border-radius:20px;" +
+      "background:#111;color:#f7f2e8;box-shadow:0 20px 70px rgba(0,0,0,.55);";
+    const heading = document.createElement("h3");
+    heading.id = "matchCompatibilityTitle";
+    heading.textContent = "Why you may connect";
+    heading.style.cssText = "margin:0 0 8px;font-size:21px;color:#f6dda5;";
+    panel.appendChild(heading);
+    const scoreText = document.createElement("p");
+    scoreText.textContent =
+      Math.max(0, Math.min(100, Math.round(Number(p._compatibilityPercent) || 0))) +
+      "% compatibility across " + Number(p._compatibilityDimensions || 0) +
+      " shared profile dimensions";
+    scoreText.style.cssText = "margin:0 0 16px;color:#d8c9a8;font-size:13px;line-height:1.5;";
+    panel.appendChild(scoreText);
+
+    const reasons = [];
+    if (Number(p._sharedInterestCount) > 0) {
+      reasons.push("You have " + Number(p._sharedInterestCount) +
+        (Number(p._sharedInterestCount) === 1 ? " interest in common." : " interests in common."));
+    }
+    if (p._compatibilityIntentionMatch === true) {
+      reasons.push("You selected the same relationship intention.");
+    } else if (p._compatibilityIntentionMatch === false) {
+      reasons.push("Your stated relationship intentions are different, so talk about what each of you wants.");
+    }
+    if (p._compatibilityCommunicationMatch === true) {
+      reasons.push("You selected the same communication style.");
+    } else if (p._compatibilityCommunicationMatch === false) {
+      reasons.push("Your communication styles differ; understanding each other's preferences may help.");
+    }
+    if (Number(p._compatibilitySharedLanguageCount) > 0) {
+      reasons.push("You have " + Number(p._compatibilitySharedLanguageCount) +
+        (Number(p._compatibilitySharedLanguageCount) === 1 ? " language in common." : " languages in common."));
+    }
+    if (Number(p._compatibilityDimensions) > reasons.length) {
+      reasons.push("Opted-in lifestyle details also contribute to this score where available.");
+    }
+    if (!reasons.length) {
+      reasons.push("Your score is based on profile details both members chose to share.");
+    }
+    const list = document.createElement("ul");
+    list.style.cssText = "margin:0 0 18px;padding-left:20px;color:#eee7d9;line-height:1.65;font-size:14px;";
+    reasons.forEach(reason => {
+      const item = document.createElement("li");
+      item.textContent = reason;
+      item.style.marginBottom = "8px";
+      list.appendChild(item);
+    });
+    panel.appendChild(list);
+
+    const note = document.createElement("p");
+    note.textContent = "This is a guide, not a prediction or guarantee. Compatibility uses only information members chose to share; private partner preferences are never shown.";
+    note.style.cssText = "margin:0 0 18px;color:#aaa;font-size:12px;line-height:1.55;";
+    panel.appendChild(note);
+    const close = document.createElement("button");
+    close.type = "button";
+    close.textContent = "Got it";
+    close.style.cssText =
+      "width:100%;padding:12px;border:0;border-radius:12px;" +
+      "background:linear-gradient(90deg,#b58b45,#f0d18a);color:#17120a;font-weight:800;";
+    const dismiss = () => overlay.remove();
+    close.addEventListener("click", dismiss);
+    overlay.addEventListener("click", event => {
+      if (event.target === overlay) dismiss();
+    });
+    panel.appendChild(close);
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+    close.focus();
+  });
+  infoOverlay.appendChild(explainButton);
+}
+
+if (p._lifestyleMatchLabels?.length) {
+  const lifestyleBadge = document.createElement("div");
+  lifestyleBadge.className = "discover-lifestyle-match-badge";
+  lifestyleBadge.textContent = "✦ Shared lifestyle: " + p._lifestyleMatchLabels.slice(0, 3).join(" · ");
+  lifestyleBadge.setAttribute("aria-label", lifestyleBadge.textContent);
+  lifestyleBadge.style.cssText = "display:inline-flex;align-self:flex-start;max-width:100%;margin:0 0 9px;padding:7px 11px;border:1px solid rgba(210,173,104,.62);border-radius:12px;background:rgba(18,15,10,.82);color:#f4d995;font-size:12px;font-weight:750;line-height:1.4;white-space:normal;";
+  infoOverlay.appendChild(lifestyleBadge);
 }
 
 if (p._sharedInterestCount > 0) {
@@ -12284,6 +12470,9 @@ like.onclick=async()=>{
 
       $("matchSendMessage").onclick=()=>{
         openChat(p.id,p.display_name||"Your match");
+      };
+      $("matchChemistryStarter").onclick=()=>{
+        openChemistryStarter(p.id,p.display_name||"Your match");
       };
       $("matchContinueDiscover").onclick=async()=>{
         personIndex++;
@@ -14998,6 +15187,7 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
     lookingFor: $("discoveryLookingFor").value,
     interests: $("discoveryInterests").value.trim(),
     prioritiseSharedInterests: $("prioritiseSharedInterests").checked,
+    lifestyleDiscovery: $("lifestyleDiscoveryEnabled").checked,
     straight: (await getCurrentAccountDiscoveryPreferences()).straight || {},
     verifiedOnly: premium && $("discoveryVerifiedOnly").checked,
     recentlyActive: premium && $("discoveryRecentlyActive").checked,
@@ -15088,6 +15278,7 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
     $("straightLookingFor").value = straightSaved.lookingFor ?? "";
     $("straightPrioritiseSharedInterests").checked = !!straightSaved.prioritiseSharedInterests;
     $("prioritiseSharedInterests").checked = !!saved.prioritiseSharedInterests;
+    $("lifestyleDiscoveryEnabled").checked = saved.lifestyleDiscovery === true;
 
     const distance = $("discoveryDistance");
     distance.max = premium ? "200" : "50";
@@ -15533,6 +15724,9 @@ if(countError)throw countError;
 
             $("matchSendMessage").onclick=()=>{
               openChat(id,p.display_name||"Your match");
+            };
+            $("matchChemistryStarter").onclick=()=>{
+              openChemistryStarter(id,p.display_name||"Your match");
             };
 
             $("matchContinueDiscover").onclick=async()=>{
@@ -16908,6 +17102,96 @@ document.addEventListener("visibilitychange", () => {
     refreshNearbyCurrentLocation();
   }
 });
+
+function openChemistryStarter(userId, userName) {
+  if (!currentUser || !userId || userId === currentUser.id) return;
+
+  const existing = document.getElementById("chemistryStarterOverlay");
+  if (existing) existing.remove();
+
+  const prompts = [
+    { category: "Easy start", prompt: "What's something small that can instantly make your day better?" },
+    { category: "Get to know you", prompt: "What is something you could talk about for hours?" },
+    { category: "A little playful", prompt: "If we could plan a spontaneous day out, what would your ideal day look like?" },
+    { category: "Shared connection", prompt: "What's one thing you hope to find in the connection you're building?" },
+    { category: "Fun question", prompt: "What's a song you never get tired of listening to?" }
+  ];
+
+  const overlay = document.createElement("div");
+  overlay.id = "chemistryStarterOverlay";
+  overlay.setAttribute("role", "presentation");
+  overlay.style.cssText =
+    "position:fixed;inset:0;z-index:10060;display:flex;align-items:center;" +
+    "justify-content:center;padding:18px;background:rgba(0,0,0,.82);backdrop-filter:blur(9px);";
+  const panel = document.createElement("section");
+  panel.setAttribute("role", "dialog");
+  panel.setAttribute("aria-modal", "true");
+  panel.setAttribute("aria-labelledby", "chemistryStarterTitle");
+  panel.style.cssText =
+    "width:min(100%,440px);max-height:85vh;overflow:auto;padding:22px;" +
+    "border:1px solid rgba(210,173,104,.5);border-radius:22px;" +
+    "background:linear-gradient(155deg,#1a1711,#090909 65%);color:#f7f2e8;" +
+    "box-shadow:0 22px 80px rgba(0,0,0,.65);";
+  const eyebrow = document.createElement("p");
+  eyebrow.textContent = "THE MATCH · CHEMISTRY STARTER";
+  eyebrow.style.cssText = "margin:0 0 8px;color:#d8b56d;font-size:10px;font-weight:850;letter-spacing:1.5px;";
+  const title = document.createElement("h2");
+  title.id = "chemistryStarterTitle";
+  title.textContent = "Break the ice naturally";
+  title.style.cssText = "margin:0 0 7px;color:#f5d99e;font-size:23px;line-height:1.2;";
+  const intro = document.createElement("p");
+  intro.textContent = "Choose a question to send to " + (userName || "your match") + ". It will appear in your message box first, so you can edit it before sending.";
+  intro.style.cssText = "margin:0 0 17px;color:#c9c1b4;font-size:13px;line-height:1.55;";
+  panel.append(eyebrow, title, intro);
+
+  prompts.forEach(item => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.style.cssText =
+      "display:block;width:100%;margin:0 0 9px;padding:13px 14px;text-align:left;" +
+      "border:1px solid rgba(210,173,104,.28);border-radius:13px;" +
+      "background:#14120e;color:#f6f0e4;cursor:pointer;";
+    const label = document.createElement("span");
+    label.textContent = item.category;
+    label.style.cssText = "display:block;margin-bottom:5px;color:#d8b56d;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.8px;";
+    const question = document.createElement("span");
+    question.textContent = item.prompt;
+    question.style.cssText = "display:block;font-size:14px;line-height:1.45;";
+    button.append(label, question);
+    button.addEventListener("click", async () => {
+      overlay.remove();
+      try {
+        await openChat(userId, userName || "Your match");
+        const input = document.getElementById("chatMessageInput");
+        if (input && activeChatUserId === userId) {
+          input.value = item.prompt;
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          input.focus();
+          input.setSelectionRange(input.value.length, input.value.length);
+        }
+      } catch (error) {
+        console.error("Could not open selected chemistry starter:", error);
+        status("chatPageStatus", "Could not open the conversation. Please try again.", true);
+      }
+    });
+    panel.appendChild(button);
+  });
+
+  const close = document.createElement("button");
+  close.type = "button";
+  close.textContent = "Maybe later";
+  close.style.cssText =
+    "width:100%;min-height:44px;margin-top:4px;border:1px solid #51452f;" +
+    "border-radius:12px;background:transparent;color:#e8d7b4;font-weight:750;";
+  close.addEventListener("click", () => overlay.remove());
+  panel.appendChild(close);
+  overlay.addEventListener("click", event => {
+    if (event.target === overlay) overlay.remove();
+  });
+  overlay.appendChild(panel);
+  document.body.appendChild(overlay);
+  panel.querySelector("button")?.focus();
+}
 
 async function openChat(userId, userName){
   if(!currentUser || !userId || userId === currentUser.id){

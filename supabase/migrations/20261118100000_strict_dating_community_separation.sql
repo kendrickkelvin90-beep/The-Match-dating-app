@@ -262,6 +262,34 @@ as $function$
     );
 $function$;
 
+-- All app interaction paths (chat, likes, passes, match-only Stories and
+-- reaction access) share this guard, so a previously-created cross-community
+-- connection cannot continue interacting after this migration.
+create or replace function public.can_interact_with_member(target_user_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+  select auth.uid() is not null
+    and target_user_id is not null
+    and target_user_id <> auth.uid()
+    and public.is_member_account_active(auth.uid())
+    and public.is_member_account_active(target_user_id)
+    and private.member_dating_community(auth.uid()) is not null
+    and private.member_dating_community(target_user_id) =
+        private.member_dating_community(auth.uid())
+    and not exists (
+      select 1
+      from public.member_blocks block_record
+      where (block_record.blocker_id = auth.uid() and block_record.blocked_id = target_user_id)
+         or (block_record.blocker_id = target_user_id and block_record.blocked_id = auth.uid())
+    );
+$function$;
+revoke all on function public.can_interact_with_member(uuid) from public, anon;
+grant execute on function public.can_interact_with_member(uuid) to authenticated;
+
 create or replace function private.enforce_same_dating_community_on_like()
 returns trigger
 language plpgsql

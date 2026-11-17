@@ -175,9 +175,6 @@
     const state=Array.isArray(data)?data[0]:data;
     if(state){
       renderConsistency(state,Number(state.reward_coins)||0);
-      if(Number(state.reward_coins)>0){
-        try{await refreshConsistency(userId);}catch(e){safeError(e,"Could not refresh consistency reward status.");}
-      }
     }else{
       await refreshConsistency(userId);
     }
@@ -190,7 +187,6 @@
     if(activeUserId!==user.id){activeUserId=user.id;lastCheckinKey="";}
     try{
       await recordActivity(user.id);
-      await refreshConsistency(user.id);
     }catch(error){
       safeError(error,"Consistency Stars are not available yet. Apply the engagement migration before enabling this feature.");
     }

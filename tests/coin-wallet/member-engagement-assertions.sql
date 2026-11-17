@@ -2,6 +2,9 @@
 \set ON_ERROR_STOP on
 
 -- Exercise the 35th active day and verify one 100-coin reward.
+insert into public.coin_wallets(user_id,balance)
+values('11111111-1111-4111-8111-111111111111',0)
+on conflict(user_id) do update set balance=0;
 insert into public.member_consistency(
   user_id,current_streak_days,total_active_days,active_days_in_cycle,
   stars_progress,rewards_claimed,last_active_date

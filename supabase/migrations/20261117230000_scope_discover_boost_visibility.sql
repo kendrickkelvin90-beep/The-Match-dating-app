@@ -1,6 +1,7 @@
 -- Do not expose the complete list of boosted member IDs to every signed-in user.
 -- Return boost status only for members who are already eligible for this viewer's Discover feed.
-revoke execute on function public.get_active_discover_boost_ids()\n  from public, anon, authenticated;
+revoke execute on function public.get_active_discover_boost_ids()
+  from public, anon, authenticated;
 
 create or replace function public.get_active_discover_boost_ids(p_user_ids uuid[])
 returns setof uuid

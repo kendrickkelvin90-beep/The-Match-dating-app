@@ -1,0 +1,64 @@
+name: Community onboarding JavaScript checks
+
+on:
+  pull_request:
+    paths:
+      - "index.html"
+      - ".github/workflows/community-onboarding-js.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  inline-javascript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Parse every inline JavaScript block
+        run: |
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import subprocess
+          import tempfile
+
+          class Scripts(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.blocks = []
+                  self.current = None
+                  self.attrs = {}
+              def handle_starttag(self, tag, attrs):
+                  if tag.lower() == "script":
+                      self.attrs = dict(attrs)
+                      self.current = [] if "src" not in self.attrs else None
+              def handle_data(self, data):
+                  if self.current is not None:
+                      self.current.append(data)
+              def handle_endtag(self, tag):
+                  if tag.lower() == "script" and self.current is not None:
+                      kind = (self.attrs.get("type") or "").lower()
+                      if kind in ("", "text/javascript", "application/javascript", "module"):
+                          self.blocks.append("".join(self.current))
+                      self.current = None
+                      self.attrs = {}
+
+          parser = Scripts()
+          parser.feed(Path("index.html").read_text(encoding="utf-8"))
+          if not parser.blocks:
+              raise SystemExit("No inline JavaScript blocks were found")
+          with tempfile.TemporaryDirectory() as directory:
+              for number, source in enumerate(parser.blocks, start=1):
+                  path = Path(directory) / f"inline-{number}.js"
+                  path.write_text(source, encoding="utf-8")
+                  result = subprocess.run(["node", "--check", str(path)], capture_output=True, text=True)
+                  if result.returncode:
+                      print(f"Inline script {number} failed syntax validation")
+                      print(result.stdout)
+                      print(result.stderr)
+                      raise SystemExit(result.returncode)
+          print(f"Validated {len(parser.blocks)} inline JavaScript blocks.")
+          PY

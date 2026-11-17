@@ -105,6 +105,42 @@ begin
     raise exception 'Expected only complete, active, unblocked candidates; got %', found_ids;
   end if;
 
+  -- Discover must enforce both sides' private partner preferences, not just the helper in isolation.
+  insert into public.member_dating_details(user_id, smoking, partner_preferences)
+  values
+    ('00000000-0000-4000-8000-000000000001','Never','{"smoking":"Never"}'::jsonb),
+    ('00000000-0000-4000-8000-000000000002','Never','{"smoking":"any"}'::jsonb),
+    ('00000000-0000-4000-8000-000000000007','Occasionally','{"smoking":"any"}'::jsonb)
+  on conflict (user_id) do update
+    set smoking = excluded.smoking,
+        partner_preferences = excluded.partner_preferences;
+
+  select array_agg(user_id order by user_id)
+    into found_ids
+  from public.matchmaking_eligible_candidate_ids();
+  if found_ids is distinct from array['00000000-0000-4000-8000-000000000002'::uuid] then
+    raise exception 'Discover did not enforce the viewer smoking preference: %', found_ids;
+  end if;
+
+  update public.member_dating_details
+  set partner_preferences = '{"smoking":"Socially"}'::jsonb
+  where user_id = '00000000-0000-4000-8000-000000000002';
+
+  select array_agg(user_id order by user_id)
+    into found_ids
+  from public.matchmaking_eligible_candidate_ids();
+  if found_ids is not null then
+    raise exception 'Discover did not enforce the candidate reciprocal smoking preference: %', found_ids;
+  end if;
+
+  update public.member_dating_details
+  set partner_preferences = '{"smoking":"any"}'::jsonb
+  where user_id in (
+    '00000000-0000-4000-8000-000000000001',
+    '00000000-0000-4000-8000-000000000002',
+    '00000000-0000-4000-8000-000000000007'
+  );
+
   select array_agg(user_id order by user_id)
     into found_ids
   from public.matchmaking_eligible_candidate_ids(p_connection_goal => 'relationship');

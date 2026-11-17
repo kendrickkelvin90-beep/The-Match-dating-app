@@ -1,4 +1,4 @@
-name: Server matchmaking, chat replies and reactions verification
+name: Server matchmaking and chat reply/reaction verification
 
 on:
   pull_request:

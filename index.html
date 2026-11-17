@@ -11284,7 +11284,7 @@ age:age,
 gender_identity:$("gender").value,
 interested_in:$("interest").value,
   
-sexual_roles:document.querySelector('input[name="sexualRole"]:checked')
+sexual_roles:$("datingCommunity")?.value === "lgbtq" && document.querySelector('input[name="sexualRole"]:checked')
   ? [document.querySelector('input[name="sexualRole"]:checked').value]
   : [],
 gender_presentation:Array.from(document.querySelectorAll('input[name="genderPresentation"]:checked')).map(el=>el.value),

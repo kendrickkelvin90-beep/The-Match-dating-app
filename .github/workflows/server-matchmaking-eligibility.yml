@@ -26,6 +26,7 @@ on:
       - test/matchmaking-eligibility-live-schema-parity
       - feat/general-inclusive-dating
       - feat/match-2-complete-dating
+      - feat/advanced-general-matchmaking
     paths:
       - "supabase/migrations/20261116130000_server_matchmaking_eligibility_gate.sql"
       - "supabase/migrations/20261116150000_general_dating_optional_roles.sql"

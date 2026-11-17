@@ -122,6 +122,8 @@ insert into public.profiles(id,display_name)
 select id,'Test member' from auth.users
 on conflict(id) do nothing;
 
+grant select on public.app_admins to authenticated;
+
 insert into public.app_admins(user_id)
 values('99999999-9999-4999-8999-999999999999')
 on conflict(user_id) do nothing;

@@ -1,4 +1,4 @@
-name: Server matchmaking eligibility and chat interaction tests
+name: Server matchmaking, chat replies and reactions regression tests
 
 on:
   pull_request:

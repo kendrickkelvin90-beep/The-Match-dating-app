@@ -646,23 +646,6 @@ begin
   insert into public.profile_passes(passer_id, passed_id)
   values (auth.uid(), '00000000-0000-4000-8000-000000000003');
 
-  if not exists (
-    select 1 from public.match_swipe_history
-    where user_id = auth.uid()
-      and target_user_id = '00000000-0000-4000-8000-000000000002'
-      and action = 'like'
-  ) then
-    raise exception 'The like trigger did not record swipe history after RPC execution was revoked';
-  end if;
-  if not exists (
-    select 1 from public.match_swipe_history
-    where user_id = auth.uid()
-      and target_user_id = '00000000-0000-4000-8000-000000000003'
-      and action = 'pass'
-  ) then
-    raise exception 'The pass trigger did not record swipe history after RPC execution was revoked';
-  end if;
-
   insert into public.messages(id,sender_id,receiver_id,body,reply_to_message_id)
   values ('10000000-0000-4000-8000-000000000003',
           '00000000-0000-4000-8000-000000000001',
@@ -720,6 +703,27 @@ end;
 $test$;
 
 reset role;
+
+do $test$
+begin
+  if not exists (
+    select 1 from public.match_swipe_history
+    where user_id = '00000000-0000-4000-8000-000000000001'
+      and target_user_id = '00000000-0000-4000-8000-000000000002'
+      and action = 'like'
+  ) then
+    raise exception 'The like trigger did not record swipe history after RPC execution was revoked';
+  end if;
+  if not exists (
+    select 1 from public.match_swipe_history
+    where user_id = '00000000-0000-4000-8000-000000000001'
+      and target_user_id = '00000000-0000-4000-8000-000000000003'
+      and action = 'pass'
+  ) then
+    raise exception 'The pass trigger did not record swipe history after RPC execution was revoked';
+  end if;
+end;
+$test$;
 
 -- Reciprocal partner deal-breakers remain private and are enforced by the server helper.
 insert into public.member_dating_details(user_id, smoking, drinking, partner_preferences)

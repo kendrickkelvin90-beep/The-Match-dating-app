@@ -10,6 +10,7 @@ on:
       - "index.html"
       - "supabase/migrations/**"
       - "tests/coin-wallet/**"
+      - "member-engagement.js"
       - ".github/workflows/coin-wallet-postgres-tests.yml"
   workflow_dispatch:
 
@@ -101,6 +102,8 @@ jobs:
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261105170000_discover_super_likes.sql
       - name: Apply Profile Boost first-message ticket migration to disposable database
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261105180000_profile_boost_first_message_tickets.sql
+      - name: Apply member feedback and Consistency Stars migration to disposable database
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261117100000_member_feedback_consistency_stars.sql
       - name: Run wallet, membership, gifts, and admin assertions
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/coin-wallet/assertions.sql
       - name: Run gift recipient notification assertions
@@ -113,6 +116,8 @@ jobs:
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/coin-wallet/super-like-assertions.sql
       - name: Run Profile Boost first-message assertions
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/coin-wallet/profile-boost-first-message-assertions.sql
+      - name: Run member engagement regression assertions
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/coin-wallet/member-engagement-assertions.sql
       - name: Configure concurrency probes
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/coin-wallet/concurrency-setup.sql
       - name: Run concurrent transaction tests

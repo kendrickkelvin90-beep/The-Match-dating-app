@@ -1,5 +1,12 @@
 -- Minimal isolated fixture for the View Once claim migration.
 create extension if not exists pgcrypto;
+do $roles$
+begin
+  if not exists(select 1 from pg_roles where rolname='authenticated') then
+    create role authenticated nologin;
+  end if;
+end
+$roles$;
 create schema if not exists auth;
 create or replace function auth.uid()
 returns uuid language sql stable
@@ -45,3 +52,13 @@ values
  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','11111111-1111-4111-8111-111111111111/once.jpg','image',true),
  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','33333333-3333-4333-8333-333333333333','44444444-4444-4444-8444-444444444444','33333333-3333-4333-8333-333333333333/blocked.jpg','image',true),
  ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','55555555-5555-4555-8555-555555555555','66666666-6666-4666-8666-666666666666','55555555-5555-4555-8555-555555555555/mutual.jpg','image',true);
+
+create or replace function public.test_assert(p_condition boolean,p_message text)
+returns void language plpgsql
+as $$
+begin
+  if p_condition is distinct from true then
+    raise exception 'TEST ASSERTION FAILED: %',p_message;
+  end if;
+end;
+$$;

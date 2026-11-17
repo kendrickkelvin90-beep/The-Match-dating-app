@@ -23,6 +23,10 @@ create table public.chat_media (
   created_at timestamptz not null default now()
 );
 
+create or replace function public.can_interact_with_member(target_user_id uuid)
+returns boolean language sql stable security definer set search_path=''
+as $ select target_user_id is not null $;
+
 create table public.test_premium_senders(user_id uuid primary key);
 create table public.test_mutual_matches(user_a uuid not null,user_b uuid not null,primary key(user_a,user_b));
 

@@ -25,7 +25,7 @@ begin
   v_definition := pg_catalog.pg_get_functiondef(
     'public.matchmaking_eligible_candidate_ids(double precision,integer,integer,text,text,text[],boolean,text,integer)'::regprocedure
   );
-  if pg_catalog.position(v_original in v_definition) = 0 then
+  if pg_catalog.strpos(v_definition, v_original) = 0 then
     raise exception 'Expected server-side profile pause predicate was not found; refusing to alter matchmaking eligibility';
   end if;
   v_definition := pg_catalog.replace(v_definition, v_original, v_replacement);

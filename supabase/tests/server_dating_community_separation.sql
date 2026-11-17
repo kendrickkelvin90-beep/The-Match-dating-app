@@ -28,6 +28,18 @@ update public.member_onboarding
 set answers = jsonb_set(answers, '{sexual_orientation}', '"Straight / heterosexual"')
 where user_id = '00000000-0000-4000-8000-000000000007';
 
+-- Make the two LGBTQ+ fixtures mutually compatible so this test isolates
+-- community eligibility rather than unrelated partner-preference filters.
+update public.profiles
+set interested_in = 'All genders'
+where id = '00000000-0000-4000-8000-000000000007';
+insert into public.member_dating_details(user_id, partner_preferences)
+values
+  ('00000000-0000-4000-8000-000000000001', '{}'::jsonb),
+  ('00000000-0000-4000-8000-000000000007', '{}'::jsonb)
+on conflict (user_id) do update
+set partner_preferences = '{}'::jsonb;
+
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
 do $community$
 declare

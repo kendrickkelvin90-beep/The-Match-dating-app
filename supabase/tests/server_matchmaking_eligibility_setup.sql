@@ -112,6 +112,17 @@ create table public.profile_boosts (
   ends_at timestamptz not null
 );
 
+create function public.get_active_discover_boost_ids()
+returns setof uuid
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+  select distinct user_id from public.profile_boosts
+  where starts_at <= now() and ends_at > now();
+$function$;
+
 -- Minimal chat tables/functions for reply and reaction regression coverage.
 create table public.messages (
   id uuid primary key default gen_random_uuid(),

@@ -750,6 +750,10 @@ begin
   if has_function_privilege('anon', 'public.get_active_discover_boost_ids(uuid[])', 'EXECUTE') then
     raise exception 'Anonymous users must not call the Discover boost status RPC';
   end if;
+  if has_function_privilege('anon', 'public.get_active_discover_boost_ids()', 'EXECUTE')
+     or has_function_privilege('authenticated', 'public.get_active_discover_boost_ids()', 'EXECUTE') then
+    raise exception 'The legacy global Discover boost enumeration RPC must not be callable by app users';
+  end if;
 end;
 $test$;
 reset role;

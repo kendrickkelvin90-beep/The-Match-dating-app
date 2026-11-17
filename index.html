@@ -11515,6 +11515,8 @@ function applyLifestyleDiscoveryScores(people, viewerDetails) {
     if (viewerDetails?.favorite_music && extras.favorite_music && overlap(viewerDetails.favorite_music, extras.favorite_music)) labels.push("Music");
     if (viewerDetails?.favorite_food && extras.favorite_food && overlap(viewerDetails.favorite_food, extras.favorite_food)) labels.push("Food");
     if (viewerDetails?.favorite_movies && extras.favorite_movies && overlap(viewerDetails.favorite_movies, extras.favorite_movies)) labels.push("Movies");
+    if (viewerDetails?.education_level && extras.education_level && normalize(viewerDetails.education_level) === normalize(extras.education_level)) labels.push("Education");
+    if (viewerDetails?.occupation && extras.occupation && normalize(viewerDetails.occupation) === normalize(extras.occupation)) labels.push("Occupation");
     [["activity_level","Activity"],["pets","Pets"],["smoking","Smoking"],["drinking","Drinking"],["children","Family plans"]].forEach(([key,label]) => {
       const own=normalize(viewerDetails?.[key]), theirs=normalize(shared[key]);
       if (own && theirs && own!=="prefer not to say" && theirs!=="prefer not to say" && own===theirs) labels.push(label);
@@ -11680,17 +11682,14 @@ let people = (peopleData || []).filter(person => eligibleIds.has(person.id)).map
 });
     
     people = await attachSharedDatingDetails(people);
-     let viewerLifestyleDetails = null;
-     if (savedPreferences.lifestyleDiscovery) {
-       const { data: ownLifestyleDetails, error: ownLifestyleError } = await db
-         .from("member_dating_details")
-         .select("interests,smoking,drinking,activity_level,pets,children,favorite_music,favorite_movies,favorite_food")
-         .eq("user_id", currentUser.id)
-         .maybeSingle();
-       if (ownLifestyleError) throw ownLifestyleError;
-       viewerLifestyleDetails = ownLifestyleDetails || {};
-       people = applyLifestyleDiscoveryScores(people, viewerLifestyleDetails);
-     }
+     const { data: ownLifestyleDetails, error: ownLifestyleError } = await db
+       .from("member_dating_details")
+       .select("interests,smoking,drinking,activity_level,pets,children,favorite_music,favorite_movies,favorite_food,education_level,occupation")
+       .eq("user_id", currentUser.id)
+       .maybeSingle();
+     if (ownLifestyleError) throw ownLifestyleError;
+     const viewerLifestyleDetails = ownLifestyleDetails || {};
+     people = applyLifestyleDiscoveryScores(people, viewerLifestyleDetails);
     const discoverIds = people.map(p => p.id);
 
     if (discoverIds.length) {
@@ -11737,11 +11736,30 @@ let people = (peopleData || []).filter(person => eligibleIds.has(person.id)).map
       const j = Math.floor(Math.random() * (i + 1));
       [people[i], people[j]] = [people[j], people[i]];
     }
-    if (savedPreferences.lifestyleDiscovery) {
-        people.sort((a, b) => (b._lifestyleMatchScore || 0) - (a._lifestyleMatchScore || 0) || (b._lifestyleMatchCount || 0) - (a._lifestyleMatchCount || 0));
-    } else if (savedPreferences.prioritiseSharedInterests) {
-        people.sort((a, b) => (b._interestMatchPercent || 0) - (a._interestMatchPercent || 0) || (b._sharedInterestCount || 0) - (a._sharedInterestCount || 0));
-    }
+    // Rank the Discover stack with the server-computed compatibility score.
+    // Optional discovery toggles add weight to the dimensions the member asked
+    // us to prioritise; ties retain the randomized order above.
+    const lifestyleWeight = savedPreferences.lifestyleDiscovery ? 0.20 : 0;
+    const interestWeight = savedPreferences.prioritiseSharedInterests ? 0.10 : 0;
+    const compatibilityWeight = 0.70;
+    const totalRankWeight = compatibilityWeight + lifestyleWeight + interestWeight;
+    const discoverRank = person => {
+      const compatibility = Math.max(0, Math.min(100, Number(person._compatibilityPercent) || 0));
+      const lifestyle = Math.max(0, Math.min(100, (Number(person._lifestyleMatchCount) || 0) / 11 * 100));
+      const interests = Math.max(0, Math.min(100, Number(person._interestMatchPercent) || 0));
+      return (
+        compatibility * compatibilityWeight +
+        lifestyle * lifestyleWeight +
+        interests * interestWeight
+      ) / totalRankWeight;
+    };
+    people = people
+      .map(person => ({ ...person, _discoverWeightedRank: discoverRank(person) }))
+      .sort((a, b) =>
+        b._discoverWeightedRank - a._discoverWeightedRank ||
+        (b._compatibilityDimensions || 0) - (a._compatibilityDimensions || 0) ||
+        (b._sharedInterestCount || 0) - (a._sharedInterestCount || 0)
+      );
 
 
 

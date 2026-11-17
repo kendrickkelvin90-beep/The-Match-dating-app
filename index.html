@@ -11754,7 +11754,7 @@ if (discoverMemberIds.length) {
   if (activeBadgeError) throw activeBadgeError;
   const activeBadgeSet = new Set((activeBadgeRows || []).map(row => row.user_id));
   people = people.map(person => ({ ...person, has_special_badge: activeBadgeSet.has(person.id) }));
-  const { data: boostedRows, error: boostedError } = await db.rpc("get_active_discover_boost_ids");
+  const { data: boostedRows, error: boostedError } = await db.rpc("get_active_discover_boost_ids", { p_user_ids: discoverMemberIds });
   if (boostedError) throw boostedError;
   const boostedSet = new Set(boostedRows || []);
   people.sort((a,b) => Number(boostedSet.has(b.id)) - Number(boostedSet.has(a.id)));

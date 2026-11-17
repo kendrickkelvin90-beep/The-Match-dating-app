@@ -275,8 +275,15 @@ as $function$
   select auth.uid() is not null
     and target_user_id is not null
     and target_user_id <> auth.uid()
-    and public.is_member_account_active(auth.uid())
-    and public.is_member_account_active(target_user_id)
+    and not exists (
+      select 1
+      from public.member_moderation moderation
+      where moderation.user_id in (auth.uid(), target_user_id)
+        and (
+          moderation.status = 'banned'
+          or (moderation.status = 'suspended' and moderation.expires_at > now())
+        )
+    )
     and private.member_dating_community(auth.uid()) is not null
     and private.member_dating_community(target_user_id) =
         private.member_dating_community(auth.uid())

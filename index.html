@@ -6141,6 +6141,18 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
 <option>Men</option><option>Women</option><option>Men and women</option><option>All genders</option>
 <option>Non-binary people</option><option>Not sure yet</option>
 </select>
+<label for="profilePronouns">Pronouns (optional)</label>
+<select id="profilePronouns">
+  <option value="">Don't show pronouns</option>
+  <option value="she/her">She / her</option>
+  <option value="he/him">He / him</option>
+  <option value="they/them">They / them</option>
+  <option value="she/they">She / they</option>
+  <option value="he/they">He / they</option>
+  <option value="any pronouns">Any pronouns</option>
+  <option value="use my name">Use my name</option>
+</select>
+<p class="small">Pronouns are optional and appear on your public profile only when you choose them.</p>
 <label for="datingCommunity">Dating community (private) *</label>
  <select id="datingCommunity" required>
    <option value="">Choose your dating community</option>
@@ -7307,7 +7319,13 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
 
         <div class="member-card" id="profilePrivacyControls">
     <h3>🛡️ Profile privacy</h3>
-    <p class="small">Pause your profile when you want a break. A paused profile is removed from new Discover recommendations; your existing matches and chats remain available.</p>
+    <label for="discoverVisibilitySelect">Who can discover my profile?</label>
+    <select id="discoverVisibilitySelect">
+      <option value="everyone">Everyone in my eligible dating community</option>
+      <option value="matches_only">Existing matches only</option>
+    </select>
+    <p class="small" id="discoverVisibilityStatus" role="status" aria-live="polite">This controls new Discover recommendations only. Existing matches and chats remain available.</p>
+    <p class="small">Pause your profile when you want a temporary break. A paused profile is removed from new Discover recommendations; your existing matches and chats remain available.</p>
     <label for="profilePauseToggle" style="display:flex;align-items:center;gap:12px;min-height:48px">
       <input id="profilePauseToggle" type="checkbox" style="width:20px;height:20px;accent-color:#c6a15a">
       <span><strong>Pause my profile</strong><br><span class="small">Hide me from new Discover recommendations</span></span>
@@ -11234,7 +11252,7 @@ $("bottomNavigation").querySelector('[data-page="discover"]').classList.add("act
 status("profileStatus","Loading your profile...");
 try{
 let r=await db.from("profiles")
-  .select("id,display_name,gender_identity,interested_in,bio,city,avatar_url,created_at,updated_at,age,location_sharing,is_verified,sexual_roles,gender_presentation,discovery_role_preferences,verification_level,verification_grace_started_at,nearby_current_city,nearby_current_state")
+  .select("id,display_name,gender_identity,interested_in,pronouns,bio,city,avatar_url,created_at,updated_at,age,location_sharing,is_verified,sexual_roles,gender_presentation,discovery_role_preferences,verification_level,verification_grace_started_at,nearby_current_city,nearby_current_state")
   .eq("id",user.id)
   .maybeSingle();
 if(r.error)throw r.error;
@@ -11244,6 +11262,7 @@ $("displayName").value=p.display_name||fallback;
 $("age").value=p.age||"";
 $("gender").value=p.gender_identity||"";
 $("interest").value=p.interested_in||"";
+$("profilePronouns").value=p.pronouns||"";
   
 document.querySelectorAll('input[name="sexualRole"]').forEach(el=>{
   el.checked=Array.isArray(p.sexual_roles)&&p.sexual_roles[0]===el.value;
@@ -11368,6 +11387,7 @@ display_name:$("displayName").value.trim(),
 age:age,
 gender_identity:$("gender").value,
 interested_in:$("interest").value,
+pronouns:$("profilePronouns").value || null,
   
 sexual_roles:$("datingCommunity")?.value === "lgbtq" && document.querySelector('input[name="sexualRole"]:checked')
   ? [document.querySelector('input[name="sexualRole"]:checked').value]
@@ -11741,7 +11761,7 @@ let people = (peopleData || []).filter(person => eligibleIds.has(person.id)).map
       const { data: verificationProfiles, error: verificationError } =
         await db
           .from("profiles")
-          .select("id,is_verified,verification_level,gender_presentation,city,created_at")
+          .select("id,is_verified,verification_level,gender_presentation,city,created_at,pronouns")
           .in("id", discoverIds);
 
       if (verificationError) throw verificationError;
@@ -11753,7 +11773,8 @@ let people = (peopleData || []).filter(person => eligibleIds.has(person.id)).map
             is_verified: profile.is_verified,
             verification_level: profile.verification_level,
             city: profile.city,
-            created_at: profile.created_at
+            created_at: profile.created_at,
+            pronouns: profile.pronouns
           }
         ])
       );
@@ -11887,7 +11908,7 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
       error: expandedVerificationError
     } = await db
       .from("profiles")
-      .select("id,is_verified,verification_level,gender_presentation,city,created_at")
+      .select("id,is_verified,verification_level,gender_presentation,city,created_at,pronouns")
       .in("id", expandedIds);
 
     if (expandedVerificationError) {
@@ -11901,7 +11922,8 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
           is_verified: profile.is_verified,
           verification_level: profile.verification_level,
             city: profile.city,
-          created_at: profile.created_at
+          created_at: profile.created_at,
+          pronouns: profile.pronouns
         }
       ])
     );
@@ -12419,6 +12441,7 @@ const details = document.createElement("p");
 details.className = "small";
 details.textContent = [
   p.age ? String(p.age) : "",
+  p.pronouns || "",
   p.gender_identity || "",
   p.city || ""
 ].filter(Boolean).join(" · ");
@@ -15544,10 +15567,15 @@ async function loadProfilePauseSetting() {
   statusEl.textContent = "Loading your privacy setting…";
   try {
     const { data, error } = await db.from("profiles")
-      .select("profile_paused").eq("id", currentUser.id).maybeSingle();
+      .select("profile_paused,discover_visibility").eq("id", currentUser.id).maybeSingle();
     if (error) throw error;
     if (!data) throw new Error("Your profile could not be found.");
     toggle.checked = data.profile_paused === true;
+    const visibilitySelect = $("discoverVisibilitySelect");
+    if (visibilitySelect) visibilitySelect.value = data.discover_visibility || "everyone";
+    $("discoverVisibilityStatus").textContent = visibilitySelect?.value === "matches_only"
+      ? "Your profile is excluded from new Discover recommendations. Existing matches and chats remain available."
+      : "Your profile can appear in eligible new Discover recommendations.";
     statusEl.textContent = toggle.checked
       ? "Your profile is paused. You won't appear in new Discover recommendations."
       : "Your profile is active and can appear in eligible Discover recommendations.";
@@ -15557,6 +15585,41 @@ async function loadProfilePauseSetting() {
     toggle.disabled = false;
   }
 }
+
+$("discoverVisibilitySelect")?.addEventListener("change", async event => {
+  const select = event.currentTarget;
+  const statusEl = $("discoverVisibilityStatus");
+  const previousValue = select.value === "matches_only" ? "everyone" : "matches_only";
+  if (!currentUser?.id) {
+    select.value = previousValue;
+    statusEl.textContent = "Please sign in again to change this setting.";
+    return;
+  }
+  const nextValue = select.value;
+  const confirmation = nextValue === "matches_only"
+    ? "Limit your profile to existing matches? You will no longer appear in new Discover recommendations. Existing matches and chats will remain available."
+    : "Allow your profile to appear in eligible new Discover recommendations again?";
+  if (!(await matchConfirm(confirmation))) {
+    select.value = previousValue;
+    return;
+  }
+  select.disabled = true;
+  statusEl.textContent = "Saving your Discover visibility…";
+  try {
+    const { error } = await db.from("profiles")
+      .update({ discover_visibility: nextValue }).eq("id", currentUser.id);
+    if (error) throw error;
+    statusEl.textContent = nextValue === "matches_only"
+      ? "Saved. Only your existing matches can continue seeing your profile through their matches; you are excluded from new Discover recommendations."
+      : "Saved. Your profile can appear in eligible new Discover recommendations.";
+    status("settingsStatus", "Discover visibility updated.");
+  } catch (error) {
+    select.value = previousValue;
+    statusEl.textContent = "Could not update Discover visibility: " + friendly(error);
+  } finally {
+    select.disabled = false;
+  }
+});
 
 $("profilePauseToggle")?.addEventListener("change", async event => {
   const toggle = event.currentTarget;
@@ -16242,7 +16305,7 @@ async function openMemberProfile(memberId){
 
     const {data:p,error} = await db
       .from("profiles")
-       .select("id,display_name,age,gender_identity,interested_in,city,bio,sexual_roles,is_verified,verification_level")
+       .select("id,display_name,age,gender_identity,interested_in,pronouns,city,bio,sexual_roles,is_verified,verification_level")
       .eq("id",memberId)
       .maybeSingle();
 
@@ -16392,6 +16455,7 @@ photo.onclick = () => {
 
     addProfileDetail("Age",p.age || "Not listed");
     addProfileDetail("Gender identity",p.gender_identity || "Not listed");
+    if (p.pronouns) addProfileDetail("Pronouns", p.pronouns);
     addProfileDetail("Interested in",p.interested_in || "Not listed");
     addProfileDetail("City",p.city || "Not listed");
     addProfileDetail(

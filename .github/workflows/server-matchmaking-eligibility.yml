@@ -19,6 +19,8 @@ on:
       - "supabase/migrations/20261117220000_restrict_swipe_history_trigger_rpc.sql"
       - "supabase/migrations/20261117230000_scope_discover_boost_visibility.sql"
       - "supabase/migrations/20261117190000_profile_pause_discovery_control.sql"
+      - "supabase/migrations/20261118130000_profile_discover_visibility_and_pronouns.sql"
+      - "supabase/tests/profile_discover_visibility_pronouns.sql"
       - "supabase/tests/profile_pause_discovery.sql"
       - "supabase/migrations/20261118100000_strict_dating_community_separation.sql"
       - "supabase/migrations/20261118110000_keep_dating_community_private.sql"
@@ -39,6 +41,7 @@ on:
       - feat/match-2-complete-dating
       - feat/advanced-general-matchmaking
       - feat/profile-pause-discovery-control
+      - feat/profile-visibility-pronouns
     paths:
       - "supabase/migrations/20261116130000_server_matchmaking_eligibility_gate.sql"
       - "supabase/migrations/20261116150000_general_dating_optional_roles.sql"
@@ -54,6 +57,8 @@ on:
       - "supabase/migrations/20261117210000_restrict_chat_reply_trigger_rpc.sql"
       - "supabase/migrations/20261117220000_restrict_swipe_history_trigger_rpc.sql"
       - "supabase/migrations/20261117230000_scope_discover_boost_visibility.sql"
+      - "supabase/migrations/20261118130000_profile_discover_visibility_and_pronouns.sql"
+      - "supabase/tests/profile_discover_visibility_pronouns.sql"
       - "supabase/migrations/20261118100000_strict_dating_community_separation.sql"
       - "supabase/migrations/20261118110000_keep_dating_community_private.sql"
       - "supabase/tests/server_dating_community_separation.sql"
@@ -149,6 +154,14 @@ jobs:
           if "candidate.profile_paused = false" not in pause_migration:
               raise SystemExit("Server-side pause filter migration is missing")
           print("Verified Pause Profile UI and save wiring")
+          if 'id="profilePronouns"' not in html or 'pronouns:$("profilePronouns").value' not in html:
+              raise SystemExit("Optional pronouns control or profile save wiring is missing")
+          if 'id="discoverVisibilitySelect"' not in html or "discover_visibility: nextValue" not in html:
+              raise SystemExit("Discover visibility control or persistence is missing")
+          visibility_migration = pathlib.Path("supabase/migrations/20261118130000_profile_discover_visibility_and_pronouns.sql").read_text(encoding="utf-8")
+          if "candidate.discover_visibility" not in visibility_migration or "matches_only" not in visibility_migration:
+              raise SystemExit("Server-side Discover visibility enforcement is missing")
+          print("Verified pronouns and Discover visibility UI wiring")
 
       - name: Prepare isolated Discover schema and synthetic fixtures
         env:
@@ -193,6 +206,8 @@ jobs:
             -f supabase/migrations/20261117230000_scope_discover_boost_visibility.sql
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/migrations/20261117190000_profile_pause_discovery_control.sql
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/migrations/20261118130000_profile_discover_visibility_and_pronouns.sql
       - name: Run moderation, block, completeness, and preference assertions
         env:
           PGPASSWORD: postgres
@@ -205,6 +220,8 @@ jobs:
         run: |
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/tests/profile_pause_discovery.sql
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/tests/profile_discover_visibility_pronouns.sql
 
       - name: Apply strict dating community separation migration
         env:

@@ -7189,6 +7189,8 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     <label for="discoveryInterests">Interests &amp; hobbies <span class="discovery-optional">OPTIONAL</span></label>
     <input id="discoveryInterests" type="text" placeholder="Music, movies, travel..." maxlength="160">
     <label class="discovery-toggle-row" for="prioritiseSharedInterests"><span><strong>Prioritise shared interests</strong><small>Show people with hobbies in common nearer the top.</small></span><input id="prioritiseSharedInterests" type="checkbox"></label>
+    <label class="discovery-toggle-row" for="lifestyleDiscoveryEnabled"><span><strong>✦ Lifestyle Discovery</strong><small>Bring people with shared hobbies, music, food, movies and activities to the top.</small></span><input id="lifestyleDiscoveryEnabled" type="checkbox"></label>
+    <p class="discovery-helper">Lifestyle Discovery uses only details members have chosen to share. Private answers and partner preferences are never exposed.</p>
   </div>
 
   <div class="discovery-preference-card">
@@ -11416,6 +11418,33 @@ async function attachSharedDatingDetails(people) {
   });
 }
 
+function applyLifestyleDiscoveryScores(people, viewerDetails) {
+  const normalize = value => String(value || "").toLowerCase().trim().replace(/\s+/g, " ");
+  const tokens = value => normalize(value).split(/[,;|/]+/).map(normalize).filter(Boolean);
+  const overlap = (viewerValue, candidateValue) => {
+    const viewer = new Set(tokens(viewerValue));
+    return tokens(candidateValue).some(value => viewer.has(value));
+  };
+  return (people || []).map(person => {
+    const shared = person.shared_dating_details || {};
+    const extras = person.shared_profile_extras || {};
+    const labels = [];
+    const ownInterests = Array.isArray(viewerDetails?.interests) ? viewerDetails.interests : [];
+    const theirInterests = Array.isArray(shared.interests) ? shared.interests : [];
+    const theirSet = new Set(theirInterests.map(normalize));
+    const common = ownInterests.filter(value => theirSet.has(normalize(value)));
+    if (common.length) labels.push("Interests: " + common.slice(0, 3).join(", "));
+    if (viewerDetails?.favorite_music && extras.favorite_music && overlap(viewerDetails.favorite_music, extras.favorite_music)) labels.push("Music");
+    if (viewerDetails?.favorite_food && extras.favorite_food && overlap(viewerDetails.favorite_food, extras.favorite_food)) labels.push("Food");
+    if (viewerDetails?.favorite_movies && extras.favorite_movies && overlap(viewerDetails.favorite_movies, extras.favorite_movies)) labels.push("Movies");
+    [["activity_level","Activity"],["pets","Pets"],["smoking","Smoking"],["drinking","Drinking"],["children","Family plans"]].forEach(([key,label]) => {
+      const own=normalize(viewerDetails?.[key]), theirs=normalize(shared[key]);
+      if (own && theirs && own!=="prefer not to say" && theirs!=="prefer not to say" && own===theirs) labels.push(label);
+    });
+    return {...person,_lifestyleMatchScore:common.length*3+labels.length,_lifestyleMatchCount:labels.length,_lifestyleMatchLabels:labels};
+  });
+}
+
 function appendSharedDatingDetails(panel, details) {
   if (!panel || !details) return;
   if (Array.isArray(details.interests) && details.interests.length) {
@@ -11496,7 +11525,8 @@ async function loadNearby(){
           location: allSavedPreferences.location || "",
           showMe: allSavedPreferences.showMe || "everyone",
           lookingFor: allSavedPreferences.lookingFor || "",
-          prioritiseSharedInterests: !!allSavedPreferences.prioritiseSharedInterests
+          prioritiseSharedInterests: !!allSavedPreferences.prioritiseSharedInterests,
+          lifestyleDiscovery: allSavedPreferences.lifestyleDiscovery === true
         };
     const preferredLocation = (savedPreferences.location || "").trim();
     // Discover is intentionally wide-ranging by default. A Premium member's
@@ -11568,6 +11598,17 @@ let people = (peopleData || []).filter(person => eligibleIds.has(person.id)).map
 });
     
     people = await attachSharedDatingDetails(people);
+     let viewerLifestyleDetails = null;
+     if (savedPreferences.lifestyleDiscovery) {
+       const { data: ownLifestyleDetails, error: ownLifestyleError } = await db
+         .from("member_dating_details")
+         .select("interests,smoking,drinking,activity_level,pets,children,favorite_music,favorite_movies,favorite_food")
+         .eq("user_id", currentUser.id)
+         .maybeSingle();
+       if (ownLifestyleError) throw ownLifestyleError;
+       viewerLifestyleDetails = ownLifestyleDetails || {};
+       people = applyLifestyleDiscoveryScores(people, viewerLifestyleDetails);
+     }
     const discoverIds = people.map(p => p.id);
 
     if (discoverIds.length) {
@@ -11614,8 +11655,10 @@ let people = (peopleData || []).filter(person => eligibleIds.has(person.id)).map
       const j = Math.floor(Math.random() * (i + 1));
       [people[i], people[j]] = [people[j], people[i]];
     }
-    if (savedPreferences.prioritiseSharedInterests) {
-      people.sort((a, b) => (b._interestMatchPercent || 0) - (a._interestMatchPercent || 0) || (b._sharedInterestCount || 0) - (a._sharedInterestCount || 0));
+    if (savedPreferences.lifestyleDiscovery) {
+        people.sort((a, b) => (b._lifestyleMatchScore || 0) - (a._lifestyleMatchScore || 0) || (b._lifestyleMatchCount || 0) - (a._lifestyleMatchCount || 0));
+    } else if (savedPreferences.prioritiseSharedInterests) {
+        people.sort((a, b) => (b._interestMatchPercent || 0) - (a._interestMatchPercent || 0) || (b._sharedInterestCount || 0) - (a._sharedInterestCount || 0));
     }
 
 
@@ -11688,6 +11731,9 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
   });
 
   people = await attachSharedDatingDetails(people);
+  if (savedPreferences.lifestyleDiscovery && viewerLifestyleDetails) {
+    people = applyLifestyleDiscoveryScores(people, viewerLifestyleDetails);
+  }
   const expandedIds = people.map(p => p.id);
 
   if (expandedIds.length) {
@@ -12152,6 +12198,15 @@ if (p._compatibilityDimensions >= 2 && p._compatibilityPercent > 0) {
     close.focus();
   });
   infoOverlay.appendChild(explainButton);
+}
+
+if (p._lifestyleMatchLabels?.length) {
+  const lifestyleBadge = document.createElement("div");
+  lifestyleBadge.className = "discover-lifestyle-match-badge";
+  lifestyleBadge.textContent = "✦ Shared lifestyle: " + p._lifestyleMatchLabels.slice(0, 3).join(" · ");
+  lifestyleBadge.setAttribute("aria-label", lifestyleBadge.textContent);
+  lifestyleBadge.style.cssText = "display:inline-flex;align-self:flex-start;max-width:100%;margin:0 0 9px;padding:7px 11px;border:1px solid rgba(210,173,104,.62);border-radius:12px;background:rgba(18,15,10,.82);color:#f4d995;font-size:12px;font-weight:750;line-height:1.4;white-space:normal;";
+  infoOverlay.appendChild(lifestyleBadge);
 }
 
 if (p._sharedInterestCount > 0) {
@@ -15130,6 +15185,7 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
     lookingFor: $("discoveryLookingFor").value,
     interests: $("discoveryInterests").value.trim(),
     prioritiseSharedInterests: $("prioritiseSharedInterests").checked,
+    lifestyleDiscovery: $("lifestyleDiscoveryEnabled").checked,
     straight: (await getCurrentAccountDiscoveryPreferences()).straight || {},
     verifiedOnly: premium && $("discoveryVerifiedOnly").checked,
     recentlyActive: premium && $("discoveryRecentlyActive").checked,
@@ -15220,6 +15276,7 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
     $("straightLookingFor").value = straightSaved.lookingFor ?? "";
     $("straightPrioritiseSharedInterests").checked = !!straightSaved.prioritiseSharedInterests;
     $("prioritiseSharedInterests").checked = !!saved.prioritiseSharedInterests;
+    $("lifestyleDiscoveryEnabled").checked = saved.lifestyleDiscovery === true;
 
     const distance = $("discoveryDistance");
     distance.max = premium ? "200" : "50";

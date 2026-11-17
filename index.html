@@ -11521,6 +11521,10 @@ async function loadNearby(){
 
   const list=$("profileList");
   list.replaceChildren();
+  if (!["lgbtq", "straight"].includes(currentMemberCommunity)) {
+    status("discoverStatus", "Choose your private dating community in My Profile to start discovering members.");
+    return;
+  }
   status("discoverStatus","Finding members...");
 
   try{

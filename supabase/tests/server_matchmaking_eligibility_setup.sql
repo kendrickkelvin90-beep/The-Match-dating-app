@@ -175,6 +175,14 @@ create table public.member_onboarding (
   answers jsonb not null default '{}'::jsonb
 );
 
+create function public.is_match_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $ select coalesce(current_setting('test.is_admin', true), 'false') = 'true' $;
+
 create function public.is_match_profile_complete(target_user_id uuid)
 returns boolean
 language sql

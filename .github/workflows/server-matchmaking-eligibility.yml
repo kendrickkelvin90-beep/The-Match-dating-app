@@ -12,6 +12,7 @@ on:
       - "supabase/migrations/20261116200000_member_profile_extras.sql"
       - "supabase/migrations/20261116220000_dating_compatibility_scores.sql"
       - "supabase/migrations/20261116210000_secure_chat_typing_broadcasts.sql"
+      - "supabase/migrations/20261117190000_chat_replies_and_reactions.sql"
       - "index.html"
       - "supabase/tests/server_matchmaking_eligibility*.sql"
       - ".github/workflows/server-matchmaking-eligibility.yml"
@@ -30,6 +31,7 @@ on:
       - "supabase/migrations/20261116190000_adult_age_enforcement.sql"
       - "supabase/migrations/20261116200000_member_profile_extras.sql"
       - "supabase/migrations/20261116210000_secure_chat_typing_broadcasts.sql"
+      - "supabase/migrations/20261117190000_chat_replies_and_reactions.sql"
       - "supabase/migrations/20261116220000_dating_compatibility_scores.sql"
       - "index.html"
       - "supabase/tests/server_matchmaking_eligibility*.sql"
@@ -93,6 +95,9 @@ jobs:
           if 'get_dating_compatibility_scores' not in html or 'discover-compatibility-badge' not in html:
               raise SystemExit("Discover compatibility score integration is missing")
           print("Verified that Discover displays opt-in compatibility scores")
+          if "reply_to_message_id" not in html or "toggle_chat_message_reaction" not in html:
+              raise SystemExit("Chat replies and reactions are not connected to the UI")
+          print("Verified chat reply and reaction UI integration")
 
       - name: Prepare isolated Discover schema and synthetic fixtures
         env:
@@ -123,6 +128,8 @@ jobs:
             -f supabase/migrations/20261116210000_secure_chat_typing_broadcasts.sql
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/migrations/20261116220000_dating_compatibility_scores.sql
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/migrations/20261117190000_chat_replies_and_reactions.sql
       - name: Run moderation, block, completeness, and preference assertions
         env:
           PGPASSWORD: postgres

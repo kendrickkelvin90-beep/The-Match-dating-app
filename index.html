@@ -11161,8 +11161,9 @@ currentUser=user;
 try {
   await loadCurrentMemberOrientation();
 } catch (orientationError) {
-  console.warn("Member orientation could not be loaded; retaining the existing discovery experience.", orientationError);
+  console.warn("Member community preferences could not be loaded; member discovery remains locked until they can be verified.", orientationError);
   currentMemberOrientation = "";
+  currentMemberCommunity = "";
 }
 const queerRoleSection = $("queerRolePreferencesSection");
 if (queerRoleSection) queerRoleSection.hidden = currentMemberCommunity !== "lgbtq";

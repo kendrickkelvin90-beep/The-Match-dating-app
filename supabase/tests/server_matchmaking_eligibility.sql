@@ -935,14 +935,6 @@ begin
     raise exception 'Compatibility score did not reflect the shared details: %', row_to_json(score_row);
   end if;
 
-  -- The public result is aggregate-only; raw candidate profile arrays and
-  -- owner-private partner preferences are not part of its return contract.
-  if (select count(*) from information_schema.columns
-      where table_schema = 'public'
-        and table_name = 'get_dating_compatibility_scores') <> 0 then
-    null;
-  end if;
-
   update public.member_dating_details
   set share_interests = false,
       share_lifestyle = false,

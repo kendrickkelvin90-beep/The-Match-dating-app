@@ -4258,7 +4258,9 @@ textarea.match-dialog-input{min-height:112px;resize:vertical}
 #matchCelebrationPage .match-moment-spark-one{top:3%;left:12%;font-size:22px}
 #matchCelebrationPage .match-moment-spark-two{right:10%;bottom:4%;font-size:25px}
 #matchCelebrationPage .match-moment-actions{display:grid;gap:12px;width:100%;margin-top:auto}
-#matchCelebrationPage #matchSendMessage,#matchCelebrationPage #matchContinueDiscover{width:100%;min-height:58px;border-radius:999px;font-size:16px;font-weight:850}
+#matchCelebrationPage #matchSendMessage,#matchCelebrationPage #matchContinueDiscover,#matchCelebrationPage #matchChemistryStarter{width:100%;min-height:54px;border-radius:999px;font-size:15px;font-weight:850}
+#matchCelebrationPage #matchChemistryStarter{border:1px solid rgba(210,173,103,.65);background:rgba(22,18,12,.9);color:#f0d28e}
+#matchCelebrationPage #matchChemistryStarter:focus-visible{outline:3px solid #f0d28e;outline-offset:3px}
 #matchCelebrationPage #matchSendMessage{display:flex;align-items:center;justify-content:center;gap:10px;border:1px solid #f2d48f;background:linear-gradient(110deg,#f0d18c,#bd8b3e 58%,#e8c77f);color:#171109;box-shadow:0 8px 25px rgba(188,139,57,.2)}
 #matchCelebrationPage #matchSendMessage span{font-size:23px}
 #matchCelebrationPage #matchContinueDiscover{border:1px solid rgba(210,173,103,.65);background:linear-gradient(120deg,#17130d,#0a0907);color:#e7c984}
@@ -6923,6 +6925,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
       <span class="match-moment-spark match-moment-spark-two" aria-hidden="true">✧</span>
     </div>
     <div class="match-moment-actions">
+      <button class="btn secondary" id="matchChemistryStarter" type="button">✦ Find a conversation starter</button>
       <button class="btn primary" id="matchSendMessage" type="button"> <span aria-hidden="true">♡</span> Send a Message</button>
       <button class="btn secondary" id="matchContinueDiscover" type="button">Continue Discovering <span aria-hidden="true">→</span></button>
       <p class="status" id="matchCelebrationStatus" role="status" aria-live="polite"></p>
@@ -12411,6 +12414,9 @@ like.onclick=async()=>{
       $("matchSendMessage").onclick=()=>{
         openChat(p.id,p.display_name||"Your match");
       };
+      $("matchChemistryStarter").onclick=()=>{
+        openChemistryStarter(p.id,p.display_name||"Your match");
+      };
       $("matchContinueDiscover").onclick=async()=>{
         personIndex++;
         show("discover");
@@ -15660,6 +15666,9 @@ if(countError)throw countError;
             $("matchSendMessage").onclick=()=>{
               openChat(id,p.display_name||"Your match");
             };
+            $("matchChemistryStarter").onclick=()=>{
+              openChemistryStarter(id,p.display_name||"Your match");
+            };
 
             $("matchContinueDiscover").onclick=async()=>{
               show("discover");
@@ -17034,6 +17043,96 @@ document.addEventListener("visibilitychange", () => {
     refreshNearbyCurrentLocation();
   }
 });
+
+function openChemistryStarter(userId, userName) {
+  if (!currentUser || !userId || userId === currentUser.id) return;
+
+  const existing = document.getElementById("chemistryStarterOverlay");
+  if (existing) existing.remove();
+
+  const prompts = [
+    { category: "Easy start", prompt: "What's something small that can instantly make your day better?" },
+    { category: "Get to know you", prompt: "What is something you could talk about for hours?" },
+    { category: "A little playful", prompt: "If we could plan a spontaneous day out, what would your ideal day look like?" },
+    { category: "Shared connection", prompt: "What's one thing you hope to find in the connection you're building?" },
+    { category: "Fun question", prompt: "What's a song you never get tired of listening to?" }
+  ];
+
+  const overlay = document.createElement("div");
+  overlay.id = "chemistryStarterOverlay";
+  overlay.setAttribute("role", "presentation");
+  overlay.style.cssText =
+    "position:fixed;inset:0;z-index:10060;display:flex;align-items:center;" +
+    "justify-content:center;padding:18px;background:rgba(0,0,0,.82);backdrop-filter:blur(9px);";
+  const panel = document.createElement("section");
+  panel.setAttribute("role", "dialog");
+  panel.setAttribute("aria-modal", "true");
+  panel.setAttribute("aria-labelledby", "chemistryStarterTitle");
+  panel.style.cssText =
+    "width:min(100%,440px);max-height:85vh;overflow:auto;padding:22px;" +
+    "border:1px solid rgba(210,173,104,.5);border-radius:22px;" +
+    "background:linear-gradient(155deg,#1a1711,#090909 65%);color:#f7f2e8;" +
+    "box-shadow:0 22px 80px rgba(0,0,0,.65);";
+  const eyebrow = document.createElement("p");
+  eyebrow.textContent = "THE MATCH · CHEMISTRY STARTER";
+  eyebrow.style.cssText = "margin:0 0 8px;color:#d8b56d;font-size:10px;font-weight:850;letter-spacing:1.5px;";
+  const title = document.createElement("h2");
+  title.id = "chemistryStarterTitle";
+  title.textContent = "Break the ice naturally";
+  title.style.cssText = "margin:0 0 7px;color:#f5d99e;font-size:23px;line-height:1.2;";
+  const intro = document.createElement("p");
+  intro.textContent = "Choose a question to send to " + (userName || "your match") + ". It will appear in your message box first, so you can edit it before sending.";
+  intro.style.cssText = "margin:0 0 17px;color:#c9c1b4;font-size:13px;line-height:1.55;";
+  panel.append(eyebrow, title, intro);
+
+  prompts.forEach(item => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.style.cssText =
+      "display:block;width:100%;margin:0 0 9px;padding:13px 14px;text-align:left;" +
+      "border:1px solid rgba(210,173,104,.28);border-radius:13px;" +
+      "background:#14120e;color:#f6f0e4;cursor:pointer;";
+    const label = document.createElement("span");
+    label.textContent = item.category;
+    label.style.cssText = "display:block;margin-bottom:5px;color:#d8b56d;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.8px;";
+    const question = document.createElement("span");
+    question.textContent = item.prompt;
+    question.style.cssText = "display:block;font-size:14px;line-height:1.45;";
+    button.append(label, question);
+    button.addEventListener("click", async () => {
+      overlay.remove();
+      try {
+        await openChat(userId, userName || "Your match");
+        const input = document.getElementById("chatMessageInput");
+        if (input && activeChatUserId === userId) {
+          input.value = item.prompt;
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          input.focus();
+          input.setSelectionRange(input.value.length, input.value.length);
+        }
+      } catch (error) {
+        console.error("Could not open selected chemistry starter:", error);
+        status("chatPageStatus", "Could not open the conversation. Please try again.", true);
+      }
+    });
+    panel.appendChild(button);
+  });
+
+  const close = document.createElement("button");
+  close.type = "button";
+  close.textContent = "Maybe later";
+  close.style.cssText =
+    "width:100%;min-height:44px;margin-top:4px;border:1px solid #51452f;" +
+    "border-radius:12px;background:transparent;color:#e8d7b4;font-weight:750;";
+  close.addEventListener("click", () => overlay.remove());
+  panel.appendChild(close);
+  overlay.addEventListener("click", event => {
+    if (event.target === overlay) overlay.remove();
+  });
+  overlay.appendChild(panel);
+  document.body.appendChild(overlay);
+  panel.querySelector("button")?.focus();
+}
 
 async function openChat(userId, userName){
   if(!currentUser || !userId || userId === currentUser.id){

@@ -6135,7 +6135,14 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
 <option>Men</option><option>Women</option><option>Men and women</option><option>All genders</option>
 <option>Non-binary people</option><option>Not sure yet</option>
 </select>
-<label for="sexualOrientation">Sexual orientation (private)</label>
+<label for="datingCommunity">Dating community (private) *</label>
+ <select id="datingCommunity" required>
+   <option value="">Choose your dating community</option>
+   <option value="lgbtq">LGBTQ+ community</option>
+   <option value="straight">Straight community</option>
+ </select>
+ <p class="small">This is a private matching setting. LGBTQ+ includes gay, lesbian, bisexual, pansexual, queer, asexual and transgender members. Your gender identity and who you want to meet remain separate preferences.</p>
+ <label for="sexualOrientation">Sexual orientation (private)</label>
 <select id="sexualOrientation">
   <option value="Prefer not to say">Prefer not to say</option>
   <option value="Straight / heterosexual">Straight / heterosexual</option>
@@ -9672,6 +9679,13 @@ const onboardingQuestions = [
     ]
   },
   {
+    key: "dating_community",
+    title: "Which dating community would you like to join?",
+    help: "This private choice controls which members can appear in your dating discovery. You can change it later in your profile.",
+    options: ["LGBTQ+ community", "Straight community"],
+    values: ["lgbtq", "straight"]
+  },
+  {
     key: "relationship_goal",
     title: "What kind of connection are you looking for?",
     options: ["A relationship", "Dating", "Friendship", "Something casual", "Still figuring it out"]
@@ -11006,6 +11020,7 @@ function profileBioHasPhoneNumber(value) {
 }
 
 let currentMemberOrientation = "";
+let currentMemberCommunity = "";
 
 async function loadCurrentMemberOrientation() {
   if (!currentUser?.id) {
@@ -11016,7 +11031,9 @@ async function loadCurrentMemberOrientation() {
     .select("answers").eq("user_id", currentUser.id).maybeSingle();
   if (error) throw error;
   currentMemberOrientation = String(data?.answers?.sexual_orientation || "Prefer not to say");
+  currentMemberCommunity = String(data?.answers?.dating_community || "");
   if ($("sexualOrientation")) $("sexualOrientation").value = currentMemberOrientation;
+  if ($("datingCommunity")) $("datingCommunity").value = currentMemberCommunity;
   return currentMemberOrientation;
 }
 
@@ -11083,7 +11100,7 @@ try {
   currentMemberOrientation = "";
 }
 const queerRoleSection = $("queerRolePreferencesSection");
-if (queerRoleSection) queerRoleSection.hidden = currentMemberOrientation === "Straight / heterosexual";
+if (queerRoleSection) queerRoleSection.hidden = currentMemberCommunity !== "lgbtq";
 
   if (window.matchModerationInterval) clearInterval(window.matchModerationInterval);
   window.matchModerationInterval = setInterval(() => {
@@ -11248,6 +11265,9 @@ if(age<18||age>120)throw Error("The Match is for adults aged 18 and above.");
 if(!$("displayName").value.trim())throw Error("Please enter your display name.");
 if(!$("gender").value.trim())throw Error("Please select your gender identity.");
 if(!$("interest").value.trim())throw Error("Please select who you're interested in.");
+if(!["lgbtq","straight"].includes($("datingCommunity")?.value || currentMemberCommunity)) {
+  throw Error("Please choose your dating community before saving.");
+}
 if(!$("city").value.trim())throw Error("Please enter your city.");
 if(!$("bio").value.trim())throw Error("Please tell members a little about yourself.");
   
@@ -11341,19 +11361,24 @@ const { error: datingDetailsError } = await db.from("member_dating_details").ups
 if (datingDetailsError) throw datingDetailsError;
 
 const newOrientation = $("sexualOrientation")?.value || currentMemberOrientation;
-if (newOrientation && newOrientation !== currentMemberOrientation) {
+const newCommunity = $("datingCommunity")?.value || currentMemberCommunity;
+if (!["lgbtq", "straight"].includes(newCommunity)) {
+  throw Error("Please choose either the LGBTQ+ or Straight dating community before saving your profile.");
+}
+if (newOrientation !== currentMemberOrientation || newCommunity !== currentMemberCommunity) {
   const { data: onboardingRecord, error: onboardingReadError } = await db.from("member_onboarding")
     .select("answers").eq("user_id", currentUser.id).maybeSingle();
   if (onboardingReadError) throw onboardingReadError;
-  if (!onboardingRecord) throw Error("Your private orientation settings could not be saved. Please contact support.");
-  const updatedAnswers = { ...(onboardingRecord.answers || {}), sexual_orientation: newOrientation };
+  if (!onboardingRecord) throw Error("Your private dating community settings could not be saved. Please contact support.");
+  const updatedAnswers = { ...(onboardingRecord.answers || {}), sexual_orientation: newOrientation, dating_community: newCommunity };
   const { error: onboardingUpdateError } = await db.from("member_onboarding")
     .update({ answers: updatedAnswers, updated_at: new Date().toISOString() })
     .eq("user_id", currentUser.id);
   if (onboardingUpdateError) throw onboardingUpdateError;
   currentMemberOrientation = newOrientation;
+  currentMemberCommunity = newCommunity;
   const roleSection = $("queerRolePreferencesSection");
-  if (roleSection) roleSection.hidden = currentMemberOrientation === "Straight / heterosexual";
+  if (roleSection) roleSection.hidden = currentMemberCommunity !== "lgbtq";
 }
 
 await loadNearby();
@@ -11518,7 +11543,7 @@ async function loadNearby(){
     const allSavedPreferences = await getCurrentAccountDiscoveryPreferences();
     // City/area discovery is available to every member. Other advanced filters
     // remain Premium-only.
-    const straightMode = currentMemberOrientation === "Straight / heterosexual";
+    const straightMode = currentMemberCommunity === "straight";
     const savedPreferences = straightMode
       ? { ...allSavedPreferences, ...(allSavedPreferences.straight || {}) }
       : viewerPremium ? allSavedPreferences : {

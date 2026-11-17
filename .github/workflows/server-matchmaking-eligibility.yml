@@ -86,6 +86,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y postgresql-client
 
+      - name: Set up Deno for Edge Function checks
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Type-check secure View Once Edge Function
+        run: deno check supabase/functions/open-view-once-chat-media/index.ts
+
       - name: Check inline JavaScript syntax
         run: |
           python3 - <<'PY'

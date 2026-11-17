@@ -40,14 +40,14 @@ grant execute on function public.can_interact_with_member(uuid) to authenticated
 grant execute on function public.is_match_premium(uuid) to authenticated;
 grant execute on function public.are_users_mutual_matches(uuid,uuid) to authenticated;
 
-insert into public.test_premium_senders values ('11111111-1111-4111-8111-111111111111');
-insert into public.test_mutual_matches values ('55555555-5555-4555-8555-555555555555','66666666-6666-4666-8666-666666666666');
+insert into public.test_premium_senders values ('00000000-0000-4000-8000-000000000001');
+insert into public.test_mutual_matches values ('00000000-0000-4000-8000-000000000005','00000000-0000-4000-8000-000000000006');
 
 insert into public.chat_media(id,sender_id,receiver_id,storage_path,media_type,view_once)
 values
- ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','11111111-1111-4111-8111-111111111111/once.jpg','image',true),
- ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','33333333-3333-4333-8333-333333333333','44444444-4444-4444-8444-444444444444','33333333-3333-4333-8333-333333333333/blocked.jpg','image',true),
- ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','55555555-5555-4555-8555-555555555555','66666666-6666-4666-8666-666666666666','55555555-5555-4555-8555-555555555555/mutual.jpg','image',true);
+ ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000001/once.jpg','image',true),
+ ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','00000000-0000-4000-8000-000000000003','00000000-0000-4000-8000-000000000004','00000000-0000-4000-8000-000000000003/blocked.jpg','image',true),
+ ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','00000000-0000-4000-8000-000000000005','00000000-0000-4000-8000-000000000006','00000000-0000-4000-8000-000000000005/mutual.jpg','image',true);
 
 create or replace function public.test_assert(p_condition boolean,p_message text)
 returns void language plpgsql

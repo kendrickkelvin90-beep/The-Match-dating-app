@@ -6270,13 +6270,15 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
   <option value="use my name">Use my name</option>
 </select>
 <p class="small">Pronouns are optional and appear on your public profile only when you choose them.</p>
-<label for="datingCommunity">Dating community (private) *</label>
+<div id="datingCommunitySetupFields">
+<label for="datingCommunity">Choose your dating community *</label>
  <select id="datingCommunity" required>
    <option value="">Choose your dating community</option>
    <option value="lgbtq">LGBTQ+ community</option>
    <option value="straight">Straight community</option>
  </select>
- <p class="small">This is a private matching setting. LGBTQ+ includes gay, lesbian, bisexual, pansexual, queer, asexual and transgender members. Your gender identity and who you want to meet remain separate preferences.</p>
+ <p class="small">Choose once. This private choice is saved to your account and is never shown on your public profile.</p>
+</div>
  <div id="sexualOrientationSection">
  <label for="sexualOrientation">Sexual orientation (private)</label>
 <select id="sexualOrientation">
@@ -11243,9 +11245,11 @@ async function loadCurrentMemberOrientation() {
   currentMemberCommunity = String(data?.answers?.dating_community || "");
   if ($("sexualOrientation")) $("sexualOrientation").value = currentMemberOrientation;
   if ($("datingCommunity")) $("datingCommunity").value = currentMemberCommunity;
+  const hasSavedCommunity = ["lgbtq", "straight"].includes(currentMemberCommunity);
+  const communitySetupFields = $("datingCommunitySetupFields");
+  if (communitySetupFields) communitySetupFields.hidden = hasSavedCommunity;
   const communityNotice = $("datingCommunityRequiredNotice");
-  if (communityNotice) communityNotice.style.display =
-    ["lgbtq", "straight"].includes(currentMemberCommunity) ? "none" : "block";
+  if (communityNotice) communityNotice.style.display = hasSavedCommunity ? "none" : "block";
   syncDatingCommunityFields();
   return currentMemberOrientation;
 }
@@ -11659,6 +11663,9 @@ if (newOrientation !== currentMemberOrientation || newCommunity !== currentMembe
 
   currentMemberOrientation = newOrientation;
   currentMemberCommunity = newCommunity;
+  // Community is a one-time private account choice; hide setup after saving.
+  const communitySetupFields = $("datingCommunitySetupFields");
+  if (communitySetupFields) communitySetupFields.hidden = true;
   const communityNotice = $("datingCommunityRequiredNotice");
   if (communityNotice) communityNotice.style.display = "none";
   syncDatingCommunityFields();

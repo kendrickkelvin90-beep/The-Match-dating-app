@@ -6117,6 +6117,8 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
 <h2 id="greeting">Welcome ❤️</h2>
 <p class="small">Complete your profile to meet people. Location is optional.</p>
 <form id="profileForm">
+<div class="profile-onboarding-progress" id="profileOnboardingProgress" aria-label="Profile setup progress"><div class="profile-onboarding-top"><span id="profileStepLabel">STEP 1 OF 3</span><span id="profileStepPercent">33%</span></div><div class="profile-onboarding-track"><span id="profileStepProgress" style="width:33%"></span></div><p id="profileStepHint">Start with the basics so members know who you are.</p></div>
+<section class="profile-onboarding-step" data-profile-step="1" aria-label="Basic profile"><div class="profile-step-heading"><span>01</span><div><h3>About you</h3><p>Let’s start with the essentials.</p></div></div>
 <label for="displayName">Display name *</label>
 <input id="displayName" maxlength="60" required placeholder="What should members call you?">
 <label for="age">Age (18+) *</label>
@@ -6166,7 +6168,9 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
   <label><input type="radio" name="sexualRole" value="Exploring"> Exploring / Not sure</label>
   <label><input type="radio" name="sexualRole" value="Prefer not to say"> Prefer not to say</label>
 </div>
-
+</section>
+<div class="profile-step-actions"><span class="profile-step-note">Basic information</span><button class="btn primary" type="button" data-profile-next>Continue →</button></div>
+<section class="profile-onboarding-step" data-profile-step="2" aria-label="Lifestyle and interests" hidden><div class="profile-step-heading"><span>02</span><div><h3>Your lifestyle</h3><p>Choose what you enjoy. You can skip anything.</p></div></div>
 <div class="member-card" id="datingLifestyleSection">
   <h2>What makes you, you? ✨</h2>
   <p class="small">Choose a few interests and lifestyle details. These are optional, and you control what other members can see.</p>
@@ -6244,7 +6248,9 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
   <label><input type="checkbox" id="shareDatingLifestyle"> Show my lifestyle details on my profile</label>
   <p class="small">Your lifestyle answers stay private unless you turn on sharing. You can change these choices anytime.</p>
 </div>
-
+</section>
+<div class="profile-step-actions"><button class="btn secondary" type="button" data-profile-back>← Back</button><div class="profile-step-actions-right"><button class="btn secondary profile-skip-step" type="button" data-profile-next>Skip for now</button><button class="btn primary" type="button" data-profile-next>Continue →</button></div></div>
+<section class="profile-onboarding-step" data-profile-step="3" aria-label="Dating preferences" hidden><div class="profile-step-heading"><span>03</span><div><h3>Your ideal connection</h3><p>Choose what matters, then you’re ready to discover.</p></div></div>
 <div class="member-card" id="datingPartnerPreferences">
   <h2>Who would be a good match? 💛</h2>
   <p class="small">Set optional preferences and deal-breakers. These answers stay private and are checked both ways before someone appears in Discover.</p>
@@ -6314,7 +6320,8 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
   <textarea id="bio" maxlength="1000" required placeholder="Share a little about yourself"></textarea>
 <button class="btn secondary" id="locationButton" type="button">📍 Turn on nearby discovery</button>
 <p class="small" id="locationHelp">Location is optional. If enabled, rounded coordinates are saved for approximate distance.</p>
-<button class="btn primary" id="saveProfile" type="submit">Save profile and discover</button>
+<div class="profile-step-actions profile-step-actions-final"><button class="btn secondary" type="button" data-profile-back>← Back</button><button class="btn primary" id="saveProfile" type="submit">Save profile and discover →</button></div>
+</section>
 </form>
 <p class="status" id="profileStatus"></p>
   
@@ -22813,6 +22820,73 @@ body.light-theme #discover #profileList > .discover-option3-card {
 }
 
 </style>
+
+<style id="profile-three-step-onboarding">
+#profile #profileForm .profile-onboarding-progress{padding:14px 15px;margin:0 0 18px;border:1px solid rgba(210,173,104,.28);border-radius:15px;background:rgba(210,173,104,.055)}
+#profile .profile-onboarding-top{display:flex;justify-content:space-between;gap:10px;color:var(--tm-gold-bright);font-size:11px;font-weight:800;letter-spacing:1.2px}
+#profile .profile-onboarding-track{height:5px;margin:10px 0 8px;overflow:hidden;border-radius:99px;background:rgba(255,255,255,.1)}
+#profile .profile-onboarding-track span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#b88c45,#f0d18b);transition:width .22s ease}
+#profile #profileStepHint{margin:0;color:var(--tm-muted);font-size:13px;line-height:1.45}
+#profile .profile-step-heading{display:flex;align-items:center;gap:12px;margin:2px 0 17px}
+#profile .profile-step-heading>span{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;border:1px solid rgba(210,173,104,.42);border-radius:13px;background:rgba(210,173,104,.1);color:var(--tm-gold-bright);font-weight:900}
+#profile .profile-step-heading h3{margin:0;color:var(--tm-gold-bright);font-size:20px}
+#profile .profile-step-heading p{margin:3px 0 0;color:var(--tm-muted);font-size:13px}
+#profile .profile-step-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:16px 0 8px}
+#profile .profile-step-actions button{min-height:46px}
+#profile .profile-step-actions-right{display:flex;align-items:center;gap:8px}
+#profile .profile-step-note{color:var(--tm-muted);font-size:12px}
+#profile .profile-step-actions .profile-skip-step{border-color:rgba(210,173,104,.28)!important;background:transparent!important;color:var(--tm-muted)!important;box-shadow:none!important}
+#profile .profile-step-actions-final{margin-top:20px}
+#profile .profile-step-actions-final #saveProfile{flex:1}
+#profile .profile-onboarding-step[hidden],#profile .profile-step-actions[hidden]{display:none!important}
+@media(max-width:390px){#profile .profile-step-actions{gap:7px}#profile .profile-step-actions button{padding:10px 12px;font-size:13px}#profile .profile-step-actions-right{gap:6px}}
+body.light-theme #profile #profileForm .profile-onboarding-progress{background:#fffaf0;border-color:#e5d6b9}
+body.light-theme #profile .profile-onboarding-track{background:#e9e1d3}
+</style>
+<script id="profile-three-step-onboarding-controller">
+(function(){
+ const form=document.getElementById('profileForm');
+ if(!form||form.dataset.threeStepReady==='true')return;
+ form.dataset.threeStepReady='true';
+ const steps=Array.from(form.querySelectorAll('[data-profile-step]'));
+ const progress=document.getElementById('profileStepProgress');
+ const label=document.getElementById('profileStepLabel');
+ const percent=document.getElementById('profileStepPercent');
+ const hint=document.getElementById('profileStepHint');
+ const hints=['Start with the basics so members know who you are.','Pick interests and lifestyle details that feel like you. These are optional.','Choose what matters in a connection. You can leave preferences open.'];
+ let current=1;
+ function showStep(next){
+  current=Math.max(1,Math.min(3,next));
+  steps.forEach(step=>step.hidden=Number(step.dataset.profileStep)!==current);
+  form.querySelectorAll('.profile-step-actions').forEach(actions=>{
+   const panel=actions.previousElementSibling;
+   if(panel&&panel.matches('[data-profile-step]'))actions.hidden=Number(panel.dataset.profileStep)!==current;
+  });
+  const value=Math.round(current/3*100);
+  if(progress)progress.style.width=value+'%';
+  if(label)label.textContent='STEP '+current+' OF 3';
+  if(percent)percent.textContent=value+'%';
+  if(hint)hint.textContent=hints[current-1];
+  const profile=document.getElementById('profile');
+  if(profile)profile.scrollTo({top:0,behavior:'smooth'});
+  else window.scrollTo({top:0,behavior:'smooth'});
+ }
+ form.addEventListener('click',function(event){
+  const next=event.target.closest('[data-profile-next]');
+  const back=event.target.closest('[data-profile-back]');
+  if(next){event.preventDefault();showStep(current+1);}
+  if(back){event.preventDefault();showStep(current-1);}
+ });
+ form.addEventListener('click',function(event){
+  const next=event.target.closest('[data-profile-next]');
+  if(!next||current!==1)return;
+  const invalid=Array.from(steps[0].querySelectorAll('[required]')).find(field=>!field.checkValidity());
+  if(invalid){event.preventDefault();invalid.reportValidity();}
+ },true);
+ showStep(1);
+})();
+</script>
+
 </body>
 </html>
 

@@ -5904,6 +5904,71 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
 }
 </style>
 
+<style id="simple-mobile-navigation-and-discover-empty-state">
+/* Keep the main navigation fully above Android's system navigation controls. */
+@media (max-width: 900px) {
+  body:has(#bottomNavigation:not(.hidden)) {
+    padding-bottom: calc(112px + max(18px, env(safe-area-inset-bottom, 0px))) !important;
+  }
+  #bottomNavigation.bottom-nav:not(.hidden) {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: max(18px, env(safe-area-inset-bottom, 0px)) !important;
+    height: 82px !important;
+    min-height: 82px !important;
+    padding: 6px 4px 8px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-around !important;
+    overflow: visible !important;
+    z-index: 100000 !important;
+  }
+  #bottomNavigation.bottom-nav:not(.hidden) > button {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    width: 0 !important;
+    height: 66px !important;
+    min-height: 66px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    padding: 4px 1px !important;
+    margin: 0 !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+    font-size: 10px !important;
+  }
+  #bottomNavigation .nav-icon {
+    display: block !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    font-size: 20px !important;
+  }
+}
+#discover #profileList:empty {
+  display: none !important;
+  min-height: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+#discover #discoverStatus:not(:empty) {
+  display: block !important;
+  margin: 14px 0 24px !important;
+  padding: 14px 16px !important;
+  border: 1px solid rgba(210,173,104,.22) !important;
+  border-radius: 14px !important;
+  background: rgba(210,173,104,.06) !important;
+  color: #d8d0c2 !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  text-align: center !important;
+}
+</style>
 </head>
 <body>
 <div id="stars" aria-hidden="true"></div>
@@ -12107,7 +12172,7 @@ if (discoverMemberIds.length) {
 if (!people.length) {
   status(
     "discoverStatus",
-    "No eligible profiles are available in your private dating community right now. Optional filters have been relaxed, but members must choose the same dating community, complete their profiles and meet mutual matching preferences before they can appear. Resetting filters will not mix the LGBTQ+ and Straight communities."
+    "No profiles available right now. Check back soon."
   );
   return;
 }

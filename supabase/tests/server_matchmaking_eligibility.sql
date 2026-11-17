@@ -251,9 +251,18 @@ values
   ('00000000-0000-4000-8000-000000000007', array['Football'], 'Socially', 'Occasionally', 'Moderately active', 'Have pets', 'Have children', true, true),
   ('00000000-0000-4000-8000-000000000010', array['Travel'], 'Never', 'Never', 'Moderately active', 'Prefer not to say', 'Not sure', false, true),
   ('00000000-0000-4000-8000-000000000011', array['Gaming'], 'Never', 'Never', 'Moderately active', 'Prefer not to say', 'Not sure', true, false),
-  ('00000000-0000-4000-8000-000000000012', array['Music'], 'Never', 'Never', 'Moderately active', 'Prefer not to say', 'Not sure', true, false);
+  ('00000000-0000-4000-8000-000000000012', array['Music'], 'Never', 'Never', 'Moderately active', 'Prefer not to say', 'Not sure', true, false)
+on conflict (user_id) do update
+set interests = excluded.interests,
+    smoking = excluded.smoking,
+    drinking = excluded.drinking,
+    activity_level = excluded.activity_level,
+    pets = excluded.pets,
+    children = excluded.children,
+    share_interests = excluded.share_interests,
+    share_lifestyle = excluded.share_lifestyle;
 
-do $$
+do $
 declare
   shared_row record;
 begin

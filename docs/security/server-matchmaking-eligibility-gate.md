@@ -17,7 +17,7 @@ The RPC public.matchmaking_eligible_candidate_ids(...):
 - Rechecks reciprocal blocks directly rather than relying on the current live can_interact_with_member definition.
 - Excludes candidates who are currently suspended or permanently banned.
 - Requires each candidate to have a complete profile and at least two profile photos.
-- Applies supported gender and role filters.
+- Applies supported gender and role filters, plus mutual compatibility: the viewer's stated dating preference must accept the candidate's gender, and the candidate's stated dating preference must accept the viewer's gender.
 - Applies the verified-only filter only for active Premium members.
 - Returns only candidate IDs, with a hard maximum of 100 rows.
 - Denies execution to anonymous and public roles.
@@ -31,7 +31,7 @@ The current live schema does not contain a separate profile-visibility/private-p
 Some Discover behavior is still frontend-only. In particular:
 - The current Recently active filter relies on browser-side presence and is not included in this server-side gate.
 - The current connection-intention preference does not map cleanly to profiles.interested_in: the UI stores relationship intentions, while that profile column stores who a member wants to meet. It is intentionally not guessed or applied here.
-- The current role filter checks the first item in sexual_roles; this RPC mirrors that behavior for compatibility.
+- The current role filter checks the first item in sexual_roles; this RPC mirrors that behavior for compatibility. Sexual roles are now optional profile information and are not part of profile-completeness validation.
 - The existing Discover RPC remains responsible for city, distance, and age filtering. Its current behavior is preserved rather than rewritten.
 
 These limits must be resolved before claiming the backend exactly reproduces every frontend Discover preference.
@@ -42,12 +42,12 @@ This RPC is not permission to read another member's interests. A later, separate
 1. Authenticate the member making the request.
 2. Obtain candidate IDs through this eligibility gate, not from browser-supplied arbitrary IDs.
 3. Re-check eligibility at the moment of interest access.
-4. Require both members to have explicitly opted in to interest sharing.
-5. Read interests only inside a trusted backend boundary.
-6. Return no raw interest lists to the browser; send only the minimum derived compatibility signal needed for ranking.
+4. Require the candidate to have explicitly opted in before their interests are shared or scored. The viewer's own selected interests may be used privately for that viewer's comparison and are never exposed to the candidate.
+5. Read candidate interests only through the trusted shared-details boundary, which rechecks current Discover visibility, moderation, blocks, mutual gender preferences, straight-only audience rules, and candidate sharing consent.
+6. The profile-details RPC may return candidate interest labels only because the candidate explicitly opted in to showing them; the separate interest-scoring RPC returns only a shared count and overlap percentage, never raw arrays.
 7. Never expose the matchmaking service token or Supabase service-role key to the browser.
 
-The Python ranking prototype remains disconnected from live member data.
+The onboarding sexual-orientation answer is stored in member_onboarding.answers, not in the public profiles table. It is identity information and is not used as a substitute for explicit dating preferences. The Python ranking prototype remains disconnected from live member data.
 
 ## Verification and rollout
 
@@ -60,4 +60,22 @@ Before any staging or production use:
 - Run Supabase security and performance advisors.
 - Obtain separate approval before applying any migration to the live project.
 
-No production migration or frontend change is included in this PR.
+This feature branch includes an optional-role profile migration and limited onboarding/profile/public-copy changes. The eligibility RPC is still not integrated into the live Discover flow, and no production migration has been applied.
+
+
+## Shared-interest compatibility scoring
+
+The general-dating branch adds `public.get_interest_match_scores(uuid[])`. It calls the existing shared-details RPC inside a trusted security-definer boundary, so a candidate is scored only when that member is currently visible through Discover and has explicitly opted in to sharing interests. Lifestyle-only sharing does not enable interest scoring.
+
+The browser receives only:
+- the number of interests in common; and
+- a Jaccard overlap percentage (shared interests divided by the union of the two selected-interest sets).
+
+It does not receive another member's raw interest array through this scoring RPC. Discover can use the score to order profiles when the member enables the shared-interest priority preference, and the card labels the figure as interest overlap rather than an overall compatibility guarantee.
+
+The profile editor also displays a live 10-interest selection counter and disables additional unselected options once the limit is reached. The database trigger remains the authoritative validation boundary.
+
+
+## Adults-only write enforcement
+
+The database migration `20261116190000_adult_age_enforcement.sql` adds a trigger that rejects profile inserts or age updates below 18. It does not rewrite existing profile rows; the server-side completeness and Discover gates independently exclude any legacy under-18 record. The browser age check is only a convenience and is not the security boundary.

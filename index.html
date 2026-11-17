@@ -4757,6 +4757,10 @@ body.light-theme #eventsPage .events-filters input,body.light-theme #eventsPage 
 #eventsPage .event-admin-actions button{flex:1;padding:10px;border-radius:10px;border:1px solid #9b793d;background:#c6a15b;color:#17130b;font-weight:700;font-size:11px}
 #eventsPage .event-admin-actions button:last-child{background:transparent;color:#e5b1a8;border-color:#744b44}
 @media(max-width:420px){#eventsPage .events-date-grid{grid-template-columns:1fr}}
+.dating-interest-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:10px}
+#datingLifestyleSection .dating-interest-grid label{display:flex;align-items:center;gap:7px;font-size:13px;margin:0;padding:9px 10px;border:1px solid #b99a5d33;border-radius:10px}
+#datingLifestyleSection select{width:100%;min-height:46px;margin:5px 0 10px}
+@media(min-width:520px){.dating-interest-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 </style>
 <style id="discoveryPreferencesPolish">
 #discoveryPreferencesPage.discovery-preferences-page{max-width:760px;margin:0 auto;padding:18px 14px 120px;box-sizing:border-box;color:#f5f1e8}
@@ -5939,9 +5943,9 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
 <div class="eyebrow">YOUR NEXT CHAPTER STARTS HERE</div>
 <h1>Find your kind<br>of <span>love.</span></h1>
   <p class="eyebrow" style="font-weight:800;font-size:14px;letter-spacing:1.5px;color:#ff3c79;text-align:center;margin:12px 0;">
-  STRICTLY FOR THE LGBTQ+ COMMUNITY
+  MEET PEOPLE. FIND YOUR CONNECTION.
   </p>
-<p class="intro">A welcoming LGBTQ+ dating space for adults 18 and above. Discover genuine connections nearby.</p>
+<p class="intro">A welcoming dating community for adults 18 and above, across all genders and sexual orientations. Discover genuine connections nearby.</p>
 </section>
 
 <section class="panel" id="welcome">
@@ -6036,7 +6040,7 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
 <section class="panel hidden" id="auth">
 <h2 id="authTitle">Create your account</h2>
 <p class="small" style="font-weight:700;">Start your journey with The Match.</p>
-<p style="font-weight:800;font-size:14px;color:#ff3c79;text-align:center;letter-spacing:0.5px;">STRICTLY FOR THE LGBTQ+ COMMUNITY · ADULTS 18+</p>
+<p style="font-weight:800;font-size:14px;color:#ff3c79;text-align:center;letter-spacing:0.5px;">DATING FOR ADULTS 18+</p>
 <form id="authForm">
 <label for="email">Email address</label>
 <input id="email" type="email" autocomplete="email" required placeholder="you@example.com">
@@ -6126,14 +6130,27 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
 <label for="interest">Interested in *</label>
 <select id="interest" required>
 <option value="">Choose who you'd like to meet</option>
-<option>Men</option><option>Women</option><option>All genders</option>
+<option>Men</option><option>Women</option><option>Men and women</option><option>All genders</option>
 <option>Non-binary people</option><option>Not sure yet</option>
 </select>
+<label for="sexualOrientation">Sexual orientation (private)</label>
+<select id="sexualOrientation">
+  <option value="Prefer not to say">Prefer not to say</option>
+  <option value="Straight / heterosexual">Straight / heterosexual</option>
+  <option value="Gay">Gay</option>
+  <option value="Lesbian">Lesbian</option>
+  <option value="Bisexual">Bisexual</option>
+  <option value="Pansexual">Pansexual</option>
+  <option value="Queer">Queer</option>
+  <option value="Asexual">Asexual</option>
+  <option value="Another orientation">Another orientation</option>
+</select>
+<p class="small">This is private and is used to tailor discovery. It is not shown on your public profile.</p>
 
-<div class="member-card">
-  <h2>My Role 🏳️‍🌈</h2>
-  <p class="small">Choose one role that best describes you. You can select only one.</p>
-  <label><input type="radio" name="sexualRole" value="Top" required> Top</label>
+<div class="member-card" id="queerRolePreferencesSection">
+  <h2>Optional role preferences</h2>
+  <p class="small">Only share a role if it is relevant to how you date. You can leave this blank.</p>
+  <label><input type="radio" name="sexualRole" value="Top"> Top</label>
   <label><input type="radio" name="sexualRole" value="Bottom"> Bottom</label>
   <label><input type="radio" name="sexualRole" value="Versatile"> Versatile (Vers)</label>
   <label><input type="radio" name="sexualRole" value="Vers Top"> Vers Top</label>
@@ -6146,6 +6163,113 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
   <label><input type="radio" name="sexualRole" value="Switch"> Switch</label>
   <label><input type="radio" name="sexualRole" value="Exploring"> Exploring / Not sure</label>
   <label><input type="radio" name="sexualRole" value="Prefer not to say"> Prefer not to say</label>
+</div>
+
+<div class="member-card" id="datingLifestyleSection">
+  <h2>What makes you, you? ✨</h2>
+  <p class="small">Choose a few interests and lifestyle details. These are optional, and you control what other members can see.</p>
+  <div class="member-card" style="margin-top:12px">
+    <strong>Things I enjoy</strong>
+    <p class="small">Choose up to 10 interests.</p>
+    <p id="datingInterestCount" class="small" aria-live="polite">0 of 10 selected</p>
+    <div class="dating-interest-grid">
+      <label><input type="checkbox" name="datingInterest" value="Music"> Music</label>
+      <label><input type="checkbox" name="datingInterest" value="Movies & TV"> Movies & TV</label>
+      <label><input type="checkbox" name="datingInterest" value="Travel"> Travel</label>
+      <label><input type="checkbox" name="datingInterest" value="Food & cooking"> Food & cooking</label>
+      <label><input type="checkbox" name="datingInterest" value="Fitness"> Fitness</label>
+      <label><input type="checkbox" name="datingInterest" value="Gym"> Gym</label>
+      <label><input type="checkbox" name="datingInterest" value="Football"> Football</label>
+      <label><input type="checkbox" name="datingInterest" value="Basketball"> Basketball</label>
+      <label><input type="checkbox" name="datingInterest" value="Gaming"> Gaming</label>
+      <label><input type="checkbox" name="datingInterest" value="Reading"> Reading</label>
+      <label><input type="checkbox" name="datingInterest" value="Art & design"> Art & design</label>
+      <label><input type="checkbox" name="datingInterest" value="Photography"> Photography</label>
+      <label><input type="checkbox" name="datingInterest" value="Fashion"> Fashion</label>
+      <label><input type="checkbox" name="datingInterest" value="Nature & hiking"> Nature & hiking</label>
+      <label><input type="checkbox" name="datingInterest" value="Dancing"> Dancing</label>
+      <label><input type="checkbox" name="datingInterest" value="Nightlife"> Nightlife</label>
+      <label><input type="checkbox" name="datingInterest" value="Volunteering"> Volunteering</label>
+      <label><input type="checkbox" name="datingInterest" value="Technology"> Technology</label>
+      <label><input type="checkbox" name="datingInterest" value="Business"> Business</label>
+      <label><input type="checkbox" name="datingInterest" value="Spirituality"> Spirituality</label>
+      <label><input type="checkbox" name="datingInterest" value="Pets"> Pets</label>
+      <label><input type="checkbox" name="datingInterest" value="Beach & outdoors"> Beach & outdoors</label>
+      <label><input type="checkbox" name="datingInterest" value="Comedy"> Comedy</label>
+      <label><input type="checkbox" name="datingInterest" value="Podcasts"> Podcasts</label>
+      <label><input type="checkbox" name="datingInterest" value="Cars"> Cars</label>
+      <label><input type="checkbox" name="datingInterest" value="Board games"> Board games</label>
+      <label><input type="checkbox" name="datingInterest" value="Live events"> Live events</label>
+      <label><input type="checkbox" name="datingInterest" value="Gardening"> Gardening</label>
+      <label><input type="checkbox" name="datingInterest" value="Running"> Running</label>
+      <label><input type="checkbox" name="datingInterest" value="Swimming"> Swimming</label>
+      <label><input type="checkbox" name="datingInterest" value="Cycling"> Cycling</label>
+      <label><input type="checkbox" name="datingInterest" value="Yoga"> Yoga</label>
+      <label><input type="checkbox" name="datingInterest" value="Volleyball"> Volleyball</label>
+      <label><input type="checkbox" name="datingInterest" value="Tennis"> Tennis</label>
+      <label><input type="checkbox" name="datingInterest" value="Badminton"> Badminton</label>
+      <label><input type="checkbox" name="datingInterest" value="Boxing & martial arts"> Boxing &amp; martial arts</label>
+      <label><input type="checkbox" name="datingInterest" value="Cooking & baking"> Cooking &amp; baking</label>
+      <label><input type="checkbox" name="datingInterest" value="Street food"> Street food</label>
+      <label><input type="checkbox" name="datingInterest" value="Cafés"> Cafés</label>
+      <label><input type="checkbox" name="datingInterest" value="Concerts & festivals"> Concerts &amp; festivals</label>
+      <label><input type="checkbox" name="datingInterest" value="Anime & manga"> Anime &amp; manga</label>
+      <label><input type="checkbox" name="datingInterest" value="Writing & poetry"> Writing &amp; poetry</label>
+      <label><input type="checkbox" name="datingInterest" value="Languages"> Languages</label>
+      <label><input type="checkbox" name="datingInterest" value="Camping"> Camping</label>
+      <label><input type="checkbox" name="datingInterest" value="Road trips"> Road trips</label>
+      <label><input type="checkbox" name="datingInterest" value="Fashion & beauty"> Fashion &amp; beauty</label>
+      <label><input type="checkbox" name="datingInterest" value="Home decor"> Home decor</label>
+      <label><input type="checkbox" name="datingInterest" value="DIY & crafts"> DIY &amp; crafts</label>
+      <label><input type="checkbox" name="datingInterest" value="History & museums"> History &amp; museums</label>
+      <label><input type="checkbox" name="datingInterest" value="Startups & entrepreneurship"> Startups &amp; entrepreneurship</label>
+    </div>
+  </div>
+  <div class="member-card" style="margin-top:12px">
+    <strong>My lifestyle (optional)</strong>
+    <label for="datingSmoking">Smoking</label>
+    <select id="datingSmoking"><option>Prefer not to say</option><option>Never</option><option>Occasionally</option><option>Socially</option><option>Regularly</option></select>
+    <label for="datingDrinking">Drinking</label>
+    <select id="datingDrinking"><option>Prefer not to say</option><option>Never</option><option>Occasionally</option><option>Socially</option><option>Regularly</option></select>
+    <label for="datingActivity">Activity level</label>
+    <select id="datingActivity"><option>Prefer not to say</option><option>Very active</option><option>Moderately active</option><option>Not very active</option></select>
+    <label for="datingPets">Pets</label>
+    <select id="datingPets"><option>Prefer not to say</option><option>Have pets</option><option>Love pets</option><option>Want pets</option><option>Not for me</option></select>
+    <label for="datingChildren">Children</label>
+    <select id="datingChildren"><option>Prefer not to say</option><option>Have children</option><option>Want children</option><option>Do not want children</option><option>Not sure</option></select>
+  </div>
+  <label><input type="checkbox" id="shareDatingInterests"> Show my selected interests on my profile</label>
+  <label><input type="checkbox" id="shareDatingLifestyle"> Show my lifestyle details on my profile</label>
+  <p class="small">Your lifestyle answers stay private unless you turn on sharing. You can change these choices anytime.</p>
+</div>
+
+<div class="member-card" id="datingProfileExtras">
+  <h2>More about my dating style ✨</h2>
+  <p class="small">Optional details that help people understand what kind of connection you're looking for. Nothing here is shared unless you enable sharing.</p>
+  <label for="datingRelationshipIntention">What are you looking for?</label>
+  <select id="datingRelationshipIntention">
+    <option>Still figuring it out</option><option>Long-term relationship</option><option>Dating</option><option>Friendship</option><option>Casual dating</option><option>Prefer not to say</option>
+  </select>
+  <label for="datingCommunicationStyle">Your communication style</label>
+  <select id="datingCommunicationStyle">
+    <option>Prefer not to say</option><option>Deep conversations</option><option>Humour and playful</option><option>Quality time</option><option>Acts of service</option><option>Texting</option><option>Phone or video calls</option>
+  </select>
+  <label for="datingLanguages">Languages you speak (comma-separated, up to 8)</label>
+  <input id="datingLanguages" maxlength="350" placeholder="English, Yoruba, Igbo">
+  <label for="datingEducation">Education</label>
+  <select id="datingEducation">
+    <option>Prefer not to say</option><option>Secondary school</option><option>Trade or professional training</option><option>Undergraduate</option><option>Graduate</option><option>Postgraduate</option>
+  </select>
+  <label for="datingOccupation">Occupation (optional)</label>
+  <input id="datingOccupation" maxlength="80" placeholder="What do you do?">
+  <label for="datingFavoriteMusic">Music you enjoy</label>
+  <input id="datingFavoriteMusic" maxlength="100" placeholder="Afrobeats, R&B, gospel...">
+  <label for="datingFavoriteMovies">Movies and shows you enjoy</label>
+  <input id="datingFavoriteMovies" maxlength="100" placeholder="Comedy, action, documentaries...">
+  <label for="datingFavoriteFood">Favourite food</label>
+  <input id="datingFavoriteFood" maxlength="100" placeholder="What do you love eating?">
+  <label><input type="checkbox" id="shareDatingProfileExtras"> Show these dating details on my profile</label>
+  <p class="small">These details are private by default. You can turn sharing off at any time.</p>
 </div>
 
 <div class="member-card" id="genderPresentationSection">
@@ -6819,6 +6943,8 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
 
   <div id="chatPartnerLocation"
     style="font-size:12px;color:#bbb;margin-top:3px;">Loading location…</div>
+  <div id="chatTypingStatus" role="status" aria-live="polite"
+    style="min-height:15px;font-size:11px;color:#d2ad68;margin-top:2px;"></div>
 </div>
 
   
@@ -6876,6 +7002,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
 
     
 
+<div id="chatReplyPreview" class="hidden" role="status" style="margin:6px 8px;padding:9px 12px;border-left:3px solid #d2ad68;border-radius:8px;background:#211c15;color:#f5e3bd;font-size:12px;"><span id="chatReplyPreviewText"></span><button id="chatReplyCancel" type="button" aria-label="Cancel reply" style="float:right;background:transparent;border:0;color:#f5e3bd;font-size:18px;">×</button></div>
 <div id="chatComposer">
   <button id="chatEmojiToggle" type="button" aria-label="Choose emoji">☺</button>
 
@@ -6960,9 +7087,30 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
   <header class="discovery-hero">
     <span class="discovery-kicker">MAKE IT YOURS</span>
     <h2>Discovery preferences</h2>
-    <p>Shape the people you see on The Match. You can update these choices whenever you like.</p>
+    <p>Choose who you want to meet. Your choices are private and can be changed anytime.</p>
   </header>
 
+  <div id="straightDiscoveryPreferences" class="discovery-preference-card" hidden>
+    <div class="discovery-card-heading"><span class="discovery-card-icon">♡</span><div><h3>Your dating preferences</h3><p>A simple way to shape your Discover feed.</p></div></div>
+    <label for="straightShowMe">Who would you like to see?</label>
+    <select id="straightShowMe"><option value="women">Women</option><option value="men">Men</option><option value="everyone">Both men and women</option></select>
+    <div class="discovery-two-column">
+      <div><label for="straightAgeMin">Minimum age</label><input id="straightAgeMin" type="number" min="18" max="99" value="18"></div>
+      <div><label for="straightAgeMax">Maximum age</label><input id="straightAgeMax" type="number" min="18" max="99" value="79"></div>
+    </div>
+    <label for="straightLocation">City or area (optional)</label>
+    <input id="straightLocation" type="text" maxlength="100" placeholder="e.g. Lagos, Ikeja or Abeokuta">
+    <div class="discovery-distance-heading"><label for="straightDistance">Maximum distance</label><strong id="straightDistanceValue">50 km</strong></div>
+    <input id="straightDistance" class="discovery-range" type="range" min="1" max="50" step="1" value="50">
+    <label for="straightLookingFor">What kind of connection?</label>
+    <select id="straightLookingFor"><option value="">No preference</option><option value="relationship">A relationship</option><option value="dating">Dating</option><option value="friendship">Friendship</option><option value="casual">Something casual</option><option value="exploring">Still figuring it out</option></select>
+    <label class="discovery-toggle-row" for="straightPrioritiseSharedInterests"><span><strong>Prioritise shared interests</strong><small>Show people with hobbies in common nearer the top.</small></span><input id="straightPrioritiseSharedInterests" type="checkbox"></label>
+    <p class="discovery-helper">Straight members are matched with other members who have also identified as straight, and only when both people's preferences are compatible.</p>
+    <div class="discovery-save-actions"><button class="btn primary" id="saveStraightDiscoveryPreferences" type="button">Save preferences</button></div>
+    <p class="status" id="straightDiscoveryPreferencesStatus" role="status" aria-live="polite"></p>
+  </div>
+
+  <div id="queerDiscoveryPreferences">
   <div class="discovery-preference-card">
     <div class="discovery-card-heading"><span class="discovery-card-icon">⌖</span><div><h3>Location &amp; distance</h3><p>Choose the area you'd like to explore.</p></div></div>
     <label for="discoveryLocation">Preferred city or area</label>
@@ -7020,6 +7168,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     </select>
     <label for="discoveryInterests">Interests &amp; hobbies <span class="discovery-optional">OPTIONAL</span></label>
     <input id="discoveryInterests" type="text" placeholder="Music, movies, travel..." maxlength="160">
+    <label class="discovery-toggle-row" for="prioritiseSharedInterests"><span><strong>Prioritise shared interests</strong><small>Show people with hobbies in common nearer the top.</small></span><input id="prioritiseSharedInterests" type="checkbox"></label>
   </div>
 
   <div class="discovery-preference-card">
@@ -7033,6 +7182,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     <p class="discovery-save-note">Your preferences are saved on this device and used by Discover.</p>
     <div class="discovery-save-actions"><button class="btn secondary" id="resetDiscoveryPreferences" type="button">Reset</button><button class="btn primary" id="saveDiscoveryPreferences" type="button">Save preferences</button></div>
     <p class="status" id="discoveryPreferencesStatus" role="status" aria-live="polite"></p>
+  </div>
   </div>
 </section>
 
@@ -7395,7 +7545,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
 </section>
 
   <section class="panel hidden" id="eventsPage" aria-label="Events"><div class="events-shell">
-<div class="events-heading"><p class="events-eyebrow">THE MATCH • COMMUNITY EXPERIENCES</p><h2>Find your next experience.</h2><p>Curated LGBTQ+ events, meaningful connections and memorable nights — all in one place.</p><div class="events-trust-row"><span>✦ Verified organisers</span><span>✦ Paid ticketed events</span><span>✦ Private attendee details</span></div></div>
+<div class="events-heading"><p class="events-eyebrow">THE MATCH • COMMUNITY EXPERIENCES</p><h2>Find your next experience.</h2><p>Curated social and dating events, meaningful connections and memorable nights — all in one place.</p><div class="events-trust-row"><span>✦ Verified organisers</span><span>✦ Paid ticketed events</span><span>✦ Private attendee details</span></div></div>
 <div class="events-toolbar"><button type="button" class="events-tab active" data-events-tab="browse">Explore events</button><button type="button" class="events-tab" data-events-tab="create">Host an event</button><button type="button" class="events-tab" data-events-tab="mine">My submissions</button><button type="button" class="events-tab hidden" id="eventsAdminTab" data-events-tab="admin">Review queue</button></div>
 <div id="eventsBrowsePanel">
 <div class="events-filters">
@@ -7416,7 +7566,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
 <div class="events-discovery-note"><span aria-hidden="true">✦</span><p><strong>Preview events</strong> — sample listings to demonstrate how event locations and ticket options will look. These are not real events.</p></div>
 <h3 id="demoEventsHeading" style="color:#e4c47d;margin:14px 0">Explore sample events</h3>
 <div class="events-grid">
-<article id="eventSampleLagos" class="event-card event-demo-card"><div class="event-demo-cover"><img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&amp;fit=crop&amp;w=1200&amp;q=85" alt="Atmospheric outdoor music and social event" loading="lazy"><span class="event-demo-ribbon">DEMO EVENT</span></div><div class="event-card-top"><span class="event-category">SOCIAL</span><span>SAMPLE LISTING</span></div><h3>The Match Social: Lagos Edition</h3><p>A relaxed LGBTQ+ community mixer with icebreakers, music and space to meet new people.</p><div class="event-meta"><span>⌖ Victoria Island & Ikeja, Lagos</span><span>◷ 12 Dec 2026 · 4 PM</span></div><div class="event-card-bottom"><strong>From ₦5,000</strong><span>2 sample areas</span></div><details><summary class="event-open-details">View locations & tickets</summary><div style="padding:12px 0;color:#c9c0ae"><p><strong>Sample locations:</strong> Victoria Island, Lagos · Ikeja, Lagos</p><p><strong>Regular:</strong> ₦5,000 · General admission</p><p><strong>VIP:</strong> ₦10,000 · Reserved lounge access</p><p><strong>VVIP:</strong> ₦18,000 · Premium seating and welcome pack</p></div></details></article>
+<article id="eventSampleLagos" class="event-card event-demo-card"><div class="event-demo-cover"><img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&amp;fit=crop&amp;w=1200&amp;q=85" alt="Atmospheric outdoor music and social event" loading="lazy"><span class="event-demo-ribbon">DEMO EVENT</span></div><div class="event-card-top"><span class="event-category">SOCIAL</span><span>SAMPLE LISTING</span></div><h3>The Match Social: Lagos Edition</h3><p>A relaxed community mixer with icebreakers, music and space for adults to meet new people.</p><div class="event-meta"><span>⌖ Victoria Island & Ikeja, Lagos</span><span>◷ 12 Dec 2026 · 4 PM</span></div><div class="event-card-bottom"><strong>From ₦5,000</strong><span>2 sample areas</span></div><details><summary class="event-open-details">View locations & tickets</summary><div style="padding:12px 0;color:#c9c0ae"><p><strong>Sample locations:</strong> Victoria Island, Lagos · Ikeja, Lagos</p><p><strong>Regular:</strong> ₦5,000 · General admission</p><p><strong>VIP:</strong> ₦10,000 · Reserved lounge access</p><p><strong>VVIP:</strong> ₦18,000 · Premium seating and welcome pack</p></div></details></article>
 <article class="event-card event-demo-card"><div class="event-demo-cover"><img src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&amp;fit=crop&amp;w=1200&amp;q=85" alt="Elegant community event venue with warm lighting" loading="lazy"><span class="event-demo-ribbon">DEMO EVENT</span></div><div class="event-card-top"><span class="event-category">COMMUNITY</span><span>SAMPLE LISTING</span></div><h3>Pride & Community Connect</h3><p>A friendly community afternoon featuring conversations, creative showcases and networking.</p><div class="event-meta"><span>⌖ Ibara & Oke-Ilewo, Abeokuta</span><span>◷ 19 Dec 2026 · 2 PM</span></div><div class="event-card-bottom"><strong>From ₦2,500</strong><span>2 sample areas</span></div><details><summary class="event-open-details">View locations & tickets</summary><div style="padding:12px 0;color:#c9c0ae"><p><strong>Sample locations:</strong> Ibara, Abeokuta · Oke-Ilewo, Abeokuta</p><p><strong>Early Access:</strong> ₦2,500 · Standard admission</p><p><strong>Plus:</strong> ₦6,000 · Reserved seating</p><p><strong>Supporter:</strong> ₦10,000 · Admission and keepsake</p></div></details></article>
 <article class="event-card event-demo-card"><div class="event-demo-cover"><img src="https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&amp;fit=crop&amp;w=1200&amp;q=85" alt="Nightlife gathering with colourful party lighting" loading="lazy"><span class="event-demo-ribbon">DEMO EVENT</span></div><div class="event-card-top"><span class="event-category">NIGHTLIFE</span><span>SAMPLE LISTING</span></div><h3>After Hours: Ibadan Meet & Mingle</h3><p>An adults-only sample social night with music, conversation and a welcoming community atmosphere.</p><div class="event-meta"><span>⌖ Ring Road & Bodija, Ibadan</span><span>◷ 9 Jan 2027 · 6 PM</span></div><div class="event-card-bottom"><strong>From ₦7,000</strong><span>2 sample areas</span></div><details><summary class="event-open-details">View locations & tickets</summary><div style="padding:12px 0;color:#c9c0ae"><p><strong>Sample locations:</strong> Ring Road, Ibadan · Bodija, Ibadan</p><p><strong>Standard:</strong> ₦7,000 · General entry</p><p><strong>Gold:</strong> ₦12,000 · Priority entry and reserved area</p><p><strong>Platinum:</strong> ₦20,000 · Premium area and welcome drink</p></div></details></article>
 </div>
@@ -7676,6 +7826,7 @@ let loginMode=false,currentUser=null,approxLocation=null;
 Object.defineProperty(window,"currentUser",{configurable:true,get:()=>currentUser});
 let discoveryLocationEnabled=false;
 let activeChatUserId = null;
+let activeReplyToMessage = null;
   let chatLoadRequestId = 0;
 let chatRefreshTimer = null;
   let chatRefreshInProgress = false;
@@ -7689,6 +7840,10 @@ let onlinePresenceUserId = null;
 let onlinePresenceState = {};
 let incomingMessagesChannel = null;
 let conversationPreviewRefreshTimer = null;
+let chatTypingChannel = null;
+let chatTypingPartnerId = null;
+let chatTypingStopTimer = null;
+let chatTypingLastSentAt = 0;
 
 function subscribeToIncomingMessages(user) {
   if (!user?.id) return;
@@ -7797,6 +7952,113 @@ function updateChatOnlineStatus(userId) {
   statusLabel.textContent = isOnline ? "Online" : "Offline";
   statusLabel.style.color = isOnline ? "#52e39a" : "#aaa";
   statusDot.style.background = isOnline ? "#52e39a" : "#777";
+}
+
+// Typing indicators use short-lived Realtime broadcasts only. No message text
+// or typing history is stored in the database.
+function sendChatTyping(isTyping) {
+  if (!chatTypingChannel || !currentUser?.id || !chatTypingPartnerId) return;
+  chatTypingChannel.send({
+    type: "broadcast",
+    event: "typing",
+    payload: { user_id: currentUser.id, is_typing: !!isTyping }
+  }).catch(error => console.warn("Typing indicator update failed:", error));
+}
+
+async function closeChatTypingChannel() {
+  if (chatTypingStopTimer) {
+    clearTimeout(chatTypingStopTimer);
+    chatTypingStopTimer = null;
+  }
+  const channel = chatTypingChannel;
+  chatTypingChannel = null;
+  chatTypingPartnerId = null;
+  chatTypingLastSentAt = 0;
+  if (channel) {
+    try {
+      if (currentUser?.id) {
+        await channel.send({
+          type: "broadcast",
+          event: "typing",
+          payload: { user_id: currentUser.id, is_typing: false }
+        });
+      }
+    } catch (error) {
+      console.warn("Could not clear typing indicator:", error);
+    }
+    try { await db.removeChannel(channel); } catch (error) {
+      console.warn("Could not close typing channel:", error);
+    }
+  }
+  const status = $("chatTypingStatus");
+  if (status) status.textContent = "";
+}
+
+async function subscribeToChatTyping(partnerId) {
+  await closeChatTypingChannel();
+  if (!currentUser?.id || !partnerId || partnerId === currentUser.id) return;
+
+  const memberIds = [currentUser.id, partnerId].sort();
+  const topic = "match-typing:" + memberIds.join(":");
+  const channel = db.channel(topic, {
+    config: { private: true, broadcast: { self: false } }
+  });
+  chatTypingChannel = channel;
+  chatTypingPartnerId = partnerId;
+
+  channel.on("broadcast", { event: "typing" }, ({ payload }) => {
+    if (
+      chatTypingChannel !== channel ||
+      currentUser?.id == null ||
+      activeChatUserId !== partnerId ||
+      payload?.user_id !== partnerId
+    ) return;
+
+    const status = $("chatTypingStatus");
+    if (!status) return;
+    if (payload.is_typing === true) {
+      status.textContent = "Typing…";
+      if (chatTypingStopTimer) clearTimeout(chatTypingStopTimer);
+      chatTypingStopTimer = setTimeout(() => {
+        chatTypingStopTimer = null;
+        if (chatTypingChannel === channel && activeChatUserId === partnerId) {
+          status.textContent = "";
+        }
+      }, 2800);
+    } else {
+      if (chatTypingStopTimer) clearTimeout(chatTypingStopTimer);
+      chatTypingStopTimer = null;
+      status.textContent = "";
+    }
+  });
+
+  channel.subscribe(state => {
+    if (state === "SUBSCRIBED" && chatTypingChannel === channel) {
+      chatTypingLastSentAt = 0;
+    }
+  });
+}
+
+function handleChatTypingInput() {
+  if (!currentUser?.id || !activeChatUserId || !chatTypingChannel) return;
+  const hasText = !!$("chatMessageInput")?.value?.trim();
+  if (!hasText) {
+    sendChatTyping(false);
+    if (chatTypingStopTimer) clearTimeout(chatTypingStopTimer);
+    chatTypingStopTimer = null;
+    return;
+  }
+
+  const now = Date.now();
+  if (now - chatTypingLastSentAt >= 1400) {
+    sendChatTyping(true);
+    chatTypingLastSentAt = now;
+  }
+  if (chatTypingStopTimer) clearTimeout(chatTypingStopTimer);
+  chatTypingStopTimer = setTimeout(() => {
+    chatTypingStopTimer = null;
+    sendChatTyping(false);
+  }, 2200);
 }
 
 async function startOnlinePresence(user) {
@@ -8088,9 +8350,6 @@ function profileDetailsAreComplete() {
   const interest = $("interest")?.value?.trim();
   const city = $("city")?.value?.trim();
   const bio = $("bio")?.value?.trim();
-  const roles = document.querySelectorAll(
-    'input[name="sexualRole"]:checked'
-  );
 
   const invalid = ["", "not listed", "unknown", "member"];
 
@@ -8102,8 +8361,7 @@ function profileDetailsAreComplete() {
     !invalid.includes((interest || "").toLowerCase()) &&
     !invalid.includes((city || "").toLowerCase()) &&
     !!bio &&
-    bio.toLowerCase() !== "no description added yet." &&
-    roles.length > 0
+    bio.toLowerCase() !== "no description added yet."
   );
 }
 
@@ -8212,6 +8470,10 @@ async function leaveChatPage() {
     conversationListNode.appendChild(activeConversationNode);
     activeConversationNode.classList.add("hidden");
   }
+  await closeChatTypingChannel();
+  activeReplyToMessage = null;
+  $("chatReplyPreview")?.classList.add("hidden");
+  $("chatReplyPreviewText")?.replaceChildren();
   activeChatUserId = null;
   window.activeChatUserId = null;
 }
@@ -9370,61 +9632,27 @@ const onboardingQuestions = [
     safety: true
   },
   {
-    key: "respect_boundaries",
-    title: "Will you respect other members' boundaries, consent, and privacy?",
+    key: "safety_commitment",
+    title: "Will you respect consent, boundaries, privacy and other members?",
+    help: "Harassment, threats, impersonation, scams and sharing private information without permission are not allowed.",
     options: ["Yes, I agree", "No, I don't agree"],
     values: ["yes", "no"],
     safety: true
   },
   {
-    key: "community_safety",
-    title: "Will you avoid harassment, threats, impersonation, scams, and sharing private information without permission?",
-    options: ["Yes, I agree", "No, I don't agree"],
-    values: ["yes", "no"],
-    safety: true
-  },
-  {
-    key: "terms_accepted",
-    title: "Do you agree to The Match Community Guidelines and Terms of Service after reviewing the linked documents?",
-    options: ["Yes, I agree", "No, I don't agree"],
-    values: ["yes", "no"],
-    safety: true
-  },
-  {
-    key: "privacy_acknowledged",
-    title: "Have you read The Match Privacy Policy and understood how your information may be used?",
-    options: ["Yes, I have read and understood it", "No, I have not"],
-    values: ["yes", "no"],
-    safety: true
-  },
-  {
-    key: "sensitive_data_consent",
-    title: "Do you explicitly consent to The Match processing sensitive information you choose to provide, including information that may reveal sexual orientation or sex life, as explained in the Privacy Policy, to provide dating, matching and safety features?",
-    help: "You can review the Privacy Policy before answering. This consent is recorded with your onboarding answers.",
-    options: ["Yes, I explicitly consent", "No, I do not consent"],
-    values: ["yes", "no"],
-    safety: true
-  },
-  {
-    key: "gender_identity",
-    title: "How do you describe your gender identity?",
-    options: ["Man", "Woman", "Trans man", "Trans woman", "Non-binary", "Another identity", "Prefer not to say"]
-  },
-  {
-    key: "sexual_orientation",
-    title: "How do you describe your sexual orientation?",
-    options: ["Gay", "Lesbian", "Bisexual", "Pansexual", "Queer", "Asexual", "Another orientation", "Prefer not to say"]
-  },
-  {
-    key: "interested_in",
-    title: "Who would you like to meet?",
-    help: "Choose the option that best describes your preference.",
-    options: ["Men", "Women", "All genders", "I'll decide later"]
+    key: "legal_consents",
+    title: "A few important things before you join",
+    help: "Please review the Terms and Privacy Policy. Each item below requires your own agreement.",
+    checklist: [
+      { key: "terms_accepted", label: "I agree to the Terms of Service and Community Guidelines." },
+      { key: "privacy_acknowledged", label: "I have read and understood the Privacy Policy." },
+      { key: "sensitive_data_consent", label: "I explicitly consent to the use of sensitive information I choose to provide, including information about sexual orientation, for the dating and safety features explained in the Privacy Policy." }
+    ]
   },
   {
     key: "relationship_goal",
-    title: "What are you looking for?",
-    options: ["A relationship", "Dating", "Friendship", "Still figuring it out"]
+    title: "What kind of connection are you looking for?",
+    options: ["A relationship", "Dating", "Friendship", "Something casual", "Still figuring it out"]
   },
   {
     key: "phone_number",
@@ -9454,7 +9682,7 @@ window.addEventListener("message", event => {
   onboardingAnswers.terms_accepted = decision;
   const termsModal = $("termsReviewModal");
   if (termsModal) termsModal.classList.add("hidden");
-  if (onboardingQuestions[onboardingIndex]?.key === "terms_accepted") {
+  if (onboardingQuestions[onboardingIndex]?.key === "legal_consents") {
     renderOnboardingQuestion();
   }
   status("onboardingStatus",
@@ -9469,9 +9697,7 @@ function renderOnboardingQuestion() {
   const q = onboardingQuestions[onboardingIndex];
   if (!q) return;
 
-  $("onboardingStepLabel").textContent =
-    onboardingIndex < 4 ? "Step 1 of 3" :
-    onboardingIndex < 8 ? "Step 2 of 3" : "Step 3 of 3";
+  $("onboardingStepLabel").textContent = "Quick account setup";
 
   $("onboardingProgressText").textContent =
     `Question ${onboardingIndex + 1} of ${onboardingQuestions.length}`;
@@ -9483,7 +9709,25 @@ function renderOnboardingQuestion() {
   $("onboardingHelp").textContent = q.help || "";
   $("onboardingAnswers").replaceChildren();
 
-  if (q.input) {
+  if (Array.isArray(q.checklist)) {
+    q.checklist.forEach(item => {
+      const label = document.createElement("label");
+      label.style.cssText = "display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid rgba(210,173,104,.28);border-radius:12px;line-height:1.5;";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = onboardingAnswers[item.key] === "yes";
+      checkbox.style.cssText = "margin-top:4px;flex:0 0 auto;";
+      checkbox.addEventListener("change", () => {
+        onboardingAnswers[item.key] = checkbox.checked ? "yes" : "no";
+        $("onboardingNext").disabled =
+          !q.checklist.every(entry => onboardingAnswers[entry.key] === "yes");
+      });
+      const text = document.createElement("span");
+      text.textContent = item.label;
+      label.append(checkbox, text);
+      $("onboardingAnswers").appendChild(label);
+    });
+  } else if (q.input) {
     const input = document.createElement("input");
     input.type = q.key === "recovery_email" ? "email" : "tel";
     input.autocomplete = q.key === "phone_number" ? "tel" : "email";
@@ -9529,9 +9773,11 @@ input.addEventListener("input", () => {
       : "Continue";
 
   $("onboardingNext").disabled =
-    q.input
-      ? (!q.optional && !onboardingAnswers[q.key])
-      : !onboardingAnswers[q.key];
+    Array.isArray(q.checklist)
+      ? !q.checklist.every(item => onboardingAnswers[item.key] === "yes")
+      : q.input
+        ? (!q.optional && !onboardingAnswers[q.key])
+        : !onboardingAnswers[q.key];
 
   status("onboardingStatus", "");
 }
@@ -9571,10 +9817,20 @@ $("onboardingNext").onclick = () => {
     onboardingAnswers[q.key] = value;
   }
 
+  if (Array.isArray(q.checklist) &&
+      !q.checklist.every(item => onboardingAnswers[item.key] === "yes")) {
+    status("onboardingStatus", "Please confirm each item to continue.", true);
+    return;
+  }
+
   if (q.safety && onboardingAnswers[q.key] !== "yes") {
     status("onboardingStatus",
       "You must agree to this requirement to continue.", true);
     return;
+  }
+  if (q.key === "safety_commitment") {
+    onboardingAnswers.respect_boundaries = "yes";
+    onboardingAnswers.community_safety = "yes";
   }
 
   if (onboardingIndex < onboardingQuestions.length - 1) {
@@ -10390,7 +10646,7 @@ function showFeaturePromoSequence() {
       key: "events",
       kicker: "Beyond the swipe",
       title: "Explore community events",
-      body: "Find LGBTQ+ gatherings, shared experiences and events in The Match community.",
+      body: "Find inclusive gatherings, shared experiences and events across The Match community.",
       action: "Explore Events",
       page: "eventsPage",
       open: () => {
@@ -10727,9 +10983,78 @@ function profileBioHasPhoneNumber(value) {
   return sanitizeProfileBio(value) !== String(value || "");
 }
 
+let currentMemberOrientation = "";
+
+async function loadCurrentMemberOrientation() {
+  if (!currentUser?.id) {
+    currentMemberOrientation = "";
+    return currentMemberOrientation;
+  }
+  const { data, error } = await db.from("member_onboarding")
+    .select("answers").eq("user_id", currentUser.id).maybeSingle();
+  if (error) throw error;
+  currentMemberOrientation = String(data?.answers?.sexual_orientation || "Prefer not to say");
+  if ($("sexualOrientation")) $("sexualOrientation").value = currentMemberOrientation;
+  return currentMemberOrientation;
+}
+
+async function loadMyDatingDetails() {
+  if (!currentUser?.id) return;
+  const { data, error } = await db.from("member_dating_details")
+    .select("interests,smoking,drinking,activity_level,pets,children,share_interests,share_lifestyle,relationship_intention,communication_style,languages,education_level,occupation,favorite_music,favorite_movies,favorite_food,share_profile_extras")
+    .eq("user_id", currentUser.id).maybeSingle();
+  if (error) throw error;
+  const saved = data || {};
+  document.querySelectorAll('input[name="datingInterest"]').forEach(input => {
+    input.checked = Array.isArray(saved.interests) && saved.interests.includes(input.value);
+  });
+  $("datingSmoking").value = saved.smoking || "Prefer not to say";
+  $("datingDrinking").value = saved.drinking || "Prefer not to say";
+  $("datingActivity").value = saved.activity_level || "Prefer not to say";
+  $("datingPets").value = saved.pets || "Prefer not to say";
+  $("datingChildren").value = saved.children || "Prefer not to say";
+  $("shareDatingInterests").checked = saved.share_interests === true;
+  $("shareDatingLifestyle").checked = saved.share_lifestyle === true;
+  $("datingRelationshipIntention").value = saved.relationship_intention || "Still figuring it out";
+  $("datingCommunicationStyle").value = saved.communication_style || "Prefer not to say";
+  $("datingLanguages").value = Array.isArray(saved.languages) ? saved.languages.join(", ") : "";
+  $("datingEducation").value = saved.education_level || "Prefer not to say";
+  $("datingOccupation").value = saved.occupation || "";
+  $("datingFavoriteMusic").value = saved.favorite_music || "";
+  $("datingFavoriteMovies").value = saved.favorite_movies || "";
+  $("datingFavoriteFood").value = saved.favorite_food || "";
+  $("shareDatingProfileExtras").checked = saved.share_profile_extras === true;
+  refreshDatingInterestCounter();
+}
+
+function refreshDatingInterestCounter() {
+  const inputs = Array.from(document.querySelectorAll('input[name="datingInterest"]'));
+  const selectedCount = inputs.filter(input => input.checked).length;
+  const counter = $("datingInterestCount");
+  if (counter) {
+    counter.textContent = selectedCount + " of 10 selected";
+    counter.style.color = selectedCount > 10 ? "#d97777" : "";
+  }
+  inputs.forEach(input => {
+    input.disabled = !input.checked && selectedCount >= 10;
+  });
+}
+
+document.querySelectorAll('input[name="datingInterest"]').forEach(input => {
+  input.addEventListener("change", refreshDatingInterestCounter);
+});
+
 async function showProfile(user, restoreToDiscover = false){
 if (!(await enforceMemberModeration(user))) return;
 currentUser=user;
+try {
+  await loadCurrentMemberOrientation();
+} catch (orientationError) {
+  console.warn("Member orientation could not be loaded; retaining the existing discovery experience.", orientationError);
+  currentMemberOrientation = "";
+}
+const queerRoleSection = $("queerRolePreferencesSection");
+if (queerRoleSection) queerRoleSection.hidden = currentMemberOrientation === "Straight / heterosexual";
 
   if (window.matchModerationInterval) clearInterval(window.matchModerationInterval);
   window.matchModerationInterval = setInterval(() => {
@@ -10844,6 +11169,12 @@ status("profileStatus","Your profile is loaded. Check your details and save when
 }
 }catch(e){status("profileStatus","Could not load profile: "+friendly(e),true);}
   
+  try {
+    await loadMyDatingDetails();
+  } catch (datingDetailsError) {
+    console.warn("Optional dating interests could not be loaded:", datingDetailsError);
+  }
+
   await loadMyPhotos();
 
   // Members can access The Match only after both requirements are met:
@@ -10895,7 +11226,7 @@ if(profileBioHasPhoneNumber($("bio").value)) {
   throw Error("For your safety, phone numbers are not allowed in profile details. Please remove the number and save again.");
 }
 
-if(!document.querySelector('input[name="sexualRole"]:checked'))throw Error("Please select one role before saving your profile.");
+// Role preferences are optional for the expanded general dating community.
 let p={
 id:currentUser.id,
 display_name:$("displayName").value.trim(),
@@ -10903,7 +11234,9 @@ age:age,
 gender_identity:$("gender").value,
 interested_in:$("interest").value,
   
-sexual_roles:[document.querySelector('input[name="sexualRole"]:checked').value],
+sexual_roles:document.querySelector('input[name="sexualRole"]:checked')
+  ? [document.querySelector('input[name="sexualRole"]:checked').value]
+  : [],
 gender_presentation:Array.from(document.querySelectorAll('input[name="genderPresentation"]:checked')).map(el=>el.value),
 
 city:$("city").value.trim(),
@@ -10935,6 +11268,57 @@ if (approxLocation && discoveryLocationEnabled) {
 
 let r=await db.from("profiles").upsert(p,{onConflict:"id"});
 if(r.error)throw r.error;
+
+const selectedDatingInterests = Array.from(
+  document.querySelectorAll('input[name="datingInterest"]:checked')
+).map(input => input.value);
+if (selectedDatingInterests.length > 10) {
+  throw Error("Please choose no more than 10 interests.");
+}
+const selectedDatingLanguages = Array.from(new Set(
+  $("datingLanguages").value.split(",").map(value => value.trim()).filter(Boolean)
+));
+if (selectedDatingLanguages.length > 8) {
+  throw Error("Please choose no more than 8 languages.");
+}
+const { error: datingDetailsError } = await db.from("member_dating_details").upsert({
+  user_id: currentUser.id,
+  interests: selectedDatingInterests,
+  smoking: $("datingSmoking").value,
+  drinking: $("datingDrinking").value,
+  activity_level: $("datingActivity").value,
+  pets: $("datingPets").value,
+  children: $("datingChildren").value,
+  share_interests: $("shareDatingInterests").checked,
+  share_lifestyle: $("shareDatingLifestyle").checked,
+  relationship_intention: $("datingRelationshipIntention").value,
+  communication_style: $("datingCommunicationStyle").value,
+  languages: selectedDatingLanguages,
+  education_level: $("datingEducation").value,
+  occupation: $("datingOccupation").value.trim(),
+  favorite_music: $("datingFavoriteMusic").value.trim(),
+  favorite_movies: $("datingFavoriteMovies").value.trim(),
+  favorite_food: $("datingFavoriteFood").value.trim(),
+  share_profile_extras: $("shareDatingProfileExtras").checked
+}, { onConflict: "user_id" });
+if (datingDetailsError) throw datingDetailsError;
+
+const newOrientation = $("sexualOrientation")?.value || currentMemberOrientation;
+if (newOrientation && newOrientation !== currentMemberOrientation) {
+  const { data: onboardingRecord, error: onboardingReadError } = await db.from("member_onboarding")
+    .select("answers").eq("user_id", currentUser.id).maybeSingle();
+  if (onboardingReadError) throw onboardingReadError;
+  if (!onboardingRecord) throw Error("Your private orientation settings could not be saved. Please contact support.");
+  const updatedAnswers = { ...(onboardingRecord.answers || {}), sexual_orientation: newOrientation };
+  const { error: onboardingUpdateError } = await db.from("member_onboarding")
+    .update({ answers: updatedAnswers, updated_at: new Date().toISOString() })
+    .eq("user_id", currentUser.id);
+  if (onboardingUpdateError) throw onboardingUpdateError;
+  currentMemberOrientation = newOrientation;
+  const roleSection = $("queerRolePreferencesSection");
+  if (roleSection) roleSection.hidden = currentMemberOrientation === "Straight / heterosexual";
+}
+
 await loadNearby();
 await loadStories();
 show("discover");
@@ -10954,6 +11338,93 @@ window.showPerson = async function () {
   if (statusBox) statusBox.textContent = "Refreshing profiles...";
   return loadNearby();
 };
+
+async function attachSharedDatingDetails(people) {
+  if (!currentUser?.id || !Array.isArray(people) || !people.length) return people;
+  const ids = people.map(person => person.id).filter(Boolean);
+  if (!ids.length) return people;
+  const [
+    { data, error },
+    { data: scoreRows, error: scoreError },
+    { data: profileExtrasRows, error: profileExtrasError },
+    { data: compatibilityRows, error: compatibilityError }
+  ] = await Promise.all([
+    db.rpc("get_shared_dating_details", { p_user_ids: ids.slice(0, 100) }),
+    db.rpc("get_interest_match_scores", { p_user_ids: ids.slice(0, 100) }),
+    db.rpc("get_shared_profile_extras", { p_user_ids: ids.slice(0, 100) }),
+    db.rpc("get_dating_compatibility_scores", { p_user_ids: ids.slice(0, 100) })
+  ]);
+  if (error) throw error;
+  if (scoreError) throw scoreError;
+  if (profileExtrasError) throw profileExtrasError;
+  if (compatibilityError) throw compatibilityError;
+  const byId = new Map((data || []).map(row => [row.user_id, row]));
+  const scoreById = new Map((scoreRows || []).map(row => [row.user_id, row]));
+  const profileExtrasById = new Map((profileExtrasRows || []).map(row => [row.user_id, row]));
+  const compatibilityById = new Map((compatibilityRows || []).map(row => [row.user_id, row]));
+  return people.map(person => {
+    const shared = byId.get(person.id) || null;
+    const score = scoreById.get(person.id) || null;
+    const compatibility = compatibilityById.get(person.id) || null;
+    return {
+      ...person,
+      shared_dating_details: shared,
+      shared_profile_extras: profileExtrasById.get(person.id) || null,
+      _sharedInterestCount: Number(score?.shared_interest_count || 0),
+      _interestMatchPercent: Number(score?.interest_match_percent || 0),
+      _compatibilityPercent: Number(compatibility?.compatibility_percent || 0),
+      _compatibilityDimensions: Number(compatibility?.scored_dimensions || 0),
+      _compatibilityIntentionMatch: compatibility?.relationship_intention_match ?? null,
+      _compatibilityCommunicationMatch: compatibility?.communication_style_match ?? null,
+      _compatibilitySharedLanguageCount: Number(compatibility?.shared_language_count || 0)
+    };
+  });
+}
+
+function appendSharedDatingDetails(panel, details) {
+  if (!panel || !details) return;
+  if (Array.isArray(details.interests) && details.interests.length) {
+    const interests = document.createElement("p");
+    interests.className = "small";
+    interests.textContent = "✨ Interests: " + details.interests.join(" · ");
+    interests.style.cssText = "font-size:12px;line-height:1.5;margin:7px 0;";
+    panel.appendChild(interests);
+  }
+  const lifestyle = [
+    details.smoking && details.smoking !== "Prefer not to say" ? "Smoking: " + details.smoking : "",
+    details.drinking && details.drinking !== "Prefer not to say" ? "Drinking: " + details.drinking : "",
+    details.activity_level && details.activity_level !== "Prefer not to say" ? "Activity: " + details.activity_level : "",
+    details.pets && details.pets !== "Prefer not to say" ? "Pets: " + details.pets : "",
+    details.children && details.children !== "Prefer not to say" ? "Children: " + details.children : ""
+  ].filter(Boolean);
+  if (lifestyle.length) {
+    const lifestyleLine = document.createElement("p");
+    lifestyleLine.className = "small";
+    lifestyleLine.textContent = "🌿 " + lifestyle.join(" · ");
+    lifestyleLine.style.cssText = "font-size:12px;line-height:1.5;margin:7px 0;";
+    panel.appendChild(lifestyleLine);
+  }
+  const extras = details.profile_extras || null;
+  if (extras) {
+    const extraParts = [
+      extras.relationship_intention && extras.relationship_intention !== "Prefer not to say" ? "Looking for: " + extras.relationship_intention : "",
+      extras.communication_style && extras.communication_style !== "Prefer not to say" ? "Communication: " + extras.communication_style : "",
+      Array.isArray(extras.languages) && extras.languages.length ? "Languages: " + extras.languages.join(", ") : "",
+      extras.education_level && extras.education_level !== "Prefer not to say" ? "Education: " + extras.education_level : "",
+      extras.occupation ? "Work: " + extras.occupation : "",
+      extras.favorite_music ? "Music: " + extras.favorite_music : "",
+      extras.favorite_movies ? "Movies: " + extras.favorite_movies : "",
+      extras.favorite_food ? "Food: " + extras.favorite_food : ""
+    ].filter(Boolean);
+    if (extraParts.length) {
+      const extraLine = document.createElement("p");
+      extraLine.className = "small";
+      extraLine.textContent = "💬 " + extraParts.join(" · ");
+      extraLine.style.cssText = "font-size:12px;line-height:1.5;margin:7px 0;";
+      panel.appendChild(extraLine);
+    }
+  }
+}
 
 async function loadNearby(){
   if(!currentUser)return;
@@ -10983,22 +11454,28 @@ async function loadNearby(){
     const allSavedPreferences = await getCurrentAccountDiscoveryPreferences();
     // City/area discovery is available to every member. Other advanced filters
     // remain Premium-only.
-    const savedPreferences = viewerPremium ? allSavedPreferences : {
-      location: allSavedPreferences.location || "",
-      showMe: allSavedPreferences.showMe || "everyone",
-      lookingFor: allSavedPreferences.lookingFor || ""
-    };
+    const straightMode = currentMemberOrientation === "Straight / heterosexual";
+    const savedPreferences = straightMode
+      ? { ...allSavedPreferences, ...(allSavedPreferences.straight || {}) }
+      : viewerPremium ? allSavedPreferences : {
+          location: allSavedPreferences.location || "",
+          showMe: allSavedPreferences.showMe || "everyone",
+          lookingFor: allSavedPreferences.lookingFor || "",
+          prioritiseSharedInterests: !!allSavedPreferences.prioritiseSharedInterests
+        };
     const preferredLocation = (savedPreferences.location || "").trim();
     // Discover is intentionally wide-ranging by default. A Premium member's
     // explicitly selected distance remains respected; Nearby stays separate at 50 km.
     // When a member selects a city/area, that regional selection is the
     // Discover boundary. Do not additionally clip it around the member's
     // current GPS point (which could hide the very city they selected).
-    const maxDistance = preferredLocation
-      ? 20050
-      : viewerPremium && Number(savedPreferences.distance) > 0
-        ? Math.min(Number(savedPreferences.distance), 20050)
-        : 20050;
+    const maxDistance = straightMode
+      ? (preferredLocation ? 20050 : Math.min(Number(savedPreferences.distance || 50), viewerPremium ? 200 : 50))
+      : preferredLocation
+        ? 20050
+        : viewerPremium && Number(savedPreferences.distance) > 0
+          ? Math.min(Number(savedPreferences.distance), 20050)
+          : 20050;
     const minAge = viewerPremium ? (Number(savedPreferences.minAge) || 18) : 18;
     const maxAge = viewerPremium
       ? Math.min(Number(savedPreferences.maxAge) || 79, 99)
@@ -11013,6 +11490,23 @@ async function loadNearby(){
     // Refresh the shared device location before querying Discover. If permission is
 // unavailable, the secure RPC may still use the last fresh saved location.
 await refreshNearbyCurrentLocation();
+const { data: eligibleRows, error: eligibilityError } = await db.rpc(
+  "matchmaking_eligible_candidate_ids",
+  {
+    p_max_distance_km: maxDistance,
+    p_min_age: minAge,
+    p_max_age: maxAge,
+    p_city: preferredLocation || null,
+    p_show_me: showMe,
+    p_role_preferences: rolePreferences,
+    p_verified_only: viewerPremium && !!savedPreferences.verifiedOnly,
+    p_connection_goal: lookingFor || null,
+    p_max_results: 100
+  }
+);
+if (eligibilityError) throw eligibilityError;
+const eligibleIds = new Set((eligibleRows || []).map(row => row.user_id));
+
 const { data: peopleData, error } = await db.rpc(
   "discover_profiles_secure",
   {
@@ -11026,7 +11520,7 @@ const { data: peopleData, error } = await db.rpc(
 if (error) throw error;
 
 const viewerCityForDistance = ($("city")?.value || "").trim();
-let people = (peopleData || []).map(p => {
+let people = (peopleData || []).filter(person => eligibleIds.has(person.id)).map(p => {
   const gpsDistance = p.distance_km == null ? null : Number(p.distance_km);
   const cityDistance = gpsDistance == null
     ? approximateDiscoverCityDistanceKm(viewerCityForDistance, p.city)
@@ -11038,6 +11532,7 @@ let people = (peopleData || []).map(p => {
   };
 });
     
+    people = await attachSharedDatingDetails(people);
     const discoverIds = people.map(p => p.id);
 
     if (discoverIds.length) {
@@ -11076,7 +11571,6 @@ let people = (peopleData || []).map(p => {
       const expected = showMe === "nonbinary" ? "non-binary" : showMe;
       people = people.filter(person => String(person.gender_identity || "").toLowerCase().includes(expected));
     }
-    if (lookingFor) people = people.filter(person => String(person.interested_in || "").toLowerCase() === lookingFor.toLowerCase());
     if (viewerPremium && savedPreferences.verifiedOnly) people = people.filter(person => person.is_verified || ["basic","enhanced"].includes(person.verification_level));
     if (viewerPremium && savedPreferences.recentlyActive) people = people.filter(person => isUserOnline(person.id));
 
@@ -11084,6 +11578,9 @@ let people = (peopleData || []).map(p => {
     for (let i = people.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [people[i], people[j]] = [people[j], people[i]];
+    }
+    if (savedPreferences.prioritiseSharedInterests) {
+      people.sort((a, b) => (b._interestMatchPercent || 0) - (a._interestMatchPercent || 0) || (b._sharedInterestCount || 0) - (a._sharedInterestCount || 0));
     }
 
 
@@ -11127,7 +11624,23 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
 
   if (expandedError) throw expandedError;
 
-  people = (expandedData || []).map(p => {
+  const { data: expandedEligibleRows, error: expandedEligibilityError } = await db.rpc(
+    "matchmaking_eligible_candidate_ids",
+    {
+      p_max_distance_km: 200,
+      p_min_age: minAge,
+      p_max_age: maxAge,
+      p_city: null,
+      p_show_me: showMe,
+      p_role_preferences: rolePreferences,
+      p_verified_only: viewerPremium && !!savedPreferences.verifiedOnly,
+      p_connection_goal: lookingFor || null,
+      p_max_results: 100
+    }
+  );
+  if (expandedEligibilityError) throw expandedEligibilityError;
+  const expandedEligibleIds = new Set((expandedEligibleRows || []).map(row => row.user_id));
+  people = (expandedData || []).filter(person => expandedEligibleIds.has(person.id)).map(p => {
     const gpsDistance = p.distance_km == null ? null : Number(p.distance_km);
     const cityDistance = gpsDistance == null
       ? approximateDiscoverCityDistanceKm(viewerCityForDistance, p.city)
@@ -11139,6 +11652,7 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
     };
   });
 
+  people = await attachSharedDatingDetails(people);
   const expandedIds = people.map(p => p.id);
 
   if (expandedIds.length) {
@@ -11181,7 +11695,6 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
     const expected = showMe === "nonbinary" ? "non-binary" : showMe;
     people = people.filter(person => String(person.gender_identity || "").toLowerCase().includes(expected));
   }
-  if (lookingFor) people = people.filter(person => String(person.interested_in || "").toLowerCase() === lookingFor.toLowerCase());
   if (viewerPremium && savedPreferences.verifiedOnly) people = people.filter(person => person.is_verified || ["basic","enhanced"].includes(person.verification_level));
   if (viewerPremium && savedPreferences.recentlyActive) people = people.filter(person => isUserOnline(person.id));
 
@@ -11193,6 +11706,9 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
   for (let i = people.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [people[i], people[j]] = [people[j], people[i]];
+  }
+  if (savedPreferences.prioritiseSharedInterests) {
+    people.sort((a, b) => (b._interestMatchPercent || 0) - (a._interestMatchPercent || 0) || (b._sharedInterestCount || 0) - (a._sharedInterestCount || 0));
   }
 }
 
@@ -11495,6 +12011,37 @@ if (p.has_special_badge) {
 infoOverlay.appendChild(name);
 if (newMemberBadge) infoOverlay.appendChild(newMemberBadge);
 
+if (p._compatibilityDimensions >= 2 && p._compatibilityPercent > 0) {
+  const compatibilityBadge = document.createElement("div");
+  compatibilityBadge.className = "discover-compatibility-badge";
+  compatibilityBadge.textContent = "💛 " + Math.max(0, Math.min(100, Math.round(p._compatibilityPercent))) + "% compatibility";
+  compatibilityBadge.title = "Based on the interests, dating intentions, communication style and languages that members chose to share.";
+  compatibilityBadge.setAttribute("aria-label", compatibilityBadge.textContent);
+  compatibilityBadge.style.cssText =
+    "display:inline-flex;align-self:flex-start;align-items:center;max-width:100%;" +
+    "margin:0 0 8px;padding:7px 11px;border:1px solid rgba(210,173,104,.55);" +
+    "border-radius:999px;background:rgba(18,15,10,.82);color:#f6dda5;" +
+    "font-size:12px;font-weight:800;line-height:1.35;";
+  infoOverlay.appendChild(compatibilityBadge);
+}
+
+if (p._sharedInterestCount > 0) {
+  const interestMatchBadge = document.createElement("div");
+  interestMatchBadge.className = "discover-interest-match-badge";
+  const overlapPercent = Math.max(0, Math.min(100, Math.round(Number(p._interestMatchPercent) || 0)));
+  interestMatchBadge.textContent = "✨ " + p._sharedInterestCount +
+    (p._sharedInterestCount === 1 ? " interest in common" : " interests in common") +
+    (overlapPercent ? " · " + overlapPercent + "% overlap" : "");
+  interestMatchBadge.setAttribute("aria-label", interestMatchBadge.textContent);
+  interestMatchBadge.style.cssText =
+    "display:inline-flex;align-self:flex-start;align-items:center;max-width:100%;" +
+    "margin:0 0 9px;padding:7px 11px;border:1px solid rgba(232,202,139,.62);" +
+    "border-radius:999px;background:rgba(18,15,10,.78);color:#f4d995;" +
+    "font-size:12px;font-weight:800;line-height:1.25;backdrop-filter:blur(10px);" +
+    "box-shadow:0 3px 12px rgba(0,0,0,.2);";
+  infoOverlay.appendChild(interestMatchBadge);
+}
+
 const distance=document.createElement("div");
 distance.className="distance";
 distance.textContent=p._distance!=null
@@ -11529,8 +12076,9 @@ details.textContent = [
 details.style.cssText =
   "font-size:14px;line-height:1.5;margin:4px 0 10px;";
 detailsPanel.appendChild(details);
+appendSharedDatingDetails(detailsPanel, { ...(p.shared_dating_details || {}), profile_extras: p.shared_profile_extras });
 
-if (Array.isArray(p.sexual_roles) && p.sexual_roles.length) {
+      if (currentMemberOrientation !== "Straight / heterosexual" && Array.isArray(p.sexual_roles) && p.sexual_roles.length) {
   const roles = document.createElement("p");
   roles.className = "small";
   roles.textContent = "🏳️‍🌈 Role: " + p.sexual_roles[0];
@@ -14385,6 +14933,7 @@ $("profileBoostBtn")?.addEventListener("click", async () => {
 });
 
 $("openDiscoveryPreferencesTop").addEventListener("click", async () => {
+  try { await loadCurrentMemberOrientation(); } catch (error) { console.warn("Orientation unavailable for discovery layout:", error); }
   await loadDiscoveryPreferences();
   show("discoveryPreferencesPage");
 });
@@ -14394,6 +14943,41 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
   $("discoveryDistance").addEventListener("input", event => {
   $("discoveryDistanceValue").textContent = event.target.value + " km";
 });
+  $("straightDistance").addEventListener("input", event => {
+    $("straightDistanceValue").textContent = event.target.value + " km";
+  });
+  $("saveStraightDiscoveryPreferences").addEventListener("click", async () => {
+    const premium = await matchHasAdvancedFilters();
+    const minAge = Number($("straightAgeMin").value);
+    const maxAge = Number($("straightAgeMax").value);
+    if (minAge < 18 || maxAge > (premium ? 99 : 79) || minAge > maxAge) {
+      status("straightDiscoveryPreferencesStatus", "Please enter a valid age range.", true);
+      return;
+    }
+    try {
+      const saved = await getCurrentAccountDiscoveryPreferences();
+      saved.straight = {
+        showMe: $("straightShowMe").value,
+        minAge,
+        maxAge,
+        location: $("straightLocation").value.trim(),
+        distance: Math.min(Number($("straightDistance").value), premium ? 200 : 50),
+        lookingFor: $("straightLookingFor").value,
+        prioritiseSharedInterests: $("straightPrioritiseSharedInterests").checked
+      };
+      const interestedIn = saved.straight.showMe === "men" ? "Men"
+        : saved.straight.showMe === "women" ? "Women" : "Men and women";
+      const { error: profilePreferenceError } = await db.from("profiles")
+        .update({ interested_in: interestedIn }).eq("id", currentUser.id);
+      if (profilePreferenceError) throw profilePreferenceError;
+      if ($("interest")) $("interest").value = interestedIn;
+      localStorage.setItem(getDiscoveryPreferencesStorageKey(), JSON.stringify(saved));
+      status("straightDiscoveryPreferencesStatus", "Your dating preferences have been saved.");
+    } catch (error) {
+      console.error("Straight discovery preference save failed:", error);
+      status("straightDiscoveryPreferencesStatus", "Could not save preferences. Please try again.", true);
+    }
+  });
   $("saveDiscoveryPreferences").addEventListener("click", async () => {
   const premium = await matchHasAdvancedFilters();
   const minAge = Number($("discoveryAgeMin").value);
@@ -14413,6 +14997,8 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
     showMe: $("discoveryShowMe").value,
     lookingFor: $("discoveryLookingFor").value,
     interests: $("discoveryInterests").value.trim(),
+    prioritiseSharedInterests: $("prioritiseSharedInterests").checked,
+    straight: (await getCurrentAccountDiscoveryPreferences()).straight || {},
     verifiedOnly: premium && $("discoveryVerifiedOnly").checked,
     recentlyActive: premium && $("discoveryRecentlyActive").checked,
     expandRange: premium && $("discoveryExpandRange").checked,
@@ -14466,6 +15052,43 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
     if (!currentUser?.id) throw new Error("Please sign in to load discovery preferences.");
     const premium = await matchHasAdvancedFilters();
     const saved = await getCurrentAccountDiscoveryPreferences();
+    const straightMode = currentMemberOrientation === "Straight / heterosexual";
+    $("straightDiscoveryPreferences").hidden = !straightMode;
+    $("queerDiscoveryPreferences").hidden = straightMode;
+
+    const straightSaved = saved.straight || {};
+    const ownGender = String($("gender")?.value || "").toLowerCase();
+    const isWoman = ownGender.includes("woman");
+    const isMan = ownGender.includes("man") && !isWoman;
+    const defaultStraightShowMe = isWoman ? "men" : (isMan ? "women" : "everyone");
+    const straightShowMe = $("straightShowMe");
+    const straightOptions = isWoman
+      ? [{ value: "men", label: "Men" }, { value: "everyone", label: "Both men and women" }]
+      : isMan
+        ? [{ value: "women", label: "Women" }, { value: "everyone", label: "Both men and women" }]
+        : [{ value: "men", label: "Men" }, { value: "women", label: "Women" }, { value: "everyone", label: "All genders" }];
+    straightShowMe.replaceChildren(...straightOptions.map(option => {
+      const element = document.createElement("option");
+      element.value = option.value;
+      element.textContent = option.label;
+      return element;
+    }));
+    const straightDistance = $("straightDistance");
+    straightDistance.max = premium ? "200" : "50";
+    straightDistance.value = Math.min(Number(straightSaved.distance || 50), premium ? 200 : 50);
+    $("straightDistanceValue").textContent = straightDistance.value + " km";
+    $("straightAgeMin").max = premium ? "99" : "79";
+    $("straightAgeMax").max = premium ? "99" : "79";
+    $("straightAgeMin").value = straightSaved.minAge ?? 18;
+    $("straightAgeMax").value = Math.min(Number(straightSaved.maxAge ?? 79), premium ? 99 : 79);
+    $("straightLocation").value = straightSaved.location ?? "";
+    $("straightShowMe").value = straightOptions.some(option => option.value === straightSaved.showMe)
+      ? straightSaved.showMe
+      : defaultStraightShowMe;
+    $("straightLookingFor").value = straightSaved.lookingFor ?? "";
+    $("straightPrioritiseSharedInterests").checked = !!straightSaved.prioritiseSharedInterests;
+    $("prioritiseSharedInterests").checked = !!saved.prioritiseSharedInterests;
+
     const distance = $("discoveryDistance");
     distance.max = premium ? "200" : "50";
     distance.value = Math.min(Number(saved.distance || 50), premium ? 200 : 50);
@@ -16273,6 +16896,12 @@ function refreshMessagesAfterReconnect() {
 
 window.addEventListener("online", refreshMessagesAfterReconnect);
 
+$("chatReplyCancel")?.addEventListener("click", () => {
+  activeReplyToMessage = null;
+  $("chatReplyPreview")?.classList.add("hidden");
+  $("chatReplyPreviewText")?.replaceChildren();
+});
+
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
     refreshMessagesAfterReconnect();
@@ -16292,6 +16921,9 @@ $("chatPageStatus").textContent = "";
 $("chatMessages").replaceChildren();
     activeChatUserId = userId;
     window.activeChatUserId = userId;
+    subscribeToChatTyping(userId).catch(error =>
+      console.warn("Could not start chat typing indicator:", error)
+    );
     
     // MATCH_LIVEKIT_CALL_UI_V1: voice-only controls, kept inside the chat header.
     ensureVoiceCallUI();
@@ -16557,7 +17189,7 @@ async function loadChatMessages(){
 
             const {data,error} = await db
       .from("messages")
-      .select("id,sender_id,receiver_id,body,created_at,delivered_at,read_at,unsent_at")
+      .select("id,sender_id,receiver_id,body,reply_to_message_id,created_at,delivered_at,read_at,unsent_at")
       .or("and(sender_id.eq."+me+",receiver_id.eq."+them+"),and(sender_id.eq."+them+",receiver_id.eq."+me+")")
       .order("created_at",{ascending:false})
       .limit(100);
@@ -16583,6 +17215,20 @@ if (visiblePageMessageIds.length) {
 const hiddenMessageIds = new Set(
   hiddenRows.map(row => row.message_id)
 );
+let reactionRows = [];
+const reactionMessageIds = (data || []).map(message => message.id).filter(Boolean);
+if (reactionMessageIds.length) {
+  const { data: rows, error: reactionError } = await db.from("message_reactions")
+    .select("message_id,user_id,emoji")
+    .in("message_id", reactionMessageIds);
+  if (reactionError) throw reactionError;
+  reactionRows = rows || [];
+}
+const reactionsByMessage = new Map();
+for (const reaction of reactionRows) {
+  if (!reactionsByMessage.has(reaction.message_id)) reactionsByMessage.set(reaction.message_id, []);
+  reactionsByMessage.get(reaction.message_id).push(reaction);
+}
 
 if (data) {
   for (let i = data.length - 1; i >= 0; i--) {
@@ -16693,6 +17339,13 @@ const receiptResults = await Promise.all(
           overflowWrap:"anywhere"
         });
 
+        if (message.reply_to_message_id) {
+          const repliedMessage = (data || []).find(item => item.id === message.reply_to_message_id);
+          const quote = document.createElement("div");
+          quote.textContent = repliedMessage ? "↪ " + (repliedMessage.sender_id === me ? "You: " : "Them: ") + (repliedMessage.body || "Message") : "↪ Replied to a message";
+          quote.style.cssText = "padding:6px 8px;margin-bottom:7px;border-left:3px solid #d2ad68;background:#171717;border-radius:6px;color:#f2d89f;font-size:11px;";
+          bubble.appendChild(quote);
+        }
         const body = document.createElement("div");
         body.textContent = message.body;
 
@@ -16761,8 +17414,8 @@ cursor: "pointer"
 
 optionsButton.onclick = async () => {
 const choices = mine
-? "Choose an option:\n1. Copy message\n2. Delete for me\n3. Unsend for everyone"
-: "Choose an option:\n1. Copy message\n2. Delete for me";
+? "Choose an option:\n1. Copy message\n2. Delete for me\n3. Unsend for everyone\n4. Reply"
+: "Choose an option:\n1. Copy message\n2. Delete for me\n4. Reply";
 
 const choice = await matchPrompt(choices);
 if (!choice) return;
@@ -16781,6 +17434,14 @@ try {
 
     bubble.remove();
     status("chatPageStatus", "Message deleted from your chat.");
+  } else if (choice === "4") {
+    if (message.unsent_at) return;
+    activeReplyToMessage = { id: message.id, body: String(message.body || "").slice(0, 180), sender_id: message.sender_id };
+    const preview = $("chatReplyPreview");
+    const previewText = $("chatReplyPreviewText");
+    if (previewText) previewText.textContent = "Replying to " + (mine ? "your message: " : "their message: ") + activeReplyToMessage.body;
+    preview?.classList.remove("hidden");
+    $("chatMessageInput")?.focus();
   } else if (choice === "3" && mine) {
     if (!await matchConfirm("Unsend this message for everyone? This cannot be undone.")) return;
 
@@ -16802,6 +17463,40 @@ try {
 };
 
 bubble.appendChild(optionsButton);
+
+const reactionBar = document.createElement("div");
+reactionBar.style.cssText = "display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;justify-content:flex-end;";
+const messageReactions = reactionsByMessage.get(message.id) || [];
+for (const emoji of ["❤️","😂","😍","😮","😢","👍"]) {
+  const matching = messageReactions.filter(item => item.emoji === emoji);
+  if (!matching.length) continue;
+  const chip = document.createElement("button");
+  chip.type = "button";
+  chip.textContent = emoji + " " + matching.length;
+  chip.setAttribute("aria-label", emoji + " reaction, " + matching.length + " members");
+  chip.style.cssText = "border:1px solid #8e7446;border-radius:14px;padding:3px 7px;background:" + (matching.some(item => item.user_id === me) ? "#59451f" : "#171717") + ";color:#fff;font-size:11px;";
+  chip.onclick = async () => {
+    chip.disabled = true;
+    try { const { error } = await db.rpc("toggle_chat_message_reaction", { p_message_id: message.id, p_emoji: emoji }); if (error) throw error; await loadChatMessages(); }
+    catch (error) { status("chatPageStatus", "Could not update reaction: " + friendly(error), true); chip.disabled = false; }
+  };
+  reactionBar.appendChild(chip);
+}
+const addReaction = document.createElement("button");
+addReaction.type = "button";
+addReaction.textContent = "☺ React";
+addReaction.setAttribute("aria-label", "Add a reaction");
+addReaction.style.cssText = "border:1px solid #6f5b3c;border-radius:14px;padding:3px 8px;background:#171717;color:#f5e3bd;font-size:11px;";
+addReaction.onclick = async () => {
+  const selected = await matchPrompt("Choose a reaction: 1 ❤️  2 😂  3 😍  4 😮  5 😢  6 👍");
+  const emojis = { "1":"❤️", "2":"😂", "3":"😍", "4":"😮", "5":"😢", "6":"👍" };
+  if (!emojis[String(selected || "").trim()]) return;
+  addReaction.disabled = true;
+  try { const { error } = await db.rpc("toggle_chat_message_reaction", { p_message_id: message.id, p_emoji: emojis[String(selected).trim()] }); if (error) throw error; await loadChatMessages(); }
+  catch (error) { status("chatPageStatus", "Could not update reaction: " + friendly(error), true); addReaction.disabled = false; }
+};
+reactionBar.appendChild(addReaction);
+bubble.appendChild(reactionBar);
 }
 
 insertBubbleInTimeOrder(bubble, message.created_at);
@@ -17157,6 +17852,7 @@ window.addEventListener("match:gift-sent", event => {
   input.style.height="auto";
   input.style.height=Math.min(input.scrollHeight,120)+"px";
   $("chatPageStatus").textContent="";
+  handleChatTypingInput();
 });
   
 $("chatEmojiToggle").addEventListener("click", event => {
@@ -17292,7 +17988,8 @@ if (body) {
   const { error } = await db.from("messages").insert({
     sender_id: senderId,
     receiver_id: receiverId,
-    body: body
+    body: body,
+    reply_to_message_id: activeReplyToMessage?.id || null
   });
 
   if (error) throw error;
@@ -17341,6 +18038,12 @@ if (file) {
 
 input.value = "";
 input.style.height = "auto";
+activeReplyToMessage = null;
+$("chatReplyPreview")?.classList.add("hidden");
+$("chatReplyPreviewText")?.replaceChildren();
+sendChatTyping(false);
+if (chatTypingStopTimer) clearTimeout(chatTypingStopTimer);
+chatTypingStopTimer = null;
 
 if (fileInput) fileInput.value = "";
 await loadChatMessages();
@@ -21764,6 +22467,66 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
     max-width:64px!important;
   }
 }
+
+/* The Match — refined, accessible Discover profile card */
+#discover #profileList > .discover-option3-card {
+  position:relative!important; isolation:isolate!important; overflow:hidden!important;
+  border:1px solid rgba(218,185,112,.72)!important; border-radius:24px!important;
+  background:#080808!important;
+  box-shadow:0 18px 46px rgba(0,0,0,.38),0 0 0 1px rgba(218,185,112,.08)!important;
+}
+#discover #profileList > .discover-option3-card > .discover-option3-photo,
+#discover #profileList > .discover-option3-card > .discover-option3-photo > .discover-option3-image {
+  border-radius:inherit!important;
+}
+#discover #profileList > .discover-option3-card > .discover-option3-photo {background:#080808!important}
+#discover #profileList > .discover-option3-card > .discover-option3-photo > .discover-option3-image {
+  object-fit:cover!important; object-position:center 32%!important; transform:scale(1.001);
+}
+#discover #profileList > .discover-option3-card .discover-option3-overlay {
+  box-sizing:border-box!important; padding:104px 18px max(18px,env(safe-area-inset-bottom))!important;
+  background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.08) 20%,rgba(0,0,0,.68) 54%,rgba(0,0,0,.94) 100%)!important;
+  text-shadow:0 1px 12px rgba(0,0,0,.45);
+}
+#discover #profileList > .discover-option3-card .discover-option3-overlay h2 {
+  margin:0 0 7px!important; color:#fffaf0!important; font-size:clamp(27px,6.5vw,36px)!important;
+  font-weight:850!important; line-height:1.12!important; letter-spacing:-.55px!important; overflow-wrap:anywhere!important;
+}
+#discover #profileList > .discover-option3-card .discover-option3-overlay .distance {
+  display:flex!important; align-items:center!important; gap:6px!important; color:#f0d28e!important;
+  font-size:13px!important; font-weight:750!important; margin:0 0 10px!important;
+}
+#discover #profileList > .discover-option3-card .discover-option3-overlay > button[aria-expanded] {
+  min-height:44px!important; border:1px solid rgba(231,203,145,.58)!important; border-radius:13px!important;
+  background:rgba(16,15,13,.78)!important; color:#f5dfad!important; font-size:13px!important;
+  font-weight:750!important; backdrop-filter:blur(12px);
+}
+#discover #profileList > .discover-option3-card .discover-photo-count {
+  top:14px!important; right:14px!important; padding:8px 11px!important;
+  border:1px solid rgba(235,213,169,.42)!important; border-radius:999px!important;
+  background:rgba(8,8,8,.66)!important; color:#fff8e8!important; font-size:11px!important;
+  font-weight:750!important; backdrop-filter:blur(12px);
+}
+#discover #profileList > .discover-option3-card .discover-photo-arrow {
+  width:42px!important; height:42px!important; border:1px solid rgba(255,255,255,.42)!important;
+  background:rgba(8,8,8,.58)!important; backdrop-filter:blur(10px);
+}
+#discover .discover-floating-actions > button {
+  min-width:58px!important; min-height:58px!important; width:58px!important; height:58px!important;
+  box-shadow:0 8px 24px rgba(0,0,0,.32)!important;
+}
+body.light-theme #discover #profileList > .discover-option3-card {
+  border-color:#d8bd83!important; box-shadow:0 14px 36px rgba(60,44,15,.16)!important;
+}
+@media(max-width:380px) {
+  #discover #profileList > .discover-option3-card .discover-option3-overlay {padding-left:13px!important;padding-right:13px!important}
+  #discover .discover-floating-actions > button {min-width:54px!important;width:54px!important;height:54px!important;min-height:54px!important}
+}
+@media(prefers-reduced-motion:reduce) {
+  #discover #profileList > .discover-option3-card,
+  #discover #profileList > .discover-option3-card * {animation:none!important;transition:none!important}
+}
+
 </style>
 </body>
 </html>

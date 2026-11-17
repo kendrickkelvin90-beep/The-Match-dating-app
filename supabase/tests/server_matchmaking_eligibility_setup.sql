@@ -3,13 +3,14 @@
 create role anon nologin;
 create role authenticated nologin;
 create schema auth;
+create table auth.users (id uuid primary key);
 create function auth.uid()
 returns uuid
 language sql
 stable
-as $$
-  select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
-$$;
+as 'select nullif(current_setting(''request.jwt.claim.sub'', true), '''')::uuid';
+grant usage on schema auth to authenticated;
+grant execute on function auth.uid() to authenticated;
 
 create table public.profiles (
   id uuid primary key,
@@ -47,9 +48,57 @@ create table public.member_blocks (
   blocker_id uuid not null,
   blocked_id uuid not null
 );
+
+-- Minimal chat tables/functions for reply and reaction regression coverage.
+create table public.messages (
+  id uuid primary key default gen_random_uuid(),
+  sender_id uuid not null,
+  receiver_id uuid not null,
+  body text not null default '',
+  unsent_at timestamptz
+);
+grant select, insert, update on public.messages to authenticated;
+
+create function public.can_interact_with_member(target_user_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as 'select auth.uid() is not null
+    and target_user_id is not null
+    and target_user_id <> auth.uid()
+    and not exists (
+      select 1 from public.member_blocks mb
+      where (mb.blocker_id = auth.uid() and mb.blocked_id = target_user_id)
+         or (mb.blocker_id = target_user_id and mb.blocked_id = auth.uid())
+    )';
+
+-- Minimal Supabase Realtime authorization surface for the disposable CI DB.
+create schema realtime;
+create table realtime.messages (
+  topic text not null,
+  extension text not null,
+  payload jsonb not null
+);
+create function realtime.topic()
+returns text
+language sql
+stable
+as $$
+  select nullif(current_setting('request.realtime.topic', true), '')
+$$;
+alter table realtime.messages enable row level security;
+grant usage on schema realtime to authenticated;
+grant select, insert on realtime.messages to authenticated;
 create table public.premium_memberships (
   user_id uuid primary key,
   premium_until timestamptz not null
+);
+
+create table public.member_onboarding (
+  user_id uuid primary key,
+  answers jsonb not null default '{}'::jsonb
 );
 
 create function public.is_match_profile_complete(target_user_id uuid)
@@ -222,4 +271,5 @@ insert into private.profile_locations
 values
   ('00000000-0000-4000-8000-000000000001', 6.5244, 3.3792, true),
   ('00000000-0000-4000-8000-000000000002', 6.5250, 3.3800, true),
-  ('00000000-0000-4000-8000-000000000007', 9.0765, 7.3986, true);
+  ('00000000-0000-4000-8000-000000000007', 9.0765, 7.3986, true),
+  ('00000000-0000-4000-8000-000000000010', 9.0765, 7.3986, true);

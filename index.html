@@ -15643,7 +15643,10 @@ $("showOnlineStatusToggle")?.addEventListener("change", async event => {
       onlinePresenceChannel = null;
       onlinePresenceUserId = currentUser.id;
       onlinePresenceState = {};
-      if (previousChannel) await db.removeChannel(previousChannel);
+      if (previousChannel) {
+        try { await db.removeChannel(previousChannel); }
+        catch (removeError) { console.warn("Could not close hidden online presence channel:", removeError); }
+      }
       if (activeChatUserId) updateChatOnlineStatus(activeChatUserId);
       refreshOutgoingVoiceCallPresence();
       statusEl.textContent = "Your online status is hidden. Other members see you as offline.";

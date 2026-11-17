@@ -67,7 +67,7 @@ alter table public.coin_ledger drop constraint if exists coin_ledger_entry_type_
 alter table public.coin_ledger add constraint coin_ledger_entry_type_check
   check (entry_type in (
     'purchase_credit','store_debit','membership_debit','annual_bonus',
-    'admin_adjustment','reversal','consistency_reward'
+    'admin_adjustment','reversal','gift_send','gift_redeem','consistency_reward'
   ));
 
 create or replace function public.match_record_daily_activity()

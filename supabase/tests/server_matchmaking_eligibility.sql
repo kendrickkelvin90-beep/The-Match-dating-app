@@ -665,6 +665,51 @@ begin
   end if;
 end;
 $test$;
+
 reset role;
+
+-- Reciprocal partner deal-breakers remain private and are enforced by the server helper.
+insert into public.member_dating_details(user_id, smoking, drinking, partner_preferences)
+values
+  ('00000000-0000-4000-8000-000000000001','Never','Never',
+   '{"smoking":"Never","drinking":"Never"}'::jsonb),
+  ('00000000-0000-4000-8000-000000000002','Occasionally','Socially',
+   '{"smoking":"any","drinking":"Socially"}'::jsonb)
+on conflict (user_id) do update
+set smoking = excluded.smoking,
+    drinking = excluded.drinking,
+    partner_preferences = excluded.partner_preferences;
+
+do $test$
+begin
+  if private.member_meets_partner_preferences(
+    '00000000-0000-4000-8000-000000000001',
+    '00000000-0000-4000-8000-000000000002'
+  ) then
+    raise exception 'A candidate who violates the viewer smoking deal-breaker was accepted';
+  end if;
+  if private.member_meets_partner_preferences(
+    '00000000-0000-4000-8000-000000000002',
+    '00000000-0000-4000-8000-000000000001'
+  ) then
+    raise exception 'A candidate who violates the viewer drinking deal-breaker was accepted';
+  end if;
+  if not private.member_meets_partner_preferences(
+    '00000000-0000-4000-8000-000000000001',
+    '00000000-0000-4000-8000-000000000001'
+  ) then
+    raise exception 'An unspecified/compatible partner preference was rejected';
+  end if;
+
+  begin
+    update public.member_dating_details
+    set partner_preferences = '{"unknown":"value"}'::jsonb
+    where user_id = '00000000-0000-4000-8000-000000000001';
+    raise exception 'An unsupported partner preference key was accepted';
+  exception when sqlstate '22023' then
+    null;
+  end;
+end;
+$test$;
 
 select 'server matchmaking eligibility tests passed' as result;

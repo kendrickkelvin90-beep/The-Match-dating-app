@@ -11831,7 +11831,7 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
   });
 
   people = await attachSharedDatingDetails(people);
-  if (savedPreferences.lifestyleDiscovery && viewerLifestyleDetails) {
+  if (viewerLifestyleDetails) {
     people = applyLifestyleDiscoveryScores(people, viewerLifestyleDetails);
   }
   const expandedIds = people.map(p => p.id);
@@ -11884,15 +11884,33 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
     !recentlyPassed.has(p.id)
   );
 
+  // Randomize equal-ranked candidates, then use the same weighted model as
+  // the primary Discover feed so expanded-range results behave consistently.
   for (let i = people.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [people[i], people[j]] = [people[j], people[i]];
   }
-  if (savedPreferences.lifestyleDiscovery) {
-    people.sort((a, b) => (b._lifestyleMatchScore || 0) - (a._lifestyleMatchScore || 0) || (b._lifestyleMatchCount || 0) - (a._lifestyleMatchCount || 0));
-  } else if (savedPreferences.prioritiseSharedInterests) {
-    people.sort((a, b) => (b._interestMatchPercent || 0) - (a._interestMatchPercent || 0) || (b._sharedInterestCount || 0) - (a._sharedInterestCount || 0));
-  }
+  const expandedLifestyleWeight = savedPreferences.lifestyleDiscovery ? 0.20 : 0;
+  const expandedInterestWeight = savedPreferences.prioritiseSharedInterests ? 0.10 : 0;
+  const expandedCompatibilityWeight = 0.70;
+  const expandedTotalWeight = expandedCompatibilityWeight + expandedLifestyleWeight + expandedInterestWeight;
+  const expandedDiscoverRank = person => {
+    const compatibility = Math.max(0, Math.min(100, Number(person._compatibilityPercent) || 0));
+    const lifestyle = Math.max(0, Math.min(100, (Number(person._lifestyleMatchCount) || 0) / 11 * 100));
+    const interests = Math.max(0, Math.min(100, Number(person._interestMatchPercent) || 0));
+    return (
+      compatibility * expandedCompatibilityWeight +
+      lifestyle * expandedLifestyleWeight +
+      interests * expandedInterestWeight
+    ) / expandedTotalWeight;
+  };
+  people = people
+    .map(person => ({ ...person, _discoverWeightedRank: expandedDiscoverRank(person) }))
+    .sort((a, b) =>
+      b._discoverWeightedRank - a._discoverWeightedRank ||
+      (b._compatibilityDimensions || 0) - (a._compatibilityDimensions || 0) ||
+      (b._sharedInterestCount || 0) - (a._sharedInterestCount || 0)
+    );
 }
 
 const discoverMemberIds = people.map(person => person.id);

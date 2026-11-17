@@ -44,6 +44,7 @@ on:
       - feat/advanced-general-matchmaking
       - feat/profile-pause-discovery-control
       - feat/profile-visibility-pronouns
+      - feat/legacy-community-recovery-diagnostics
     paths:
       - "supabase/migrations/20261116130000_server_matchmaking_eligibility_gate.sql"
       - "supabase/migrations/20261116150000_general_dating_optional_roles.sql"

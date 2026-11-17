@@ -7305,13 +7305,15 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
   <p class="small" id="installAppHelp">If installation doesn't start, follow your browser's Add to Home Screen option.</p>
 </div>
 
-        <div class="member-card">
-    <h3>🛡️ Privacy and safety</h3>
-    <p class="small">Location sharing is optional. Manage it from your profile.</p>
-    <button class="btn secondary" id="settingsPrivacyProfile" type="button">Profile and location settings</button>
-    
-
-
+        <div class="member-card" id="profilePrivacyControls">
+    <h3>🛡️ Profile privacy</h3>
+    <p class="small">Pause your profile when you want a break. A paused profile is removed from new Discover recommendations; your existing matches and chats remain available.</p>
+    <label for="profilePauseToggle" style="display:flex;align-items:center;gap:12px;min-height:48px">
+      <input id="profilePauseToggle" type="checkbox" style="width:20px;height:20px;accent-color:#c6a15a">
+      <span><strong>Pause my profile</strong><br><span class="small">Hide me from new Discover recommendations</span></span>
+    </label>
+    <p class="small" id="profilePauseStatus" role="status" aria-live="polite">Open Settings to load your privacy setting.</p>
+    <button class="btn secondary" id="settingsPrivacyProfile" type="button">Edit profile and location settings</button>
   </div>
 
   
@@ -15528,8 +15530,65 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
     status("discoveryPreferencesStatus", "Could not reset saved preferences.", true);
   }
 });
+async function loadProfilePauseSetting() {
+  const toggle = $("profilePauseToggle");
+  const statusEl = $("profilePauseStatus");
+  if (!toggle || !statusEl || !currentUser?.id) return;
+  toggle.disabled = true;
+  statusEl.textContent = "Loading your privacy setting…";
+  try {
+    const { data, error } = await db.from("profiles")
+      .select("profile_paused").eq("id", currentUser.id).maybeSingle();
+    if (error) throw error;
+    if (!data) throw new Error("Your profile could not be found.");
+    toggle.checked = data.profile_paused === true;
+    statusEl.textContent = toggle.checked
+      ? "Your profile is paused. You won't appear in new Discover recommendations."
+      : "Your profile is active and can appear in eligible Discover recommendations.";
+  } catch (error) {
+    statusEl.textContent = "Could not load this setting: " + friendly(error);
+  } finally {
+    toggle.disabled = false;
+  }
+}
+
+$("profilePauseToggle")?.addEventListener("change", async event => {
+  const toggle = event.currentTarget;
+  const statusEl = $("profilePauseStatus");
+  if (!currentUser?.id) {
+    toggle.checked = !toggle.checked;
+    statusEl.textContent = "Please sign in again to change profile privacy.";
+    return;
+  }
+  const nextPaused = toggle.checked;
+  const previousPaused = !nextPaused;
+  const confirmation = nextPaused
+    ? "Pause your profile? You will be hidden from new Discover recommendations. Existing matches and chats will remain available."
+    : "Resume your profile? You may appear in eligible new Discover recommendations again.";
+  if (!(await matchConfirm(confirmation))) {
+    toggle.checked = previousPaused;
+    return;
+  }
+  toggle.disabled = true;
+  statusEl.textContent = nextPaused ? "Pausing your profile…" : "Resuming your profile…";
+  try {
+    const { error } = await db.from("profiles")
+      .update({ profile_paused: nextPaused }).eq("id", currentUser.id);
+    if (error) throw error;
+    statusEl.textContent = nextPaused
+      ? "Your profile is paused. Existing matches and chats are unchanged."
+      : "Your profile is active again and eligible for new Discover recommendations.";
+    status("settingsStatus", nextPaused ? "Profile paused successfully." : "Profile resumed successfully.");
+  } catch (error) {
+    toggle.checked = previousPaused;
+    statusEl.textContent = "Could not update your profile privacy: " + friendly(error);
+  } finally {
+    toggle.disabled = false;
+  }
+});
+
 $("settingsPrivacyProfile").onclick=()=>{
-show("profile");
+  show("profile");
 };
 
 $("settingsPremium").onclick=async()=>{

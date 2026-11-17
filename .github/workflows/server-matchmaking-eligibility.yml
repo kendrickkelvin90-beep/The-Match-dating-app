@@ -21,6 +21,9 @@ on:
       - "supabase/migrations/20261117230000_scope_discover_boost_visibility.sql"
       - "supabase/migrations/20261118100000_strict_dating_community_separation.sql"
       - "supabase/migrations/20261118110000_keep_dating_community_private.sql"
+      - "supabase/migrations/20261117160000_secure_view_once_media_delivery.sql"
+      - "supabase/functions/open-view-once-chat-media/**"
+      - "supabase/tests/view_once_media_*.sql"
       - "supabase/tests/server_dating_community_separation.sql"
       - "index.html"
       - "supabase/tests/server_matchmaking_eligibility*.sql"
@@ -82,6 +85,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client
+
+      - name: Set up Deno for Edge Function checks
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Type-check secure View Once Edge Function
+        run: deno check supabase/functions/open-view-once-chat-media/index.ts
 
       - name: Check inline JavaScript syntax
         run: |
@@ -190,3 +201,22 @@ jobs:
         run: |
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/tests/server_dating_community_separation.sql
+
+      - name: Prepare isolated View Once media fixtures
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/tests/view_once_media_setup.sql
+      - name: Apply secure View Once media claim migration
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/migrations/20261117160000_secure_view_once_media_delivery.sql
+      - name: Test View Once claim eligibility and single-use enforcement
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/tests/view_once_media_claim.sql

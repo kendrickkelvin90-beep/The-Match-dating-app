@@ -17912,23 +17912,29 @@ for (const media of mediaRows || []) {
       openButton.textContent = "Opening...";
 
       try {
+        let signed;
         if (media.view_once && !mine) {
-          const { data: claimed, error: claimError } = await db.rpc(
-            "claim_view_once_chat_media",
-            { p_media_id: media.id }
+          // The private bucket blocks receiver reads after the atomic claim.
+          // A server endpoint signs first, claims once, and returns the URL
+          // only to the single caller that successfully opens the media.
+          const { data: opened, error: openError } = await db.functions.invoke(
+            "open-view-once-chat-media",
+            { body: { media_id: media.id } }
           );
 
-          if (claimError) throw claimError;
-          if (!claimed || !claimed.length) {
-            throw new Error("This View Once media has already been opened.");
+          if (openError) throw openError;
+          if (!opened?.signedUrl) {
+            throw new Error(opened?.error || "This View Once media could not be opened.");
           }
+          signed = { signedUrl: opened.signedUrl };
+        } else {
+          const { data, error: signedError } = await db.storage
+            .from("chat-media")
+            .createSignedUrl(media.storage_path, 60);
+
+          if (signedError) throw signedError;
+          signed = data;
         }
-
-        const { data: signed, error: signedError } = await db.storage
-          .from("chat-media")
-          .createSignedUrl(media.storage_path, 60);
-
-        if (signedError) throw signedError;
 
         const isOnce = media.view_once && !mine;
         const isImage = media.media_type === "image";

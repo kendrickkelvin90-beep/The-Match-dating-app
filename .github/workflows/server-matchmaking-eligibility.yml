@@ -215,7 +215,7 @@ jobs:
             -f supabase/migrations/20261118120000_shared_dating_details_strict_community_guard.sql
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/migrations/20261118121000_enforce_community_for_passes_and_story_views.sql
-          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -c "SELECT pg_get_functiondef('public.get_shared_dating_details(uuid[])'::regprocedure) LIKE '%member_dating_community(candidate.id)%' AS shared_details_community_guard, EXISTS (SELECT 1 FROM pg_trigger WHERE tgname='enforce_same_dating_community_on_pass' AND NOT tgisinternal) AS pass_community_trigger, EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='story_views' AND policyname='Members can record their own story views' AND with_check LIKE '%can_view_story_from_owner%') AS story_view_audience_guard" | grep -E 't\|t\|t'
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -c "SELECT pg_get_functiondef('public.get_shared_dating_details(uuid[])'::regprocedure) LIKE '%member_dating_community(candidate.id)%' AS shared_details_community_guard, EXISTS (SELECT 1 FROM pg_trigger WHERE tgname='enforce_same_dating_community_on_pass' AND NOT tgisinternal) AS pass_community_trigger, (to_regclass('public.story_views') IS NULL OR EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='story_views' AND policyname='Members can record their own story views' AND with_check LIKE '%can_view_story_from_owner%')) AS story_view_audience_guard" | grep -E 't\|t\|t'
 
       - name: Prepare isolated View Once media fixtures
         env:

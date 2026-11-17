@@ -11788,7 +11788,9 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
     const j = Math.floor(Math.random() * (i + 1));
     [people[i], people[j]] = [people[j], people[i]];
   }
-  if (savedPreferences.prioritiseSharedInterests) {
+  if (savedPreferences.lifestyleDiscovery) {
+    people.sort((a, b) => (b._lifestyleMatchScore || 0) - (a._lifestyleMatchScore || 0) || (b._lifestyleMatchCount || 0) - (a._lifestyleMatchCount || 0));
+  } else if (savedPreferences.prioritiseSharedInterests) {
     people.sort((a, b) => (b._interestMatchPercent || 0) - (a._interestMatchPercent || 0) || (b._sharedInterestCount || 0) - (a._sharedInterestCount || 0));
   }
 }

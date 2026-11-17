@@ -11025,6 +11025,7 @@ let currentMemberCommunity = "";
 async function loadCurrentMemberOrientation() {
   if (!currentUser?.id) {
     currentMemberOrientation = "";
+    currentMemberCommunity = "";
     return currentMemberOrientation;
   }
   const { data, error } = await db.from("member_onboarding")
@@ -12289,7 +12290,7 @@ details.style.cssText =
 detailsPanel.appendChild(details);
 appendSharedDatingDetails(detailsPanel, { ...(p.shared_dating_details || {}), profile_extras: p.shared_profile_extras });
 
-      if (currentMemberOrientation !== "Straight / heterosexual" && Array.isArray(p.sexual_roles) && p.sexual_roles.length) {
+      if (currentMemberCommunity === "lgbtq" && Array.isArray(p.sexual_roles) && p.sexual_roles.length) {
   const roles = document.createElement("p");
   roles.className = "small";
   roles.textContent = "🏳️‍🌈 Role: " + p.sexual_roles[0];
@@ -15268,7 +15269,7 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
     if (!currentUser?.id) throw new Error("Please sign in to load discovery preferences.");
     const premium = await matchHasAdvancedFilters();
     const saved = await getCurrentAccountDiscoveryPreferences();
-    const straightMode = currentMemberOrientation === "Straight / heterosexual";
+    const straightMode = currentMemberCommunity === "straight";
     $("straightDiscoveryPreferences").hidden = !straightMode;
     $("queerDiscoveryPreferences").hidden = straightMode;
 

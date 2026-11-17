@@ -8462,6 +8462,12 @@ function show(id, addToHistory = true) {
 
   currentPage = id;
 
+  if (id === "settings" && currentUser) {
+    window.setTimeout(() => {
+      if (currentUser && currentPage === "settings") void loadProfilePauseSetting();
+    }, 0);
+  }
+
   // Start the shared feature-message sequence when a member reaches Discover.
   // This also covers members who complete their profile after the initial login.
   if (id === "discover" && currentUser) {

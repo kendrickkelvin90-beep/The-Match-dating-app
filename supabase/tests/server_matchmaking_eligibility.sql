@@ -636,6 +636,33 @@ begin
     raise exception 'The trigger-only chat reply validator is directly executable through the API';
   end if;
 
+  if has_function_privilege('anon', 'public.record_match_swipe_history()', 'EXECUTE')
+     or has_function_privilege('authenticated', 'public.record_match_swipe_history()', 'EXECUTE') then
+    raise exception 'The trigger-only swipe-history recorder is directly executable through the API';
+  end if;
+
+  insert into public.likes(liker_id, liked_id)
+  values (auth.uid(), '00000000-0000-4000-8000-000000000002');
+  insert into public.profile_passes(passer_id, passed_id)
+  values (auth.uid(), '00000000-0000-4000-8000-000000000003');
+
+  if not exists (
+    select 1 from public.match_swipe_history
+    where user_id = auth.uid()
+      and target_user_id = '00000000-0000-4000-8000-000000000002'
+      and action = 'like'
+  ) then
+    raise exception 'The like trigger did not record swipe history after RPC execution was revoked';
+  end if;
+  if not exists (
+    select 1 from public.match_swipe_history
+    where user_id = auth.uid()
+      and target_user_id = '00000000-0000-4000-8000-000000000003'
+      and action = 'pass'
+  ) then
+    raise exception 'The pass trigger did not record swipe history after RPC execution was revoked';
+  end if;
+
   insert into public.messages(id,sender_id,receiver_id,body,reply_to_message_id)
   values ('10000000-0000-4000-8000-000000000003',
           '00000000-0000-4000-8000-000000000001',

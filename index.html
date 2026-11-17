@@ -11908,7 +11908,7 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
       error: expandedVerificationError
     } = await db
       .from("profiles")
-      .select("id,is_verified,verification_level,gender_presentation,city,created_at")
+      .select("id,is_verified,verification_level,gender_presentation,city,created_at,pronouns")
       .in("id", expandedIds);
 
     if (expandedVerificationError) {

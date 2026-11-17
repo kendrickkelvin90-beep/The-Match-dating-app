@@ -11018,7 +11018,7 @@ async function loadCurrentMemberOrientation() {
 async function loadMyDatingDetails() {
   if (!currentUser?.id) return;
   const { data, error } = await db.from("member_dating_details")
-    .select("interests,smoking,drinking,activity_level,pets,children,share_interests,share_lifestyle,relationship_intention,communication_style,languages,education_level,occupation,favorite_music,favorite_movies,favorite_food,share_profile_extras")
+    .select("interests,smoking,drinking,activity_level,pets,children,share_interests,share_lifestyle,relationship_intention,communication_style,languages,education_level,occupation,favorite_music,favorite_movies,favorite_food,share_profile_extras,partner_preferences")
     .eq("user_id", currentUser.id).maybeSingle();
   if (error) throw error;
   const saved = data || {};

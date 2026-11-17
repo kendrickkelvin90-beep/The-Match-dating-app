@@ -4550,6 +4550,40 @@ textarea.match-dialog-input{min-height:112px;resize:vertical}
 .admin-report-profile{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)}
 .admin-report-avatar{width:46px;height:46px;border-radius:50%;object-fit:cover;background:#292929}
 .admin-report-actions button{min-height:38px}
+
+/* Profile/mobile navigation visibility correction.
+   Keep the fixed app bar clear of Android's bottom gesture area and reserve
+   matching scroll space so profile content cannot sit underneath it. */
+@media (max-width: 900px) {
+  body:has(#bottomNavigation:not(.hidden)) > main {
+    padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  #bottomNavigation.bottom-nav:not(.hidden) {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: env(safe-area-inset-bottom, 0px) !important;
+    min-height: 72px !important;
+    padding: 7px 6px 7px !important;
+    box-sizing: border-box !important;
+    align-items: center !important;
+    z-index: 10000 !important;
+    overflow: visible !important;
+  }
+  #bottomNavigation.bottom-nav:not(.hidden) button {
+    min-height: 56px !important;
+    height: 56px !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 5px 2px !important;
+    line-height: 1.15 !important;
+  }
+  #bottomNavigation.bottom-nav:not(.hidden) .nav-icon {
+    line-height: 1 !important;
+    margin: 0 !important;
+  }
+}
+
 </style>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>

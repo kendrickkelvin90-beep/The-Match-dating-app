@@ -22881,8 +22881,11 @@ body.light-theme #profile .profile-onboarding-track{background:#e9e1d3}
   const next=event.target.closest('[data-profile-next]');
   if(!next||current!==1)return;
   const invalid=Array.from(steps[0].querySelectorAll('[required]')).find(field=>!field.checkValidity());
-  if(invalid){event.preventDefault();invalid.reportValidity();}
+  if(invalid){event.preventDefault();event.stopPropagation();invalid.reportValidity();}
  },true);
+ const lifestyleStep=form.querySelector('[data-profile-step="2"]');
+ const presentation=form.querySelector('#genderPresentationSection');
+ if(lifestyleStep&&presentation)lifestyleStep.appendChild(presentation);
  showStep(1);
 })();
 </script>

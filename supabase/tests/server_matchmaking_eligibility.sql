@@ -606,7 +606,7 @@ insert into public.messages(id,sender_id,receiver_id,body) values
 
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
 set role authenticated;
-do $
+do $test$
 declare
   reaction_added boolean;
 begin
@@ -664,7 +664,7 @@ begin
     raise exception 'The reaction was not removed';
   end if;
 end;
-$;
+$test$;
 reset role;
 
 select 'server matchmaking eligibility tests passed' as result;

@@ -11342,6 +11342,12 @@ status("profileStatus","Your profile is loaded. Check your details and save when
 
   await loadMyPhotos();
 
+  // Retry after the profile row is loaded/created so first-time members also
+  // receive their default online-presence behavior without a page reload.
+  startOnlinePresence(user).catch(error => {
+    console.warn("Online presence could not start after profile load:", error);
+  });
+
   // Members can access The Match only after both requirements are met:
   // at least two saved profile photos and all required profile details.
   const hasSavedDatingCommunity = ["lgbtq", "straight"].includes(currentMemberCommunity);

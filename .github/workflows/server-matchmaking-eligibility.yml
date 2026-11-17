@@ -21,6 +21,8 @@ on:
       - "supabase/migrations/20261117190000_profile_pause_discovery_control.sql"
       - "supabase/migrations/20261118130000_profile_discover_visibility_and_pronouns.sql"
       - "supabase/tests/profile_discover_visibility_pronouns.sql"
+      - "supabase/migrations/20261118140000_online_status_privacy.sql"
+      - "supabase/tests/online_status_privacy.sql"
       - "supabase/tests/profile_pause_discovery.sql"
       - "supabase/migrations/20261118100000_strict_dating_community_separation.sql"
       - "supabase/migrations/20261118110000_keep_dating_community_private.sql"
@@ -42,6 +44,7 @@ on:
       - feat/advanced-general-matchmaking
       - feat/profile-pause-discovery-control
       - feat/profile-visibility-pronouns
+      - feat/online-status-privacy
     paths:
       - "supabase/migrations/20261116130000_server_matchmaking_eligibility_gate.sql"
       - "supabase/migrations/20261116150000_general_dating_optional_roles.sql"
@@ -59,6 +62,8 @@ on:
       - "supabase/migrations/20261117230000_scope_discover_boost_visibility.sql"
       - "supabase/migrations/20261118130000_profile_discover_visibility_and_pronouns.sql"
       - "supabase/tests/profile_discover_visibility_pronouns.sql"
+      - "supabase/migrations/20261118140000_online_status_privacy.sql"
+      - "supabase/tests/online_status_privacy.sql"
       - "supabase/migrations/20261118100000_strict_dating_community_separation.sql"
       - "supabase/migrations/20261118110000_keep_dating_community_private.sql"
       - "supabase/tests/server_dating_community_separation.sql"
@@ -162,6 +167,11 @@ jobs:
           if "candidate.discover_visibility" not in visibility_migration or "matches_only" not in visibility_migration:
               raise SystemExit("Server-side Discover visibility enforcement is missing")
           print("Verified pronouns and Discover visibility UI wiring")
+          if 'id="showOnlineStatusToggle"' not in html or 'show_online_status: nextVisible' not in html:
+              raise SystemExit("Online status privacy control or persistence is missing")
+          if '.select("show_online_status")' not in html or 'presencePreference.show_online_status === false' not in html:
+              raise SystemExit("Realtime presence is not gated by the member privacy preference")
+          print("Verified online status privacy UI and presence gate")
 
       - name: Prepare isolated Discover schema and synthetic fixtures
         env:
@@ -208,6 +218,8 @@ jobs:
             -f supabase/migrations/20261117190000_profile_pause_discovery_control.sql
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/migrations/20261118130000_profile_discover_visibility_and_pronouns.sql
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/migrations/20261118140000_online_status_privacy.sql
       - name: Run moderation, block, completeness, and preference assertions
         env:
           PGPASSWORD: postgres
@@ -222,6 +234,13 @@ jobs:
             -f supabase/tests/profile_pause_discovery.sql
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/tests/profile_discover_visibility_pronouns.sql
+
+      - name: Verify online status privacy schema
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/tests/online_status_privacy.sql
 
       - name: Apply strict dating community separation migration
         env:

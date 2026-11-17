@@ -7325,6 +7325,11 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
       <option value="matches_only">Existing matches only</option>
     </select>
     <p class="small" id="discoverVisibilityStatus" role="status" aria-live="polite">This controls new Discover recommendations only. Existing matches and chats remain available.</p>
+    <label for="showOnlineStatusToggle" style="display:flex;align-items:center;gap:12px;min-height:48px">
+      <input id="showOnlineStatusToggle" type="checkbox" checked style="width:20px;height:20px;accent-color:#c6a15a">
+      <span><strong>Show my online status</strong><br><span class="small">When off, other members see you as offline while you use The Match.</span></span>
+    </label>
+    <p class="small" id="onlineStatusPrivacyStatus" role="status" aria-live="polite">Live online status is visible. The Match does not currently display last-seen timestamps.</p>
     <p class="small">Pause your profile when you want a temporary break. A paused profile is removed from new Discover recommendations; your existing matches and chats remain available.</p>
     <label for="profilePauseToggle" style="display:flex;align-items:center;gap:12px;min-height:48px">
       <input id="profilePauseToggle" type="checkbox" style="width:20px;height:20px;accent-color:#c6a15a">
@@ -8137,6 +8142,27 @@ async function startOnlinePresence(user) {
 
   onlinePresenceUserId = user.id;
   onlinePresenceState = {};
+
+  // Do not publish a Realtime presence entry when the member opts out.
+  // Fail closed if the privacy preference cannot be loaded.
+  try {
+    const { data: presencePreference, error: presencePreferenceError } = await db
+      .from("profiles")
+      .select("show_online_status")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (presencePreferenceError) throw presencePreferenceError;
+    if (!presencePreference || presencePreference.show_online_status === false) {
+      if (activeChatUserId) updateChatOnlineStatus(activeChatUserId);
+      refreshOutgoingVoiceCallPresence();
+      return;
+    }
+  } catch (error) {
+    console.warn("Online status privacy preference could not be checked; presence remains hidden:", error);
+    if (activeChatUserId) updateChatOnlineStatus(activeChatUserId);
+    refreshOutgoingVoiceCallPresence();
+    return;
+  }
 
   onlinePresenceChannel = db.channel("match-online-users", {
     config: {
@@ -11315,6 +11341,12 @@ status("profileStatus","Your profile is loaded. Check your details and save when
   }
 
   await loadMyPhotos();
+
+  // Retry after the profile row is loaded/created so first-time members also
+  // receive their default online-presence behavior without a page reload.
+  startOnlinePresence(user).catch(error => {
+    console.warn("Online presence could not start after profile load:", error);
+  });
 
   // Members can access The Match only after both requirements are met:
   // at least two saved profile photos and all required profile details.
@@ -15567,12 +15599,17 @@ async function loadProfilePauseSetting() {
   statusEl.textContent = "Loading your privacy setting…";
   try {
     const { data, error } = await db.from("profiles")
-      .select("profile_paused,discover_visibility").eq("id", currentUser.id).maybeSingle();
+      .select("profile_paused,discover_visibility,show_online_status").eq("id", currentUser.id).maybeSingle();
     if (error) throw error;
     if (!data) throw new Error("Your profile could not be found.");
     toggle.checked = data.profile_paused === true;
     const visibilitySelect = $("discoverVisibilitySelect");
     if (visibilitySelect) visibilitySelect.value = data.discover_visibility || "everyone";
+    const onlineToggle = $("showOnlineStatusToggle");
+    if (onlineToggle) onlineToggle.checked = data.show_online_status !== false;
+    $("onlineStatusPrivacyStatus").textContent = data.show_online_status === false
+      ? "Your online status is hidden. Other members see you as offline."
+      : "Your live online status is visible to other members.";
     $("discoverVisibilityStatus").textContent = visibilitySelect?.value === "matches_only"
       ? "Your profile is excluded from new Discover recommendations. Existing matches and chats remain available."
       : "Your profile can appear in eligible new Discover recommendations.";
@@ -15585,6 +15622,49 @@ async function loadProfilePauseSetting() {
     toggle.disabled = false;
   }
 }
+
+$("showOnlineStatusToggle")?.addEventListener("change", async event => {
+  const toggle = event.currentTarget;
+  const statusEl = $("onlineStatusPrivacyStatus");
+  if (!currentUser?.id) {
+    toggle.checked = !toggle.checked;
+    statusEl.textContent = "Please sign in again to change online status privacy.";
+    return;
+  }
+  const nextVisible = toggle.checked;
+  const previousVisible = !nextVisible;
+  toggle.disabled = true;
+  statusEl.textContent = "Saving online status privacy…";
+  try {
+    const { error } = await db.from("profiles")
+      .update({ show_online_status: nextVisible }).eq("id", currentUser.id);
+    if (error) throw error;
+
+    if (nextVisible) {
+      onlinePresenceUserId = null;
+      await startOnlinePresence(currentUser);
+      statusEl.textContent = "Your live online status is visible to other members.";
+    } else {
+      const previousChannel = onlinePresenceChannel;
+      onlinePresenceChannel = null;
+      onlinePresenceUserId = currentUser.id;
+      onlinePresenceState = {};
+      if (previousChannel) {
+        try { await db.removeChannel(previousChannel); }
+        catch (removeError) { console.warn("Could not close hidden online presence channel:", removeError); }
+      }
+      if (activeChatUserId) updateChatOnlineStatus(activeChatUserId);
+      refreshOutgoingVoiceCallPresence();
+      statusEl.textContent = "Your online status is hidden. Other members see you as offline.";
+    }
+    status("settingsStatus", "Online status privacy updated.");
+  } catch (error) {
+    toggle.checked = previousVisible;
+    statusEl.textContent = "Could not update online status privacy: " + friendly(error);
+  } finally {
+    toggle.disabled = false;
+  }
+});
 
 $("discoverVisibilitySelect")?.addEventListener("change", async event => {
   const select = event.currentTarget;

@@ -13678,6 +13678,7 @@ async function loadStories(){
         let touchStartY = 0;
         let touchStartX = 0;
 
+        // Keep the full-screen story viewer and its reply/reaction controls above app navigation.
         const overlay = document.createElement("div");
         overlay.className = "tm-story-viewer";
         Object.assign(overlay.style, {

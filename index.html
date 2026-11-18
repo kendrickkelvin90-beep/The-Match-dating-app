@@ -5972,10 +5972,11 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
 <style id="tm-discover-loader-and-compact-chat">
 /* Discover loading state: Tinder-inspired radar, branded for The Match. */
 #discover #discoverStatus.tm-discover-loading {
-  display:flex!important; flex-direction:column!important; align-items:center!important;
-  justify-content:center!important; gap:24px!important; width:100%!important;
-  min-height:calc(100svh - 210px)!important; margin:0!important; padding:28px 16px!important;
-  border:0!important; border-radius:0!important; background:transparent!important;
+  position:fixed!important; top:150px!important; right:0!important; bottom:100px!important; left:0!important;
+  z-index:999!important; display:flex!important; flex-direction:column!important;
+  align-items:center!important; justify-content:center!important; gap:24px!important;
+  width:100%!important; min-height:0!important; margin:0!important; padding:28px 16px!important;
+  border:0!important; border-radius:0!important; background:#10100f!important;
   color:#e9e4e8!important; text-align:center!important; font-size:15px!important; line-height:1.4!important;
 }
 #discover .tm-discover-radar {

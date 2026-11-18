@@ -12621,9 +12621,11 @@ superLike.onclick=async()=>{
     window.__matchRenderDiscoverPerson = showPerson;
 
     status("discoverStatus","");
+    $("discoverStatus")?.classList.remove("tm-discover-loading");
     await showPerson();
 
   }catch(e){
+    $("discoverStatus")?.classList.remove("tm-discover-loading");
     status("discoverStatus","Could not load members: "+friendly(e),true);
   }
 }

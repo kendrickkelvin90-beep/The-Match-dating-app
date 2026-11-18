@@ -25,6 +25,8 @@ create table public.profiles (
   sexual_roles text[] not null default '{}',
   verification_level text not null default 'none'
 );
+grant select on public.profiles to authenticated;
+
 create table public.profile_photos (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null,

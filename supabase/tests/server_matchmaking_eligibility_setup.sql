@@ -21,9 +21,12 @@ create table public.profiles (
   city text not null default '',
   age smallint,
   is_verified boolean not null default false,
+  location_sharing boolean not null default false,
   sexual_roles text[] not null default '{}',
   verification_level text not null default 'none'
 );
+grant select on public.profiles to authenticated;
+
 create table public.profile_photos (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null,
@@ -181,7 +184,7 @@ language sql
 stable
 security definer
 set search_path = ''
-as $ select coalesce(current_setting('test.is_admin', true), 'false') = 'true' $;
+as 'select coalesce(current_setting(''test.is_admin'', true), ''false'') = ''true''';
 
 create function public.is_match_profile_complete(target_user_id uuid)
 returns boolean

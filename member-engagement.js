@@ -24,51 +24,51 @@
     console.warn(context,error);
   }
 
-  function ensureConsistencyCard(){
-    if($("memberConsistencyCard"))return;
-    const profile=$("profile");
-    const before=$("verificationSection");
-    if(!profile||!before)return;
-    const card=document.createElement("section");
-    card.id="memberConsistencyCard";
-    card.className="member-card";
-    card.innerHTML=
-      '<div class="mc-head"><div><p class="mc-eyebrow">THE MATCH · MEMBER MILESTONES</p><h3>Your Consistency Stars ✦</h3></div><span class="mc-streak" id="mcStreak">0-day streak</span></div>'+
-      '<p class="mc-copy">Show up regularly, earn stars and unlock Match Coin rewards. One active day counts once per Lagos calendar day.</p>'+
-      '<div class="mc-stars" id="mcStars" aria-label="Consistency star progress"></div>'+
-      '<div class="mc-progress-track"><span id="mcProgressFill"></span></div>'+
-      '<div class="mc-stats"><span id="mcProgressText">0 of 35 active days</span><span id="mcTotalDays">0 total active days</span></div>'+
-      '<p class="mc-reward" id="mcReward" aria-live="polite">Earn 1 star every 7 active days. Complete 5 stars to receive 100 Match Coins.</p>';
-    before.parentNode.insertBefore(card,before);
+  let consistencyToastTimer=null;
+
+  function showConsistencyToast(message){
+    let toast=$("memberConsistencyToast");
+    if(!toast){
+      toast=document.createElement("div");
+      toast.id="memberConsistencyToast";
+      toast.setAttribute("role","status");
+      toast.setAttribute("aria-live","polite");
+      toast.style.cssText=
+        "position:fixed;left:16px;right:16px;bottom:calc(108px + env(safe-area-inset-bottom,0px));" +
+        "z-index:1000001;max-width:440px;margin:0 auto;padding:14px 18px;" +
+        "border:1px solid rgba(224,190,119,.65);border-radius:16px;" +
+        "background:linear-gradient(145deg,rgba(39,31,18,.98),rgba(12,11,9,.98));" +
+        "box-shadow:0 12px 36px rgba(0,0,0,.42);color:#f6e6c2;" +
+        "font-size:14px;font-weight:700;line-height:1.45;text-align:center;" +
+        "opacity:0;transform:translateY(10px);transition:opacity .2s ease,transform .2s ease;pointer-events:none;";
+      document.body.appendChild(toast);
+    }
+    toast.textContent=message;
+    toast.style.opacity="1";
+    toast.style.transform="translateY(0)";
+    if(consistencyToastTimer)window.clearTimeout(consistencyToastTimer);
+    consistencyToastTimer=window.setTimeout(()=>{
+      toast.style.opacity="0";
+      toast.style.transform="translateY(10px)";
+      consistencyToastTimer=window.setTimeout(()=>toast.remove(),240);
+    },4200);
   }
 
-  function renderConsistency(state,rewardCoins){
-    ensureConsistencyCard();
-    if(!$("memberConsistencyCard"))return;
+  function renderConsistency(state,rewardCoins,showToast){
     const cycle=Math.max(0,Number(state.active_days_in_cycle)||0);
     const stars=Math.max(0,Math.min(4,Number(state.stars_progress)||0));
-    const visualStars=rewardCoins>0?5:stars;
     const streak=Math.max(0,Number(state.current_streak_days)||0);
     const total=Math.max(0,Number(state.total_active_days)||0);
-    const starBox=$("mcStars");
-    if(starBox){
-      starBox.replaceChildren();
-      for(let i=1;i<=5;i++){
-        const star=document.createElement("span");
-        star.className="mc-star"+(i<=visualStars?" earned":"");
-        star.textContent="★";
-        star.setAttribute("aria-label",i<=visualStars?"Star earned":"Star not yet earned");
-        starBox.appendChild(star);
-      }
+    if(!showToast)return;
+    let message;
+    if(rewardCoins>0){
+      message="Amazing consistency! You completed all 5 stars and earned "+rewardCoins+" Match Coins.";
+    }else if(cycle>0&&cycle%7===0){
+      message="Consistency milestone! You earned star "+Math.min(5,Math.floor(cycle/7))+" of 5. Keep showing up!";
+    }else{
+      message="Consistency updated · "+cycle+" of 35 active days · "+streak+"-day streak.";
     }
-    setText("mcStreak",streak+"-day streak");
-    setText("mcProgressText",cycle+" of 35 active days");
-    setText("mcTotalDays",total+" total active days");
-    const fill=$("mcProgressFill");
-    if(fill)fill.style.width=(rewardCoins>0?100:Math.min(100,cycle/35*100))+"%";
-    setText("mcReward",rewardCoins>0
-      ?"Amazing consistency! You completed all 5 stars and received "+rewardCoins+" Match Coins. Your next star cycle has started."
-      :"Earn 1 star every 7 active days. Complete 5 stars (35 active days) to receive 100 Match Coins.");
+    showConsistencyToast(message);
   }
 
   async function refreshConsistency(userId){
@@ -76,7 +76,7 @@
       .select("current_streak_days,total_active_days,active_days_in_cycle,stars_progress,rewards_claimed,last_active_date")
       .eq("user_id",userId).maybeSingle();
     if(error)throw error;
-    if(data)renderConsistency(data,0);
+    if(data)renderConsistency(data,0,false);
   }
 
   function ensureFeedbackDialog(){
@@ -174,7 +174,7 @@
     if(error){lastCheckinKey="";throw error;}
     const state=Array.isArray(data)?data[0]:data;
     if(state){
-      renderConsistency(state,Number(state.reward_coins)||0);
+      renderConsistency(state,Number(state.reward_coins)||0,state.already_checked_in!==true);
     }else{
       await refreshConsistency(userId);
     }
@@ -196,19 +196,6 @@
     if($("member-engagement-styles"))return;
     const style=document.createElement("style");style.id="member-engagement-styles";
     style.textContent=`
-      #memberConsistencyCard{margin:16px 0;padding:18px;border:1px solid rgba(211,177,108,.35);border-radius:20px;background:linear-gradient(145deg,rgba(211,177,108,.09),rgba(12,12,12,.96));color:#f5f0e7}
-      #memberConsistencyCard .mc-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-      #memberConsistencyCard .mc-eyebrow{margin:0 0 5px;color:#d9b66e;font-size:10px;font-weight:850;letter-spacing:1.5px}
-      #memberConsistencyCard h3{margin:0;color:#f0d18d;font-size:19px}
-      #memberConsistencyCard .mc-streak{padding:7px 10px;border:1px solid rgba(217,182,110,.35);border-radius:999px;color:#f0d18d;font-size:11px;font-weight:800}
-      #memberConsistencyCard .mc-copy{color:#b9b4a9;font-size:13px;line-height:1.55}
-      #memberConsistencyCard .mc-stars{display:flex;justify-content:center;gap:clamp(8px,4vw,20px);margin:16px 0 12px}
-      #memberConsistencyCard .mc-star{color:#4d4a43;font-size:clamp(30px,8vw,42px);line-height:1}
-      #memberConsistencyCard .mc-star.earned{color:#e2bd70;text-shadow:0 0 15px rgba(226,189,112,.28)}
-      #memberConsistencyCard .mc-progress-track{height:7px;overflow:hidden;border-radius:99px;background:#34312a}
-      #memberConsistencyCard #mcProgressFill{display:block;width:0;height:100%;border-radius:99px;background:linear-gradient(90deg,#b88c45,#f0d18b);transition:width .3s}
-      #memberConsistencyCard .mc-stats{display:flex;justify-content:space-between;gap:8px;margin-top:9px;color:#c8c1b3;font-size:11px}
-      #memberConsistencyCard .mc-reward{margin:12px 0 0;color:#e7d2a7;font-size:12px;line-height:1.55}
       .me-dialog{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.78);backdrop-filter:blur(5px)}
       .me-dialog.hidden{display:none!important}
       .me-card{box-sizing:border-box;width:min(100%,430px);padding:28px 22px 22px;border:1px solid rgba(217,182,110,.55);border-radius:23px;background:linear-gradient(155deg,#191713,#080808 65%);color:#f7f3eb;text-align:center;box-shadow:0 22px 65px rgba(0,0,0,.55)}
@@ -224,18 +211,15 @@
       .me-submit:disabled{opacity:.42;cursor:not-allowed}
       .me-dismiss{margin:14px auto 0;padding:10px 18px;border:0;background:transparent;color:#c5bba9;font-size:14px}
       .me-privacy{margin:12px 0 0;color:#8f897f;font-size:11px;line-height:1.5}
-      body.light-theme #memberConsistencyCard{background:linear-gradient(145deg,#fff8e9,#fff);color:#30291e;border-color:#e0cfaa}
-      body.light-theme #memberConsistencyCard .mc-copy,body.light-theme #memberConsistencyCard .mc-stats{color:#6d6558}
       body.light-theme .me-card{background:linear-gradient(155deg,#fffdf8,#f6efe2);color:#30291e}
       body.light-theme .me-question{color:#30291e}
-      @media(prefers-reduced-motion:reduce){#memberConsistencyCard *,.me-dialog *{transition:none!important}}
+      @media(prefers-reduced-motion:reduce){#memberConsistencyToast,.me-dialog *{transition:none!important}}
     `;
     document.head.appendChild(style);
   }
 
   async function init(){
     addStyles();
-    ensureConsistencyCard();
     try{
       const {data,error}=await db.auth.getUser();
       if(error)throw error;

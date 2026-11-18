@@ -5969,6 +5969,53 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
   text-align: center !important;
 }
 </style>
+<style id="tm-discover-loader-and-compact-chat">
+/* Discover loading state: Tinder-inspired radar, branded for The Match. */
+#discover #discoverStatus.tm-discover-loading {
+  position:fixed!important; top:150px!important; right:0!important; bottom:100px!important; left:0!important;
+  z-index:999!important; display:flex!important; flex-direction:column!important;
+  align-items:center!important; justify-content:center!important; gap:24px!important;
+  width:100%!important; min-height:0!important; margin:0!important; padding:28px 16px!important;
+  border:0!important; border-radius:0!important; background:#10100f!important;
+  color:#e9e4e8!important; text-align:center!important; font-size:15px!important; line-height:1.4!important;
+}
+#discover .tm-discover-radar {
+  position:relative; display:grid; place-items:center; width:clamp(210px,64vw,300px);
+  aspect-ratio:1; border:1px solid rgba(198,161,91,.12); border-radius:50%;
+  background:radial-gradient(circle,rgba(198,161,91,.10) 0 34%,rgba(198,161,91,.045) 35% 62%,transparent 63%);
+}
+#discover .tm-discover-radar-ring {
+  position:absolute; inset:8%; border:1px solid rgba(198,161,91,.16); border-radius:50%;
+  animation:tmDiscoverRadarPulse 2.8s ease-out infinite;
+}
+#discover .tm-discover-radar-ring-two { inset:22%; animation-delay:1.4s; }
+#discover .tm-discover-radar-core {
+  display:grid; place-items:center; width:clamp(76px,24vw,104px); aspect-ratio:1; overflow:hidden;
+  border:1px solid rgba(246,223,170,.65); border-radius:50%;
+  background:linear-gradient(145deg,#f1d69a,#b88b42); box-shadow:0 0 34px rgba(198,161,91,.22);
+}
+#discover .tm-discover-radar-core img { display:block; width:72%; height:72%; object-fit:contain; border-radius:50%; }
+#discover .tm-discover-loading-label { color:#d5d0d3; font-size:15px; font-weight:550; letter-spacing:.01em; }
+@keyframes tmDiscoverRadarPulse { 0% { transform:scale(.84); opacity:.72; } 100% { transform:scale(1.12); opacity:0; } }
+@media(prefers-reduced-motion:reduce) { #discover .tm-discover-radar-ring { animation:none!important; } }
+
+/* Compact message bubbles: timestamp and three-dot menu share one footer row. */
+#chatPage #chatMessages { gap:2px!important; padding:10px 8px!important; }
+#chatPage #chatMessages .chat-bubble { padding:9px 12px!important; margin:3px 0!important; line-height:1.35!important; }
+#chatPage #chatMessages .chat-bubble .chat-meta-row {
+  display:flex!important; align-items:center!important; justify-content:flex-end!important;
+  gap:4px!important; width:100%; min-height:22px; margin-top:4px;
+}
+#chatPage #chatMessages .chat-bubble .chat-meta-row small {
+  display:inline-flex!important; align-items:center!important; margin:0!important;
+  line-height:1.2!important; font-size:10px!important;
+}
+#chatPage #chatMessages .chat-bubble .chat-meta-row button {
+  min-height:22px!important; height:22px!important; width:22px!important;
+  padding:0!important; margin:0 0 0 3px!important; font-size:15px!important;
+}
+#chatPage #chatMessages .chat-bubble .chat-meta-row + div { margin-top:4px!important; }
+</style>
 </head>
 <body>
 <div id="stars" aria-hidden="true"></div>
@@ -11824,7 +11871,14 @@ async function loadNearby(){
     status("discoverStatus", "Choose your private dating community in My Profile to start discovering members.");
     return;
   }
-  status("discoverStatus","Finding members...");
+  status("discoverStatus","Finding people near you ...");
+  const discoverLoadingStatus = $("discoverStatus");
+  if (discoverLoadingStatus) {
+    discoverLoadingStatus.classList.add("tm-discover-loading");
+    discoverLoadingStatus.setAttribute("role", "status");
+    discoverLoadingStatus.setAttribute("aria-live", "polite");
+    discoverLoadingStatus.innerHTML = '<span class="tm-discover-radar" aria-hidden="true"><span class="tm-discover-radar-ring tm-discover-radar-ring-one"></span><span class="tm-discover-radar-ring tm-discover-radar-ring-two"></span><span class="tm-discover-radar-core"><img src="/icons/file_00000000194481f48390cd96271ae5c9.png" alt=""></span></span><span class="tm-discover-loading-label">Finding people near you ...</span>';
+  }
 
   try{
     const viewerPremium = await matchHasAdvancedFilters();
@@ -13054,9 +13108,11 @@ superLike.onclick=async()=>{
     window.__matchRenderDiscoverPerson = showPerson;
 
     status("discoverStatus","");
+    $("discoverStatus")?.classList.remove("tm-discover-loading");
     await showPerson();
 
   }catch(e){
+    $("discoverStatus")?.classList.remove("tm-discover-loading");
     status("discoverStatus","Could not load members: "+friendly(e),true);
   }
 }
@@ -18127,10 +18183,12 @@ const timeText = new Date(message.created_at).toLocaleTimeString([],{
 });
 
 timestamp.textContent = timeText;
-timestamp.style.display = "block";
-timestamp.style.marginTop = "5px";
+timestamp.style.display = "inline-flex";
+timestamp.style.marginTop = "0";
 timestamp.style.opacity = "0.85";
 timestamp.style.textAlign = "right";
+timestamp.style.alignItems = "center";
+timestamp.style.flexWrap = "wrap";
 
 if(mine){
   const receipt = document.createElement("span");
@@ -18159,7 +18217,10 @@ if(mine){
   timestamp.appendChild(receipt);
 }
 
-bubble.append(body,timestamp);
+const metaRow = document.createElement("div");
+metaRow.className = "chat-meta-row";
+metaRow.appendChild(timestamp);
+bubble.append(body, metaRow);
 
 if (message.unsent_at) {
 body.textContent = "This message was unsent.";
@@ -18172,15 +18233,20 @@ optionsButton.textContent = "⋮";
 optionsButton.setAttribute("aria-label", "Message options");
 optionsButton.title = "Message options";
 Object.assign(optionsButton.style, {
-display: "block",
-marginTop: "6px",
-marginLeft: "auto",
-padding: "2px 8px",
+display: "inline-flex",
+alignItems: "center",
+justifyContent: "center",
+flex: "0 0 auto",
+margin: "0 0 0 5px",
+padding: "1px 6px",
+minWidth: "22px",
+minHeight: "22px",
 border: "1px solid #d0aa63",
 borderRadius: "8px",
 background: "#17130d",
 color: "#f5e3bd",
-cursor: "pointer"
+cursor: "pointer",
+lineHeight: "1"
 });
 
 optionsButton.onclick = async () => {
@@ -18233,10 +18299,10 @@ try {
 
 };
 
-bubble.appendChild(optionsButton);
+metaRow.appendChild(optionsButton);
 
 const reactionBar = document.createElement("div");
-reactionBar.style.cssText = "display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;justify-content:flex-end;";
+reactionBar.style.cssText = "display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;justify-content:flex-end;";
 const messageReactions = reactionsByMessage.get(message.id) || [];
 for (const emoji of ["❤️","😂","😍","😮","😢","👍"]) {
   const matching = messageReactions.filter(item => item.emoji === emoji);

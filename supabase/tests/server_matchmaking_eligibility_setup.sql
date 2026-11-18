@@ -21,6 +21,7 @@ create table public.profiles (
   city text not null default '',
   age smallint,
   is_verified boolean not null default false,
+  location_sharing boolean not null default false,
   sexual_roles text[] not null default '{}',
   verification_level text not null default 'none'
 );

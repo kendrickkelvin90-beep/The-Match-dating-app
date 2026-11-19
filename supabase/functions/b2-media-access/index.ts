@@ -5,10 +5,10 @@ import { getSignedUrl } from "npm:@aws-sdk/s3-request-presigner";
 
 const allowedOrigins = new Set(["https://match.beyondthebinarymedia.online"]);
 const media = {
-  stories: { table: "stories", column: "media_url" },
-  chat_media: { table: "chat_media", column: "storage_path" },
-  verification_selfies: { table: "verification_requests", column: "selfie_path" },
-  event_posters: { table: "match_event_poster_assets", column: "storage_path" },
+  stories: { table: "stories", column: "media_url", idColumn: "id" },
+  chat_media: { table: "chat_media", column: "storage_path", idColumn: "id" },
+  verification_selfies: { table: "verification_requests", column: "selfie_path", idColumn: "id" },
+  event_posters: { table: "match_event_poster_assets", column: "storage_path", idColumn: "event_id" },
 } as const;
 
 function json(body: unknown, status: number, origin: string) {
@@ -69,7 +69,7 @@ Deno.serve(async (req: Request) => {
     const storagePath = `b2://${objectKey}`;
     const config = media[category];
     const query = new URLSearchParams({
-      select: "id",
+      select: config.idColumn,
       [config.column]: `eq.${storagePath}`,
     });
     const recordResponse = await fetch(

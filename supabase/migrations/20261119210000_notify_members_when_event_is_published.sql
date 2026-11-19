@@ -131,6 +131,58 @@ after insert or update of status on public.match_events
 for each row
 execute function public.notify_members_when_event_is_published();
 
+-- Child event assets and ticket options must follow the same community boundary.
+drop policy if exists "Members view permitted event poster assets" on public.match_event_poster_assets;
+create policy "Members view permitted event poster assets"
+on public.match_event_poster_assets
+for select
+to authenticated
+using (
+  organiser_id = (select auth.uid())
+  or is_match_admin()
+  or exists (
+    select 1
+    from public.match_events e
+    where e.id = match_event_poster_assets.event_id
+      and e.status = 'published'
+      and e.community = (
+        select mo.answers ->> 'dating_community'
+        from public.member_onboarding mo
+        where mo.user_id = (select auth.uid())
+      )
+  )
+);
+
+drop policy if exists "Members and organisers can view permitted ticket options" on public.match_event_ticket_types;
+create policy "Members and organisers can view permitted ticket options"
+on public.match_event_ticket_types
+for select
+to authenticated
+using (
+  (
+    is_active
+    and exists (
+      select 1
+      from public.match_events e
+      where e.id = match_event_ticket_types.event_id
+        and e.status = 'published'
+        and e.community = (
+          select mo.answers ->> 'dating_community'
+          from public.member_onboarding mo
+          where mo.user_id = (select auth.uid())
+        )
+    )
+  )
+  or exists (
+    select 1
+    from public.match_events e
+    where e.id = match_event_ticket_types.event_id
+      and e.organiser_id = (select auth.uid())
+      and e.status = 'pending_review'
+  )
+  or is_match_admin()
+);
+
 -- Enable INSERT events for the per-member realtime notification subscription.
 do $$
 begin

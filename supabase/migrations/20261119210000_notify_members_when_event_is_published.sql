@@ -16,7 +16,9 @@ begin
         title,
         body,
         related_user_id,
-        is_read
+        is_read,
+        action_url,
+        action_label
       )
       select
         p.id,
@@ -24,7 +26,9 @@ begin
         'New event posted',
         new.title || ' · ' || new.city,
         new.organiser_id,
-        false
+        false,
+        'event:' || new.id::text,
+        'View event'
       from public.profiles as p
       where p.id <> new.organiser_id;
     end if;

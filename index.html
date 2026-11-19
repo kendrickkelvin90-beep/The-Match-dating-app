@@ -7902,7 +7902,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
 <div id="eventsCreatePanel" class="hidden"><div class="events-host-intro"><span class="events-host-kicker">HOST WITH THE MATCH</span><h3>Bring your community together.</h3><p>Submit your event for review. Once approved, it will be visible only to members of your saved dating community.</p><div class="events-host-steps"><span><b>01</b> Submit details</span><span><b>02</b> Payment review</span><span><b>03</b> Go live</span></div></div><div class="events-info-card"><strong>Verified organisers only</strong><p>Every event must be ticketed. The organiser promotion fee starts at ₦10,000 and is separate from attendee ticket payments.</p></div>
 <form id="eventSubmissionForm" class="events-form">
 <label for="eventTitle">Event name</label><input id="eventTitle" maxlength="100" required>
-<label for="eventDescription">About this event</label><textarea id="eventDescription" maxlength="2000" minlength="20" required></textarea><label for="eventPoster">Event poster (optional)</label><input id="eventPoster" type="file" accept="image/jpeg,image/png,image/webp"><small class="events-field-help">JPG, PNG or WebP · maximum 5 MB. Your poster stays private until approval.</small>
+<label for="eventDescription">About this event</label><textarea id="eventDescription" maxlength="2000" minlength="20" required></textarea><label for="eventPoster">Event poster (optional)</label><input id="eventPoster" type="file" accept="image/jpeg,image/png,image/webp"><small class="events-field-help">JPG, PNG or WebP · maximum 5 MB. Your poster stays private until approval.</small><div id="eventPosterPreview" class="hidden" style="margin:12px 0 18px;padding:12px;border:1px solid #b99555;border-radius:14px;background:#171510"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px"><strong style="color:#e4c47f;font-size:13px">Selected flyer preview</strong><button id="removeEventPoster" type="button" style="border:1px solid #6c5940;border-radius:20px;background:#211b12;color:#f1d49a;padding:6px 11px">Remove</button></div><img id="eventPosterPreviewImage" alt="Preview of selected event flyer" style="display:block;width:100%;max-height:320px;object-fit:contain;border-radius:9px;background:#080808"><p id="eventPosterFileName" style="margin:8px 0 0;color:#c9c0af;font-size:12px;overflow-wrap:anywhere"></p></div>
 <label for="eventCategory">Category</label><select id="eventCategory"><option value="social">Social</option><option value="dating">Singles & dating</option><option value="nightlife">Nightlife</option><option value="community">Community</option><option value="online">Online</option><option value="other">Other</option></select>
 <p class="events-field-help">Keep the exact venue private. Share it directly with attendees after you have confirmed their arrangements.</p>
 <label for="eventCity">City / area shown publicly</label><input id="eventCity" maxlength="100" required placeholder="e.g. Lagos, Nigeria">
@@ -21012,6 +21012,37 @@ E("eventDetailsModal")?.addEventListener("click",ev=>{if(ev.target===E("eventDet
 E("eventInterestedBtn")?.addEventListener("click",()=>saveResponse("interested"));E("eventGoingBtn")?.addEventListener("click",()=>saveResponse("going"));
 E("submitEventReport")?.addEventListener("click",async()=>{if(!selectedEvent)return;const btn=E("submitEventReport"),status=E("eventReportStatus");btn.disabled=true;status.textContent="Sending private report…";try{const {error}=await db.from("match_event_reports").insert({event_id:selectedEvent.id,reporter_id:currentUser.id,reason:E("eventReportReason").value,details:E("eventReportDetails").value.trim()||null});if(error)throw error;status.textContent="Your report was sent privately to the safety team. The organiser will not be told who submitted it.";}catch(err){status.textContent=err.code==="23505"?"You have already reported this event. The safety team can review your existing report.":(err.message||"Report could not be sent.");}finally{btn.disabled=false;}});
 E("backFromEvents")?.addEventListener("click",()=>window.show("discover"));
+// Show the exact flyer selected by the organiser before submission.
+let eventPosterPreviewUrl = "";
+function clearEventPosterPreview() {
+  if (eventPosterPreviewUrl) URL.revokeObjectURL(eventPosterPreviewUrl);
+  eventPosterPreviewUrl = "";
+  const panel = E("eventPosterPreview");
+  if (panel) panel.classList.add("hidden");
+  const image = E("eventPosterPreviewImage");
+  if (image) image.removeAttribute("src");
+  if (E("eventPosterFileName")) E("eventPosterFileName").textContent = "";
+}
+E("eventPoster")?.addEventListener("change", () => {
+  clearEventPosterPreview();
+  const file = E("eventPoster")?.files?.[0];
+  if (!file) return;
+  if (!["image/jpeg","image/png","image/webp"].includes(file.type) || file.size > 5 * 1024 * 1024) {
+    E("eventFormStatus").textContent = "Choose a JPG, PNG or WebP flyer under 5 MB.";
+    E("eventPoster").value = "";
+    return;
+  }
+  eventPosterPreviewUrl = URL.createObjectURL(file);
+  E("eventPosterPreviewImage").src = eventPosterPreviewUrl;
+  E("eventPosterFileName").textContent = file.name + " · " + (file.size / 1024 / 1024).toFixed(2) + " MB";
+  E("eventPosterPreview").classList.remove("hidden");
+  E("eventFormStatus").textContent = "Flyer selected. Check the preview before submitting.";
+});
+E("removeEventPoster")?.addEventListener("click", () => {
+  E("eventPoster").value = "";
+  clearEventPosterPreview();
+  E("eventFormStatus").textContent = "Flyer removed. You can choose another one.";
+});
 E("eventSubmissionForm")?.addEventListener("submit",async ev=>{ev.preventDefault();const btn=E("submitEventBtn");btn.disabled=true;E("eventFormStatus").textContent="Submitting…";try{
 const {data:p,error:pe}=await db.from("profiles").select("is_verified").eq("id",currentUser.id).maybeSingle();if(pe)throw pe;if(p?.is_verified!==true)throw Error("Verified membership is required.");
 const start=new Date(E("eventStart").value),end=new Date(E("eventEnd").value);if(isNaN(start)||isNaN(end)||start<=new Date()||end<=start)throw Error("Enter a valid future start and end time.");
@@ -21031,7 +21062,7 @@ try{
  if(E("eventVvipPrice").value.trim()){const qty=E("eventVvipQty").value?Number(E("eventVvipQty").value):null;if(!Number.isFinite(vvip)||vvip<100)throw Error("Enter a valid VVIP ticket price.");if(qty!==null&&(!Number.isInteger(qty)||qty<1))throw Error("VVIP quantity must be a whole number above zero.");tiers.push({event_id:created.id,name:"VVIP",description:"VVIP event admission",price_ngn:vvip,quantity_total:qty});}
  const {error:tierError}=await db.from("match_event_ticket_types").insert(tiers);if(tierError)throw tierError;
 }catch(saveError){await db.from("match_events").delete().eq("id",created.id);throw saveError;}
-E("eventFormStatus").textContent="Submitted. Your event remains private until The Match confirms the promotion fee and approves it.";E("eventSubmissionForm").reset();E("eventTicketPrice").value="";await load();tab("mine");
+E("eventFormStatus").textContent="Submitted. Your event remains private until The Match confirms the promotion fee and approves it.";E("eventSubmissionForm").reset();clearEventPosterPreview();E("eventTicketPrice").value="";await load();tab("mine");
 }catch(err){E("eventFormStatus").textContent=err.message||"Submission failed.";}finally{btn.disabled=false;}});
 E("eventsMineList")?.addEventListener("click",async ev=>{const b=ev.target.closest("[data-event-delete-pending]");if(!b)return;if(!confirm("Withdraw this pending submission? This cannot be undone."))return;const {error}=await db.from("match_events").delete().eq("id",b.dataset.eventDeletePending);if(error){alert("Could not withdraw submission: "+error.message);return;}await load();});
 E("eventsAdminReports")?.addEventListener("click",async ev=>{const reviewed=ev.target.closest("[data-report-reviewed]"),actioned=ev.target.closest("[data-report-actioned]"),remove=ev.target.closest("[data-event-remove]");if(reviewed||actioned){const b=reviewed||actioned;const {error}=await db.from("match_event_reports").update({status:reviewed?"reviewed":"actioned"}).eq("id",b.dataset.reportReviewed||b.dataset.reportActioned);if(error){alert(error.message);return;}await adminReports();}else if(remove){if(!confirm("Remove this event from the public listing?"))return;const {error}=await db.from("match_events").update({status:"cancelled",admin_note:"Removed after member safety report"}).eq("id",remove.dataset.eventRemove);if(error){alert(error.message);return;}await load();}});

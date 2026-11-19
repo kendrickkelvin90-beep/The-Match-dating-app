@@ -11858,6 +11858,7 @@ status("profileStatus","Your profile is loaded. Check your details and save when
   }
 
   await loadMyPhotos();
+  window.dispatchEvent(new Event('match:profile-loaded'));
 
   // Members can access The Match only after both requirements are met:
   // at least two saved profile photos and all required profile details.
@@ -23970,7 +23971,7 @@ body.light-theme #profile .profile-home-action small,body.light-theme #profile .
  const sync=()=>{if(!root.classList.contains('profile-edit-mode')&&!root.classList.contains('profile-preview-mode')){if(completed())showHome();else showEdit();}};
  const observer=new MutationObserver(()=>{if(!root.classList.contains('hidden')){window.setTimeout(sync,250);}});
  observer.observe(root,{attributes:true,attributeFilter:['class']});
- window.addEventListener('match:profile-loaded',()=>{window.setTimeout(sync,100);});
+ window.addEventListener('match:profile-loaded',()=>{window.setTimeout(()=>{if(completed())showHome();else showEdit();},100);});
  window.setTimeout(sync,500);
 })();
 </script>

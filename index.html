@@ -7999,6 +7999,65 @@ async function resolveProfilePhotoUrl(storagePath) {
   catch (error) { profilePhotoUrlCache.delete(storagePath); throw error; }
 }
 
+// Resolve B2 media only through a short-lived URL issued after the
+// authenticated user's existing Supabase RLS policy allows the media row.
+const b2MediaUrlCache = new Map();
+async function resolveB2MediaUrl(category, storagePath) {
+  if (!storagePath || !storagePath.startsWith("b2://")) {
+    throw new Error("Invalid B2 media reference.");
+  }
+  const cacheKey = category + ":" + storagePath;
+  const cached = b2MediaUrlCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.promise;
+  const pending = (async () => {
+    const { data, error } = await db.functions.invoke("b2-media-access", {
+      body: { category, objectKey: storagePath.slice(5) }
+    });
+    if (error || !data?.downloadUrl) {
+      throw error || new Error(data?.error || "Could not authorize this media.");
+    }
+    return data.downloadUrl;
+  })();
+  b2MediaUrlCache.set(cacheKey, { promise: pending, expiresAt: Date.now() + 90000 });
+  try { return await pending; }
+  catch (error) { b2MediaUrlCache.delete(cacheKey); throw error; }
+}
+
+async function uploadMediaToB2(category, file) {
+  const { data: authData, error: authError } = await db.auth.getSession();
+  const accessToken = authData?.session?.access_token;
+  if (authError || !accessToken) throw authError || new Error("Please sign in again before uploading.");
+  const { data: result, error: prepareError } = await db.functions.invoke("b2-media-upload", {
+    body: { fileName: file.name || "media", contentType: file.type, size: file.size },
+    headers: { "x-category": category }
+  });
+  if (prepareError || !result?.uploadUrl || !result?.objectKey) {
+    throw prepareError || new Error(result?.error || "Could not prepare B2 upload.");
+  }
+  const uploadResponse = await fetch(result.uploadUrl, {
+    method: "PUT",
+    headers: result.requiredHeaders || { "Content-Type": file.type },
+    body: file
+  });
+  if (!uploadResponse.ok) {
+    await deleteB2Upload(category, "b2://" + result.objectKey).catch(() => {});
+    throw new Error("B2 rejected the media upload (" + uploadResponse.status + ").");
+  }
+  return "b2://" + result.objectKey;
+}
+
+async function deleteB2Upload(category, storagePath) {
+  if (!storagePath?.startsWith("b2://")) return;
+  const { data: authData, error: authError } = await db.auth.getSession();
+  const accessToken = authData?.session?.access_token;
+  if (authError || !accessToken) throw authError || new Error("Please sign in again.");
+  const { data: result, error } = await db.functions.invoke("b2-media-upload", {
+    body: { objectKey: storagePath.slice(5) },
+    headers: { "x-category": category, "x-action": "delete-upload" }
+  });
+  if (error || !result?.deleted) throw error || new Error(result?.error || "Could not clean up the B2 upload.");
+}
+
 let authCaptchaToken = "";
 let resetCaptchaToken = "";
 let authCaptchaIssuedAt = 0;
@@ -8908,23 +8967,25 @@ async function loadAdminVerificationRequests() {
           viewSelfie.textContent = "Opening selfie...";
 
           try {
-            // Verification selfies are private. Download through the authenticated
-            // Supabase client so the admin SELECT policy is applied to this request.
-            const { data: selfieBlob, error: selfieDownloadError } = await db.storage
-              .from("verification-selfies")
-              .download(request.selfie_path);
-
-            if (selfieDownloadError) throw selfieDownloadError;
-            if (!selfieBlob || !selfieBlob.size) {
-              throw new Error("The stored verification selfie is empty or unavailable.");
+            // RLS authorizes the admin's access to the verification request.
+            // B2 URLs are short-lived and issued only after that row is visible.
+            let signedSelfie;
+            if (request.selfie_path.startsWith("b2://")) {
+              signedSelfie = { signedUrl: await resolveB2MediaUrl("verification_selfies", request.selfie_path) };
+            } else {
+              const { data: selfieBlob, error: selfieDownloadError } = await db.storage
+                .from("verification-selfies")
+                .download(request.selfie_path);
+              if (selfieDownloadError) throw selfieDownloadError;
+              if (!selfieBlob || !selfieBlob.size) {
+                throw new Error("The stored verification selfie is empty or unavailable.");
+              }
+              const { data, error } = await db.storage
+                .from("verification-selfies")
+                .createSignedUrl(request.selfie_path, 300);
+              if (error) throw error;
+              signedSelfie = data;
             }
-
-            // Keep the bucket private and issue a short-lived URL only after the
-            // authenticated admin download has succeeded.
-            const { data: signedSelfie, error: signedSelfieError } = await db.storage
-              .from("verification-selfies")
-              .createSignedUrl(request.selfie_path, 300);
-            if (signedSelfieError) throw signedSelfieError;
             if (!signedSelfie?.signedUrl) {
               throw new Error("Could not create a temporary secure selfie link.");
             }
@@ -13817,10 +13878,15 @@ if (story.user_id === currentUser.id) {
       if (error) throw error;
 
       if (current.media_url) {
-        const { error: removeError } = await db.storage
-          .from("story-media")
-          .remove([current.media_url]);
-        if (removeError) console.warn(removeError.message);
+        if (current.media_url.startsWith("b2://")) {
+          try { await deleteB2Upload("stories", current.media_url); }
+          catch (removeError) { console.warn("Story B2 cleanup failed:", removeError); }
+        } else {
+          const { error: removeError } = await db.storage
+            .from("story-media")
+            .remove([current.media_url]);
+          if (removeError) console.warn(removeError.message);
+        }
       }
 
       closeStory();
@@ -14456,12 +14522,22 @@ viewersInfo.onclick = async event => {
   }
 };
           if(current.media_url){
-  const {data,error}=await db.storage
-    .from("story-media")
-    .createSignedUrl(current.media_url,300);
+  let storyUrl = "";
+  try {
+    if (current.media_url.startsWith("b2://")) {
+      storyUrl = await resolveB2MediaUrl("stories", current.media_url);
+    } else {
+      const {data,error}=await db.storage.from("story-media").createSignedUrl(current.media_url,300);
+      if(error) throw error;
+      storyUrl = data?.signedUrl || "";
+    }
+  } catch (mediaError) {
+    console.error("Story media could not be authorized:", mediaError);
+    if(overlay.isConnected) mediaArea.textContent="Could not load this Story media.";
+  }
 
   if(!overlay.isConnected)return;
-  if(error){
+  if(!storyUrl){
     mediaArea.textContent="Could not load this Story media.";
   }else{
     const media=document.createElement(
@@ -14512,7 +14588,7 @@ viewersInfo.onclick = async event => {
                 media.alt = "Story photo by " + storyOwnerName;
               }
 
-              media.src = data.signedUrl;
+              media.src = storyUrl;
 
               Object.assign(media.style, {
                 position: "absolute",
@@ -15065,10 +15141,7 @@ $("storyMediaFile").onchange = async () => {
         ? file.name.split(".").pop().toLowerCase()
         : "bin";
 
-      const path =
-        currentUser.id + "/" + crypto.randomUUID() + "." + extension;
-
-      await uploadStoryMediaWithRetry(path, file);
+      const path = await uploadMediaToB2("stories", file);
       uploadedPaths.push(path);
 
       storyRows.push({
@@ -15104,13 +15177,14 @@ $("storyMediaFile").onchange = async () => {
     await loadNotificationBadge();
   } catch (e) {
     if (uploadedPaths.length) {
-      const { error: cleanupError } = await db.storage
-        .from("story-media")
-        .remove(uploadedPaths);
-
-      if (cleanupError) {
-        console.warn("Some uploaded Story files could not be removed:", cleanupError.message);
-      }
+      await Promise.all(uploadedPaths.map(async path => {
+        try {
+          if (path.startsWith("b2://")) await deleteB2Upload("stories", path);
+          else await db.storage.from("story-media").remove([path]);
+        } catch (cleanupError) {
+          console.warn("Some uploaded Story files could not be removed:", cleanupError);
+        }
+      }));
     }
 
     
@@ -18424,11 +18498,12 @@ for (const media of mediaRows || []) {
             throw new Error(opened?.error || "This View Once media could not be opened.");
           }
           signed = { signedUrl: opened.signedUrl };
+        } else if (media.storage_path?.startsWith("b2://")) {
+          signed = { signedUrl: await resolveB2MediaUrl("chat_media", media.storage_path) };
         } else {
           const { data, error: signedError } = await db.storage
             .from("chat-media")
             .createSignedUrl(media.storage_path, 60);
-
           if (signedError) throw signedError;
           signed = data;
         }
@@ -18848,21 +18923,23 @@ if (file) {
     file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) ||
     "media";
 
-  const storagePath =
-    senderId + "/" + crypto.randomUUID() + "-" + safeName;
+  let storagePath;
+  if (viewOnce) {
+    // View Once remains in the private Supabase bucket until its atomic
+    // one-time access endpoint is migrated and verified for B2.
+    storagePath = senderId + "/" + crypto.randomUUID() + "-" + safeName;
+    const { error: uploadError } = await db.storage.from("chat-media").upload(storagePath, file, {
+      contentType: file.type,
+      upsert: false
+    });
+    if (uploadError) throw uploadError;
+  } else {
+    storagePath = await uploadMediaToB2("chat_media", file);
+  }
 
   const mediaType = file.type.startsWith("image/")
     ? "image"
     : "video";
-
-  const { error: uploadError } = await db.storage
-    .from("chat-media")
-    .upload(storagePath, file, {
-      contentType: file.type,
-      upsert: false
-    });
-
-  if (uploadError) throw uploadError;
 
   const { error: saveError } = await db
     .from("chat_media")
@@ -18875,7 +18952,8 @@ if (file) {
     });
 
   if (saveError) {
-    await db.storage.from("chat-media").remove([storagePath]);
+    if (storagePath.startsWith("b2://")) await deleteB2Upload("chat_media", storagePath);
+    else await db.storage.from("chat-media").remove([storagePath]);
     throw saveError;
   }
 }
@@ -19420,16 +19498,7 @@ if(previous&&previous.length){
   return;
 }
 
-path=currentUser.id+"/"+Date.now()+"-verification."+(
-  file.type==="image/png"?"png":
-  file.type==="image/webp"?"webp":"jpg"
-);
-
-const {error:uploadError}=await db.storage
-  .from("verification-selfies")
-  .upload(path,file,{contentType:file.type});
-
-if(uploadError)throw uploadError;
+path=await uploadMediaToB2("verification_selfies",file);
 
 const {error:insertError}=await db
   .from("verification_requests")
@@ -19440,7 +19509,7 @@ const {error:insertError}=await db
   });
 
 if(insertError){
-  await db.storage.from("verification-selfies").remove([path]);
+  await deleteB2Upload("verification_selfies",path);
   throw insertError;
 }
 
@@ -19863,21 +19932,20 @@ if (previewStatus) {
       file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) ||
       "media";
 
-    storagePath =
-      senderId + "/" + crypto.randomUUID() + "-" + safeName;
+    if (viewOnce) {
+      storagePath = senderId + "/" + crypto.randomUUID() + "-" + safeName;
+      const { error: uploadError } = await db.storage.from("chat-media").upload(storagePath, file, {
+        contentType: file.type,
+        upsert: false
+      });
+      if (uploadError) throw uploadError;
+    } else {
+      storagePath = await uploadMediaToB2("chat_media", file);
+    }
 
     const mediaType = file.type.startsWith("image/")
       ? "image"
       : "video";
-
-    const { error: uploadError } = await db.storage
-      .from("chat-media")
-      .upload(storagePath, file, {
-        contentType: file.type,
-        upsert: false
-      });
-
-    if (uploadError) throw uploadError;
 
     const { error: saveError } = await db
       .from("chat_media")
@@ -19926,7 +19994,8 @@ if (previewStatus) {
     // Keep the preview open so the user can retry.
     if (!saved && storagePath) {
       try {
-        await db.storage.from("chat-media").remove([storagePath]);
+        if (storagePath.startsWith("b2://")) await deleteB2Upload("chat_media", storagePath);
+        else await db.storage.from("chat-media").remove([storagePath]);
       } catch (cleanupError) {
         console.error("Media cleanup failed:", cleanupError);
       }
@@ -20507,7 +20576,7 @@ if(form)form.hidden=!verifiedMember;
 const {data:pub,error}=await db.from("match_events").select("id,organiser_id,title,description,category,city,starts_at,ends_at,ticket_price_ngn,organiser_whatsapp_url").eq("status","published").gte("ends_at",new Date().toISOString()).order("starts_at");if(error)throw error;
 eventsCache=pub||[];
 const {data:posterAssets}=await db.from("match_event_poster_assets").select("event_id,storage_path").in("event_id",eventsCache.map(x=>x.id));
-await Promise.all(eventsCache.map(async x=>{const asset=(posterAssets||[]).find(a=>a.event_id===x.id);if(asset){const {data}=await db.storage.from("event-posters").createSignedUrl(asset.storage_path,3600);x.posterUrl=data?.signedUrl||null;}}));
+await Promise.all(eventsCache.map(async x=>{const asset=(posterAssets||[]).find(a=>a.event_id===x.id);if(asset){try{x.posterUrl=asset.storage_path.startsWith("b2://")?await resolveB2MediaUrl("event_posters",asset.storage_path):(await db.storage.from("event-posters").createSignedUrl(asset.storage_path,3600)).data?.signedUrl||null;}catch(error){console.warn("Event poster could not be loaded:",error);x.posterUrl=null;}}}));
 eventOrganisers={};
 const organiserIds=[...new Set(eventsCache.map(x=>x.organiser_id).filter(Boolean))];
 if(organiserIds.length){
@@ -20545,7 +20614,7 @@ async function adminQueue(){
 const list=E("eventsAdminList"),{data,error}=await db.from("match_events").select("id,title,description,city,starts_at,promotion_fee_ngn,payment_status,payment_sender_name,payment_reference,status").eq("status","pending_review").order("created_at",{ascending:false});
 if(error){list.textContent=error.message;return;}
 const ids=(data||[]).map(x=>x.id);let payments=[],posterMap={};
-if(ids.length){const {data:assets}=await db.from("match_event_poster_assets").select("event_id,storage_path").in("event_id",ids);await Promise.all((assets||[]).map(async a=>{const {data}=await db.storage.from("event-posters").createSignedUrl(a.storage_path,3600);posterMap[a.event_id]=data?.signedUrl||null;}));}
+if(ids.length){const {data:assets}=await db.from("match_event_poster_assets").select("event_id,storage_path").in("event_id",ids);await Promise.all((assets||[]).map(async a=>{try{posterMap[a.event_id]=a.storage_path.startsWith("b2://")?await resolveB2MediaUrl("event_posters",a.storage_path):(await db.storage.from("event-posters").createSignedUrl(a.storage_path,3600)).data?.signedUrl||null;}catch(error){console.warn("Admin event poster could not be loaded:",error);posterMap[a.event_id]=null;}}));}
 if(ids.length){const result=await db.from("match_event_promotion_payments").select("event_id,amount_ngn,sender_name,transfer_reference,payment_status").in("event_id",ids);if(result.error){list.textContent="Could not load payment verification details: "+result.error.message;return;}payments=result.data||[];}
 list.innerHTML=data?.length?data.map(x=>{const pay=payments.find(p=>p.event_id===x.id);return '<article class="event-admin-card">'+(posterMap[x.id]?'<img src="'+esc(posterMap[x.id])+'" alt="Event poster" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;margin-bottom:10px">' : '')+'<strong>'+esc(x.title)+'</strong><p>'+esc(x.description)+'</p><p>'+esc(x.city)+' · '+esc(date(x.starts_at))+'</p><p>Promotion fee: '+naira(pay?.amount_ngn||x.promotion_fee_ngn)+' · Transfer name: '+esc(pay?.sender_name||x.payment_sender_name||"Not submitted")+' · Ref: '+esc(pay?.transfer_reference||x.payment_reference||"Not submitted")+'</p><p>Payment: '+esc(pay?.payment_status||x.payment_status)+' / '+esc(x.status)+'</p><div class="event-admin-actions"><button data-event-approve="'+x.id+'">Confirm payment & publish</button><button data-event-reject="'+x.id+'">Reject</button></div></article>';}).join(''):'<p class="small">No submissions waiting for review.</p>';
 }
@@ -20592,7 +20661,7 @@ const posterFile=E("eventPoster")?.files?.[0];if(posterFile&&(!["image/jpeg","im
 const payload={organiser_id:currentUser.id,title:E("eventTitle").value.trim(),description:E("eventDescription").value.trim(),category:E("eventCategory").value,venue:"Organiser shares venue details directly with attendees",city:E("eventCity").value.trim(),organiser_whatsapp_url:whatsapp,starts_at:start.toISOString(),ends_at:end.toISOString(),ticket_price_ngn:ticketPrice,promotion_fee_ngn:10000,payment_status:"pending",status:"pending_review"};
 const {data:created,error}=await db.from("match_events").insert(payload).select("id").single();if(error)throw error;
 try{
- if(posterFile){const ext=posterFile.type==="image/png"?"png":posterFile.type==="image/webp"?"webp":"jpg";const path=currentUser.id+"/"+created.id+"/"+crypto.randomUUID()+"."+ext;const {error:uploadError}=await db.storage.from("event-posters").upload(path,posterFile,{contentType:posterFile.type,upsert:false});if(uploadError)throw uploadError;const {error:assetError}=await db.from("match_event_poster_assets").insert({event_id:created.id,organiser_id:currentUser.id,storage_path:path});if(assetError){await db.storage.from("event-posters").remove([path]);throw assetError;}}
+ if(posterFile){const path=await uploadMediaToB2("event_posters",posterFile);const {error:assetError}=await db.from("match_event_poster_assets").insert({event_id:created.id,organiser_id:currentUser.id,storage_path:path});if(assetError){await deleteB2Upload("event_posters",path);throw assetError;}}
 
  
  const {error:paymentError}=await db.from("match_event_promotion_payments").insert({event_id:created.id,organiser_id:currentUser.id,amount_ngn:10000,sender_name:E("eventPaymentSender").value.trim(),transfer_reference:E("eventPaymentReference").value.trim()});if(paymentError)throw paymentError;

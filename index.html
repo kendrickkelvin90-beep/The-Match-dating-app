@@ -7662,6 +7662,26 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
         <div id="adminPremiumList" class="admin-queue-card admin-queue-list"><p>Loading membership overview with dashboard refresh...</p></div>
       </section>
 
+      <section class="admin-feature-section" aria-labelledby="adminB2Heading">
+        <div class="admin-section-heading admin-queue-heading">
+          <div><p class="admin-eyebrow">STORAGE · MIGRATION</p><h3 id="adminB2Heading">Backblaze B2 media migration</h3></div>
+          <span class="admin-data-note">Admin only · safe two-file batches</span>
+        </div>
+        <div class="admin-queue-card" style="display:grid;gap:12px">
+          <p style="margin:0;color:#aaa;line-height:1.6">Copy existing media from Supabase Storage to the private Backblaze bucket. Each batch moves at most two files and updates a database reference only after the B2 copy succeeds. Original Supabase files are never deleted.</p>
+          <label for="adminB2Category" style="color:#c6a45c;font-weight:700">Media category</label>
+          <select id="adminB2Category" style="width:100%;padding:12px;border-radius:10px;background:#111;color:#fff;border:1px solid #555">
+            <option value="profile_photos">Profile photos</option>
+            <option value="stories">Stories</option>
+            <option value="chat_media">Regular chat media (View Once excluded)</option>
+            <option value="verification_selfies">Verification selfies (admin-only)</option>
+            <option value="event_posters">Event posters</option>
+          </select>
+          <button type="button" id="adminB2MigrateBtn" class="admin-refresh-button">Migrate next 2 files</button>
+          <p id="adminB2MigrationStatus" role="status" aria-live="polite" style="margin:0;color:#ddd;line-height:1.6">No migration batch has been run from this dashboard yet.</p>
+        </div>
+      </section>
+
       <section class="admin-feature-section" aria-labelledby="adminAnalyticsHeading">
         <div class="admin-section-heading admin-queue-heading">
           <div><p class="admin-eyebrow">PLATFORM INSIGHTS</p><h3 id="adminAnalyticsHeading">Activity overview</h3></div>
@@ -9729,6 +9749,46 @@ $("adminMembersRefreshBtn")?.addEventListener("click", async () => {
   catch (error) { $("adminMembersList").textContent = "Could not load members: " + friendly(error); }
 });
 $("adminMemberSearch")?.addEventListener("input", event => renderAdminMemberDirectory(event.target.value));
+
+$("adminB2MigrateBtn")?.addEventListener("click", async () => {
+  const button = $("adminB2MigrateBtn");
+  const category = $("adminB2Category")?.value;
+  const output = $("adminB2MigrationStatus");
+  if (!category || !output || button.disabled) return;
+  if (!(await checkMatchAdmin())) {
+    output.textContent = "Admin access denied. No files were moved.";
+    return;
+  }
+  const labels = {
+    profile_photos: "profile photos",
+    stories: "Stories",
+    chat_media: "regular chat media (View Once excluded)",
+    verification_selfies: "verification selfies",
+    event_posters: "event posters"
+  };
+  if (!window.confirm("Migrate the next two " + labels[category] + " to the private B2 bucket? Original Supabase files will be retained.")) return;
+  button.disabled = true;
+  output.textContent = "Copying up to two files. Please keep this page open...";
+  try {
+    const { data, error } = await db.functions.invoke("b2-media-migrate", {
+      body: { category, limit: 2 }
+    });
+    if (error) throw error;
+    if (!data) throw new Error("The migration function returned no result.");
+    const migrated = Number(data.migrated || 0);
+    const failed = Number(data.failed || 0);
+    const remaining = Number(data.remaining);
+    output.textContent = migrated + " file(s) copied to B2; " + failed + " failed." +
+      (Number.isFinite(remaining) ? " Remaining in this category: " + remaining + "." : "") +
+      (Array.isArray(data.failures) && data.failures.length ? " Details: " + data.failures.join("; ") : "") +
+      (migrated === 0 && failed === 0 ? " No eligible legacy files remain in this category." : " Original Supabase files were retained.");
+  } catch (error) {
+    console.error("B2 migration batch failed:", error);
+    output.textContent = "Migration stopped safely: " + friendly(error) + ". No source files were deleted.";
+  } finally {
+    button.disabled = false;
+  }
+});
 
 $("openAdminDashboardBtn").addEventListener("click", async () => {
   const allowed = await checkMatchAdmin();

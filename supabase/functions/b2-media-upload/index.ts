@@ -76,8 +76,8 @@ Deno.serve(async (req: Request) => {
     });
     // Accept small browser uploads through this authenticated function so
     // Android browsers do not need to perform a cross-origin PUT to B2.
-    const action = req.headers.get("x-action") || "create-upload-url";
-    if (action === "upload-binary") {
+    const binaryAction = req.headers.get("x-action") || "create-upload-url";
+    if (binaryAction === "upload-binary") {
       const contentType = (req.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
       if (!allowedTypes.has(contentType)) return response({ error: "Unsupported media type" }, 400, origin);
       const declaredSize = Number(req.headers.get("content-length") || "0");

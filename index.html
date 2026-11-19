@@ -7678,6 +7678,9 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
             <option value="event_posters">Event posters</option>
           </select>
           <button type="button" id="adminB2MigrateBtn" class="admin-refresh-button">Migrate next 2 files</button>
+          <button type="button" id="adminB2MigrateAllBtn" class="admin-refresh-button" style="border-color:#c6a45c">Migrate all remaining files automatically</button>
+          <button type="button" id="adminB2StopBtn" class="admin-refresh-button" style="display:none">Stop after current batch</button>
+          <div id="adminB2ProgressWrap" style="display:none;height:9px;border-radius:99px;background:#292929;overflow:hidden"><div id="adminB2ProgressBar" style="height:100%;width:0;background:linear-gradient(90deg,#b88c45,#f0d18b);transition:width .2s"></div></div>
           <p id="adminB2MigrationStatus" role="status" aria-live="polite" style="margin:0;color:#ddd;line-height:1.6">No migration batch has been run from this dashboard yet.</p>
         </div>
       </section>
@@ -9749,6 +9752,95 @@ $("adminMembersRefreshBtn")?.addEventListener("click", async () => {
   catch (error) { $("adminMembersList").textContent = "Could not load members: " + friendly(error); }
 });
 $("adminMemberSearch")?.addEventListener("input", event => renderAdminMemberDirectory(event.target.value));
+
+let adminB2StopRequested = false;
+$("adminB2StopBtn")?.addEventListener("click", () => {
+  adminB2StopRequested = true;
+  const stop = $("adminB2StopBtn");
+  if (stop) stop.textContent = "Stopping after this batch...";
+});
+$("adminB2MigrateAllBtn")?.addEventListener("click", async () => {
+  const button = $("adminB2MigrateAllBtn");
+  const stopButton = $("adminB2StopBtn");
+  const category = $("adminB2Category")?.value;
+  const output = $("adminB2MigrationStatus");
+  const progressWrap = $("adminB2ProgressWrap");
+  const progressBar = $("adminB2ProgressBar");
+  if (!category || !output || !button || button.disabled) return;
+  if (!(await checkMatchAdmin())) {
+    output.textContent = "Admin access denied. No files were moved.";
+    return;
+  }
+  const labels = {
+    profile_photos: "profile photos",
+    stories: "Stories",
+    chat_media: "regular chat media (View Once excluded)",
+    verification_selfies: "verification selfies",
+    event_posters: "event posters"
+  };
+  if (!window.confirm("Start automatic migration of all remaining " + labels[category] + "? The system will copy two files per request, update references only after successful copies, and retain every original Supabase file. Keep this page open. You can stop between batches.")) return;
+  button.disabled = true;
+  $("adminB2MigrateBtn").disabled = true;
+  button.textContent = "Migration running...";
+  if (stopButton) { stopButton.style.display = "block"; stopButton.disabled = false; stopButton.textContent = "Stop after current batch"; }
+  if (progressWrap) progressWrap.style.display = "block";
+  adminB2StopRequested = false;
+  let totalMigrated = 0;
+  let totalFailed = 0;
+  let initialRemaining = null;
+  let remaining = null;
+  let batches = 0;
+  try {
+    while (!adminB2StopRequested) {
+      output.textContent = "Checking next safe batch... " + totalMigrated + " copied so far.";
+      const { data, error } = await db.functions.invoke("b2-media-migrate", {
+        body: { category, limit: 2 }
+      });
+      if (error) throw error;
+      if (!data) throw new Error("The migration function returned no result.");
+      batches++;
+      const migrated = Number(data.migrated || 0);
+      const failed = Number(data.failed || 0);
+      remaining = Number(data.remaining);
+      totalMigrated += migrated;
+      totalFailed += failed;
+      if (initialRemaining === null && Number.isFinite(remaining)) initialRemaining = remaining + totalMigrated;
+      const percent = initialRemaining > 0 && Number.isFinite(remaining)
+        ? Math.min(100, Math.round((totalMigrated / initialRemaining) * 100))
+        : (remaining === 0 ? 100 : 0);
+      if (progressBar) progressBar.style.width = percent + "%";
+      output.textContent = "Automatic migration: " + totalMigrated + " copied; " + totalFailed +
+        " failed; " + (Number.isFinite(remaining) ? remaining + " remaining." : "remaining count unavailable.") +
+        " Batch " + batches + ". " + percent + "% complete.";
+      if (failed > 0) {
+        const details = Array.isArray(data.failures) && data.failures.length ? " Details: " + data.failures.join("; ") : "";
+        output.textContent += " Paused because a batch reported failures." + details;
+        break;
+      }
+      if (remaining === 0 || (migrated === 0 && remaining === 0)) break;
+      if (migrated === 0) {
+        output.textContent += " Paused because no files were copied in this batch; please inspect before retrying.";
+        break;
+      }
+      if (adminB2StopRequested) break;
+      await new Promise(resolve => setTimeout(resolve, 350));
+    }
+    if (adminB2StopRequested) {
+      output.textContent += " Stopped safely after the current batch. Originals were retained.";
+    } else if (remaining === 0 && totalFailed === 0) {
+      output.textContent += " All eligible files in this category have been migrated. Original Supabase files were retained.";
+      if (progressBar) progressBar.style.width = "100%";
+    }
+  } catch (error) {
+    console.error("B2 automatic migration stopped:", error);
+    output.textContent += " Migration paused safely: " + friendly(error) + ". You can resume later; original Supabase files were not deleted.";
+  } finally {
+    button.disabled = false;
+    button.textContent = "Migrate all remaining files automatically";
+    $("adminB2MigrateBtn").disabled = false;
+    if (stopButton) { stopButton.style.display = "none"; stopButton.disabled = false; stopButton.textContent = "Stop after current batch"; }
+  }
+});
 
 $("adminB2MigrateBtn")?.addEventListener("click", async () => {
   const button = $("adminB2MigrateBtn");

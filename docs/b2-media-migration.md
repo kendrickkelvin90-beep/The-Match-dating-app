@@ -8,6 +8,8 @@
 - Re-running a batch is safe: the B2 object key is deterministic for a source row.
 - Process at most two objects per request; each source object must be 25 MB or smaller.
 - A row is counted as migrated only after the database reference update succeeds.
+- New profile photos, Stories, regular chat attachments, verification selfies, and event posters are routed to B2 by the branch code.
+- Chat View Once attachments intentionally remain in Supabase until their atomic one-time access flow is migrated and tested.
 - Verify application reads for every media category before any later source cleanup.
 
 ## Categories
@@ -28,7 +30,7 @@ Call the `b2-media-migrate` Edge Function with the signed-in administrator sessi
 { "category": "profile_photos", "limit": 2 }
 ```
 
-Repeat with each category key: `stories`, `chat_media`, `verification_selfies`, and `event_posters`. Continue a category until its returned `remaining` count is zero. A failed item is returned in `failures`; inspect and resolve it before continuing.
+Repeat with each category key: `stories`, `chat_media`, `verification_selfies`, and `event_posters`. Continue a category until its returned `remaining` count is zero. For `chat_media`, `remaining` excludes View Once records; those are separately reported as `excludedViewOnce`. A failed item is returned in `failures`; inspect and resolve it before continuing.
 
 **Do not run the worker until the matching app read path has been deployed.** The current production app only resolves B2 profile-photo paths. Stories, chat media, verification selfies, and event posters still use Supabase Storage reads. Migrating those references before their readers are updated would make those assets temporarily unavailable.
 

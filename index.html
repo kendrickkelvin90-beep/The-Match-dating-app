@@ -6568,7 +6568,6 @@ button:disabled,input:disabled,select:disabled,textarea:disabled{opacity:.58;cur
 
 <button class="btn primary" id="openPremium" type="button">⭐ Go Premium</button>
 
-  <button class="btn secondary" id="logoutProfile" type="button">Log out</button>
 </section>
 
 
@@ -10611,10 +10610,29 @@ if (window.turnstile && authCaptchaWidgetId !== null) {
     }
   } catch (error) {
     console.error("Signup/login error:", error);
-    const authMessage = loginMode && /banned|ban duration|user is banned/i.test(error?.message || "")
-      ? "This account is suspended or permanently banned from The Match. Contact support if you believe this is a mistake."
-      : friendly(error);
-    status("authStatus", authMessage, true);
+    const isRestrictedLogin = loginMode && /banned|ban duration|user is banned|user_banned|suspended/i.test(String(error?.message || "") + " " + String(error?.code || ""));
+    if (isRestrictedLogin) {
+      status("authStatus", "Your account is currently suspended or restricted. You cannot access The Match while this restriction is active.", true);
+      let appealPanel = $("suspensionAppealPanel");
+      if (!appealPanel) {
+        appealPanel = document.createElement("div");
+        appealPanel.id = "suspensionAppealPanel";
+        appealPanel.className = "member-card";
+        appealPanel.style.cssText = "margin-top:14px;border:1px solid #C6A45C;padding:16px;border-radius:14px;";
+        const heading = document.createElement("h3"); heading.textContent = "Account suspension";
+        const message = document.createElement("p"); message.textContent = "If you believe this action was made in error, you can request a review from The Match Support. Include the email address registered to your account so our team can identify it.";
+        const contact = document.createElement("p"); contact.className = "small"; contact.textContent = "Support: thematchsuppprt@gmail.com";
+        const reviewLink = document.createElement("a"); reviewLink.id = "requestSuspensionReview"; reviewLink.className = "btn primary"; reviewLink.textContent = "Request a review by email"; reviewLink.style.cssText = "display:block;text-align:center;text-decoration:none;box-sizing:border-box;margin-top:12px;";
+        appealPanel.append(heading, message, contact, reviewLink);
+        $("authStatus").insertAdjacentElement("afterend", appealPanel);
+      }
+      const appealBody = ["Hello The Match Support,", "", "I am requesting a review of the suspension or restriction on my account.", "Registered account email: " + email, "", "Please review the decision and let me know the next steps.", "", "Thank you."].join("\n");
+      $("requestSuspensionReview").href = "mailto:thematchsuppprt@gmail.com?subject=" + encodeURIComponent("The Match account suspension review request") + "&body=" + encodeURIComponent(appealBody);
+      appealPanel.hidden = false;
+    } else {
+      const oldAppealPanel = $("suspensionAppealPanel"); if (oldAppealPanel) oldAppealPanel.hidden = true;
+      status("authStatus", friendly(error), true);
+    }
   } finally {
     button.disabled = false;
   }
@@ -16353,8 +16371,9 @@ if(countError)throw countError;
 
     const {data:received,error:receivedError}=await db
       .from("likes")
-      .select("liker_id")
-      .eq("liked_id",currentUser.id);
+      .select("liker_id,created_at")
+      .eq("liked_id",currentUser.id)
+      .order("created_at", { ascending: false });
 
     if(receivedError)throw receivedError;
 
@@ -17303,8 +17322,9 @@ async function loadMyMatches(){
   try{
     const {data:sent,error:sentError}=await db
       .from("likes")
-      .select("liked_id")
-      .eq("liker_id",currentUser.id);
+      .select("liked_id,created_at")
+      .eq("liker_id",currentUser.id)
+      .order("created_at", { ascending: false });
 
     if(sentError)throw sentError;
 
@@ -17349,6 +17369,26 @@ async function loadMyMatches(){
       .in("id",mutualIds);
 
     if(profileError)throw profileError;
+
+    // Use the time the second like arrived as the mutual-match timestamp.
+    const { data: reciprocalLikes, error: reciprocalLikesError } = await db
+      .from("likes")
+      .select("liker_id,created_at")
+      .eq("liked_id", currentUser.id)
+      .in("liker_id", mutualIds);
+    if (reciprocalLikesError) throw reciprocalLikesError;
+    const matchTimeByUser = new Map();
+    (sent || []).forEach(like => {
+      if (mutualIds.includes(like.liked_id) && like.created_at) {
+        matchTimeByUser.set(like.liked_id, new Date(like.created_at).getTime());
+      }
+    });
+    (reciprocalLikes || []).forEach(like => {
+      if (!like.created_at) return;
+      const timestamp = new Date(like.created_at).getTime();
+      matchTimeByUser.set(like.liker_id, Math.max(matchTimeByUser.get(like.liker_id) || 0, timestamp));
+    });
+    (profiles || []).sort((a, b) => (matchTimeByUser.get(b.id) || 0) - (matchTimeByUser.get(a.id) || 0));
 
     // Fetch all match photos in one request rather than one request per card.
     const profileIds = (profiles || []).map(profile => profile.id);
@@ -19497,6 +19537,7 @@ async function loadVerificationStatus() {
 
     
     if (level === "enhanced" || level === "basic" || profile?.is_verified) {
+      section.hidden = true;
       button.textContent = "✓ Verified";
       button.style.background = "#D4AF37";
       button.style.color = "#111111";
@@ -19506,6 +19547,7 @@ async function loadVerificationStatus() {
     }
 
 
+    section.hidden = false;
     button.textContent = "🛡️ Get Verified";
     button.style.background = "";
     button.style.color = "";
@@ -19918,7 +19960,7 @@ let r=await db.auth.signOut();
 if(r.error){alert(friendly(r.error));return;}
 currentUser=null;approxLocation=null;show("welcome");
 }
-$("logoutProfile").onclick=logout;
+$("settingsLogout").onclick = logout;
 if ($("logoutDiscover")) {
   $("logoutDiscover").onclick = logout;
 }

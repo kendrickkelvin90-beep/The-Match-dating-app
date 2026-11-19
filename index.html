@@ -18923,21 +18923,11 @@ if (file) {
     file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) ||
     "media";
 
-  const storagePath =
-    senderId + "/" + crypto.randomUUID() + "-" + safeName;
+  const storagePath = await uploadMediaToB2("chat_media", file);
 
   const mediaType = file.type.startsWith("image/")
     ? "image"
     : "video";
-
-  const { error: uploadError } = await db.storage
-    .from("chat-media")
-    .upload(storagePath, file, {
-      contentType: file.type,
-      upsert: false
-    });
-
-  if (uploadError) throw uploadError;
 
   const { error: saveError } = await db
     .from("chat_media")
@@ -18950,7 +18940,7 @@ if (file) {
     });
 
   if (saveError) {
-    await db.storage.from("chat-media").remove([storagePath]);
+    await deleteB2Upload("chat_media", storagePath);
     throw saveError;
   }
 }
@@ -19938,21 +19928,11 @@ if (previewStatus) {
       file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) ||
       "media";
 
-    storagePath =
-      senderId + "/" + crypto.randomUUID() + "-" + safeName;
+    storagePath = await uploadMediaToB2("chat_media", file);
 
     const mediaType = file.type.startsWith("image/")
       ? "image"
       : "video";
-
-    const { error: uploadError } = await db.storage
-      .from("chat-media")
-      .upload(storagePath, file, {
-        contentType: file.type,
-        upsert: false
-      });
-
-    if (uploadError) throw uploadError;
 
     const { error: saveError } = await db
       .from("chat_media")
@@ -20001,7 +19981,8 @@ if (previewStatus) {
     // Keep the preview open so the user can retry.
     if (!saved && storagePath) {
       try {
-        await db.storage.from("chat-media").remove([storagePath]);
+        if (storagePath.startsWith("b2://")) await deleteB2Upload("chat_media", storagePath);
+        else await db.storage.from("chat-media").remove([storagePath]);
       } catch (cleanupError) {
         console.error("Media cleanup failed:", cleanupError);
       }

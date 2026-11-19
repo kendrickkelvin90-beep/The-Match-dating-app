@@ -11814,10 +11814,20 @@ if (ownActiveBadgeError) {
   ownSpecialBadge.setAttribute("aria-label", "Your active Special Profile Badge");
   $("greeting").appendChild(ownSpecialBadge);
 }
-show("profile", false);
-  setTimeout(showReferralToast, 1200);
-$("bottomNavigation").querySelector('[data-page="discover"]').classList.add("active");
-status("profileStatus","Loading your profile...");
+// Keep the previous page covered while we verify the saved profile.
+  // Completed members are routed directly to Discover; incomplete members
+  // are sent to Profile only after the required fields/photos are checked.
+  const existingBootScreen = $("matchSessionRestoreScreen");
+  existingBootScreen?.remove();
+  const bootScreen = document.createElement("div");
+  bootScreen.id = "matchSessionRestoreScreen";
+  bootScreen.setAttribute("role", "status");
+  bootScreen.setAttribute("aria-live", "polite");
+  bootScreen.style.cssText = "position:fixed;inset:0;z-index:20000;display:grid;place-items:center;padding:24px;background:#080808;color:#e6c77f;text-align:center;font-size:18px;font-weight:700;";
+  bootScreen.textContent = "Opening The Match…";
+  document.body.appendChild(bootScreen);
+  status("profileStatus","Checking your saved profile...");
+
 try{
 let r=await db.from("profiles")
   .select("id,display_name,gender_identity,interested_in,pronouns,bio,city,avatar_url,created_at,updated_at,age,location_sharing,is_verified,sexual_roles,gender_presentation,discovery_role_preferences,verification_level,verification_grace_started_at,nearby_current_city,nearby_current_state")
@@ -11909,6 +11919,9 @@ status("profileStatus","Your profile is loaded. Check your details and save when
   } else {
     show("profile", false);
   }
+
+  // Reveal the selected first page only after profile completion checks finish.
+  $("matchSessionRestoreScreen")?.remove();
 
   await loadVerificationStatus();
   refreshNearbyCurrentLocation();

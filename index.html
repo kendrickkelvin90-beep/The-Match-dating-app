@@ -8139,6 +8139,8 @@ async function uploadMediaToB2(category, file) {
 // The Events module is a separate script closure and must use the same
 // authenticated B2 uploader as the rest of the app.
 window.uploadMediaToB2 = uploadMediaToB2;
+// The Events module runs in its own IIFE and needs the profile-photo resolver.
+window.resolveProfilePhotoUrl = resolveProfilePhotoUrl;
 
 async function deleteB2Upload(category, storagePath) {
   if (!storagePath?.startsWith("b2://")) return;
@@ -20947,7 +20949,7 @@ if(organiserIds.length){
  if(profileError)throw profileError;
  const {data:photos,error:photoError}=await db.from("profile_photos").select("user_id,storage_path,position").in("user_id",organiserIds).order("position");
  if(photoError)throw photoError;
- await Promise.all((profiles||[]).map(async p=>{const photo=(photos||[]).find(x=>x.user_id===p.id);eventOrganisers[p.id]={...p,photoUrl:photo?await resolveProfilePhotoUrl(photo.storage_path):null};}));
+ await Promise.all((profiles||[]).map(async p=>{const photo=(photos||[]).find(x=>x.user_id===p.id);eventOrganisers[p.id]={...p,photoUrl:photo?await window.resolveProfilePhotoUrl(photo.storage_path):null};}));
 }
 const {data:responses,error:re}=await db.from("match_event_responses").select("event_id,response").eq("member_id",currentUser.id);
 if(re)throw re;myResponses=Object.fromEntries((responses||[]).map(x=>[x.event_id,x.response]));

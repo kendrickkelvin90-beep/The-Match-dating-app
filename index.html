@@ -12616,7 +12616,44 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
     );
 }
 
-const discoverMemberIds = people.map(person => person.id);
+// Published community events are additional Discover cards, never dating profiles.
+    let discoverEventCards = [];
+    try {
+      const { data: publishedEvents, error: publishedEventsError } = await db
+        .from("match_events")
+        .select("id,title,description,category,city,starts_at,ends_at,ticket_price_ngn,community")
+        .eq("status", "published")
+        .eq("community", currentMemberCommunity)
+        .gte("ends_at", new Date().toISOString())
+        .order("starts_at", { ascending: true })
+        .limit(30);
+      if (publishedEventsError) throw publishedEventsError;
+      const eventRows = publishedEvents || [];
+      const { data: eventPosterAssets, error: eventPosterError } = eventRows.length
+        ? await db.from("match_event_poster_assets").select("event_id,storage_path").in("event_id", eventRows.map(event => event.id))
+        : { data: [], error: null };
+      if (eventPosterError) throw eventPosterError;
+      const posterByEventId = new Map();
+      await Promise.all((eventPosterAssets || []).map(async asset => {
+        try {
+          const posterUrl = asset.storage_path.startsWith("b2://")
+            ? await resolveB2MediaUrl("event_posters", asset.storage_path)
+            : (await db.storage.from("event-posters").createSignedUrl(asset.storage_path, 3600)).data?.signedUrl || null;
+          if (posterUrl) posterByEventId.set(asset.event_id, posterUrl);
+        } catch (posterError) {
+          console.warn("Discover event flyer could not be loaded:", posterError);
+        }
+      }));
+      discoverEventCards = eventRows.map(event => ({
+        ...event,
+        __matchEvent: true,
+        posterUrl: posterByEventId.get(event.id) || null
+      }));
+    } catch (eventFeedError) {
+      console.warn("Published events could not be added to Discover:", eventFeedError);
+    }
+
+    const discoverMemberIds = people.map(person => person.id);
 if (discoverMemberIds.length) {
   const { data: premiumRows, error: premiumRowsError } = await db.rpc("get_active_premium_member_ids", { p_user_ids: discoverMemberIds });
   if (premiumRowsError) throw premiumRowsError;
@@ -12632,11 +12669,8 @@ if (discoverMemberIds.length) {
   people.sort((a,b) => Number(boostedSet.has(b.id)) - Number(boostedSet.has(a.id)));
 }
 
-if (!people.length) {
-  status(
-    "discoverStatus",
-    "No profiles available right now. Check back soon."
-  );
+if (!people.length && !discoverEventCards.length) {
+  status("discoverStatus", "No profiles or published events are available right now. Check back soon.");
   return;
 }
   
@@ -12671,6 +12705,114 @@ if (!people.length) {
       return discoverPhotoCache.get(userId);
     };
 
+    // Mix one event after every three member cards. All eligible published
+    // events are included, while member ordering and matching data stay intact.
+    const discoverFeed = [];
+    let eventFeedIndex = 0;
+    people.forEach((person, index) => {
+      discoverFeed.push(person);
+      if ((index + 1) % 3 === 0 && eventFeedIndex < discoverEventCards.length) {
+        discoverFeed.push(discoverEventCards[eventFeedIndex++]);
+      }
+    });
+    while (eventFeedIndex < discoverEventCards.length) {
+      discoverFeed.push(discoverEventCards[eventFeedIndex++]);
+    }
+    if (!people.length) discoverFeed.push(...discoverEventCards);
+
+    async function showDiscoverEvent(eventCard, currentCard) {
+      const card = currentCard;
+      card.className = "member-card discover-event-card";
+      card.dataset.eventId = eventCard.id;
+      card.style.cssText = "position:relative;display:flex;flex-direction:column;width:calc(100vw - 28px);max-width:calc(100vw - 28px);height:calc(100dvh - 220px);min-height:360px;max-height:none;box-sizing:border-box;margin:0 14px;padding:12px;border:1px solid rgba(224,190,116,.88);border-radius:28px;background:#090909;box-shadow:0 12px 34px rgba(0,0,0,.42);overflow:hidden;touch-action:pan-y;";
+      const flyer = document.createElement("img");
+      flyer.alt = "Flyer for " + (eventCard.title || "community event");
+      flyer.src = eventCard.posterUrl || "";
+      flyer.style.cssText = "display:block;width:100%;height:58%;min-height:160px;max-height:58%;object-fit:contain;object-position:center;background:#050505;border-radius:18px;cursor:" + (eventCard.posterUrl ? "zoom-in" : "default") + ";";
+      flyer.addEventListener("click", event => {
+        event.stopPropagation();
+        if (eventCard.posterUrl) window.openMatchEventFlyer?.(eventCard.posterUrl, flyer.alt);
+      });
+      if (!eventCard.posterUrl) {
+        flyer.style.display = "none";
+        const placeholder = document.createElement("div");
+        placeholder.textContent = "✦  EVENT FLYER";
+        placeholder.style.cssText = "height:58%;min-height:160px;display:grid;place-items:center;border-radius:18px;background:linear-gradient(145deg,#211a0d,#080808);color:#e5c37d;font-weight:850;letter-spacing:2px;";
+        card.appendChild(placeholder);
+      } else {
+        card.appendChild(flyer);
+      }
+      const content = document.createElement("div");
+      content.style.cssText = "display:flex;flex:1;min-height:0;flex-direction:column;justify-content:center;gap:9px;padding:12px 8px 4px;color:#f6f0e3;";
+      const tag = document.createElement("span");
+      tag.textContent = "✦ COMMUNITY EVENT";
+      tag.style.cssText = "color:#e6c47e;font-size:11px;font-weight:850;letter-spacing:1.8px;";
+      const title = document.createElement("h2");
+      title.textContent = eventCard.title || "Community event";
+      title.style.cssText = "margin:0;font-size:clamp(23px,6vw,30px);line-height:1.15;font-weight:850;";
+      const description = document.createElement("p");
+      description.textContent = eventCard.description || "Discover this community event.";
+      description.style.cssText = "margin:0;color:#c8c0b1;font-size:14px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;";
+      const meta = document.createElement("p");
+      meta.textContent = "⌖ " + (eventCard.city || "Location to be confirmed") + "   ·   ◷ " + new Date(eventCard.starts_at).toLocaleString("en-NG",{dateStyle:"medium",timeStyle:"short"});
+      meta.style.cssText = "margin:0;color:#e6c47e;font-size:12px;line-height:1.4;";
+      const price = document.createElement("strong");
+      price.textContent = Number(eventCard.ticket_price_ngn) > 0 ? "₦" + Number(eventCard.ticket_price_ngn).toLocaleString("en-NG") : "Free entry";
+      price.style.cssText = "color:#f0d18a;font-size:18px;";
+      const hint = document.createElement("p");
+      hint.textContent = "Swipe right or tap ♥ to explore this event.";
+      hint.style.cssText = "margin:0;color:#aaa;font-size:12px;";
+      content.append(tag,title,description,meta,price,hint);
+      card.appendChild(content);
+      const actions = document.createElement("div");
+      actions.style.cssText = "display:flex;justify-content:center;align-items:center;gap:28px;padding:8px 0 4px;";
+      const passEvent = document.createElement("button");
+      passEvent.type = "button";
+      passEvent.textContent = "✕";
+      passEvent.setAttribute("aria-label","Pass this event");
+      passEvent.style.cssText = "width:68px;height:68px;border-radius:50%;border:1px solid #888;background:#171717;color:#fff;font-size:34px;";
+      const likeEvent = document.createElement("button");
+      likeEvent.type = "button";
+      likeEvent.textContent = "♥";
+      likeEvent.setAttribute("aria-label","Explore this event");
+      likeEvent.title = "Open event details";
+      likeEvent.style.cssText = "width:68px;height:68px;border-radius:50%;border:1px solid #f5d995;background:linear-gradient(145deg,#f7dfaa,#bd8b39);color:#211707;font-size:32px;font-weight:900;";
+      passEvent.onclick = async () => {
+        passEvent.disabled = likeEvent.disabled = true;
+        await animateDiscoverCardExit(card, "left");
+        personIndex++;
+        await showPerson();
+      };
+      likeEvent.onclick = async () => {
+        passEvent.disabled = likeEvent.disabled = true;
+        await animateDiscoverCardExit(card, "right");
+        personIndex++;
+        if (typeof window.openPublishedEventById === "function") {
+          await window.openPublishedEventById(eventCard.id);
+        } else {
+          show("eventsPage");
+        }
+      };
+      actions.append(passEvent,likeEvent);
+      card.appendChild(actions);
+      list.replaceChildren(card);
+      let touchStartX=0,touchStartY=0;
+      card.addEventListener("touchstart",event=>{touchStartX=event.changedTouches[0].clientX;touchStartY=event.changedTouches[0].clientY;},{passive:true});
+      card.addEventListener("touchend",event=>{
+        const dx=event.changedTouches[0].clientX-touchStartX,dy=event.changedTouches[0].clientY-touchStartY;
+        if(Math.abs(dx)<90||Math.abs(dx)<Math.abs(dy))return;
+        if(dx<0)passEvent.click();else likeEvent.click();
+      },{passive:true});
+    }
+
+    const animateDiscoverCardExit = (card, direction) => new Promise(resolve => {
+      card.style.transition = "transform 260ms cubic-bezier(.2,.75,.25,1), opacity 260ms ease";
+      void card.offsetWidth;
+      card.style.transform = direction === "left" ? "translate3d(-115%,0,0) rotate(-12deg)" : "translate3d(115%,0,0) rotate(12deg)";
+      card.style.opacity = "0";
+      window.setTimeout(resolve,275);
+    });
+
     let personIndex=0;
 
     async function showPerson(){
@@ -12679,13 +12821,17 @@ if (!people.length) {
       // jump the page back to the Stories section.
       const discoverScrollPosition = document.scrollingElement?.scrollTop ?? window.scrollY;
 
-      if(personIndex>=people.length){
+      if(personIndex>=discoverFeed.length){
         list.replaceChildren();
-        status("discoverStatus","You've seen all available profiles. Refresh to check again.");
+        status("discoverStatus","You've seen all available profiles and events. Refresh to explore again.");
         return;
       }
 
-      const p=people[personIndex];
+      const p=discoverFeed[personIndex];
+      if (p?.__matchEvent) {
+        await showDiscoverEvent(p, document.createElement("div"));
+        return;
+      }
       if (personIndex > 0) discoverPhotoCache.delete(people[personIndex - 1]?.id);
 
       // Super Likes are a coin-store entitlement, not a Premium membership benefit.
@@ -12809,8 +12955,8 @@ if (isNewHere) {
       }
 
       // Quietly preload the next profile's first photo while this card is visible.
-      const nextPerson = people[personIndex + 1];
-      if (nextPerson) {
+      const nextPerson = discoverFeed[personIndex + 1];
+      if (nextPerson && !nextPerson.__matchEvent) {
         getDiscoverPhotoUrls(nextPerson.id)
           .then(nextUrls => {
             if (!nextUrls.length) return;
@@ -20927,9 +21073,33 @@ function filteredEvents(){
 const q=(E("eventsSearch")?.value||"").trim().toLowerCase(), city=(E("eventsCityFilter")?.value||"").trim().toLowerCase(), cat=E("eventsCategoryFilter")?.value||"";
 return eventsCache.filter(x=>(!q||(x.title+" "+x.description).toLowerCase().includes(q))&&(!city||x.city.toLowerCase().includes(city))&&(!cat||x.category===cat));
 }
+function openEventFlyerViewer(src, altText) {
+  if (!src) return;
+  document.getElementById("tmEventFlyerViewer")?.remove();
+  const overlay=document.createElement("div");
+  overlay.id="tmEventFlyerViewer";
+  overlay.setAttribute("role","dialog");
+  overlay.setAttribute("aria-modal","true");
+  overlay.setAttribute("aria-label","Event flyer image viewer");
+  overlay.style.cssText="position:fixed;inset:0;z-index:20000;display:flex;align-items:center;justify-content:center;padding:12px;background:rgba(0,0,0,.96);";
+  const close=document.createElement("button");
+  close.type="button";close.textContent="✕";close.setAttribute("aria-label","Close flyer viewer");
+  close.style.cssText="position:absolute;top:max(16px,env(safe-area-inset-top));right:16px;z-index:2;width:46px;height:46px;border:1px solid rgba(255,255,255,.45);border-radius:50%;background:#171717;color:#fff;font-size:25px;";
+  const image=document.createElement("img");
+  image.src=src;image.alt=altText||"Event flyer";
+  image.style.cssText="display:block;max-width:100%;max-height:calc(100dvh - 32px);width:auto;height:auto;object-fit:contain;user-select:none;";
+  const closeViewer=()=>overlay.remove();
+  close.addEventListener("click",closeViewer);
+  overlay.addEventListener("click",event=>{if(event.target===overlay)closeViewer();});
+  overlay.append(image,close);document.body.appendChild(overlay);close.focus();
+  const onKey=event=>{if(event.key==="Escape"){closeViewer();document.removeEventListener("keydown",onKey);}};
+  document.addEventListener("keydown",onKey);
+}
+window.openMatchEventFlyer=openEventFlyerViewer;
+
 function renderEvents(){
 const list=E("eventsPublicList"), rows=filteredEvents();
-list.innerHTML=rows.length?rows.map(x=>'<article class="event-card">'+(x.posterUrl?'<img src="'+esc(x.posterUrl)+'" alt="Poster for '+esc(x.title)+'" loading="lazy" style="width:100%;max-height:190px;object-fit:cover;border-radius:12px;margin-bottom:12px">' : '')+'<div class="event-card-top"><span class="event-category">'+esc(x.category)+'</span><span>'+(new Date(x.starts_at)>new Date()?"UPCOMING":"ONGOING")+'</span></div><h3>'+esc(x.title)+'</h3><p>'+esc(x.description.slice(0,180))+(x.description.length>180?'…':'')+'</p><div class="event-meta"><span>⌖ '+esc(x.city)+'</span><span>◷ '+esc(date(x.starts_at))+'</span></div><div class="event-card-bottom"><strong>'+(x.ticket_price_ngn?naira(x.ticket_price_ngn):"Free entry")+'</strong><span>Contact organiser for venue</span></div><button type="button" class="event-open-details" data-event-details="'+x.id+'">View event details</button></article>').join(""):'<div class="events-empty"><strong>No events match your search</strong><p>Try another name, city or category.</p></div>';
+list.innerHTML=rows.length?rows.map(x=>'<article class="event-card">'+(x.posterUrl?'<img class="tm-event-flyer-preview" data-event-flyer="'+esc(x.posterUrl)+'" src="'+esc(x.posterUrl)+'" alt="Poster for '+esc(x.title)+'" loading="lazy" role="button" tabindex="0" style="display:block;width:100%;height:auto;max-height:320px;object-fit:contain;object-position:center;background:#080808;border-radius:12px;margin-bottom:12px;cursor:zoom-in">' : '')+'<div class="event-card-top"><span class="event-category">'+esc(x.category)+'</span><span>'+(new Date(x.starts_at)>new Date()?"UPCOMING":"ONGOING")+'</span></div><h3>'+esc(x.title)+'</h3><p>'+esc(x.description.slice(0,180))+(x.description.length>180?'…':'')+'</p><div class="event-meta"><span>⌖ '+esc(x.city)+'</span><span>◷ '+esc(date(x.starts_at))+'</span></div><div class="event-card-bottom"><strong>'+(x.ticket_price_ngn?naira(x.ticket_price_ngn):"Free entry")+'</strong><span>Contact organiser for venue</span></div><button type="button" class="event-open-details" data-event-details="'+x.id+'">View event details</button></article>').join(""):'<div class="events-empty"><strong>No events match your search</strong><p>Try another name, city or category.</p></div>';
 }
 async function load(){
 if(!currentUser?.id)throw Error("Please sign in to view Events.");
@@ -20983,7 +21153,7 @@ if(error){list.textContent=error.message;return;}
 const ids=(data||[]).map(x=>x.id);let payments=[],posterMap={};
 if(ids.length){const {data:assets}=await db.from("match_event_poster_assets").select("event_id,storage_path").in("event_id",ids);await Promise.all((assets||[]).map(async a=>{try{posterMap[a.event_id]=a.storage_path.startsWith("b2://")?await window.resolveB2MediaUrl("event_posters",a.storage_path):(await db.storage.from("event-posters").createSignedUrl(a.storage_path,3600)).data?.signedUrl||null;}catch(error){console.warn("Admin event poster could not be loaded:",error);posterMap[a.event_id]=null;}}));}
 if(ids.length){const result=await db.from("match_event_promotion_payments").select("event_id,amount_ngn,sender_name,transfer_reference,payment_status").in("event_id",ids);if(result.error){list.textContent="Could not load payment verification details: "+result.error.message;return;}payments=result.data||[];}
-list.innerHTML=data?.length?data.map(x=>{const pay=payments.find(p=>p.event_id===x.id);return '<article class="event-admin-card">'+(posterMap[x.id]?'<img src="'+esc(posterMap[x.id])+'" alt="Event poster" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;margin-bottom:10px">' : '')+'<strong>'+esc(x.title)+'</strong><p>'+esc(x.description)+'</p><p>'+esc(x.city)+' · '+esc(date(x.starts_at))+'</p><p>Promotion fee: '+naira(pay?.amount_ngn||x.promotion_fee_ngn)+' · Transfer name: '+esc(pay?.sender_name||x.payment_sender_name||"Not submitted")+' · Ref: '+esc(pay?.transfer_reference||x.payment_reference||"Not submitted")+'</p><p>Payment: '+esc(pay?.payment_status||x.payment_status)+' / '+esc(x.status)+'</p><div class="event-admin-actions"><button data-event-approve="'+x.id+'">Confirm payment & publish</button><button data-event-reject="'+x.id+'">Reject</button></div></article>';}).join(''):'<p class="small">No submissions waiting for review.</p>';
+list.innerHTML=data?.length?data.map(x=>{const pay=payments.find(p=>p.event_id===x.id);return '<article class="event-admin-card">'+(posterMap[x.id]?'<img class="tm-event-flyer-preview" src="'+esc(posterMap[x.id])+'" alt="Event poster" role="button" tabindex="0" style="display:block;width:100%;height:auto;max-height:320px;object-fit:contain;background:#080808;border-radius:10px;margin-bottom:10px;cursor:zoom-in">' : '')+'<strong>'+esc(x.title)+'</strong><p>'+esc(x.description)+'</p><p>'+esc(x.city)+' · '+esc(date(x.starts_at))+'</p><p>Promotion fee: '+naira(pay?.amount_ngn||x.promotion_fee_ngn)+' · Transfer name: '+esc(pay?.sender_name||x.payment_sender_name||"Not submitted")+' · Ref: '+esc(pay?.transfer_reference||x.payment_reference||"Not submitted")+'</p><p>Payment: '+esc(pay?.payment_status||x.payment_status)+' / '+esc(x.status)+'</p><div class="event-admin-actions"><button data-event-approve="'+x.id+'">Confirm payment & publish</button><button data-event-reject="'+x.id+'">Reject</button></div></article>';}).join(''):'<p class="small">No submissions waiting for review.</p>';
 }
 async function openDetails(id){
 selectedEvent=eventsCache.find(x=>x.id===id);if(!selectedEvent)return;
@@ -21013,7 +21183,12 @@ E("eventInterestedBtn").textContent=response==="interested"?"✓ Interested":"In
 document.querySelectorAll("[data-events-tab]").forEach(b=>b.addEventListener("click",()=>tab(b.dataset.eventsTab)));
 E("eventsSearch")?.addEventListener("input",renderEvents);E("eventsCityFilter")?.addEventListener("input",renderEvents);E("eventsCategoryFilter")?.addEventListener("change",renderEvents);
 document.querySelectorAll("[data-event-category]").forEach(b=>b.addEventListener("click",()=>{const value=b.dataset.eventCategory||"";E("eventsCategoryFilter").value=value;document.querySelectorAll("[data-event-category]").forEach(x=>{const active=x===b;x.classList.toggle("active",active);x.setAttribute("aria-pressed",String(active));});renderEvents();}));
-E("eventsPublicList")?.addEventListener("click",ev=>{const b=ev.target.closest("[data-event-details]");if(b)openDetails(b.dataset.eventDetails);});
+E("eventsPublicList")?.addEventListener("click",ev=>{
+  const flyer=ev.target.closest("[data-event-flyer]");
+  if(flyer){openEventFlyerViewer(flyer.dataset.eventFlyer,flyer.alt);return;}
+  const b=ev.target.closest("[data-event-details]");if(b)openDetails(b.dataset.eventDetails);
+});
+E("eventsPublicList")?.addEventListener("keydown",ev=>{const flyer=ev.target.closest("[data-event-flyer]");if(flyer&&(ev.key==="Enter"||ev.key===" ")){ev.preventDefault();openEventFlyerViewer(flyer.dataset.eventFlyer,flyer.alt);}});
 window.openPublishedEventById = async function(eventId) {
   window.show("eventsPage");
   try {
@@ -21085,7 +21260,7 @@ E("eventFormStatus").textContent="Submitted. Your event remains private until Th
 }catch(err){E("eventFormStatus").textContent=err.message||"Submission failed.";}finally{btn.disabled=false;}});
 E("eventsMineList")?.addEventListener("click",async ev=>{const b=ev.target.closest("[data-event-delete-pending]");if(!b)return;if(!confirm("Withdraw this pending submission? This cannot be undone."))return;const {error}=await db.from("match_events").delete().eq("id",b.dataset.eventDeletePending);if(error){alert("Could not withdraw submission: "+error.message);return;}await load();});
 E("eventsAdminReports")?.addEventListener("click",async ev=>{const reviewed=ev.target.closest("[data-report-reviewed]"),actioned=ev.target.closest("[data-report-actioned]"),remove=ev.target.closest("[data-event-remove]");if(reviewed||actioned){const b=reviewed||actioned;const {error}=await db.from("match_event_reports").update({status:reviewed?"reviewed":"actioned"}).eq("id",b.dataset.reportReviewed||b.dataset.reportActioned);if(error){alert(error.message);return;}await adminReports();}else if(remove){if(!confirm("Remove this event from the public listing?"))return;const {error}=await db.from("match_events").update({status:"cancelled",admin_note:"Removed after member safety report"}).eq("id",remove.dataset.eventRemove);if(error){alert(error.message);return;}await load();}});
-E("eventsAdminList")?.addEventListener("click",async ev=>{const a=ev.target.closest("[data-event-approve]"),rj=ev.target.closest("[data-event-reject]");if(!a&&!rj)return;const id=(a||rj).dataset.eventApprove||(rj&&rj.dataset.eventReject);if(a&&!confirm("Have you confirmed the organiser promotion-fee transfer in your account and approved this event?"))return;if(rj&&!confirm("Reject this event submission?"))return;try{const decision=a?"approved":"rejected";const {error:payError}=await db.from("match_event_promotion_payments").update({payment_status:decision,reviewed_by:currentUser.id,reviewed_at:new Date().toISOString()}).eq("event_id",id);if(payError)throw payError;const patch=a?{payment_status:"approved",status:"published",reviewed_by:currentUser.id,reviewed_at:new Date().toISOString(),admin_note:"Promotion payment confirmed"}:{payment_status:"rejected",status:"rejected",reviewed_by:currentUser.id,reviewed_at:new Date().toISOString(),admin_note:"Rejected by admin"};const {error}=await db.from("match_events").update(patch).eq("id",id);if(error)throw error;await load();}catch(err){alert("Review failed: "+err.message);}});
+E("eventsAdminList")?.addEventListener("click",async ev=>{const flyer=ev.target.closest(".tm-event-flyer-preview");if(flyer){openEventFlyerViewer(flyer.src,flyer.alt);return;}const a=ev.target.closest("[data-event-approve]"),rj=ev.target.closest("[data-event-reject]");if(!a&&!rj)return;const id=(a||rj).dataset.eventApprove||(rj&&rj.dataset.eventReject);if(a&&!confirm("Have you confirmed the organiser promotion-fee transfer in your account and approved this event?"))return;if(rj&&!confirm("Reject this event submission?"))return;try{const decision=a?"approved":"rejected";const {error:payError}=await db.from("match_event_promotion_payments").update({payment_status:decision,reviewed_by:currentUser.id,reviewed_at:new Date().toISOString()}).eq("event_id",id);if(payError)throw payError;const patch=a?{payment_status:"approved",status:"published",reviewed_by:currentUser.id,reviewed_at:new Date().toISOString(),admin_note:"Promotion payment confirmed"}:{payment_status:"rejected",status:"rejected",reviewed_by:currentUser.id,reviewed_at:new Date().toISOString(),admin_note:"Rejected by admin"};const {error}=await db.from("match_events").update(patch).eq("id",id);if(error)throw error;await load();}catch(err){alert("Review failed: "+err.message);}});
 E("adminOpenEventsBtn")?.addEventListener("click",async()=>{window.show("eventsPage");try{await load();if(E("eventsAdminTab")&&!E("eventsAdminTab").classList.contains("hidden")){tab("admin");}else{E("eventsPageStatus").textContent="Your account does not have Events admin access.";}}catch(err){E("eventsPageStatus").textContent="Events management unavailable: "+err.message;}}); 
 E("openEventsFromDiscover")?.addEventListener("click",async()=>{
   if(currentUser){

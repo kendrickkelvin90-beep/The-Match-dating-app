@@ -8033,14 +8033,22 @@ async function uploadMediaToB2(category, file) {
       "apikey": "sb_publishable_5OirCcmy8L5n3isPvi-P0w_Dgeb13U_",
       "Authorization": "Bearer " + accessToken,
       "x-category": category,
-      "x-file-name": encodeURIComponent(file.name || "media"),
-      "Content-Type": file.type
+      "Content-Type": "application/json"
     },
-    body: file
+    body: JSON.stringify({ fileName: file.name || "media", contentType: file.type, size: file.size })
   });
   const result = await response.json().catch(() => ({}));
-  if (!response.ok || !result?.objectKey) {
-    throw new Error(result?.error || "B2 upload failed (" + response.status + ").");
+  if (!response.ok || !result?.uploadUrl || !result?.objectKey) {
+    throw new Error(result?.error || "Could not prepare B2 upload (" + response.status + ").");
+  }
+  const uploadResponse = await fetch(result.uploadUrl, {
+    method: "PUT",
+    headers: result.requiredHeaders || { "Content-Type": file.type },
+    body: file
+  });
+  if (!uploadResponse.ok) {
+    await deleteB2Upload(category, "b2://" + result.objectKey).catch(() => {});
+    throw new Error("B2 rejected the media upload (" + uploadResponse.status + ").");
   }
   return "b2://" + result.objectKey;
 }

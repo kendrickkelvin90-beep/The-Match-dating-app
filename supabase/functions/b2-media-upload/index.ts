@@ -116,7 +116,6 @@ Deno.serve(async (req: Request) => {
       Bucket: bucket,
       Key: objectKey,
       ContentType: contentType,
-      ContentLength: size,
     });
     const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
     return response({

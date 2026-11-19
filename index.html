@@ -8583,7 +8583,8 @@ function renderMemberNotifications() {
     card.appendChild(chevron);
 
     const markRead = async () => {
-      if (notification.is_read || !currentUser) return;
+      if (notification.is_read) return true;
+      if (!currentUser) return false;
       card.setAttribute("aria-busy", "true");
       const { error } = await db.from("notifications")
         .update({ is_read: true })
@@ -8592,11 +8593,12 @@ function renderMemberNotifications() {
       if (error) {
         $("notificationsStatus").textContent = "Could not mark notification as read. Please try again.";
         card.removeAttribute("aria-busy");
-        return;
+        return false;
       }
       notification.is_read = true;
       renderMemberNotifications();
       await loadNotificationBadge();
+      return true;
     };
     if (hasAction) {
       const actions = document.createElement("div");
@@ -8608,7 +8610,7 @@ function renderMemberNotifications() {
       renew.textContent = notification.action_label || "Yes, Renew";
       renew.addEventListener("click", async event => {
         event.stopPropagation();
-        await markRead();
+        if (!(await markRead())) return;
         show("premium");
       });
       const dismiss = document.createElement("button");
@@ -8617,7 +8619,7 @@ function renderMemberNotifications() {
       dismiss.textContent = "No, Thanks";
       dismiss.addEventListener("click", async event => {
         event.stopPropagation();
-        await markRead();
+        if (!(await markRead())) return;
         actions.remove();
       });
       actions.append(renew, dismiss);

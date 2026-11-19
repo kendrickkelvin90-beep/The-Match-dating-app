@@ -8027,19 +8027,12 @@ async function uploadMediaToB2(category, file) {
   const { data: authData, error: authError } = await db.auth.getSession();
   const accessToken = authData?.session?.access_token;
   if (authError || !accessToken) throw authError || new Error("Please sign in again before uploading.");
-  const response = await fetch("https://rxbdmgzmwhjnkcclyrcq.supabase.co/functions/v1/b2-media-upload", {
-    method: "POST",
-    headers: {
-      "apikey": "sb_publishable_5OirCcmy8L5n3isPvi-P0w_Dgeb13U_",
-      "Authorization": "Bearer " + accessToken,
-      "x-category": category,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ fileName: file.name || "media", contentType: file.type, size: file.size })
+  const { data: result, error: prepareError } = await db.functions.invoke("b2-media-upload", {
+    body: { fileName: file.name || "media", contentType: file.type, size: file.size },
+    headers: { "x-category": category }
   });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok || !result?.uploadUrl || !result?.objectKey) {
-    throw new Error(result?.error || "Could not prepare B2 upload (" + response.status + ").");
+  if (prepareError || !result?.uploadUrl || !result?.objectKey) {
+    throw prepareError || new Error(result?.error || "Could not prepare B2 upload.");
   }
   const uploadResponse = await fetch(result.uploadUrl, {
     method: "PUT",
@@ -8058,19 +8051,11 @@ async function deleteB2Upload(category, storagePath) {
   const { data: authData, error: authError } = await db.auth.getSession();
   const accessToken = authData?.session?.access_token;
   if (authError || !accessToken) throw authError || new Error("Please sign in again.");
-  const response = await fetch("https://rxbdmgzmwhjnkcclyrcq.supabase.co/functions/v1/b2-media-upload", {
-    method: "POST",
-    headers: {
-      "apikey": "sb_publishable_5OirCcmy8L5n3isPvi-P0w_Dgeb13U_",
-      "Authorization": "Bearer " + accessToken,
-      "x-category": category,
-      "x-action": "delete-upload",
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ objectKey: storagePath.slice(5) })
+  const { data: result, error } = await db.functions.invoke("b2-media-upload", {
+    body: { objectKey: storagePath.slice(5) },
+    headers: { "x-category": category, "x-action": "delete-upload" }
   });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok || !result?.deleted) throw new Error(result?.error || "Could not clean up the B2 upload.");
+  if (error || !result?.deleted) throw error || new Error(result?.error || "Could not clean up the B2 upload.");
 }
 
 let authCaptchaToken = "";

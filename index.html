@@ -8121,6 +8121,10 @@ async function uploadMediaToB2(category, file) {
   return "b2://" + result.objectKey;
 }
 
+// The Events module is a separate script closure and must use the same
+// authenticated B2 uploader as the rest of the app.
+window.uploadMediaToB2 = uploadMediaToB2;
+
 async function deleteB2Upload(category, storagePath) {
   if (!storagePath?.startsWith("b2://")) return;
   const { data: authData, error: authError } = await db.auth.getSession();
@@ -11670,6 +11674,14 @@ async function loadCurrentMemberOrientation() {
   syncDatingCommunityFields();
   return currentMemberOrientation;
 }
+
+// Events is loaded in a separate script block, so explicitly expose this
+// authenticated community loader and its read-only community state.
+window.loadCurrentMemberOrientation = loadCurrentMemberOrientation;
+Object.defineProperty(window, "currentMemberCommunity", {
+  configurable: true,
+  get: () => currentMemberCommunity
+});
 
 function syncDatingCommunityFields() {
   const community = $("datingCommunity")?.value || currentMemberCommunity;

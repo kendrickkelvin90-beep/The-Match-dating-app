@@ -18923,7 +18923,19 @@ if (file) {
     file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) ||
     "media";
 
-  const storagePath = await uploadMediaToB2("chat_media", file);
+  let storagePath;
+  if (viewOnce) {
+    // View Once remains in the private Supabase bucket until its atomic
+    // one-time access endpoint is migrated and verified for B2.
+    storagePath = senderId + "/" + crypto.randomUUID() + "-" + safeName;
+    const { error: uploadError } = await db.storage.from("chat-media").upload(storagePath, file, {
+      contentType: file.type,
+      upsert: false
+    });
+    if (uploadError) throw uploadError;
+  } else {
+    storagePath = await uploadMediaToB2("chat_media", file);
+  }
 
   const mediaType = file.type.startsWith("image/")
     ? "image"
@@ -18940,7 +18952,8 @@ if (file) {
     });
 
   if (saveError) {
-    await deleteB2Upload("chat_media", storagePath);
+    if (storagePath.startsWith("b2://")) await deleteB2Upload("chat_media", storagePath);
+    else await db.storage.from("chat-media").remove([storagePath]);
     throw saveError;
   }
 }
@@ -19928,7 +19941,16 @@ if (previewStatus) {
       file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) ||
       "media";
 
-    storagePath = await uploadMediaToB2("chat_media", file);
+    if (viewOnce) {
+      storagePath = senderId + "/" + crypto.randomUUID() + "-" + safeName;
+      const { error: uploadError } = await db.storage.from("chat-media").upload(storagePath, file, {
+        contentType: file.type,
+        upsert: false
+      });
+      if (uploadError) throw uploadError;
+    } else {
+      storagePath = await uploadMediaToB2("chat_media", file);
+    }
 
     const mediaType = file.type.startsWith("image/")
       ? "image"

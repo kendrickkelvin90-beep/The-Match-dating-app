@@ -11915,13 +11915,27 @@ status("profileStatus","Your profile is loaded. Check your details and save when
   if (savedProfileIsReady) {
     show("discover", false);
     status("discoverStatus", "Welcome back! Finding people for you...");
-    await Promise.all([loadNearby(), loadStories()]);
   } else {
     show("profile", false);
   }
 
-  // Reveal the selected first page only after profile completion checks finish.
+  // Reveal the app as soon as the saved profile has been checked.
+  // Nearby and Stories are secondary feeds: a slow or stalled feed request
+  // must never keep every page hidden behind the startup screen.
   $("matchSessionRestoreScreen")?.remove();
+
+  if (savedProfileIsReady) {
+    void Promise.allSettled([loadNearby(), loadStories()]).then(results => {
+      results.forEach((result, index) => {
+        if (result.status === "rejected") {
+          console.warn(
+            index === 0 ? "Nearby feed failed to load:" : "Stories feed failed to load:",
+            result.reason
+          );
+        }
+      });
+    });
+  }
 
   await loadVerificationStatus();
   refreshNearbyCurrentLocation();

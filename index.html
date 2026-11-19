@@ -8141,6 +8141,8 @@ async function uploadMediaToB2(category, file) {
 window.uploadMediaToB2 = uploadMediaToB2;
 // The Events module runs in its own IIFE and needs the profile-photo resolver.
 window.resolveProfilePhotoUrl = resolveProfilePhotoUrl;
+// The Events module also needs the authenticated private-media URL resolver.
+window.resolveB2MediaUrl = resolveB2MediaUrl;
 
 async function deleteB2Upload(category, storagePath) {
   if (!storagePath?.startsWith("b2://")) return;
@@ -20941,7 +20943,7 @@ if(form)form.hidden=!verifiedMember;
 let publicEventsQuery=db.from("match_events").select("id,organiser_id,title,description,category,city,starts_at,ends_at,ticket_price_ngn,organiser_whatsapp_url").eq("status","published").gte("ends_at",new Date().toISOString());if(!isMatchAdmin)publicEventsQuery=publicEventsQuery.eq("community",currentMemberCommunity);const {data:pub,error}=await publicEventsQuery.order("starts_at");if(error)throw error;
 eventsCache=pub||[];
 const {data:posterAssets}=await db.from("match_event_poster_assets").select("event_id,storage_path").in("event_id",eventsCache.map(x=>x.id));
-await Promise.all(eventsCache.map(async x=>{const asset=(posterAssets||[]).find(a=>a.event_id===x.id);if(asset){try{x.posterUrl=asset.storage_path.startsWith("b2://")?await resolveB2MediaUrl("event_posters",asset.storage_path):(await db.storage.from("event-posters").createSignedUrl(asset.storage_path,3600)).data?.signedUrl||null;}catch(error){console.warn("Event poster could not be loaded:",error);x.posterUrl=null;}}}));
+await Promise.all(eventsCache.map(async x=>{const asset=(posterAssets||[]).find(a=>a.event_id===x.id);if(asset){try{x.posterUrl=asset.storage_path.startsWith("b2://")?await window.resolveB2MediaUrl("event_posters",asset.storage_path):(await db.storage.from("event-posters").createSignedUrl(asset.storage_path,3600)).data?.signedUrl||null;}catch(error){console.warn("Event poster could not be loaded:",error);x.posterUrl=null;}}}));
 eventOrganisers={};
 const organiserIds=[...new Set(eventsCache.map(x=>x.organiser_id).filter(Boolean))];
 if(organiserIds.length){
@@ -20979,7 +20981,7 @@ async function adminQueue(){
 const list=E("eventsAdminList"),{data,error}=await db.from("match_events").select("id,title,description,city,starts_at,promotion_fee_ngn,payment_status,payment_sender_name,payment_reference,status").eq("status","pending_review").order("created_at",{ascending:false});
 if(error){list.textContent=error.message;return;}
 const ids=(data||[]).map(x=>x.id);let payments=[],posterMap={};
-if(ids.length){const {data:assets}=await db.from("match_event_poster_assets").select("event_id,storage_path").in("event_id",ids);await Promise.all((assets||[]).map(async a=>{try{posterMap[a.event_id]=a.storage_path.startsWith("b2://")?await resolveB2MediaUrl("event_posters",a.storage_path):(await db.storage.from("event-posters").createSignedUrl(a.storage_path,3600)).data?.signedUrl||null;}catch(error){console.warn("Admin event poster could not be loaded:",error);posterMap[a.event_id]=null;}}));}
+if(ids.length){const {data:assets}=await db.from("match_event_poster_assets").select("event_id,storage_path").in("event_id",ids);await Promise.all((assets||[]).map(async a=>{try{posterMap[a.event_id]=a.storage_path.startsWith("b2://")?await window.resolveB2MediaUrl("event_posters",a.storage_path):(await db.storage.from("event-posters").createSignedUrl(a.storage_path,3600)).data?.signedUrl||null;}catch(error){console.warn("Admin event poster could not be loaded:",error);posterMap[a.event_id]=null;}}));}
 if(ids.length){const result=await db.from("match_event_promotion_payments").select("event_id,amount_ngn,sender_name,transfer_reference,payment_status").in("event_id",ids);if(result.error){list.textContent="Could not load payment verification details: "+result.error.message;return;}payments=result.data||[];}
 list.innerHTML=data?.length?data.map(x=>{const pay=payments.find(p=>p.event_id===x.id);return '<article class="event-admin-card">'+(posterMap[x.id]?'<img src="'+esc(posterMap[x.id])+'" alt="Event poster" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;margin-bottom:10px">' : '')+'<strong>'+esc(x.title)+'</strong><p>'+esc(x.description)+'</p><p>'+esc(x.city)+' · '+esc(date(x.starts_at))+'</p><p>Promotion fee: '+naira(pay?.amount_ngn||x.promotion_fee_ngn)+' · Transfer name: '+esc(pay?.sender_name||x.payment_sender_name||"Not submitted")+' · Ref: '+esc(pay?.transfer_reference||x.payment_reference||"Not submitted")+'</p><p>Payment: '+esc(pay?.payment_status||x.payment_status)+' / '+esc(x.status)+'</p><div class="event-admin-actions"><button data-event-approve="'+x.id+'">Confirm payment & publish</button><button data-event-reject="'+x.id+'">Reject</button></div></article>';}).join(''):'<p class="small">No submissions waiting for review.</p>';
 }

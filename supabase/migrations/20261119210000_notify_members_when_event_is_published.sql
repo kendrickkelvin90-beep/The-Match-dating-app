@@ -8,25 +8,26 @@ security definer
 set search_path = pg_catalog, public
 as $$
 begin
-  if new.status = 'published'
-     and (tg_op = 'INSERT' or old.status is distinct from 'published') then
-    insert into public.notifications (
-      user_id,
-      type,
-      title,
-      body,
-      related_user_id,
-      is_read
-    )
-    select
-      p.id,
-      'event_published',
-      'New event posted',
-      new.title || ' · ' || new.city,
-      new.organiser_id,
-      false
-    from public.profiles as p
-    where p.id <> new.organiser_id;
+  if new.status = 'published' then
+    if tg_op = 'INSERT' or old.status is distinct from 'published' then
+      insert into public.notifications (
+        user_id,
+        type,
+        title,
+        body,
+        related_user_id,
+        is_read
+      )
+      select
+        p.id,
+        'event_published',
+        'New event posted',
+        new.title || ' · ' || new.city,
+        new.organiser_id,
+        false
+      from public.profiles as p
+      where p.id <> new.organiser_id;
+    end if;
   end if;
 
   return new;

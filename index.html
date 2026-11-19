@@ -13885,10 +13885,15 @@ if (story.user_id === currentUser.id) {
       if (error) throw error;
 
       if (current.media_url) {
-        const { error: removeError } = await db.storage
-          .from("story-media")
-          .remove([current.media_url]);
-        if (removeError) console.warn(removeError.message);
+        if (current.media_url.startsWith("b2://")) {
+          try { await deleteB2Upload("stories", current.media_url); }
+          catch (removeError) { console.warn("Story B2 cleanup failed:", removeError); }
+        } else {
+          const { error: removeError } = await db.storage
+            .from("story-media")
+            .remove([current.media_url]);
+          if (removeError) console.warn(removeError.message);
+        }
       }
 
       closeStory();

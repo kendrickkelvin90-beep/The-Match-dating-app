@@ -22,6 +22,10 @@
 | Verification selfies | verification-selfies | verification_requests.selfie_path | b2:// |
 | Event posters | event-posters | match_event_poster_assets.storage_path | b2:// |
 
+## Backblaze bucket CORS prerequisite
+
+New browser uploads use short-lived presigned PUT URLs so large videos do not pass through a Supabase Edge Function. Before enabling the new upload code, configure the B2 bucket's CORS rules to allow the app origin `https://match.beyondthebinarymedia.online`, method `PUT`, and request header `Content-Type`. Keep the origin restricted to the production app domain; do not use a wildcard origin. Signed GET downloads do not require exposing the bucket publicly.
+
 ## Running the worker (after application B2 read support is deployed)
 
 Call the `b2-media-migrate` Edge Function with the signed-in administrator session:

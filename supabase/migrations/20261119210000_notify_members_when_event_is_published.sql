@@ -117,7 +117,7 @@ begin
         action_label
       )
       select
-        p.id,
+        mo.user_id,
         'event_published',
         'New event posted',
         new.title || ' · ' || new.city,

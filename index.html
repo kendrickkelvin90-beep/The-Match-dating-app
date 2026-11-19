@@ -6309,6 +6309,31 @@ button:disabled,input:disabled,select:disabled,textarea:disabled{opacity:.58;cur
     <div><p class="profile-eyebrow">THE MATCH</p><h2>My Profile</h2></div>
     <button type="button" id="openSettingsFromProfile" aria-label="Open settings" title="Settings">⚙</button>
   </div>
+  <div id="profileHomeDashboard" class="profile-home-dashboard">
+    <div class="profile-home-identity">
+      <div class="profile-home-avatar" id="profileHomeAvatar">♥</div>
+      <div class="profile-home-identity-copy"><h3 id="profileHomeName">Your profile</h3><p id="profileHomeMeta">Your Match account</p></div>
+      <span class="profile-home-status">● Active</span>
+    </div>
+    <p class="profile-home-intro">Your profile, your way. Manage your details whenever you need to.</p>
+    <button type="button" class="profile-home-action profile-home-action-primary" id="viewMyProfileDetails"><span class="profile-home-action-icon">◉</span><span><strong>View my profile</strong><small>See your profile details and how members may see you</small></span><span class="profile-home-chevron">›</span></button>
+    <button type="button" class="profile-home-action" id="editMyProfile"><span class="profile-home-action-icon">✎</span><span><strong>Edit profile</strong><small>Update your photos, information and preferences</small></span><span class="profile-home-chevron">›</span></button>
+    <button type="button" class="profile-home-action" id="openVerificationFromProfile"><span class="profile-home-action-icon">♢</span><span><strong>Profile verification</strong><small>Build trust with other members</small></span><span class="profile-home-chevron">›</span></button>
+    <button type="button" class="profile-home-action" id="openSettingsFromProfileHome"><span class="profile-home-action-icon">⚙</span><span><strong>Account settings</strong><small>Privacy, security and account options</small></span><span class="profile-home-chevron">›</span></button>
+    <div class="profile-home-premium"><div><strong>Get more with Premium</strong><small>Explore your membership benefits</small></div><button type="button" id="openPremiumFromProfileHome">Explore</button></div>
+    <p class="status" id="profileHomeStatus" aria-live="polite"></p>
+  </div>
+  <div id="profileHomePreview" class="profile-home-preview hidden">
+    <div class="profile-home-preview-heading"><button type="button" id="backToProfileHome">← Back</button><strong>My profile details</strong></div>
+    <div class="profile-home-preview-card">
+      <div class="profile-home-preview-avatar" id="profilePreviewAvatar">♥</div>
+      <h3 id="profilePreviewName">Your name</h3><p id="profilePreviewMeta"></p>
+      <p id="profilePreviewBio" class="profile-home-preview-bio"></p>
+      <div id="profilePreviewFacts" class="profile-home-preview-facts"></div>
+    </div>
+    <p class="profile-home-preview-note">Only details you choose to share are shown to other members. Private preferences remain private.</p>
+    <button type="button" class="btn primary" id="editFromProfilePreview">Edit profile</button>
+  </div>
   <div class="member-card" id="photoGallery">
   <h2>My photos 📸</h2>
   <p class="small">Upload at least 2 profile photos to use The Match, and up to 7 if you wish. Your first photo is your main photo. JPG, PNG or WebP, up to 5 MB each.</p>
@@ -23875,6 +23900,80 @@ body.light-theme #profile #profileForm > .profile-onboarding-step > textarea{bac
 }
 </style>
 
+<style id="profile-home-dashboard-styles">
+#profile .profile-home-dashboard{display:grid;gap:12px;margin:8px 0 24px}
+#profile .profile-home-identity{display:flex;align-items:center;gap:12px;padding:17px 15px;border:1px solid rgba(218,185,112,.28);border-radius:18px;background:linear-gradient(135deg,rgba(218,185,112,.11),rgba(255,255,255,.025))}
+#profile .profile-home-avatar,#profile .profile-home-preview-avatar{display:grid;place-items:center;width:54px;height:54px;flex:0 0 54px;border:1px solid rgba(218,185,112,.55);border-radius:50%;background:#211b10;color:#e5c77f;font-size:25px;font-weight:800}
+#profile .profile-home-identity-copy{min-width:0;flex:1}
+#profile .profile-home-identity-copy h3{margin:0;color:#f4dfad;font-size:19px}
+#profile .profile-home-identity-copy p{margin:4px 0 0;color:#aaa;font-size:12px}
+#profile .profile-home-status{color:#d9bd7b;font-size:11px;white-space:nowrap}
+#profile .profile-home-intro{margin:0 2px 5px;color:var(--tm-muted,#aaa);font-size:13px;line-height:1.5}
+#profile .profile-home-action{display:flex;align-items:center;gap:13px;width:100%;min-height:76px;padding:13px 14px;border:1px solid rgba(218,185,112,.18);border-radius:15px;background:#111;color:#f5f1e8;text-align:left}
+#profile .profile-home-action-primary{border-color:rgba(218,185,112,.42);background:linear-gradient(110deg,rgba(218,185,112,.10),rgba(255,255,255,.025))}
+#profile .profile-home-action-icon{display:grid;place-items:center;width:39px;height:39px;flex:0 0 39px;border-radius:12px;background:rgba(218,185,112,.12);color:#dfc17b;font-size:21px}
+#profile .profile-home-action>span:nth-child(2){display:grid;gap:5px;flex:1}
+#profile .profile-home-action strong{font-size:14px}
+#profile .profile-home-action small{color:#aaa;font-size:11px;line-height:1.4}
+#profile .profile-home-chevron{color:#d8ba75;font-size:25px}
+#profile .profile-home-premium{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px;border:1px solid rgba(218,185,112,.3);border-radius:15px;background:rgba(218,185,112,.07)}
+#profile .profile-home-premium div{display:grid;gap:5px}
+#profile .profile-home-premium strong{color:#e8ce91;font-size:13px}
+#profile .profile-home-premium small{color:#aaa;font-size:11px}
+#profile .profile-home-premium button{padding:9px 13px;border:1px solid #b99452;border-radius:10px;background:#211a0e;color:#ecd49b;font-weight:700}
+#profile .profile-home-preview{margin:8px 0 24px}
+#profile .profile-home-preview-heading{display:flex;align-items:center;gap:14px;margin-bottom:16px;color:#ead39b}
+#profile .profile-home-preview-heading button,#profile #backToProfileHome{border:0;background:transparent;color:#dfc17b;font-weight:700}
+#profile .profile-home-preview-card{padding:22px 16px;border:1px solid rgba(218,185,112,.3);border-radius:18px;background:#111;text-align:center}
+#profile .profile-home-preview-avatar{margin:0 auto 12px}
+#profile .profile-home-preview-card h3{margin:0;color:#f2dfb3;font-size:22px}
+#profile .profile-home-preview-card>p{color:#aaa;font-size:13px}
+#profile .profile-home-preview-bio{margin:16px 0;line-height:1.6;white-space:pre-wrap}
+#profile .profile-home-preview-facts{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+#profile .profile-home-preview-facts span{padding:7px 10px;border:1px solid rgba(218,185,112,.2);border-radius:20px;color:#e2d4b5;font-size:12px}
+#profile .profile-home-preview-note{color:#999;font-size:12px;line-height:1.5}
+#profile:not(.profile-edit-mode) #photoGallery,#profile:not(.profile-edit-mode) #profileForm,#profile:not(.profile-edit-mode) #profileStatus,#profile:not(.profile-edit-mode) #verificationSection,#profile:not(.profile-edit-mode) #openPremium{display:none!important}
+#profile.profile-edit-mode #profileHomeDashboard,#profile.profile-edit-mode #profileHomePreview{display:none!important}
+#profile.profile-preview-mode #profileHomeDashboard,#profile.profile-preview-mode #photoGallery,#profile.profile-preview-mode #profileForm,#profile.profile-preview-mode #profileStatus,#profile.profile-preview-mode #verificationSection,#profile.profile-preview-mode #openPremium{display:none!important}
+#profile.profile-preview-mode #profileHomePreview{display:block!important}
+body.light-theme #profile .profile-home-action,body.light-theme #profile .profile-home-preview-card{background:#fff;color:#27231c;border-color:#e5d7ba}
+body.light-theme #profile .profile-home-action small,body.light-theme #profile .profile-home-identity-copy p{color:#746e63}
+</style>
+<script id="profile-home-dashboard-controller">
+(function(){
+ const root=document.getElementById('profile');if(!root||root.dataset.profileHomeReady==='true')return;root.dataset.profileHomeReady='true';
+ const $=id=>document.getElementById(id);
+ const value=id=>($(id)?.value||'').trim();
+ function completed(){return !!(value('displayName')&&Number(value('age'))>=18&&value('gender')&&value('interest')&&value('datingCommunity')&&value('city')&&value('bio'));}
+ function facts(){return [value('age')?value('age')+' years old':'',value('gender'),value('interest')? 'Interested in '+value('interest'):'',value('city'),value('profilePronouns')].filter(Boolean);}
+ function refreshPreview(){
+  const name=value('displayName')||'Your profile';const meta=facts().slice(0,3).join(' · ');
+  $('profileHomeName').textContent=name;$('profileHomeMeta').textContent=meta||'Your Match account';
+  $('profileHomeAvatar').textContent=name.charAt(0).toUpperCase();
+  $('profilePreviewAvatar').textContent=name.charAt(0).toUpperCase();
+  $('profilePreviewName').textContent=name;$('profilePreviewMeta').textContent=meta;
+  $('profilePreviewBio').textContent=value('bio')||'Add a short introduction to tell members about yourself.';
+  $('profilePreviewFacts').replaceChildren(...facts().map(item=>{const span=document.createElement('span');span.textContent=item;return span;}));
+ }
+ function showHome(){root.classList.remove('profile-edit-mode','profile-preview-mode');refreshPreview();}
+ function showEdit(){root.classList.remove('profile-preview-mode');root.classList.add('profile-edit-mode');const p=$('profile');if(p)p.scrollTo({top:0,behavior:'smooth'});else window.scrollTo({top:0,behavior:'smooth'});}
+ function showPreview(){refreshPreview();root.classList.remove('profile-edit-mode');root.classList.add('profile-preview-mode');}
+ $('editMyProfile')?.addEventListener('click',showEdit);$('editFromProfilePreview')?.addEventListener('click',showEdit);
+ $('viewMyProfileDetails')?.addEventListener('click',showPreview);$('backToProfileHome')?.addEventListener('click',showHome);
+ $('openVerificationFromProfile')?.addEventListener('click',()=>window.show?.('verificationPage'));
+ $('openSettingsFromProfileHome')?.addEventListener('click',()=>window.show?.('settings'));
+ $('openPremiumFromProfileHome')?.addEventListener('click',()=>window.show?.('premium'));
+ $('openSettingsFromProfile')?.addEventListener('click',()=>window.show?.('settings'));
+ $('openVerification')?.addEventListener('click',()=>window.show?.('verificationPage'));
+ $('openPremium')?.addEventListener('click',()=>window.show?.('premium'));
+ $('profileForm')?.addEventListener('input',refreshPreview);$('profileForm')?.addEventListener('change',refreshPreview);
+ const sync=()=>{if(!root.classList.contains('profile-edit-mode')&&!root.classList.contains('profile-preview-mode')){if(completed())showHome();else showEdit();}};
+ const observer=new MutationObserver(()=>{if(!root.classList.contains('hidden')){window.setTimeout(sync,250);}});
+ observer.observe(root,{attributes:true,attributeFilter:['class']});
+ window.addEventListener('match:profile-loaded',()=>{window.setTimeout(sync,100);});
+ window.setTimeout(sync,500);
+})();
+</script>
 </body>
 </html>
 

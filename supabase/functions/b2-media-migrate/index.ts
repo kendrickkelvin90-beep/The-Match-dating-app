@@ -99,11 +99,15 @@ Deno.serve(async (req: Request) => {
     const s3 = getStorageClient();
     const bucket = Deno.env.get("B2_BUCKET_NAME")!;
 
-    const { data: rows, error: listError } = await admin
+    let rowsQuery = admin
       .from(config.table)
       .select("*")
       .not(config.pathColumn, "like", "b2://%")
-      .not(config.pathColumn, "is", null)
+      .not(config.pathColumn, "is", null);
+    // View Once still relies on its existing atomic Supabase access workflow.
+    // Keep those files in the private bucket until that workflow is migrated.
+    if (category === "chat_media") rowsQuery = rowsQuery.eq("view_once", false);
+    const { data: rows, error: listError } = await rowsQuery
       .order("created_at", { ascending: true })
       .limit(limit);
     if (listError) throw new Error("Could not list legacy media records.");
@@ -152,12 +156,23 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    const { count: remaining, error: countError } = await admin
+    let countQuery = admin
       .from(config.table)
-      .select("id", { count: "exact", head: true })
+      .select(category === "event_posters" ? "event_id" : "id", { count: "exact", head: true })
       .not(config.pathColumn, "like", "b2://%")
       .not(config.pathColumn, "is", null);
+    if (category === "chat_media") countQuery = countQuery.eq("view_once", false);
+    const { count: remaining, error: countError } = await countQuery;
     if (countError) throw new Error("Migration ran, but remaining count could not be verified.");
+    let excludedViewOnce = 0;
+    if (category === "chat_media") {
+      const { count, error } = await admin.from("chat_media")
+        .select("id", { count: "exact", head: true })
+        .eq("view_once", true)
+        .not("storage_path", "like", "b2://%");
+      if (error) throw new Error("Could not count View Once media excluded from migration.");
+      excludedViewOnce = count ?? 0;
+    }
 
     return json({
       success: failed === 0,
@@ -166,6 +181,7 @@ Deno.serve(async (req: Request) => {
       migrated,
       failed,
       remaining: remaining ?? null,
+      excludedViewOnce,
       failures,
       note: "Legacy objects are intentionally retained. Delete them only after application reads have been verified.",
     }, 200, origin);

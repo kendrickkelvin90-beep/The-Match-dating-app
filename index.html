@@ -8102,23 +8102,22 @@ async function uploadMediaToB2(category, file) {
   const { data: authData, error: authError } = await db.auth.getSession();
   const accessToken = authData?.session?.access_token;
   if (authError || !accessToken) throw authError || new Error("Please sign in again before uploading.");
-  const { data: result, error: prepareError } = await db.functions.invoke("b2-media-upload", {
-    body: { fileName: file.name || "media", contentType: file.type, size: file.size },
-    headers: { "x-category": category }
-  });
-  if (prepareError || !result?.uploadUrl || !result?.objectKey) {
-    throw prepareError || new Error(result?.error || "Could not prepare B2 upload.");
+  if (!file || !file.size || file.size > 25 * 1024 * 1024) {
+    throw new Error("Choose a file between 1 byte and 25 MB.");
   }
-  const uploadResponse = await fetch(result.uploadUrl, {
-    method: "PUT",
-    headers: result.requiredHeaders || { "Content-Type": file.type },
-    body: file
+  const { data: result, error: uploadError } = await db.functions.invoke("b2-media-upload", {
+    body: file,
+    headers: {
+      "x-category": category,
+      "x-action": "upload-binary",
+      "x-file-name": file.name || "media",
+      "Content-Type": file.type
+    }
   });
-  if (!uploadResponse.ok) {
-    await deleteB2Upload(category, "b2://" + result.objectKey).catch(() => {});
-    throw new Error("B2 rejected the media upload (" + uploadResponse.status + ").");
+  if (uploadError || !result?.storagePath) {
+    throw uploadError || new Error(result?.error || "The secure media upload did not complete.");
   }
-  return "b2://" + result.objectKey;
+  return result.storagePath;
 }
 
 // The Events module is a separate script closure and must use the same

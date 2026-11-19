@@ -18,7 +18,7 @@ begin
     from public.member_onboarding as mo
     where mo.user_id = new.organiser_id;
 
-    if organiser_community not in ('lgbtq', 'straight') then
+    if organiser_community is null or organiser_community not in ('lgbtq', 'straight') then
       raise exception 'Choose a valid private dating community before submitting an event.';
     end if;
 
@@ -39,7 +39,7 @@ revoke all on function public.set_match_event_community() from authenticated;
 
 drop trigger if exists match_events_set_community on public.match_events;
 create trigger match_events_set_community
-before insert or update of community, organiser_id on public.match_events
+before insert or update on public.match_events
 for each row
 execute function public.set_match_event_community();
 

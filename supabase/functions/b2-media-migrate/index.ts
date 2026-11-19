@@ -129,8 +129,9 @@ Deno.serve(async (req: Request) => {
           throw new Error("Object exceeds the 25 MB safe migration limit.");
         }
         const ownerId = String(row[config.ownerColumn] || "");
-        if (!ownerId) throw new Error("Media owner is missing.");
-        const objectKey = `users/${ownerId}/${category}/${row.id}-${safeFilename(oldPath)}`;
+        const recordId = String(row[config.idColumn] || "");
+        if (!ownerId || !recordId) throw new Error("Media owner or record identifier is missing.");
+        const objectKey = `users/${ownerId}/${category}/${recordId}-${safeFilename(oldPath)}`;
         const bytes = new Uint8Array(await file.arrayBuffer());
         await s3.send(new PutObjectCommand({
           Bucket: bucket,
@@ -140,13 +141,13 @@ Deno.serve(async (req: Request) => {
           Metadata: {
             "source-bucket": config.bucket,
             "source-path": oldPath.slice(0, 500),
-            "source-row": String(row.id),
+            "source-row": recordId,
           },
         }));
         const { error: updateError } = await admin
           .from(config.table)
           .update({ [config.pathColumn]: `b2://${objectKey}` })
-          .eq(config.idColumn, row[config.idColumn])
+          .eq(config.idColumn, recordId)
           .eq(config.pathColumn, oldPath);
         if (updateError) throw new Error("B2 copy succeeded but the database reference was not changed; retry is safe.");
         migrated++;

@@ -19,11 +19,11 @@ const json = (body: unknown, status = 200, origin = "") =>
   });
 
 const categories = {
-  profile_photos: { table: "profile_photos", bucket: "profile-photos", pathColumn: "storage_path", ownerColumn: "user_id" },
-  stories: { table: "stories", bucket: "story-media", pathColumn: "media_url", ownerColumn: "user_id" },
-  chat_media: { table: "chat_media", bucket: "chat-media", pathColumn: "storage_path", ownerColumn: "sender_id" },
-  verification_selfies: { table: "verification_requests", bucket: "verification-selfies", pathColumn: "selfie_path", ownerColumn: "user_id" },
-  event_posters: { table: "match_event_poster_assets", bucket: "event-posters", pathColumn: "storage_path", ownerColumn: "organiser_id" },
+  profile_photos: { table: "profile_photos", bucket: "profile-photos", pathColumn: "storage_path", ownerColumn: "user_id", idColumn: "id" },
+  stories: { table: "stories", bucket: "story-media", pathColumn: "media_url", ownerColumn: "user_id", idColumn: "id" },
+  chat_media: { table: "chat_media", bucket: "chat-media", pathColumn: "storage_path", ownerColumn: "sender_id", idColumn: "id" },
+  verification_selfies: { table: "verification_requests", bucket: "verification-selfies", pathColumn: "selfie_path", ownerColumn: "user_id", idColumn: "id" },
+  event_posters: { table: "match_event_poster_assets", bucket: "event-posters", pathColumn: "storage_path", ownerColumn: "organiser_id", idColumn: "event_id" },
 } as const;
 
 type Category = keyof typeof categories;
@@ -91,7 +91,7 @@ Deno.serve(async (req: Request) => {
     if (!category || !(category in categories)) {
       return json({ error: "Choose a supported media category." }, 400, origin);
     }
-    const limit = Math.max(1, Math.min(10, Number.isInteger(body?.limit) ? body.limit : 5));
+    const limit = Math.max(1, Math.min(2, Number.isInteger(body?.limit) ? body.limit : 2));
     const config = categories[category];
     const admin = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
       auth: { autoRefreshToken: false, persistSession: false },
@@ -142,7 +142,7 @@ Deno.serve(async (req: Request) => {
         const { error: updateError } = await admin
           .from(config.table)
           .update({ [config.pathColumn]: `b2://${objectKey}` })
-          .eq("id", row.id)
+          .eq(config.idColumn, row[config.idColumn])
           .eq(config.pathColumn, oldPath);
         if (updateError) throw new Error("B2 copy succeeded but the database reference was not changed; retry is safe.");
         migrated++;

@@ -16765,6 +16765,19 @@ if(countError)throw countError;
 
             if(error && error.code!=="23505")throw error;
 
+            // Never celebrate or unlock a match based only on a stale incoming-like card.
+            // Confirm the reverse like exists on the server after our like is saved.
+            const {data:isMutualMatch,error:mutualMatchError}=await db.rpc(
+              "check_mutual_like",
+              {p_other_user_id:id}
+            );
+            if(mutualMatchError)throw mutualMatchError;
+            if(isMutualMatch!==true){
+              status("likesStatus","Your like was sent. You'll match only if they have liked you too.");
+              await loadLikesPage();
+              return;
+            }
+
             const {data:myProfile,error:myProfileError}=await db
               .from("profiles")
               .select("display_name")

@@ -153,7 +153,7 @@ Deno.serve(async (req: Request) => {
         migrated++;
       } catch (error) {
         failed++;
-        failures.push(`${row.id}: ${error instanceof Error ? error.message : "migration failed"}`);
+        failures.push(`${row[config.idColumn]}: ${error instanceof Error ? error.message : "migration failed"}`);
       }
     }
 

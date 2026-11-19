@@ -6640,7 +6640,7 @@ button:disabled,input:disabled,select:disabled,textarea:disabled{opacity:.58;cur
 <div class="discover-page-heading">
   <div><h2>Discover</h2><p class="small">Find people you'd like to meet.</p></div>
   <div class="discover-header-actions">
-    <button type="button" id="openEventsFromDiscover" class="discover-events-shortcut">Events</button>
+    <button type="button" id="openEventsFromDiscover" class="discover-events-shortcut">Events<span id="eventsNotificationBadge" class="events-notification-badge" style="display:none" aria-label="Unread event notifications">0</span></button>
     <button type="button" id="openLikesFromDiscover" class="discover-likes-shortcut" aria-label="Open likes">
       <span aria-hidden="true">♡</span> Likes
       <span id="likesCount" class="nav-badge" style="display:none;">0</span>
@@ -8747,6 +8747,18 @@ async function loadNotificationBadge() {
 
     const unread = count || 0;
     badge.textContent = unread > 99 ? "99+" : String(unread);
+    const eventsBadge = $("eventsNotificationBadge");
+    if (eventsBadge) {
+      const { count: eventCount, error: eventCountError } = await db.from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", currentUser.id)
+        .eq("type", "event_published")
+        .eq("is_read", false);
+      if (eventCountError) throw eventCountError;
+      const pendingEvents = eventCount || 0;
+      eventsBadge.textContent = pendingEvents > 99 ? "99+" : String(pendingEvents);
+      eventsBadge.style.display = pendingEvents > 0 ? "inline-flex" : "none";
+    }
     // Keep visual placement in CSS so the badge stays anchored to the heart
     // in both themes and is not pushed into the status-bar area by inline styles.
     badge.style.display = unread > 0 ? "inline-flex" : "none";
@@ -20967,7 +20979,14 @@ E("eventsMineList")?.addEventListener("click",async ev=>{const b=ev.target.close
 E("eventsAdminReports")?.addEventListener("click",async ev=>{const reviewed=ev.target.closest("[data-report-reviewed]"),actioned=ev.target.closest("[data-report-actioned]"),remove=ev.target.closest("[data-event-remove]");if(reviewed||actioned){const b=reviewed||actioned;const {error}=await db.from("match_event_reports").update({status:reviewed?"reviewed":"actioned"}).eq("id",b.dataset.reportReviewed||b.dataset.reportActioned);if(error){alert(error.message);return;}await adminReports();}else if(remove){if(!confirm("Remove this event from the public listing?"))return;const {error}=await db.from("match_events").update({status:"cancelled",admin_note:"Removed after member safety report"}).eq("id",remove.dataset.eventRemove);if(error){alert(error.message);return;}await load();}});
 E("eventsAdminList")?.addEventListener("click",async ev=>{const a=ev.target.closest("[data-event-approve]"),rj=ev.target.closest("[data-event-reject]");if(!a&&!rj)return;const id=(a||rj).dataset.eventApprove||(rj&&rj.dataset.eventReject);if(a&&!confirm("Have you confirmed the organiser promotion-fee transfer in your account and approved this event?"))return;if(rj&&!confirm("Reject this event submission?"))return;try{const decision=a?"approved":"rejected";const {error:payError}=await db.from("match_event_promotion_payments").update({payment_status:decision,reviewed_by:currentUser.id,reviewed_at:new Date().toISOString()}).eq("event_id",id);if(payError)throw payError;const patch=a?{payment_status:"approved",status:"published",reviewed_by:currentUser.id,reviewed_at:new Date().toISOString(),admin_note:"Promotion payment confirmed"}:{payment_status:"rejected",status:"rejected",reviewed_by:currentUser.id,reviewed_at:new Date().toISOString(),admin_note:"Rejected by admin"};const {error}=await db.from("match_events").update(patch).eq("id",id);if(error)throw error;await load();}catch(err){alert("Review failed: "+err.message);}});
 E("adminOpenEventsBtn")?.addEventListener("click",async()=>{window.show("eventsPage");try{await load();if(E("eventsAdminTab")&&!E("eventsAdminTab").classList.contains("hidden")){tab("admin");}else{E("eventsPageStatus").textContent="Your account does not have Events admin access.";}}catch(err){E("eventsPageStatus").textContent="Events management unavailable: "+err.message;}}); 
-E("openEventsFromDiscover")?.addEventListener("click",async()=>{window.show("eventsPage");try{await load();}catch(err){E("eventsPageStatus").textContent="Events unavailable: "+err.message;}});
+E("openEventsFromDiscover")?.addEventListener("click",async()=>{
+  if(currentUser){
+    const {error:readError}=await db.from("notifications").update({is_read:true}).eq("user_id",currentUser.id).eq("type","event_published").eq("is_read",false);
+    if(readError)console.warn("Could not clear event notification count:",readError.message);
+    if(typeof loadNotificationBadge==="function")await loadNotificationBadge();
+  }
+  window.show("eventsPage");try{await load();}catch(err){E("eventsPageStatus").textContent="Events unavailable: "+err.message;}
+});
 })();
 </script>
 <script>
@@ -23033,6 +23052,8 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
   flex:0 0 auto!important;
 }
 #discover .discover-events-shortcut {
+  position:relative!important;
+  overflow:visible!important;
   min-height:38px!important;
   padding:0 10px!important;
   border:1px solid rgba(214,180,110,.48)!important;
@@ -23042,6 +23063,26 @@ body.light-theme #nearbyPage #nearbyMembersList > .member-card .distance {color:
   font-size:12px!important;
   font-weight:700!important;
 }
+#discover .events-notification-badge {
+  position:absolute!important;
+  top:-8px!important;
+  right:-7px!important;
+  display:inline-flex;
+  align-items:center!important;
+  justify-content:center!important;
+  min-width:19px!important;
+  height:19px!important;
+  padding:0 5px!important;
+  border:2px solid #080808!important;
+  border-radius:999px!important;
+  background:#C6A66B!important;
+  color:#17120A!important;
+  font-size:10px!important;
+  font-weight:900!important;
+  line-height:1!important;
+  box-shadow:0 2px 7px rgba(0,0,0,.35)!important;
+}
+body.light-theme #discover .events-notification-badge { border-color:#fff!important; }
 #discover #refreshNearby {
   display:block!important;
   width:auto!important;

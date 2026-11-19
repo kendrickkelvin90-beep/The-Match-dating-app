@@ -6017,6 +6017,46 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
 }
 #chatPage #chatMessages .chat-bubble .chat-meta-row + div { margin-top:4px!important; }
 </style>
+<style id="match-balanced-theme-system">
+/* The Match design system v1.0 — matched dark/light surfaces and semantic accents */
+:root{--tm-black:#080808;--tm-black-soft:#111111;--tm-gold:#C6A45C;--tm-gold-bright:#D8B96F;--tm-emerald:#087F5B;--tm-emerald-bright:#16A078;--tm-danger:#D64545;--tm-warning:#B7791F;--tm-radius-card:16px;--tm-focus:rgba(198,164,92,.34)}
+body:not(.light-theme){color-scheme:dark;--tm-page:#080808;--tm-surface:#111111;--tm-surface-raised:#181818;--tm-surface-muted:#202020;--tm-text:#F7F5F0;--tm-muted:#B8B3A8;--tm-border:#393326;--tm-accent:var(--tm-gold);--tm-accent-contrast:#17120A;--tm-success:var(--tm-emerald-bright);--tm-success-soft:rgba(8,127,91,.18)}
+body.light-theme{color-scheme:light;--tm-page:#FFFFFF;--tm-surface:#FFFFFF;--tm-surface-raised:#FAF8F3;--tm-surface-muted:#F1EEE7;--tm-text:#211F1A;--tm-muted:#625D53;--tm-border:#E2D9C8;--tm-accent:#98702E;--tm-accent-contrast:#FFFFFF;--tm-success:#08704F;--tm-success-soft:#E2F3EB}
+body:not(.light-theme){background-color:var(--tm-page);color:var(--tm-text)}
+body.light-theme{background-color:var(--tm-page)!important;color:var(--tm-text)!important}
+body.light-theme .panel,body.light-theme .member-card,body.light-theme .card{background:var(--tm-surface)!important;color:var(--tm-text)!important;border-color:var(--tm-border)!important}
+body:not(.light-theme) input,body:not(.light-theme) select,body:not(.light-theme) textarea,body.light-theme input,body.light-theme select,body.light-theme textarea{background:var(--tm-surface)!important;color:var(--tm-text)!important;border-color:var(--tm-border)!important}
+input:focus,select:focus,textarea:focus,body.light-theme input:focus,body.light-theme select:focus,body.light-theme textarea:focus{border-color:var(--tm-accent)!important;box-shadow:0 0 0 3px var(--tm-focus)!important;outline:none!important}
+body.light-theme input::placeholder,body.light-theme textarea::placeholder{color:#71695D!important;opacity:1!important}
+header span,h1 span,.eyebrow,.link,.distance,body.light-theme header span,body.light-theme h1 span,body.light-theme .eyebrow,body.light-theme .link{color:var(--tm-accent)!important}
+.btn.primary,button.primary,body.light-theme .btn.primary,body.light-theme button.primary{background:linear-gradient(110deg,#C6A45C,#E0C783)!important;color:#17120A!important;border:1px solid #B58D42!important;box-shadow:0 5px 16px rgba(166,128,54,.16)!important}
+.btn.secondary,button.btn.secondary,body.light-theme .btn.secondary,body.light-theme button.btn.secondary{background:transparent!important;color:var(--tm-accent)!important;border:1px solid var(--tm-accent)!important}
+body:not(.light-theme) .bottom-nav{background:#080808!important;border-top:1px solid #3A3020!important}
+body.light-theme .bottom-nav{background:#FFFFFF!important;border-top:1px solid var(--tm-border)!important}
+.bottom-nav button.active,body.light-theme .bottom-nav button.active{color:var(--tm-accent)!important;background:rgba(198,164,92,.13)!important}
+body:not(.light-theme) #discover{background:radial-gradient(ellipse at 50% 0%,rgba(198,164,92,.10),transparent 48%),var(--tm-page)!important;color:var(--tm-text)!important}
+body.light-theme #discover{background:radial-gradient(ellipse at 50% 0%,rgba(198,164,92,.10),transparent 48%),#fff!important;color:var(--tm-text)!important}
+#discover #refreshNearby{border-color:var(--tm-accent)!important}
+body:not(.light-theme) #discover #refreshNearby{background:var(--tm-surface-raised)!important;color:var(--tm-gold-bright)!important}
+body.light-theme #discover #refreshNearby{background:#FBF7EC!important;color:#76551F!important;border-color:#C6A45C!important}
+.story-plus,.story-avatar{border-color:var(--tm-accent)!important}
+.success,.is-success,[data-state="success"],.status.success,.status.is-success,.online-indicator,.member-online,.online-dot,.verified-indicator,.verification-approved,.success-badge,.success-message,.payment-success,.match-success,.verification-success{color:var(--tm-success)!important}
+.success-badge,.success-message,.payment-success,.match-success,.verification-success{background:var(--tm-success-soft)!important;border-color:var(--tm-success)!important}
+body.light-theme .success-badge,body.light-theme .success-message,body.light-theme .payment-success,body.light-theme .match-success,body.light-theme .verification-success{color:#075C40!important;background:#E2F3EB!important;border-color:#8BC9AE!important}
+input[type="checkbox"],input[type="radio"],progress{accent-color:var(--tm-emerald)}
+body:not(.light-theme) #chatPage{background:#080808!important;color:#F7F5F0!important}
+body.light-theme #chatPage{background:#FFFFFF!important;color:#211F1A!important}
+body.light-theme #chatPage #chatHeader,body.light-theme #chatPage #chatMessages,body.light-theme #chatPage #chatComposer,body.light-theme #chatPage #chatEmojiPicker{background:#FAF8F3!important;color:#211F1A!important;border-color:#E2D9C8!important}
+body.light-theme #chatPage #chatPageTitle,body.light-theme #chatPage #chatPageContent h3{color:#76551F!important}
+body.light-theme #chatPage #chatMessages .chat-bubble.received{background:#F1EEE7!important;color:#211F1A!important;border-color:#DED6C7!important}
+body.light-theme #chatPage #chatMessages .chat-bubble.sent{background:#F7EEDB!important;color:#2A2418!important;border-color:#D8C18F!important}
+body.light-theme #chatPage #chatMessageInput{background:#FFFFFF!important;color:#211F1A!important;border-color:#D8D0C1!important}
+#chatPage #chatComposer #sendChatMessage,body.light-theme #chatPage #chatComposer #sendChatMessage{background:linear-gradient(145deg,#D8B96F,#B58D42)!important;color:#17120A!important}
+body.light-theme #chatMediaPreview{background:#F7F5EF!important;color:#28251F!important}
+body.light-theme #chatMediaPreviewStage{background:#EEEAE1!important;border-color:#E2D9C8!important}
+button:focus-visible,a:focus-visible,[role="button"]:focus-visible{outline:2px solid var(--tm-accent)!important;outline-offset:3px!important}
+button:disabled,input:disabled,select:disabled,textarea:disabled{opacity:.58;cursor:not-allowed}
+</style>
 </head>
 <body>
 <div id="stars" aria-hidden="true"></div>

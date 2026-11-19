@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from "npm:@aws-sdk/client-s3";
+import { getSignedUrl } from "npm:@aws-sdk/s3-request-presigner";
 
 const allowedOrigins = new Set(["https://match.beyondthebinarymedia.online"]);
 const categories = new Set(["stories", "chat_media", "verification_selfies", "event_posters"]);
@@ -68,7 +69,7 @@ Deno.serve(async (req: Request) => {
       credentials: { accessKeyId: keyId, secretAccessKey: appKey },
     });
 
-    const action = req.headers.get("x-action") || "upload";
+    const action = req.headers.get("x-action") || "create-upload-url";
     if (action === "delete-upload") {
       const body = await req.json().catch(() => null);
       const objectKey = typeof body?.objectKey === "string" ? body.objectKey : "";
@@ -79,24 +80,32 @@ Deno.serve(async (req: Request) => {
       await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: objectKey }));
       return response({ deleted: true }, 200, origin);
     }
-    if (action !== "upload") return response({ error: "Unsupported action" }, 400, origin);
+    if (action !== "create-upload-url") return response({ error: "Unsupported action" }, 400, origin);
 
-    const contentType = (req.headers.get("Content-Type") || "").split(";")[0].trim().toLowerCase();
+    const body = await req.json().catch(() => null);
+    const contentType = typeof body?.contentType === "string" ? body.contentType.toLowerCase() : "";
     if (!allowedTypes.has(contentType)) return response({ error: "Unsupported media type" }, 400, origin);
-    const bytes = new Uint8Array(await req.arrayBuffer());
-    if (!bytes.length || bytes.length > maxBytes) return response({ error: "Media must be between 1 byte and 25 MB." }, 400, origin);
-
-    let rawName = req.headers.get("x-file-name") || "media";
-    try { rawName = decodeURIComponent(rawName); } catch { /* keep original */ }
-    const filename = rawName.split(/[\\/]/).pop()!.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "media";
+    const size = Number(body?.size);
+    if (!Number.isFinite(size) || size < 1 || size > maxBytes) {
+      return response({ error: "Media must be between 1 byte and 25 MB." }, 400, origin);
+    }
+    const rawName = typeof body?.fileName === "string" ? body.fileName : "media";
+    const filename = rawName.split(/[\\\\/]/).pop()!.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "media";
     const objectKey = `users/${userData.user.id}/${category}/${crypto.randomUUID()}-${filename}`;
-    await s3.send(new PutObjectCommand({
+    const command = new PutObjectCommand({
       Bucket: bucket,
       Key: objectKey,
-      Body: bytes,
       ContentType: contentType,
-    }));
-    return response({ uploaded: true, objectKey }, 200, origin);
+      ContentLength: size,
+    });
+    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
+    return response({
+      uploadUrl,
+      objectKey,
+      method: "PUT",
+      expiresIn: 300,
+      requiredHeaders: { "Content-Type": contentType },
+    }, 200, origin);
   } catch (error) {
     console.error("B2 media upload failed:", error instanceof Error ? error.message : "unknown error");
     return response({ error: "Unable to upload media to B2" }, 500, origin);

@@ -8315,6 +8315,26 @@ function subscribeToIncomingMessages(user) {
       }
     })
     .subscribe();
+
+  // Keep the notification and Events badges current while the member is signed in.
+  if (window.matchEventNotificationsChannel) {
+    db.removeChannel(window.matchEventNotificationsChannel).catch(() => {});
+    window.matchEventNotificationsChannel = null;
+  }
+  window.matchEventNotificationsChannel = db.channel("match-member-notifications-" + user.id)
+    .on("postgres_changes", {
+      event: "INSERT",
+      schema: "public",
+      table: "notifications",
+      filter: "user_id=eq." + user.id
+    }, payload => {
+      if (!payload?.new || currentUser?.id !== user.id) return;
+      loadNotificationBadge().catch(error => console.warn("Notification badge refresh failed:", error));
+      if (currentPage === "notificationsPage") {
+        loadMemberNotifications().catch(error => console.warn("Live notifications refresh failed:", error));
+      }
+    })
+    .subscribe();
 }
 
 function isUserOnline(userId) {

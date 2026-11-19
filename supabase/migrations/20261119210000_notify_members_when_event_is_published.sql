@@ -8,7 +8,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = pg_catalog, public
-as $
+as $$
 declare
   organiser_community text;
 begin
@@ -31,7 +31,7 @@ begin
 
   return new;
 end;
-$;
+$$;
 
 revoke all on function public.set_match_event_community() from public;
 revoke all on function public.set_match_event_community() from anon;
@@ -51,13 +51,13 @@ where mo.user_id = e.organiser_id
   and mo.answers ->> 'dating_community' in ('lgbtq', 'straight')
   and e.community is null;
 
-do $
+do $$
 begin
   if exists (select 1 from public.match_events where community is null) then
     raise exception 'Cannot enable event community isolation: an existing event organiser has no valid saved dating community.';
   end if;
 end;
-$;
+$$;
 
 alter table public.match_events
   alter column community set not null;

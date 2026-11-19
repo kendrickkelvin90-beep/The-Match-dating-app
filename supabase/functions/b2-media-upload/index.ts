@@ -6,6 +6,12 @@ import { getSignedUrl } from "npm:@aws-sdk/s3-request-presigner";
 const allowedOrigins = new Set(["https://match.beyondthebinarymedia.online"]);
 const categories = new Set(["stories", "chat_media", "verification_selfies", "event_posters"]);
 const maxBytes = 25 * 1024 * 1024;
+const referenceTables: Record<string, { table: string; column: string }> = {
+  stories: { table: "stories", column: "media_url" },
+  chat_media: { table: "chat_media", column: "storage_path" },
+  verification_selfies: { table: "verification_requests", column: "selfie_path" },
+  event_posters: { table: "match_event_poster_assets", column: "storage_path" },
+};
 const allowedTypes = new Set([
   "image/jpeg", "image/png", "image/webp", "image/gif",
   "video/mp4", "video/webm", "video/quicktime",
@@ -77,6 +83,20 @@ Deno.serve(async (req: Request) => {
           objectKey.includes("..") || objectKey.includes("\\\\") || objectKey.length > 500) {
         return response({ error: "Invalid upload object key" }, 403, origin);
       }
+      // Do not allow cleanup to delete an object while any database row
+      // still references it. This prevents a member from breaking a live asset.
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+      if (!serviceKey) return response({ error: "Safe cleanup is not configured" }, 500, origin);
+      const service = createClient(url, serviceKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const reference = referenceTables[category];
+      const { count, error: referenceError } = await service
+        .from(reference.table)
+        .select(reference.column, { count: "exact", head: true })
+        .eq(reference.column, `b2://${objectKey}`);
+      if (referenceError) return response({ error: "Could not verify whether this upload is still in use" }, 500, origin);
+      if ((count || 0) > 0) return response({ error: "This media is still attached to an active record" }, 409, origin);
       await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: objectKey }));
       return response({ deleted: true }, 200, origin);
     }

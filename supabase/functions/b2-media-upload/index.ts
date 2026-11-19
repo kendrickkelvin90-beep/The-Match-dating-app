@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetBucketCorsCommand } from "npm:@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetBucketCorsCommand, PutBucketCorsCommand } from "npm:@aws-sdk/client-s3";
 import { getSignedUrl } from "npm:@aws-sdk/s3-request-presigner";
 
 const allowedOrigins = new Set(["https://match.beyondthebinarymedia.online"]);
@@ -89,6 +89,36 @@ Deno.serve(async (req: Request) => {
     }
 
     const action = req.headers.get("x-action") || "create-upload-url";
+    // The simple Backblaze console rule did not update the S3-compatible CORS
+    // policy. Repair only that S3 policy, and only when the signed-in caller
+    // is a verified Match admin. Keep the bucket private and the origin narrow.
+    if (action === "create-upload-url") {
+      const { data: isAdmin } = await caller.rpc("is_match_admin");
+      if (isAdmin === true) {
+        const currentCors = await s3.send(new GetBucketCorsCommand({ Bucket: bucket }));
+        const rules = currentCors.CORSRules || [];
+        const hasPutForOrigin = rules.some((rule) =>
+          (rule.AllowedOrigins || []).includes("https://match.beyondthebinarymedia.online") &&
+          (rule.AllowedMethods || []).includes("PUT") &&
+          (rule.AllowedHeaders || []).some((header) => header === "*" || header.toLowerCase() === "content-type")
+        );
+        if (!hasPutForOrigin) {
+          await s3.send(new PutBucketCorsCommand({
+            Bucket: bucket,
+            CORSConfiguration: {
+              CORSRules: [{
+                AllowedOrigins: ["https://match.beyondthebinarymedia.online"],
+                AllowedMethods: ["GET", "HEAD", "PUT"],
+                AllowedHeaders: ["*"],
+                ExposeHeaders: ["ETag"],
+                MaxAgeSeconds: 3600,
+              }],
+            },
+          }));
+          console.info("B2 S3 CORS policy repaired for The Match origin.");
+        }
+      }
+    }
     if (action === "delete-upload") {
       const body = await req.json().catch(() => null);
       const objectKey = typeof body?.objectKey === "string" ? body.objectKey : "";

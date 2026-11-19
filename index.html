@@ -8974,23 +8974,25 @@ async function loadAdminVerificationRequests() {
           viewSelfie.textContent = "Opening selfie...";
 
           try {
-            // Verification selfies are private. Download through the authenticated
-            // Supabase client so the admin SELECT policy is applied to this request.
-            const { data: selfieBlob, error: selfieDownloadError } = await db.storage
-              .from("verification-selfies")
-              .download(request.selfie_path);
-
-            if (selfieDownloadError) throw selfieDownloadError;
-            if (!selfieBlob || !selfieBlob.size) {
-              throw new Error("The stored verification selfie is empty or unavailable.");
+            // RLS authorizes the admin's access to the verification request.
+            // B2 URLs are short-lived and issued only after that row is visible.
+            let signedSelfie;
+            if (request.selfie_path.startsWith("b2://")) {
+              signedSelfie = { signedUrl: await resolveB2MediaUrl("verification_selfies", request.selfie_path) };
+            } else {
+              const { data: selfieBlob, error: selfieDownloadError } = await db.storage
+                .from("verification-selfies")
+                .download(request.selfie_path);
+              if (selfieDownloadError) throw selfieDownloadError;
+              if (!selfieBlob || !selfieBlob.size) {
+                throw new Error("The stored verification selfie is empty or unavailable.");
+              }
+              const { data, error } = await db.storage
+                .from("verification-selfies")
+                .createSignedUrl(request.selfie_path, 300);
+              if (error) throw error;
+              signedSelfie = data;
             }
-
-            // Keep the bucket private and issue a short-lived URL only after the
-            // authenticated admin download has succeeded.
-            const { data: signedSelfie, error: signedSelfieError } = await db.storage
-              .from("verification-selfies")
-              .createSignedUrl(request.selfie_path, 300);
-            if (signedSelfieError) throw signedSelfieError;
             if (!signedSelfie?.signedUrl) {
               throw new Error("Could not create a temporary secure selfie link.");
             }
@@ -19498,16 +19500,7 @@ if(previous&&previous.length){
   return;
 }
 
-path=currentUser.id+"/"+Date.now()+"-verification."+(
-  file.type==="image/png"?"png":
-  file.type==="image/webp"?"webp":"jpg"
-);
-
-const {error:uploadError}=await db.storage
-  .from("verification-selfies")
-  .upload(path,file,{contentType:file.type});
-
-if(uploadError)throw uploadError;
+path=await uploadMediaToB2("verification_selfies",file);
 
 const {error:insertError}=await db
   .from("verification_requests")
@@ -19518,7 +19511,7 @@ const {error:insertError}=await db
   });
 
 if(insertError){
-  await db.storage.from("verification-selfies").remove([path]);
+  await deleteB2Upload("verification_selfies",path);
   throw insertError;
 }
 
@@ -20670,7 +20663,7 @@ const posterFile=E("eventPoster")?.files?.[0];if(posterFile&&(!["image/jpeg","im
 const payload={organiser_id:currentUser.id,title:E("eventTitle").value.trim(),description:E("eventDescription").value.trim(),category:E("eventCategory").value,venue:"Organiser shares venue details directly with attendees",city:E("eventCity").value.trim(),organiser_whatsapp_url:whatsapp,starts_at:start.toISOString(),ends_at:end.toISOString(),ticket_price_ngn:ticketPrice,promotion_fee_ngn:10000,payment_status:"pending",status:"pending_review"};
 const {data:created,error}=await db.from("match_events").insert(payload).select("id").single();if(error)throw error;
 try{
- if(posterFile){const ext=posterFile.type==="image/png"?"png":posterFile.type==="image/webp"?"webp":"jpg";const path=currentUser.id+"/"+created.id+"/"+crypto.randomUUID()+"."+ext;const {error:uploadError}=await db.storage.from("event-posters").upload(path,posterFile,{contentType:posterFile.type,upsert:false});if(uploadError)throw uploadError;const {error:assetError}=await db.from("match_event_poster_assets").insert({event_id:created.id,organiser_id:currentUser.id,storage_path:path});if(assetError){await db.storage.from("event-posters").remove([path]);throw assetError;}}
+ if(posterFile){const path=await uploadMediaToB2("event_posters",posterFile);const {error:assetError}=await db.from("match_event_poster_assets").insert({event_id:created.id,organiser_id:currentUser.id,storage_path:path});if(assetError){await deleteB2Upload("event_posters",path);throw assetError;}}
 
  
  const {error:paymentError}=await db.from("match_event_promotion_payments").insert({event_id:created.id,organiser_id:currentUser.id,amount_ngn:10000,sender_name:E("eventPaymentSender").value.trim(),transfer_reference:E("eventPaymentReference").value.trim()});if(paymentError)throw paymentError;

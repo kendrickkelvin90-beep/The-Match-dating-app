@@ -7999,6 +7999,30 @@ async function resolveProfilePhotoUrl(storagePath) {
   catch (error) { profilePhotoUrlCache.delete(storagePath); throw error; }
 }
 
+// Resolve B2 media only through a short-lived URL issued after the
+// authenticated user's existing Supabase RLS policy allows the media row.
+const b2MediaUrlCache = new Map();
+async function resolveB2MediaUrl(category, storagePath) {
+  if (!storagePath || !storagePath.startsWith("b2://")) {
+    throw new Error("Invalid B2 media reference.");
+  }
+  const cacheKey = category + ":" + storagePath;
+  const cached = b2MediaUrlCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.promise;
+  const pending = (async () => {
+    const { data, error } = await db.functions.invoke("b2-media-access", {
+      body: { category, objectKey: storagePath.slice(5) }
+    });
+    if (error || !data?.downloadUrl) {
+      throw error || new Error(data?.error || "Could not authorize this media.");
+    }
+    return data.downloadUrl;
+  })();
+  b2MediaUrlCache.set(cacheKey, { promise: pending, expiresAt: Date.now() + 90000 });
+  try { return await pending; }
+  catch (error) { b2MediaUrlCache.delete(cacheKey); throw error; }
+}
+
 let authCaptchaToken = "";
 let resetCaptchaToken = "";
 let authCaptchaIssuedAt = 0;
@@ -14456,12 +14480,22 @@ viewersInfo.onclick = async event => {
   }
 };
           if(current.media_url){
-  const {data,error}=await db.storage
-    .from("story-media")
-    .createSignedUrl(current.media_url,300);
+  let storyUrl = "";
+  try {
+    if (current.media_url.startsWith("b2://")) {
+      storyUrl = await resolveB2MediaUrl("stories", current.media_url);
+    } else {
+      const {data,error}=await db.storage.from("story-media").createSignedUrl(current.media_url,300);
+      if(error) throw error;
+      storyUrl = data?.signedUrl || "";
+    }
+  } catch (mediaError) {
+    console.error("Story media could not be authorized:", mediaError);
+    if(overlay.isConnected) mediaArea.textContent="Could not load this Story media.";
+  }
 
   if(!overlay.isConnected)return;
-  if(error){
+  if(!storyUrl){
     mediaArea.textContent="Could not load this Story media.";
   }else{
     const media=document.createElement(
@@ -14512,7 +14546,7 @@ viewersInfo.onclick = async event => {
                 media.alt = "Story photo by " + storyOwnerName;
               }
 
-              media.src = data.signedUrl;
+              media.src = storyUrl;
 
               Object.assign(media.style, {
                 position: "absolute",
@@ -18424,11 +18458,12 @@ for (const media of mediaRows || []) {
             throw new Error(opened?.error || "This View Once media could not be opened.");
           }
           signed = { signedUrl: opened.signedUrl };
+        } else if (media.storage_path?.startsWith("b2://")) {
+          signed = { signedUrl: await resolveB2MediaUrl("chat_media", media.storage_path) };
         } else {
           const { data, error: signedError } = await db.storage
             .from("chat-media")
             .createSignedUrl(media.storage_path, 60);
-
           if (signedError) throw signedError;
           signed = data;
         }
@@ -20507,7 +20542,7 @@ if(form)form.hidden=!verifiedMember;
 const {data:pub,error}=await db.from("match_events").select("id,organiser_id,title,description,category,city,starts_at,ends_at,ticket_price_ngn,organiser_whatsapp_url").eq("status","published").gte("ends_at",new Date().toISOString()).order("starts_at");if(error)throw error;
 eventsCache=pub||[];
 const {data:posterAssets}=await db.from("match_event_poster_assets").select("event_id,storage_path").in("event_id",eventsCache.map(x=>x.id));
-await Promise.all(eventsCache.map(async x=>{const asset=(posterAssets||[]).find(a=>a.event_id===x.id);if(asset){const {data}=await db.storage.from("event-posters").createSignedUrl(asset.storage_path,3600);x.posterUrl=data?.signedUrl||null;}}));
+await Promise.all(eventsCache.map(async x=>{const asset=(posterAssets||[]).find(a=>a.event_id===x.id);if(asset){try{x.posterUrl=asset.storage_path.startsWith("b2://")?await resolveB2MediaUrl("event_posters",asset.storage_path):(await db.storage.from("event-posters").createSignedUrl(asset.storage_path,3600)).data?.signedUrl||null;}catch(error){console.warn("Event poster could not be loaded:",error);x.posterUrl=null;}}}));
 eventOrganisers={};
 const organiserIds=[...new Set(eventsCache.map(x=>x.organiser_id).filter(Boolean))];
 if(organiserIds.length){
@@ -20545,7 +20580,7 @@ async function adminQueue(){
 const list=E("eventsAdminList"),{data,error}=await db.from("match_events").select("id,title,description,city,starts_at,promotion_fee_ngn,payment_status,payment_sender_name,payment_reference,status").eq("status","pending_review").order("created_at",{ascending:false});
 if(error){list.textContent=error.message;return;}
 const ids=(data||[]).map(x=>x.id);let payments=[],posterMap={};
-if(ids.length){const {data:assets}=await db.from("match_event_poster_assets").select("event_id,storage_path").in("event_id",ids);await Promise.all((assets||[]).map(async a=>{const {data}=await db.storage.from("event-posters").createSignedUrl(a.storage_path,3600);posterMap[a.event_id]=data?.signedUrl||null;}));}
+if(ids.length){const {data:assets}=await db.from("match_event_poster_assets").select("event_id,storage_path").in("event_id",ids);await Promise.all((assets||[]).map(async a=>{try{posterMap[a.event_id]=a.storage_path.startsWith("b2://")?await resolveB2MediaUrl("event_posters",a.storage_path):(await db.storage.from("event-posters").createSignedUrl(a.storage_path,3600)).data?.signedUrl||null;}catch(error){console.warn("Admin event poster could not be loaded:",error);posterMap[a.event_id]=null;}}));}
 if(ids.length){const result=await db.from("match_event_promotion_payments").select("event_id,amount_ngn,sender_name,transfer_reference,payment_status").in("event_id",ids);if(result.error){list.textContent="Could not load payment verification details: "+result.error.message;return;}payments=result.data||[];}
 list.innerHTML=data?.length?data.map(x=>{const pay=payments.find(p=>p.event_id===x.id);return '<article class="event-admin-card">'+(posterMap[x.id]?'<img src="'+esc(posterMap[x.id])+'" alt="Event poster" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;margin-bottom:10px">' : '')+'<strong>'+esc(x.title)+'</strong><p>'+esc(x.description)+'</p><p>'+esc(x.city)+' · '+esc(date(x.starts_at))+'</p><p>Promotion fee: '+naira(pay?.amount_ngn||x.promotion_fee_ngn)+' · Transfer name: '+esc(pay?.sender_name||x.payment_sender_name||"Not submitted")+' · Ref: '+esc(pay?.transfer_reference||x.payment_reference||"Not submitted")+'</p><p>Payment: '+esc(pay?.payment_status||x.payment_status)+' / '+esc(x.status)+'</p><div class="event-admin-actions"><button data-event-approve="'+x.id+'">Confirm payment & publish</button><button data-event-reject="'+x.id+'">Reject</button></div></article>';}).join(''):'<p class="small">No submissions waiting for review.</p>';
 }

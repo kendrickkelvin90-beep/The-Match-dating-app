@@ -74,6 +74,32 @@ Deno.serve(async (req: Request) => {
       forcePathStyle: true,
       credentials: { accessKeyId: keyId, secretAccessKey: appKey },
     });
+    // Accept small browser uploads through this authenticated function so
+    // Android browsers do not need to perform a cross-origin PUT to B2.
+    const action = req.headers.get("x-action") || "create-upload-url";
+    if (action === "upload-binary") {
+      const contentType = (req.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+      if (!allowedTypes.has(contentType)) return response({ error: "Unsupported media type" }, 400, origin);
+      const declaredSize = Number(req.headers.get("content-length") || "0");
+      if (!Number.isFinite(declaredSize) || declaredSize < 1 || declaredSize > maxBytes) {
+        return response({ error: "Media must be between 1 byte and 25 MB." }, 400, origin);
+      }
+      const bytes = new Uint8Array(await req.arrayBuffer());
+      if (!bytes.byteLength || bytes.byteLength > maxBytes || (declaredSize && bytes.byteLength !== declaredSize)) {
+        return response({ error: "Upload size is invalid." }, 400, origin);
+      }
+      const rawName = req.headers.get("x-file-name") || "media";
+      const filename = rawName.split(/[\\/]/).pop()!.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "media";
+      const objectKey = `users/${userData.user.id}/${category}/${crypto.randomUUID()}-${filename}`;
+      await s3.send(new PutObjectCommand({
+        Bucket: bucket,
+        Key: objectKey,
+        Body: bytes,
+        ContentType: contentType,
+      }));
+      return response({ objectKey, storagePath: "b2://" + objectKey }, 200, origin);
+    }
+
 
     // Read the active S3 CORS policy for diagnostics. Never expose credentials.
     try {

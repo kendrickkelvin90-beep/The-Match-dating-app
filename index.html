@@ -8547,8 +8547,9 @@ function renderMemberNotifications() {
   filtered.forEach(notification => {
     const card = document.createElement("article");
     card.className = "notification-card" + (notification.is_read ? "" : " unread");
-    card.tabIndex = 0;
-    card.setAttribute("role", "button");
+    const hasAction = Boolean(notification.action_url && notification.action_label);
+    card.tabIndex = hasAction ? -1 : 0;
+    if (!hasAction) card.setAttribute("role", "button");
     card.setAttribute("aria-label", (notification.title || "Notification") + (notification.is_read ? "" : ", unread"));
 
     const icon = document.createElement("div");
@@ -8597,10 +8598,37 @@ function renderMemberNotifications() {
       renderMemberNotifications();
       await loadNotificationBadge();
     };
-    card.addEventListener("click", markRead);
-    card.addEventListener("keydown", event => {
-      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); markRead(); }
-    });
+    if (hasAction) {
+      const actions = document.createElement("div");
+      actions.className = "notification-actions";
+      actions.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin-top:12px";
+      const renew = document.createElement("button");
+      renew.type = "button";
+      renew.className = "btn primary";
+      renew.textContent = notification.action_label || "Yes, Renew";
+      renew.addEventListener("click", async event => {
+        event.stopPropagation();
+        await markRead();
+        show("premium");
+      });
+      const dismiss = document.createElement("button");
+      dismiss.type = "button";
+      dismiss.className = "btn secondary";
+      dismiss.textContent = "No, Thanks";
+      dismiss.addEventListener("click", async event => {
+        event.stopPropagation();
+        await markRead();
+        actions.remove();
+      });
+      actions.append(renew, dismiss);
+      copy.appendChild(actions);
+    }
+    if (!hasAction) {
+      card.addEventListener("click", markRead);
+      card.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); markRead(); }
+      });
+    }
     list.appendChild(card);
   });
 }
@@ -8614,7 +8642,7 @@ async function loadMemberNotifications() {
   statusBox.textContent = "Loading notifications...";
   try {
     const { data, error } = await db.from("notifications")
-      .select("id,type,title,body,related_user_id,is_read,created_at")
+      .select("id,type,title,body,related_user_id,is_read,created_at,action_url,action_label")
       .eq("user_id", currentUser.id)
       .order("created_at", { ascending: false })
       .limit(100);

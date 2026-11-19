@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "npm:@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetBucketCorsCommand } from "npm:@aws-sdk/client-s3";
 import { getSignedUrl } from "npm:@aws-sdk/s3-request-presigner";
 
 const allowedOrigins = new Set(["https://match.beyondthebinarymedia.online"]);
@@ -74,6 +74,19 @@ Deno.serve(async (req: Request) => {
       forcePathStyle: true,
       credentials: { accessKeyId: keyId, secretAccessKey: appKey },
     });
+
+    // Read the active S3 CORS policy for diagnostics. Never expose credentials.
+    try {
+      const cors = await s3.send(new GetBucketCorsCommand({ Bucket: bucket }));
+      console.info("B2 S3 CORS diagnostic:", JSON.stringify((cors.CORSRules || []).map((rule) => ({
+        allowedOrigins: rule.AllowedOrigins || [],
+        allowedMethods: rule.AllowedMethods || [],
+        allowedHeaders: rule.AllowedHeaders || [],
+        exposeHeaders: rule.ExposeHeaders || [],
+      }))));
+    } catch (corsError) {
+      console.error("B2 S3 CORS diagnostic unavailable:", corsError instanceof Error ? corsError.message : "unknown error");
+    }
 
     const action = req.headers.get("x-action") || "create-upload-url";
     if (action === "delete-upload") {

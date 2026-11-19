@@ -8547,7 +8547,7 @@ function renderMemberNotifications() {
   filtered.forEach(notification => {
     const card = document.createElement("article");
     card.className = "notification-card" + (notification.is_read ? "" : " unread");
-    const hasAction = Boolean(notification.action_url && notification.action_label);
+    const hasAction = Boolean(notification.action_url && notification.action_label && !notification.is_read);
     card.tabIndex = hasAction ? -1 : 0;
     if (!hasAction) card.setAttribute("role", "button");
     card.setAttribute("aria-label", (notification.title || "Notification") + (notification.is_read ? "" : ", unread"));

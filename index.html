@@ -8105,17 +8105,33 @@ async function uploadMediaToB2(category, file) {
   if (!file || !file.size || file.size > 25 * 1024 * 1024) {
     throw new Error("Choose a file between 1 byte and 25 MB.");
   }
-  const { data: result, error: uploadError } = await db.functions.invoke("b2-media-upload", {
-    body: file,
-    headers: {
-      "x-category": category,
-      "x-action": "upload-binary",
-      "x-file-name": file.name || "media",
-      "Content-Type": file.type
-    }
-  });
-  if (uploadError || !result?.storagePath) {
-    throw uploadError || new Error(result?.error || "The secure media upload did not complete.");
+  // Send the file as an actual binary request body. The Supabase Functions
+  // client can wrap browser File objects differently across mobile browsers;
+  // using fetch + ArrayBuffer keeps Android uploads byte-for-byte and avoids
+  // the request failing after a successful CORS preflight.
+  const projectUrl = "https://rxbdmgzmwhjnkcclyrcq.supabase.co";
+  const publishableKey = "sb_publishable_5OirCcmy8L5n3isPvi-P0w_Dgeb13U_";
+  let response;
+  try {
+    response = await fetch(projectUrl + "/functions/v1/b2-media-upload", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + accessToken,
+        "apikey": publishableKey,
+        "x-category": category,
+        "x-action": "upload-binary",
+        "x-file-name": file.name || "media",
+        "Content-Type": file.type
+      },
+      body: await file.arrayBuffer()
+    });
+  } catch (networkError) {
+    console.error("B2 binary upload request failed before a response:", networkError);
+    throw new Error("The secure flyer upload could not reach Supabase. Your selected flyer is still here; check your connection and try again.");
+  }
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !result?.storagePath) {
+    throw new Error(result?.error || ("Secure flyer upload failed (HTTP " + response.status + ")."));
   }
   return result.storagePath;
 }

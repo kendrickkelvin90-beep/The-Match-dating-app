@@ -8592,9 +8592,10 @@ function renderMemberNotifications() {
   filtered.forEach(notification => {
     const card = document.createElement("article");
     card.className = "notification-card" + (notification.is_read ? "" : " unread");
-    const hasAction = Boolean(notification.action_url && notification.action_label && !notification.is_read);
-    card.tabIndex = hasAction ? -1 : 0;
-    if (!hasAction) card.setAttribute("role", "button");
+    const isPublishedEvent = notification.type === "event_published" && /^event:[0-9a-f-]{36}$/i.test(String(notification.action_url || ""));
+    const hasAction = Boolean(notification.action_url && notification.action_label && !notification.is_read && !isPublishedEvent);
+    card.tabIndex = (hasAction || isPublishedEvent) ? -1 : 0;
+    if (!hasAction && !isPublishedEvent) card.setAttribute("role", "button");
     card.setAttribute("aria-label", (notification.title || "Notification") + (notification.is_read ? "" : ", unread"));
 
     const icon = document.createElement("div");
@@ -8670,7 +8671,29 @@ function renderMemberNotifications() {
       actions.append(renew, dismiss);
       copy.appendChild(actions);
     }
-    if (!hasAction) {
+    if (isPublishedEvent) {
+      card.classList.add("notification-actionable");
+      card.tabIndex = 0;
+      card.setAttribute("role", "button");
+      card.setAttribute("aria-label", (notification.title || "New event posted") + ". Open event details");
+      const openEvent = async () => {
+        if (!notification.is_read && !(await markRead())) return;
+        const eventId = String(notification.action_url).slice("event:".length);
+        if (typeof window.openPublishedEventById === "function") {
+          await window.openPublishedEventById(eventId);
+        }
+      };
+      card.addEventListener("click", openEvent);
+      card.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openEvent(); }
+      });
+      const viewEvent = document.createElement("button");
+      viewEvent.type = "button";
+      viewEvent.className = "btn primary";
+      viewEvent.textContent = "View event";
+      viewEvent.addEventListener("click", event => { event.stopPropagation(); openEvent(); });
+      copy.appendChild(viewEvent);
+    } else if (!hasAction) {
       card.addEventListener("click", markRead);
       card.addEventListener("keydown", event => {
         if (event.key === "Enter" || event.key === " ") { event.preventDefault(); markRead(); }
@@ -20969,6 +20992,16 @@ document.querySelectorAll("[data-events-tab]").forEach(b=>b.addEventListener("cl
 E("eventsSearch")?.addEventListener("input",renderEvents);E("eventsCityFilter")?.addEventListener("input",renderEvents);E("eventsCategoryFilter")?.addEventListener("change",renderEvents);
 document.querySelectorAll("[data-event-category]").forEach(b=>b.addEventListener("click",()=>{const value=b.dataset.eventCategory||"";E("eventsCategoryFilter").value=value;document.querySelectorAll("[data-event-category]").forEach(x=>{const active=x===b;x.classList.toggle("active",active);x.setAttribute("aria-pressed",String(active));});renderEvents();}));
 E("eventsPublicList")?.addEventListener("click",ev=>{const b=ev.target.closest("[data-event-details]");if(b)openDetails(b.dataset.eventDetails);});
+window.openPublishedEventById = async function(eventId) {
+  window.show("eventsPage");
+  try {
+    await load();
+    await openDetails(eventId);
+  } catch (error) {
+    E("eventsPageStatus").textContent = "This event could not be opened. Please refresh Events and try again.";
+    console.warn("Could not open event from notification:", error);
+  }
+};
 E("closeEventDetails")?.addEventListener("click",()=>E("eventDetailsModal").classList.add("hidden"));
 E("eventDetailsModal")?.addEventListener("click",ev=>{if(ev.target===E("eventDetailsModal"))E("eventDetailsModal").classList.add("hidden");});
 E("eventInterestedBtn")?.addEventListener("click",()=>saveResponse("interested"));E("eventGoingBtn")?.addEventListener("click",()=>saveResponse("going"));

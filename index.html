@@ -24522,6 +24522,19 @@ body:has(#bottomNavigation:not(.hidden))>footer{
 #chatPage:not(.hidden) #chatEmojiToggle {
   visibility:visible!important;
 }
+
+/* MATCH_CHAT_VIEWPORT_RECOVERY_2026_11: keep the active conversation visible on mobile */
+#chatPage:not(.hidden){height:100dvh!important;min-height:100dvh!important;padding-top:90px!important;padding-bottom:calc(10px + env(safe-area-inset-bottom))!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;}
+#chatPage:not(.hidden) #chatHeader{position:relative!important;top:auto!important;left:auto!important;right:auto!important;flex:0 0 auto!important;min-height:70px!important;z-index:2!important;}
+#chatPage:not(.hidden) #chatPageContent{position:relative!important;z-index:2!important;flex:1 1 0!important;min-height:0!important;height:auto!important;display:flex!important;overflow:hidden!important;}
+#chatPage:not(.hidden) #activeConversation{display:flex!important;visibility:visible!important;flex:1 1 0!important;min-height:0!important;height:auto!important;overflow:hidden!important;flex-direction:column!important;}
+#chatPage:not(.hidden) #chatMessages{position:relative!important;z-index:2!important;display:flex!important;visibility:visible!important;flex:1 1 0!important;min-height:0!important;max-height:none!important;overflow-y:auto!important;overscroll-behavior:contain!important;}
+#chatPage:not(.hidden) #chatComposer{position:relative!important;z-index:3!important;display:flex!important;visibility:visible!important;flex:0 0 auto!important;min-height:60px!important;padding:6px!important;gap:6px!important;background:#080808!important;border-top:1px solid #302719!important;}
+#chatPage:not(.hidden) #chatComposer #chatMessageInput{flex:1 1 0!important;width:auto!important;min-width:0!important;}
+#chatPage:not(.hidden) #chatComposer #sendChatMessage{width:auto!important;min-width:48px!important;max-width:64px!important;margin:0!important;}
+#chatPage:not(.hidden) #chatComposer #chatMediaButton,#chatPage:not(.hidden) #chatComposer #chatEmojiToggle{width:44px!important;height:44px!important;flex:0 0 44px!important;margin:0!important;}
+#chatPage:not(.hidden) #chatPageStatus{position:relative!important;z-index:3!important;}
+#chatPage:not(.hidden) #stars,#chatPage:not(.hidden) .stars,#chatPage:not(.hidden) #starBackground{z-index:0!important;pointer-events:none!important;}
 </style>
 <script id="profile-home-dashboard-controller">
 (function(){

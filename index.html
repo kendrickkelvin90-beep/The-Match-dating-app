@@ -18073,13 +18073,20 @@ if (photoPath) {
 
 
       const openThisChat = () => openChat(p.id, p.display_name || "Member");
-      button.onclick = openThisChat;
-      button.onkeydown = event => {
+      // Explicit, touch-friendly row activation. Keep the favorite control
+      // isolated so its clicks never trigger opening the conversation.
+      button.style.cursor = "pointer";
+      button.style.pointerEvents = "auto";
+      button.addEventListener("click", event => {
+        if (event.target === favoriteButton || favoriteButton.contains(event.target)) return;
+        openThisChat();
+      });
+      button.addEventListener("keydown", event => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           openThisChat();
         }
-      };
+      });
 
       list.appendChild(button);
     }

@@ -8085,39 +8085,6 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
 </footer>
 
 <script>
-/* OPT-IN JAVASCRIPT ERROR DIAGNOSTICS: activate with ?debugjs=1 */
-(function(){
-  try {
-    if (!new URLSearchParams(window.location.search).has('debugjs')) return;
-    const entries=[];
-    let panel, output;
-    function ensurePanel(){
-      if(panel || !document.body) return;
-      panel=document.createElement('section');
-      panel.id='tm-js-error-diagnostics';
-      panel.style.cssText='position:fixed;inset:auto 8px 8px 8px;max-height:45vh;overflow:auto;z-index:2147483647;background:#190b0b;color:#fff;border:2px solid #ff4d4d;border-radius:12px;padding:12px;font:12px monospace;box-shadow:0 0 25px #000';
-      const title=document.createElement('div');title.textContent='THE MATCH — JavaScript diagnostics';title.style.cssText='font-weight:bold;color:#ff7777;margin-bottom:8px';
-      const copy=document.createElement('button');copy.textContent='Copy errors';copy.style.cssText='padding:6px;margin-right:6px';
-      copy.onclick=()=>{navigator.clipboard.writeText(entries.join('\n\n')).catch(e=>record('Clipboard failure',String(e)));};
-      const clear=document.createElement('button');clear.textContent='Clear';clear.style.cssText='padding:6px';
-      clear.onclick=()=>{entries.length=0;if(output)output.textContent='No captured errors yet.';};
-      output=document.createElement('pre');output.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;margin:10px 0 0';
-      panel.append(title,copy,clear,output);document.body.appendChild(panel);
-    }
-    function record(label,detail){
-      ensurePanel();
-      const item='['+new Date().toISOString()+'] '+label+'\n'+(detail||'');
-      entries.push(item);if(output){output.textContent=entries.join('\n\n');output.scrollTop=output.scrollHeight;}
-    }
-    window.addEventListener('error',e=>record('WINDOW ERROR',e.message+'\n'+(e.filename||'')+':'+(e.lineno||0)+':'+(e.colno||0)+'\n'+(e.error&&e.error.stack||'')));
-    window.addEventListener('unhandledrejection',e=>record('UNHANDLED PROMISE REJECTION',e.reason&&e.reason.stack||String(e.reason)));
-    const original=console.error.bind(console);
-    console.error=function(){try{record('console.error',Array.from(arguments).map(v=>v&&v.stack||String(v)).join(' '));}catch(_){}original.apply(console,arguments);};
-    window.__TM_JS_DIAGNOSTICS__={getErrors:()=>entries.slice(),clear:()=>{entries.length=0;if(output)output.textContent='No captured errors yet.';}};
-    if(document.body)ensurePanel();else document.addEventListener('DOMContentLoaded',ensurePanel,{once:true});
-  }catch(installError){console.error('Diagnostics installer failed',installError);}
-})();
-
 (function(){
 "use strict";
 

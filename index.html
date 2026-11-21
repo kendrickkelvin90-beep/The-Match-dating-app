@@ -18608,6 +18608,7 @@ async function loadChatMessages(){
   }
 
     const chat = $("chatMessages");
+  chat.dataset.loading = "true";
   function insertBubbleInTimeOrder(bubble, createdAt) {
   const messageTime = new Date(createdAt).getTime();
   bubble.dataset.createdAt = createdAt;
@@ -18759,11 +18760,13 @@ const receiptResults = await Promise.all(
       console.warn("Unread count refresh failed; chat rendering continues:", error)
     );
 
+        chat.dataset.loading = "false";
         if (!data || !data.length) {
       if (!chat.querySelector("[data-empty-message]")) {
         const empty = document.createElement("p");
         empty.dataset.emptyMessage = "true";
-        empty.textContent = "No messages yet. Say hello!";
+        empty.className = "chat-empty-state";
+        empty.textContent = "No messages yet — say hi to start the conversation";
         chat.appendChild(empty);
       }
     } else {
@@ -18819,6 +18822,7 @@ const receiptResults = await Promise.all(
         const bubble = document.createElement("div");
         bubble.dataset.messageId = message.id;
         bubble.dataset.createdAt = message.created_at;
+        bubble.dataset.senderId = message.sender_id;
         bubble.className = mine ? "chat-bubble sent" : "chat-bubble received";
 
         Object.assign(bubble.style,{
@@ -24522,6 +24526,35 @@ body:has(#bottomNavigation:not(.hidden))>footer{
 #chatPage:not(.hidden) #chatEmojiToggle {
   visibility:visible!important;
 }
+
+/* MATCH_CHAT_VIEWPORT_RECOVERY_2026_11: keep the active conversation visible on mobile, without overriding hidden states */
+#chatPage:not(.hidden){height:100dvh!important;min-height:100dvh!important;padding-top:90px!important;padding-bottom:calc(10px + env(safe-area-inset-bottom))!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;}
+#chatPage:not(.hidden) #chatHeader{position:relative!important;top:auto!important;left:auto!important;right:auto!important;flex:0 0 auto!important;min-height:70px!important;z-index:2!important;}
+#chatPage:not(.hidden) #chatPageContent{position:relative!important;z-index:2!important;flex:1 1 0!important;min-height:0!important;height:auto!important;display:flex!important;overflow:hidden!important;}
+#chatPage:not(.hidden) #activeConversation:not(.hidden){display:flex!important;visibility:visible!important;flex:1 1 0!important;min-height:0!important;height:auto!important;overflow:hidden!important;flex-direction:column!important;}
+#chatPage:not(.hidden) #activeConversation:not(.hidden) #chatMessages{position:relative!important;z-index:2!important;display:flex!important;visibility:visible!important;flex:1 1 0!important;min-height:0!important;max-height:none!important;overflow-y:auto!important;overscroll-behavior:contain!important;}
+#chatPage:not(.hidden) #activeConversation:not(.hidden) #chatComposer{position:relative!important;z-index:3!important;display:flex!important;visibility:visible!important;flex:0 0 auto!important;min-height:60px!important;padding:6px!important;gap:6px!important;background:#080808!important;border-top:1px solid #302719!important;}
+#chatPage:not(.hidden) #activeConversation:not(.hidden) #chatComposer #chatMessageInput{flex:1 1 0!important;width:auto!important;min-width:0!important;}
+#chatPage:not(.hidden) #activeConversation:not(.hidden) #chatComposer #sendChatMessage{width:auto!important;min-width:48px!important;max-width:64px!important;margin:0!important;}
+#chatPage:not(.hidden) #activeConversation:not(.hidden) #chatComposer #chatMediaButton,#chatPage:not(.hidden) #activeConversation:not(.hidden) #chatComposer #chatEmojiToggle{width:44px!important;height:44px!important;flex:0 0 44px!important;margin:0!important;}
+#chatPage:not(.hidden) #chatPageStatus{position:relative!important;z-index:3!important;}
+#chatPage:not(.hidden) #stars,#chatPage:not(.hidden) .stars,#chatPage:not(.hidden) #starBackground{z-index:0!important;pointer-events:none!important;}
+
+/* MATCH WHATSAPP-STYLE CHAT refinement: grouping, theme, loading and scroll behavior */
+#chatPage:not(.hidden) #activeConversation:not(.hidden){display:flex;flex-direction:column;min-height:0;flex:1 1 0;overflow:hidden}
+#chatPage:not(.hidden) #chatMessages{flex:1 1 0;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:3px;padding:12px 8px}
+#chatPage:not(.hidden) #chatHeader{flex-shrink:0;position:relative!important}
+#chatPage:not(.hidden) #chatComposer{flex-shrink:0;position:relative;z-index:3;display:flex;align-items:center;gap:7px}
+#chatPage:not(.hidden) #chatMessageInput{flex:1 1 0;min-width:0;resize:none;overflow-y:auto}
+#chatPage:not(.hidden) .chat-bubble{max-width:min(80%,520px)!important;width:fit-content!important;overflow-wrap:anywhere;white-space:pre-wrap;box-shadow:0 1px 2px rgba(0,0,0,.22)}
+#chatPage:not(.hidden) .chat-bubble.sent{align-self:flex-end;border:1px solid #806333;border-radius:18px 18px 5px 18px!important;background:linear-gradient(145deg,#342817,#211a10)!important;color:#f8edda!important}
+#chatPage:not(.hidden) .chat-bubble.received{align-self:flex-start;border:1px solid #40352a;border-radius:18px 18px 18px 5px!important;background:#191716!important;color:#f5f1e8!important}
+#chatPage:not(.hidden) .chat-bubble[data-sender-id] + .chat-bubble[data-sender-id]{margin-top:2px!important}
+#chatPage:not(.hidden) .chat-empty-state,[data-empty-message]{margin:auto!important;text-align:center;max-width:280px;padding:14px 18px;border:1px solid #66502c;border-radius:16px;background:#17130d;color:#e5c77f;font-size:14px;line-height:1.5}
+#chatMessages[data-loading="true"]::before{content:"Loading conversation…";align-self:center;margin:auto;padding:10px 14px;border:1px solid #66502c;border-radius:14px;background:#17130d;color:#d8bd83;font-size:13px}
+body.light-theme #chatPage:not(.hidden) .chat-bubble.received{background:#f2eee6!important;color:#27221a!important;border-color:#ded5c6!important}
+body.light-theme #chatPage:not(.hidden) .chat-bubble.sent{background:#f7ecd6!important;color:#27221a!important;border-color:#d7bd87!important}
+body.light-theme #chatPage:not(.hidden) .chat-empty-state,[data-empty-message]{background:#f7f1e3;color:#6b5125}
 </style>
 <script id="profile-home-dashboard-controller">
 (function(){

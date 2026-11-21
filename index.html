@@ -4719,13 +4719,22 @@ textarea.match-dialog-input{min-height:112px;resize:vertical}
 <script>
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      appId: "c5deb192-536d-4498-ba4b-b973d50d5ba6",
-      // Share the app's root-scope worker so OneSignal and the PWA
-      // never replace each other's service-worker registration.
-      serviceWorkerPath: "/service-worker.js",
-      serviceWorkerParam: { scope: "/" },
-    });
+    try {
+      // Register and await the shared root worker BEFORE initializing OneSignal.
+      // Otherwise the SDK may try to message a worker registration that is not
+      // available yet, producing "[WM] No SW registration for postMessage".
+      if ("serviceWorker" in navigator) {
+        await navigator.serviceWorker.register("/service-worker.js", { scope: "/" });
+        await navigator.serviceWorker.ready;
+      }
+      await OneSignal.init({
+        appId: "c5deb192-536d-4498-ba4b-b973d50d5ba6",
+        serviceWorkerPath: "/service-worker.js",
+        serviceWorkerParam: { scope: "/" },
+      });
+    } catch (error) {
+      console.error("OneSignal initialization/worker setup failed:", error);
+    }
   });
 </script>
 
@@ -21525,14 +21534,7 @@ E("openEventsFromDiscover")?.addEventListener("click",async()=>{
 });
 })();
 </script>
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/service-worker.js")
-      .catch((error) => console.error("Service worker registration failed:", error));
-  });
-}
-</script>
+<!-- Shared service worker is registered and awaited before OneSignal init above. -->
   
 <!-- The Match Install App Popup -->
 <div id="installAppModal" class="install-app-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="installAppTitle">

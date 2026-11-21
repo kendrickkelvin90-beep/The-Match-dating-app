@@ -340,10 +340,10 @@ label{display:block;margin-top:14px;font-size:13px}
 
 #chatPage #chatPageContent {
   display: flex !important;
-  flex: 1 1 0%;
+  flex: 1 1 auto;
   width: 100%;
   min-height: 0;
-  height: 0;
+  height: auto;
   overflow: hidden;
   flex-direction: column;
   color: #fff;
@@ -351,12 +351,28 @@ label{display:block;margin-top:14px;font-size:13px}
 
 #chatPage #activeConversation {
   display: flex !important;
-  flex: 1 1 0%;
+  flex: 1 1 auto;
   width: 100%;
   min-height: 0;
-  height: 0;
+  height: auto;
   overflow: hidden;
   flex-direction: column;
+}
+
+#chatPage #chatMessages {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  height: auto;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+#chatPage #chatComposer,
+#chatPage #chatReplyPreview,
+#chatPage #chatPageStatus,
+#chatPage #backFromChatPage {
+  flex-shrink: 0;
 }
 
 #chatPage #chatPartnerName {
@@ -18331,17 +18347,17 @@ $("chatMessages").replaceChildren();
     const activeConversationNode = $("activeConversation");
     activeConversationNode.classList.remove("hidden");
     activeConversationNode.style.display = "flex";
-    activeConversationNode.style.flex = "1 1 0%";
+    activeConversationNode.style.flex = "1 1 auto";
     activeConversationNode.style.width = "100%";
     activeConversationNode.style.minHeight = "0";
-    activeConversationNode.style.height = "0";
+    activeConversationNode.style.height = "auto";
     activeConversationNode.style.overflow = "hidden";
     chatContent.appendChild(activeConversationNode);
     chatContent.style.display = "flex";
-    chatContent.style.flex = "1 1 0%";
+    chatContent.style.flex = "1 1 auto";
     chatContent.style.width = "100%";
     chatContent.style.minHeight = "0";
-    chatContent.style.height = "0";
+    chatContent.style.height = "auto";
     chatContent.style.overflow = "hidden";
 
     // The emoji picker used to sit outside #activeConversation. Moving the

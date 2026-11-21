@@ -12,6 +12,15 @@ const referenceTables: Record<string, { table: string; column: string }> = {
   verification_selfies: { table: "verification_requests", column: "selfie_path" },
   event_posters: { table: "match_event_poster_assets", column: "storage_path" },
 };
+
+async function moderateStoryImageBytes(bytes: Uint8Array, contentType: string) {
+ const apiKey=Deno.env.get("OPENAI_API_KEY"); if(!apiKey) throw new Error("Image moderation is not configured.");
+ let binary=""; for(let i=0;i<bytes.length;i+=0x8000) binary+=String.fromCharCode(...bytes.subarray(i,Math.min(i+0x8000,bytes.length)));
+ const moderation=await fetch("https://api.openai.com/v1/moderations",{method:"POST",headers:{"Authorization":"Bearer "+apiKey,"Content-Type":"application/json"},body:JSON.stringify({model:"omni-moderation-latest",input:[{type:"image_url",image_url:{url:"data:"+contentType+";base64,"+btoa(binary)}}]})});
+ if(!moderation.ok) throw new Error("Moderation service unavailable."); const data=await moderation.json(),result=data?.results?.[0];if(!result)throw new Error("Moderation returned an invalid response.");
+ if(result.categories?.["sexual/minors"]===true||Number(result.category_scores?.sexual??0)>=0.85)throw new Error("This image appears to contain explicit content that is not allowed.");
+}
+
 const allowedTypes = new Set([
   "image/jpeg", "image/png", "image/webp", "image/gif",
   "video/mp4", "video/webm", "video/quicktime",
@@ -91,6 +100,7 @@ Deno.serve(async (req: Request) => {
       }
       const rawName = req.headers.get("x-file-name") || "media";
       const filename = rawName.split(/[\\/]/).pop()!.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "media";
+      if (category === "stories") { if (!contentType.startsWith("image/")) return response({ error: "Story videos cannot be uploaded until video moderation is supported." }, 400, origin); await moderateStoryImageBytes(bytes, contentType); }
       const objectKey = `users/${userData.user.id}/${category}/${crypto.randomUUID()}-${filename}`;
       await s3.send(new PutObjectCommand({
         Bucket: bucket,
@@ -171,6 +181,7 @@ Deno.serve(async (req: Request) => {
       return response({ deleted: true }, 200, origin);
     }
     if (action !== "create-upload-url") return response({ error: "Unsupported action" }, 400, origin);
+    if (category === "stories") return response({ error: "Stories must use the inspected binary upload route." }, 400, origin);
 
     const body = await req.json().catch(() => null);
     const contentType = typeof body?.contentType === "string" ? body.contentType.toLowerCase() : "";

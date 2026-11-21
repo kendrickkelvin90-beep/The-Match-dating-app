@@ -340,32 +340,61 @@ label{display:block;margin-top:14px;font-size:13px}
 
 #chatPage #chatPageContent {
   display: flex !important;
-  flex: 1 1 auto;
+  flex: 1 1 0% !important;
   width: 100%;
-  min-height: 0;
-  height: auto;
+  min-height: 0 !important;
+  height: 0 !important;
   overflow: hidden;
   flex-direction: column;
   color: #fff;
 }
 
 #chatPage #activeConversation {
-  display: flex !important;
-  flex: 1 1 auto;
+  display: grid !important;
+  grid-template-rows: minmax(0, 1fr) auto;
+  flex: 1 1 0% !important;
   width: 100%;
-  min-height: 0;
-  height: auto;
+  min-height: 0 !important;
+  height: 0 !important;
   overflow: hidden;
-  flex-direction: column;
 }
 
 #chatPage #chatMessages {
-  flex: 1 1 auto;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0%;
   width: 100%;
-  min-height: 0;
-  height: auto;
+  min-height: 0 !important;
+  height: 0 !important;
   box-sizing: border-box;
   overflow-y: auto;
+}
+
+#chatPage #chatComposer {
+  grid-row: 2;
+  display: flex !important;
+  flex: 0 0 auto !important;
+  width: 100%;
+  min-height: 56px;
+  box-sizing: border-box;
+  align-items: center;
+}
+
+#chatPage #chatComposer > * {
+  flex-shrink: 0;
+}
+
+#chatPage #chatMessageInput {
+  flex: 1 1 0%;
+  width: auto;
+  min-width: 0;
+}
+
+#chatPage #chatReplyPreview,
+#chatPage #chatPageStatus,
+#chatPage #backFromChatPage {
+  flex-shrink: 0;
 }
 
 #chatPage #chatComposer,
@@ -18360,17 +18389,19 @@ $("chatMessages").replaceChildren();
     const activeConversationNode = $("activeConversation");
     activeConversationNode.classList.remove("hidden");
     activeConversationNode.style.display = "flex";
-    activeConversationNode.style.flex = "1 1 auto";
+    activeConversationNode.style.display = "grid";
+    activeConversationNode.style.gridTemplateRows = "minmax(0, 1fr) auto";
+    activeConversationNode.style.flex = "1 1 0%";
     activeConversationNode.style.width = "100%";
     activeConversationNode.style.minHeight = "0";
-    activeConversationNode.style.height = "auto";
+    activeConversationNode.style.height = "0";
     activeConversationNode.style.overflow = "hidden";
     chatContent.appendChild(activeConversationNode);
     chatContent.style.display = "flex";
-    chatContent.style.flex = "1 1 auto";
+    chatContent.style.flex = "1 1 0%";
     chatContent.style.width = "100%";
     chatContent.style.minHeight = "0";
-    chatContent.style.height = "auto";
+    chatContent.style.height = "0";
     chatContent.style.overflow = "hidden";
 
     // The emoji picker used to sit outside #activeConversation. Moving the

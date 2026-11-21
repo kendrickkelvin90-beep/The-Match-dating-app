@@ -17844,42 +17844,46 @@ const conversationCandidateIds = [
   ])
 ];
 
+// Existing conversation partners are retained in the inbox based on
+// participant history. Do not re-evaluate old conversations as new matches;
+// the existing database policies still control which rows can be read.
+// Newly liked candidates remain subject to mutual-like and interaction checks.
+const historicalPartnerIds = [...messagePartnerSet];
+
+const newLikeCandidateIds = conversationCandidateIds.filter(
+  id => !messagePartnerSet.has(id)
+);
+
 const mutualResults = await Promise.all(
-  conversationCandidateIds.map(async id => {
+  newLikeCandidateIds.map(async id => {
     const { data, error } = await db.rpc(
       "check_mutual_like",
       { p_other_user_id: id }
     );
 
     if (error) throw error;
-
-    return data === true || messagePartnerSet.has(id)
-      ? id
-      : null;
+    return data === true ? id : null;
   })
 );
 
-const mutualIds = [...new Set(mutualResults.filter(Boolean))];
-
-
 const interactionResults = await Promise.all(
-  mutualIds.map(async id => {
+  mutualResults.filter(Boolean).map(async id => {
     const { data, error } = await db.rpc(
       "can_interact_with_member",
       { target_user_id: id }
     );
 
     if (error) throw error;
-
     return data === true ? id : null;
   })
 );
 
-mutualIds.splice(
-  0,
-  mutualIds.length,
-  ...new Set(interactionResults.filter(Boolean))
-);
+const mutualIds = [
+  ...new Set([
+    ...historicalPartnerIds,
+    ...interactionResults.filter(Boolean)
+  ])
+];
 
 
     if (!mutualIds.length) {

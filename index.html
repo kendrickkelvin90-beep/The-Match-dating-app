@@ -18560,7 +18560,9 @@ async function loadChatMessages(){
     requestedChatUserId === activeChatUserId &&
     requestedUserId === currentUser?.id;
 
-  const blockCheck = await db.rpc("can_interact_with_member", {
+  // Chat access is independent of Discover/Nearby community boundaries.
+  // The chat-specific RPC checks blocks and active moderation only.
+  const blockCheck = await db.rpc("can_chat_with_member", {
     target_user_id: requestedChatUserId
   });
 

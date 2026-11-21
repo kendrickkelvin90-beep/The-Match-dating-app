@@ -12028,11 +12028,10 @@ if (datingDetailsError) throw datingDetailsError;
 
 const newCommunity = currentMemberCommunity || "";
 const newOrientation = $("sexualOrientation")?.value || currentMemberOrientation;
-const { data: onboardingRecord, error: onboardingReadError } = await db.from("member_onboarding").select("answers").eq("user_id", currentUser.id).maybeSingle();\n  if (onboardingReadError) throw onboardingReadError;\nconst lifestyleFlag = !!$("lgbtqLifestyleFlag")?.checked;\nif (newOrientation !== currentMemberOrientation || newCommunity !== currentMemberCommunity || lifestyleFlag !== !!onboardingRecord?.answers?.lgbtq_lifestyle) {
-  const { data: onboardingRecord, error: onboardingReadError } = await db.from("member_onboarding")
-    .select("answers").eq("user_id", currentUser.id).maybeSingle();
-  if (onboardingReadError) throw onboardingReadError;
-
+const { data: onboardingRecord, error: onboardingReadError } = await db.from("member_onboarding").select("answers").eq("user_id", currentUser.id).maybeSingle();
+if (onboardingReadError) throw onboardingReadError;
+const lifestyleFlag = !!$("lgbtqLifestyleFlag")?.checked;
+if (newOrientation !== currentMemberOrientation || newCommunity !== currentMemberCommunity || lifestyleFlag !== !!onboardingRecord?.answers?.lgbtq_lifestyle) {
   const updatedAnswers = {
     ...(onboardingRecord?.answers || {}),
     sexual_orientation: newOrientation,

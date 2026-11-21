@@ -18551,14 +18551,22 @@ async function loadChatMessages(){
       new Date(myMembership.premium_until).getTime() > Date.now();
 
 
-            const {data,error} = await db
-      .from("messages")
-      .select("id,sender_id,receiver_id,body,reply_to_message_id,created_at,delivered_at,read_at,unsent_at")
-      .or("and(sender_id.eq."+me+",receiver_id.eq."+them+"),and(sender_id.eq."+them+",receiver_id.eq."+me+")")
-      .order("created_at",{ascending:false})
-      .limit(100);
-
-    if (error) throw error;
+    // Fetch both directions independently. The previous nested .or(and(...))
+    // filter is fragile in PostgREST and can fail to parse on some deployments.
+    const messageFields = "id,sender_id,receiver_id,body,reply_to_message_id,created_at,delivered_at,read_at,unsent_at";
+    const [sentResult, receivedResult] = await Promise.all([
+      db.from("messages").select(messageFields)
+        .eq("sender_id", me).eq("receiver_id", them)
+        .order("created_at", { ascending: false }).limit(100),
+      db.from("messages").select(messageFields)
+        .eq("sender_id", them).eq("receiver_id", me)
+        .order("created_at", { ascending: false }).limit(100)
+    ]);
+    if (sentResult.error) throw sentResult.error;
+    if (receivedResult.error) throw receivedResult.error;
+    const data = [...(sentResult.data || []), ...(receivedResult.data || [])]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 100);
 
 // Keep messages deleted by this member hidden after reopening chat.
 // Scope the lookup to IDs in this conversation's latest page instead of

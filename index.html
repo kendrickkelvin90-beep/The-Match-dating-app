@@ -6428,6 +6428,7 @@ button:disabled,input:disabled,select:disabled,textarea:disabled{opacity:.58;cur
     <p class="small">Choose up to 10 interests.</p>
     <p id="datingInterestCount" class="small" aria-live="polite">0 of 10 selected</p>
     <div class="dating-interest-grid">
+      <label><input type="checkbox" id="lgbtqLifestyleFlag"> LGBTQ+</label>
       <label><input type="checkbox" name="datingInterest" value="Music"> Music</label>
       <label><input type="checkbox" name="datingInterest" value="Movies & TV"> Movies & TV</label>
       <label><input type="checkbox" name="datingInterest" value="Travel"> Travel</label>
@@ -11606,6 +11607,7 @@ async function loadCurrentMemberOrientation() {
     .select("answers").eq("user_id", currentUser.id).maybeSingle();
   if (error) throw error;
   currentMemberOrientation = String(data?.answers?.sexual_orientation || "Prefer not to say");
+  if ($("lgbtqLifestyleFlag")) $("lgbtqLifestyleFlag").checked = !!data?.answers?.lgbtq_lifestyle;
   currentMemberCommunity = String(data?.answers?.dating_community || "");
   if ($("sexualOrientation")) $("sexualOrientation").value = currentMemberOrientation;
   if (!currentMemberCommunity) currentMemberCommunity = "lgbtq";
@@ -12037,7 +12039,7 @@ if (datingDetailsError) throw datingDetailsError;
 
 const newCommunity = currentMemberCommunity || "lgbtq";
 const newOrientation = $("sexualOrientation")?.value || currentMemberOrientation;
-if (newOrientation !== currentMemberOrientation || newCommunity !== currentMemberCommunity) {
+if (newOrientation !== currentMemberOrientation || newCommunity !== currentMemberCommunity || !!$("lgbtqLifestyleFlag")?.checked !== !!(await db.from("member_onboarding").select("answers").eq("user_id", currentUser.id).maybeSingle()).data?.answers?.lgbtq_lifestyle) {
   const { data: onboardingRecord, error: onboardingReadError } = await db.from("member_onboarding")
     .select("answers").eq("user_id", currentUser.id).maybeSingle();
   if (onboardingReadError) throw onboardingReadError;
@@ -12045,7 +12047,8 @@ if (newOrientation !== currentMemberOrientation || newCommunity !== currentMembe
   const updatedAnswers = {
     ...(onboardingRecord?.answers || {}),
     sexual_orientation: newOrientation,
-    dating_community: newCommunity
+    dating_community: newCommunity,
+    lgbtq_lifestyle: !!$("lgbtqLifestyleFlag")?.checked
   };
   const { error: onboardingSaveError } = await db.from("member_onboarding").upsert({
     user_id: currentUser.id,

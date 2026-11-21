@@ -17816,12 +17816,21 @@ const { data: sent, error: sentError } = await db
 if (sentError) throw sentError;
 
 
-const { data: relatedMessages, error: relatedMessagesError } = await db
-  .from("messages")
-  .select("sender_id,receiver_id")
-  .or("sender_id.eq." + me + ",receiver_id.eq." + me);
+// Paginate message-participant discovery so accounts with extensive
+// histories aren't cut off by Supabase's response row limit.
+const relatedMessages = [];
+const partnerPageSize = 500;
+for (let partnerOffset = 0; ; partnerOffset += partnerPageSize) {
+  const { data: partnerPage, error: relatedMessagesError } = await db
+    .from("messages")
+    .select("sender_id,receiver_id")
+    .or("sender_id.eq." + me + ",receiver_id.eq." + me)
+    .range(partnerOffset, partnerOffset + partnerPageSize - 1);
 
-if (relatedMessagesError) throw relatedMessagesError;
+  if (relatedMessagesError) throw relatedMessagesError;
+  relatedMessages.push(...(partnerPage || []));
+  if (!partnerPage || partnerPage.length < partnerPageSize) break;
+}
 
 const messagePartnerIds = [
   ...new Set(
@@ -18591,22 +18600,30 @@ async function loadChatMessages(){
       new Date(myMembership.premium_until).getTime() > Date.now();
 
 
-    // Fetch both directions independently. The previous nested .or(and(...))
-    // filter is fragile in PostgREST and can fail to parse on some deployments.
+    // Load complete conversation history in pages, separately by direction.
+    // This avoids the previous hard cap of 100 messages per thread.
     const messageFields = "id,sender_id,receiver_id,body,reply_to_message_id,created_at,delivered_at,read_at,unsent_at";
-    const [sentResult, receivedResult] = await Promise.all([
-      db.from("messages").select(messageFields)
-        .eq("sender_id", me).eq("receiver_id", them)
-        .order("created_at", { ascending: false }).limit(100),
-      db.from("messages").select(messageFields)
-        .eq("sender_id", them).eq("receiver_id", me)
-        .order("created_at", { ascending: false }).limit(100)
+    const historyPageSize = 500;
+    async function fetchAllDirection(sender, receiver) {
+      const rows = [];
+      for (let offset = 0; ; offset += historyPageSize) {
+        const { data: page, error } = await db.from("messages")
+          .select(messageFields)
+          .eq("sender_id", sender).eq("receiver_id", receiver)
+          .order("created_at", { ascending: false })
+          .range(offset, offset + historyPageSize - 1);
+        if (error) throw error;
+        rows.push(...(page || []));
+        if (!page || page.length < historyPageSize) break;
+      }
+      return rows;
+    }
+    const [sentHistory, receivedHistory] = await Promise.all([
+      fetchAllDirection(me, them),
+      fetchAllDirection(them, me)
     ]);
-    if (sentResult.error) throw sentResult.error;
-    if (receivedResult.error) throw receivedResult.error;
-    const data = [...(sentResult.data || []), ...(receivedResult.data || [])]
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 100);
+    const data = [...sentHistory, ...receivedHistory]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
 // Keep messages deleted by this member hidden after reopening chat.
 // Scope the lookup to IDs in this conversation's latest page instead of

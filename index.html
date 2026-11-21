@@ -18614,7 +18614,25 @@ async function loadChatMessages(){
     return;
   }
 
-    const chat = $("chatMessages");
+  // Explicitly restore the mounted conversation/message viewport after access is granted.
+  // This prevents inherited hidden/display state from leaving the thread blank.
+  const activeConversation = $("activeConversation");
+  activeConversation.classList.remove("hidden");
+  activeConversation.style.display = "flex";
+  activeConversation.style.flexDirection = "column";
+  activeConversation.style.flex = "1 1 auto";
+  activeConversation.style.minHeight = "0";
+  activeConversation.style.width = "100%";
+  activeConversation.style.overflow = "hidden";
+  const chat = $("chatMessages");
+  chat.classList.remove("hidden");
+  chat.style.display = "flex";
+  chat.style.flex = "1 1 auto";
+  chat.style.minHeight = "120px";
+  chat.style.height = "auto";
+  chat.style.maxHeight = "none";
+  chat.style.flexDirection = "column";
+  chat.style.overflowY = "auto";
   chat.dataset.loading = "true";
   function insertBubbleInTimeOrder(bubble, createdAt) {
   const messageTime = new Date(createdAt).getTime();

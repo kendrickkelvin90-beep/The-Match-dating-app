@@ -350,13 +350,35 @@ label{display:block;margin-top:14px;font-size:13px}
 }
 
 #chatPage #activeConversation {
-  display: grid !important;
-  grid-template-rows: minmax(0, 1fr) auto;
+  display: flex !important;
+  flex-direction: column !important;
   flex: 1 1 auto !important;
   width: 100%;
   min-height: 0 !important;
   height: auto !important;
   overflow: hidden;
+}
+
+#chatPage #chatMessages {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow-y: auto !important;
+}
+
+#chatPage #chatComposer {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  width: 100%;
+  min-height: 56px;
+  box-sizing: border-box;
+  align-items: center;
+}
+
+#chatPage #chatReplyPreview,
+#chatPage #chatEmojiPicker {
+  flex: 0 0 auto;
+  width: 100%;
 }
 
 #chatPage #chatMessages {
@@ -18389,8 +18411,8 @@ $("chatMessages").replaceChildren();
     const activeConversationNode = $("activeConversation");
     activeConversationNode.classList.remove("hidden");
     activeConversationNode.style.display = "flex";
-    activeConversationNode.style.display = "grid";
-    activeConversationNode.style.gridTemplateRows = "minmax(0, 1fr) auto";
+    activeConversationNode.style.flexDirection = "column";
+    activeConversationNode.style.gridTemplateRows = "";
     activeConversationNode.style.flex = "1 1 auto";
     activeConversationNode.style.width = "100%";
     activeConversationNode.style.minHeight = "0";
@@ -19475,7 +19497,7 @@ if (body) {
 }
 
 const { data: allowed, error: blockError } = await db.rpc(
-  "can_interact_with_member",
+  "can_chat_with_member",
   { target_user_id: receiverId }
 );
 if (blockError) throw blockError;

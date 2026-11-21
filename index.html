@@ -24628,6 +24628,42 @@ body.light-theme #chatPage:not(.hidden) .chat-empty-state,[data-empty-message]{b
 #chatPage:not(.hidden) #activeConversation:not(.hidden){flex:1 1 0!important;min-height:0!important;height:auto!important;width:100%!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;}
 #chatPage:not(.hidden) #activeConversation:not(.hidden) #chatMessages{flex:1 1 0!important;min-height:0!important;height:auto!important;max-height:none!important;width:100%!important;display:flex!important;overflow-y:auto!important;}
 #chatPage:not(.hidden) #activeConversation:not(.hidden) #chatComposer{flex:0 0 auto!important;display:flex!important;position:relative!important;width:100%!important;min-height:56px!important;box-sizing:border-box!important;z-index:5!important;}
+/* ACTIVE CHAT VIEWPORT FIX: neutralize the earlier bottom-nav clipping override.
+   Keep the chat page a fixed, non-scrolling flex viewport and let only the
+   message history scroll. */
+#chatPage {
+  position: fixed !important;
+  inset: 0 !important;
+  bottom: 0 !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+  z-index: 1100 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+#chatPage #chatPageContent,
+#chatPage #activeConversation {
+  min-height: 0 !important;
+  height: auto !important;
+  overflow: hidden !important;
+  flex: 1 1 0 !important;
+}
+#chatPage #chatMessages {
+  min-height: 0 !important;
+  max-height: none !important;
+  height: auto !important;
+  flex: 1 1 0 !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+#chatPage #chatComposer,
+#chatPage #chatPageStatus,
+#chatPage #backFromChatPage {
+  flex-shrink: 0 !important;
+}
+
 </style>
 <script id="profile-home-dashboard-controller">
 (function(){

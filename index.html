@@ -24451,6 +24451,53 @@ body:has(#bottomNavigation:not(.hidden))>footer{
     min-width:50px!important;min-height:50px!important;
   }
 }
+
+/* 2026-11-21 chat visibility failsafe: force a non-collapsing conversation layout */
+#chatPage:not(.hidden) {
+  display:flex!important;
+  flex-direction:column!important;
+  height:100dvh!important;
+  min-height:0!important;
+  overflow:hidden!important;
+}
+#chatPage:not(.hidden) #chatPageContent {
+  display:flex!important;
+  flex:1 1 0!important;
+  min-height:0!important;
+  height:auto!important;
+  overflow:hidden!important;
+}
+#chatPage:not(.hidden) #activeConversation {
+  display:flex!important;
+  flex:1 1 0!important;
+  flex-direction:column!important;
+  min-height:0!important;
+  height:auto!important;
+  overflow:hidden!important;
+  visibility:visible!important;
+}
+#chatPage:not(.hidden) #chatMessages {
+  display:flex!important;
+  flex:1 1 0!important;
+  flex-direction:column!important;
+  min-height:0!important;
+  height:auto!important;
+  max-height:none!important;
+  overflow-y:auto!important;
+  visibility:visible!important;
+}
+#chatPage:not(.hidden) #chatComposer {
+  display:flex!important;
+  flex:0 0 auto!important;
+  min-height:56px!important;
+  visibility:visible!important;
+}
+#chatPage:not(.hidden) #chatMessageInput,
+#chatPage:not(.hidden) #sendChatMessage,
+#chatPage:not(.hidden) #chatMediaButton,
+#chatPage:not(.hidden) #chatEmojiToggle {
+  visibility:visible!important;
+}
 </style>
 <script id="profile-home-dashboard-controller">
 (function(){

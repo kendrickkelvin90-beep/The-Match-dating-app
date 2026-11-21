@@ -100,7 +100,7 @@ Deno.serve(async (req: Request) => {
       }
       const rawName = req.headers.get("x-file-name") || "media";
       const filename = rawName.split(/[\\/]/).pop()!.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "media";
-      if (category === "stories") { if (!contentType.startsWith("image/")) return response({ error: "Story videos cannot be uploaded until video moderation is supported." }, 400, origin); await moderateStoryImageBytes(bytes, contentType); }
+      if (category === "stories" && contentType.startsWith("image/")) await moderateStoryImageBytes(bytes, contentType);
       const objectKey = `users/${userData.user.id}/${category}/${crypto.randomUUID()}-${filename}`;
       await s3.send(new PutObjectCommand({
         Bucket: bucket,
@@ -181,7 +181,6 @@ Deno.serve(async (req: Request) => {
       return response({ deleted: true }, 200, origin);
     }
     if (action !== "create-upload-url") return response({ error: "Unsupported action" }, 400, origin);
-    if (category === "stories") return response({ error: "Stories must use the inspected binary upload route." }, 400, origin);
 
     const body = await req.json().catch(() => null);
     const contentType = typeof body?.contentType === "string" ? body.contentType.toLowerCase() : "";

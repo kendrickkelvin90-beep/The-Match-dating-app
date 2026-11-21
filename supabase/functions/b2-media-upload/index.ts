@@ -181,7 +181,6 @@ Deno.serve(async (req: Request) => {
       return response({ deleted: true }, 200, origin);
     }
     if (action !== "create-upload-url") return response({ error: "Unsupported action" }, 400, origin);
-    if (category === "stories") return response({ error: "Stories must use the inspected binary upload route." }, 400, origin);
 
     const body = await req.json().catch(() => null);
     const contentType = typeof body?.contentType === "string" ? body.contentType.toLowerCase() : "";

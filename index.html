@@ -340,10 +340,10 @@ label{display:block;margin-top:14px;font-size:13px}
 
 #chatPage #chatPageContent {
   display: flex !important;
-  flex: 1 1 0% !important;
+  flex: 1 1 auto !important;
   width: 100%;
   min-height: 0 !important;
-  height: 0 !important;
+  height: auto !important;
   overflow: hidden;
   flex-direction: column;
   color: #fff;
@@ -352,10 +352,10 @@ label{display:block;margin-top:14px;font-size:13px}
 #chatPage #activeConversation {
   display: grid !important;
   grid-template-rows: minmax(0, 1fr) auto;
-  flex: 1 1 0% !important;
+  flex: 1 1 auto !important;
   width: 100%;
   min-height: 0 !important;
-  height: 0 !important;
+  height: auto !important;
   overflow: hidden;
 }
 
@@ -363,10 +363,10 @@ label{display:block;margin-top:14px;font-size:13px}
   grid-row: 1;
   display: flex;
   flex-direction: column;
-  flex: 1 1 0%;
+  flex: 1 1 auto;
   width: 100%;
   min-height: 0 !important;
-  height: 0 !important;
+  height: auto !important;
   box-sizing: border-box;
   overflow-y: auto;
 }
@@ -18391,17 +18391,17 @@ $("chatMessages").replaceChildren();
     activeConversationNode.style.display = "flex";
     activeConversationNode.style.display = "grid";
     activeConversationNode.style.gridTemplateRows = "minmax(0, 1fr) auto";
-    activeConversationNode.style.flex = "1 1 0%";
+    activeConversationNode.style.flex = "1 1 auto";
     activeConversationNode.style.width = "100%";
     activeConversationNode.style.minHeight = "0";
-    activeConversationNode.style.height = "0";
+    activeConversationNode.style.height = "auto";
     activeConversationNode.style.overflow = "hidden";
     chatContent.appendChild(activeConversationNode);
     chatContent.style.display = "flex";
-    chatContent.style.flex = "1 1 0%";
+    chatContent.style.flex = "1 1 auto";
     chatContent.style.width = "100%";
     chatContent.style.minHeight = "0";
-    chatContent.style.height = "0";
+    chatContent.style.height = "auto";
     chatContent.style.overflow = "hidden";
 
     // The emoji picker used to sit outside #activeConversation. Moving the

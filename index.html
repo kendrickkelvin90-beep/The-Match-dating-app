@@ -18598,7 +18598,9 @@ async function loadChatMessages(){
   
   
 
-  if(blockCheck.data !== true){
+  // Normalize the RPC result without treating string-encoded true as denied.
+  const chatPermissionGranted = blockCheck.data === true || blockCheck.data === "true";
+  if(!chatPermissionGranted){
     $("activeConversation").classList.add("hidden");
     $("chatMessages").replaceChildren();
     activeChatUserId = null;

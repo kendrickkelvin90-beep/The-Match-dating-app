@@ -11632,6 +11632,7 @@ function syncDatingCommunityFields() {
   const community = currentMemberCommunity || "";
   const straight = community === "straight";
   const orientationSection = $("sexualOrientationSection");
+  if (orientationSection) orientationSection.hidden = !community || community === "straight";
   const roleSection = $("queerRolePreferencesSection");
   if (orientationSection) orientationSection.hidden = straight;
   if (roleSection) roleSection.hidden = community !== "lgbtq";
@@ -12204,6 +12205,10 @@ async function loadNearby(){
 
   const list=$("profileList");
   list.replaceChildren();
+  if (!["lgbtq","straight"].includes(currentMemberCommunity)) {
+    status("discoverStatus","Choose your private dating community in your profile to access Discover.",true);
+    return;
+  }
   // No fallback community assignment.
   status("discoverStatus","Finding people near you ...");
   const discoverLoadingStatus = $("discoverStatus");
@@ -13971,6 +13976,7 @@ async function loadPremiumNearby(){
     console.warn("Could not refresh private dating-community choice before Nearby:", communityLoadError);
   }
   // No fallback community assignment.
+  if (!["lgbtq","straight"].includes(currentMemberCommunity)) { status("nearbyMembersStatus","Choose your private dating community in your profile to access Nearby.",true); return; }
   premiumNearbyLoadInProgress=true;
   const list=$("nearbyMembersList");
   list.replaceChildren();
@@ -21047,6 +21053,7 @@ async function load(){
 if(!currentUser?.id)throw Error("Please sign in to view Events.");
 await loadCurrentMemberOrientation();
 // No fallback community assignment.
+if(!["lgbtq","straight"].includes(currentMemberCommunity)){E("eventsPageStatus").textContent="Choose your private dating community in your profile to access community Events.";eventsCache=[];renderEvents();return;}
 const {data:p,error:pe}=await db.from("profiles").select("is_verified").eq("id",currentUser.id).maybeSingle();if(pe)throw pe;
 verifiedMember=p?.is_verified===true;
 const info=E("eventsCreatePanel")?.querySelector(".events-info-card"),form=E("eventSubmissionForm");

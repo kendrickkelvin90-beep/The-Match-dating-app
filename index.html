@@ -6383,15 +6383,7 @@ button:disabled,input:disabled,select:disabled,textarea:disabled{opacity:.58;cur
   <option value="use my name">Use my name</option>
 </select>
 <p class="small">Pronouns are optional and appear on your public profile only when you choose them.</p>
-<div id="datingCommunitySetupFields">
-<label for="datingCommunity">Choose your dating community *</label>
- <select id="datingCommunity" required>
-   <option value="">Choose your dating community</option>
-   <option value="lgbtq">LGBTQ+ community</option>
-   <option value="straight">Straight community</option>
- </select>
- <p class="small">Choose once. This private choice is saved to your account and is never shown on your public profile.</p>
-</div>
+<div id="datingCommunitySetupFields" hidden></div>
  <div id="sexualOrientationSection">
  <label for="sexualOrientation">Sexual orientation (private)</label>
 <select id="sexualOrientation">
@@ -8834,8 +8826,7 @@ function profileDetailsAreComplete() {
   const interest = $("interest")?.value?.trim();
   const city = $("city")?.value?.trim();
   const bio = $("bio")?.value?.trim();
-  const community = $("datingCommunity")?.value || currentMemberCommunity;
-  const hasDatingCommunity = ["lgbtq", "straight"].includes(community);
+  const community = currentMemberCommunity;
 
   const invalid = ["", "not listed", "unknown", "member"];
 
@@ -8847,8 +8838,7 @@ function profileDetailsAreComplete() {
     !invalid.includes((interest || "").toLowerCase()) &&
     !invalid.includes((city || "").toLowerCase()) &&
     !!bio &&
-    bio.toLowerCase() !== "no description added yet." &&
-    hasDatingCommunity
+    bio.toLowerCase() !== "no description added yet."
   );
 }
 
@@ -8861,24 +8851,7 @@ function show(id, addToHistory = true) {
     "memberProfilePage", "notificationsPage", "blockedMembers", "verificationPage",
     "premium", "coinWalletPage", "referralsPage", "callHistoryPage"
   ];
-  const requiresCommunityChoice = !publicPages.includes(id) &&
-    !accountSafePages.includes(id);
-
-  if (
-    currentUser &&
-    !["lgbtq", "straight"].includes(currentMemberCommunity) &&
-    requiresCommunityChoice
-  ) {
-    id = "profile";
-    setTimeout(() => {
-      status(
-        "profileStatus",
-        "Please choose your private dating community (LGBTQ+ or Straight) and save your profile before using Discover and other member features.",
-        true
-      );
-      $("datingCommunity")?.focus();
-    }, 0);
-  }
+  const requiresCommunityChoice = false;
 
   if (
     currentUser &&
@@ -11635,7 +11608,7 @@ async function loadCurrentMemberOrientation() {
   currentMemberOrientation = String(data?.answers?.sexual_orientation || "Prefer not to say");
   currentMemberCommunity = String(data?.answers?.dating_community || "");
   if ($("sexualOrientation")) $("sexualOrientation").value = currentMemberOrientation;
-  if ($("datingCommunity")) $("datingCommunity").value = currentMemberCommunity;
+  if (!currentMemberCommunity) currentMemberCommunity = "lgbtq";
   const hasSavedCommunity = ["lgbtq", "straight"].includes(currentMemberCommunity);
   const communitySetupFields = $("datingCommunitySetupFields");
   if (communitySetupFields) communitySetupFields.hidden = hasSavedCommunity;
@@ -11654,7 +11627,7 @@ Object.defineProperty(window, "currentMemberCommunity", {
 });
 
 function syncDatingCommunityFields() {
-  const community = $("datingCommunity")?.value || currentMemberCommunity;
+  const community = currentMemberCommunity || "lgbtq";
   const straight = community === "straight";
   const orientationSection = $("sexualOrientationSection");
   const roleSection = $("queerRolePreferencesSection");
@@ -11897,7 +11870,7 @@ status("profileStatus","Your profile is loaded. Check your details and save when
 
   // Members can access The Match only after both requirements are met:
   // at least two saved profile photos and all required profile details.
-  const hasSavedDatingCommunity = ["lgbtq", "straight"].includes(currentMemberCommunity);
+  const hasSavedDatingCommunity = true;
   const communityNotice = $("datingCommunityRequiredNotice");
   if (communityNotice) communityNotice.style.display = hasSavedDatingCommunity ? "none" : "block";
 
@@ -12062,15 +12035,8 @@ const { error: datingDetailsError } = await db.from("member_dating_details").ups
 }, { onConflict: "user_id" });
 if (datingDetailsError) throw datingDetailsError;
 
-const newCommunity = $("datingCommunity")?.value || currentMemberCommunity;
-const newOrientation = newCommunity === "straight"
-  ? "Straight / heterosexual"
-  : ($("sexualOrientation")?.value === "Straight / heterosexual"
-      ? "Prefer not to say"
-      : ($("sexualOrientation")?.value || currentMemberOrientation));
-if (!["lgbtq", "straight"].includes(newCommunity)) {
-  throw Error("Please choose either the LGBTQ+ or Straight dating community before saving your profile.");
-}
+const newCommunity = currentMemberCommunity || "lgbtq";
+const newOrientation = $("sexualOrientation")?.value || currentMemberOrientation;
 if (newOrientation !== currentMemberOrientation || newCommunity !== currentMemberCommunity) {
   const { data: onboardingRecord, error: onboardingReadError } = await db.from("member_onboarding")
     .select("answers").eq("user_id", currentUser.id).maybeSingle();
@@ -12247,10 +12213,7 @@ async function loadNearby(){
 
   const list=$("profileList");
   list.replaceChildren();
-  if (!["lgbtq", "straight"].includes(currentMemberCommunity)) {
-    status("discoverStatus", "Choose your private dating community in My Profile to start discovering members.");
-    return;
-  }
+  if (!currentMemberCommunity) currentMemberCommunity = "lgbtq";
   status("discoverStatus","Finding people near you ...");
   const discoverLoadingStatus = $("discoverStatus");
   if (discoverLoadingStatus) {
@@ -14016,10 +13979,7 @@ async function loadPremiumNearby(){
   } catch (communityLoadError) {
     console.warn("Could not refresh private dating-community choice before Nearby:", communityLoadError);
   }
-  if (!["lgbtq", "straight"].includes(currentMemberCommunity)) {
-    status("nearbyMembersStatus", "Choose your private dating community in My Profile before using Nearby.", true);
-    return;
-  }
+  if (!currentMemberCommunity) currentMemberCommunity = "lgbtq";
   premiumNearbyLoadInProgress=true;
   const list=$("nearbyMembersList");
   list.replaceChildren();
@@ -21095,7 +21055,7 @@ list.innerHTML=rows.length?rows.map(x=>'<article class="event-card">'+(x.posterU
 async function load(){
 if(!currentUser?.id)throw Error("Please sign in to view Events.");
 await loadCurrentMemberOrientation();
-if(!isMatchAdmin&&!["lgbtq","straight"].includes(currentMemberCommunity))throw Error("Choose your private dating community in My Profile before viewing Events.");
+if(!currentMemberCommunity)currentMemberCommunity="lgbtq";
 const {data:p,error:pe}=await db.from("profiles").select("is_verified").eq("id",currentUser.id).maybeSingle();if(pe)throw pe;
 verifiedMember=p?.is_verified===true;
 const info=E("eventsCreatePanel")?.querySelector(".events-info-card"),form=E("eventSubmissionForm");
@@ -24378,7 +24338,7 @@ body:has(#bottomNavigation:not(.hidden))>footer{
  const root=document.getElementById('profile');if(!root||root.dataset.profileHomeReady==='true')return;root.dataset.profileHomeReady='true';
  const $=id=>document.getElementById(id);
  const value=id=>($(id)?.value||'').trim();
- function completed(){return !!(value('displayName')&&Number(value('age'))>=18&&value('gender')&&value('interest')&&value('datingCommunity')&&value('city')&&value('bio'));}
+ function completed(){return !!(value('displayName')&&Number(value('age'))>=18&&value('gender')&&value('interest')&&value('city')&&value('bio'));}
  function facts(){return [value('age')?value('age')+' years old':'',value('gender'),value('interest')? 'Interested in '+value('interest'):'',value('city'),value('profilePronouns')].filter(Boolean);}
  function refreshPreview(){
   const name=value('displayName')||'Your profile';const meta=facts().slice(0,3).join(' · ');

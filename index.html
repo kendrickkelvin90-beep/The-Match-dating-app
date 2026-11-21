@@ -18625,7 +18625,9 @@ async function loadChatMessages(){
       .eq("user_id", me)
       .maybeSingle();
 
-    if (membershipError) throw membershipError;
+    // Premium receipt labels are optional; a membership-query failure must
+    // never prevent the actual conversation history from being rendered.
+    if (membershipError) console.warn("Premium receipt status unavailable:", membershipError);
 
     const isPremiumSender = !!myMembership &&
       new Date(myMembership.premium_until).getTime() > Date.now();
@@ -18668,8 +18670,11 @@ if (visiblePageMessageIds.length) {
     .eq("user_id", me)
     .in("message_id", visiblePageMessageIds);
 
-  if (hiddenError) throw hiddenError;
-  hiddenRows = rows || [];
+  if (hiddenError) {
+    console.warn("Hidden-message metadata unavailable; rendering conversation:", hiddenError);
+  } else {
+    hiddenRows = rows || [];
+  }
 }
 
 const hiddenMessageIds = new Set(
@@ -18681,8 +18686,11 @@ if (reactionMessageIds.length) {
   const { data: rows, error: reactionError } = await db.from("message_reactions")
     .select("message_id,user_id,emoji")
     .in("message_id", reactionMessageIds);
-  if (reactionError) throw reactionError;
-  reactionRows = rows || [];
+  if (reactionError) {
+    console.warn("Reaction metadata unavailable; rendering conversation:", reactionError);
+  } else {
+    reactionRows = rows || [];
+  }
 }
 const reactionsByMessage = new Map();
 for (const reaction of reactionRows) {
@@ -18723,7 +18731,9 @@ const receiptResults = await Promise.all(
 );
 
     // Refresh the unread-message count.
-    await updateAccountCounts();
+    updateAccountCounts().catch(error =>
+      console.warn("Unread count refresh failed; chat rendering continues:", error)
+    );
 
         if (!data || !data.length) {
       if (!chat.querySelector("[data-empty-message]")) {
@@ -19307,7 +19317,16 @@ for (const gift of chatGifts || []) {
     // failures still surface below, but routine success/loading notices
     // should not interrupt the conversation.
   } catch(e) {
-    status("chatPageStatus","Could not load messages: "+friendly(e),true);
+    console.error("Conversation render/load failed:", e);
+    const errorStatus = $("chatPageStatus");
+    if (errorStatus) {
+      errorStatus.textContent = "Could not load messages: " + friendly(e);
+      errorStatus.style.display = "block";
+      errorStatus.style.height = "auto";
+      errorStatus.style.minHeight = "auto";
+      errorStatus.style.padding = "8px";
+      errorStatus.style.color = "#f2b8b5";
+    }
   }
     
 }

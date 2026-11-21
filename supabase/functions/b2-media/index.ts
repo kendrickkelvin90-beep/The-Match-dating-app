@@ -29,19 +29,20 @@ const s3 = missing.length === 0 ? new S3Client({
 }) : null;
 
 async function moderateImageBytes(bytes: Uint8Array, contentType: string) {
-  const apiKey = Deno.env.get("OPENAI_API_KEY");
-  if (!apiKey) throw new Error("Image moderation is not configured.");
-  let binary = "";
-  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, Math.min(i + 0x8000, bytes.length)));
-  const moderation = await fetch("https://api.openai.com/v1/moderations", {
-    method: "POST", headers: { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "omni-moderation-latest", input: [{ type: "image_url", image_url: { url: "data:" + contentType + ";base64," + btoa(binary) } }] })
-  });
-  if (!moderation.ok) throw new Error("Moderation service unavailable.");
-  const data = await moderation.json(), result = data?.results?.[0];
-  if (!result) throw new Error("Moderation returned an invalid response.");
-  if (result.categories?.["sexual/minors"] === true || Number(result.category_scores?.sexual ?? 0) >= 0.85)
-    throw new Error("This image appears to contain explicit content that is not allowed.");
+ const apiKey=Deno.env.get("OPENAI_API_KEY"); if(!apiKey) throw new Error("Image moderation is not configured.");
+ let binary=""; for(let i=0;i<bytes.length;i+=0x8000) binary+=String.fromCharCode(...bytes.subarray(i,Math.min(i+0x8000,bytes.length)));
+ const moderation=await fetch("https://api.openai.com/v1/moderations",{method:"POST",headers:{"Authorization":"Bearer "+apiKey,"Content-Type":"application/json"},body:JSON.stringify({model:"omni-moderation-latest",input:[{type:"image_url",image_url:{url:"data:"+contentType+";base64,"+btoa(binary)}}]})});
+ if(!moderation.ok) throw new Error("Moderation service unavailable."); const data=await moderation.json(),result=data?.results?.[0];if(!result)throw new Error("Moderation returned an invalid response.");
+ if(result.categories?.["sexual/minors"]===true||Number(result.category_scores?.sexual??0)>=0.85)throw new Error("This image appears to contain explicit content that is not allowed.");
+}
+
+
+async function moderateImageBytes(bytes: Uint8Array, contentType: string) {
+ const apiKey=Deno.env.get("OPENAI_API_KEY"); if(!apiKey) throw new Error("Image moderation is not configured.");
+ let binary=""; for(let i=0;i<bytes.length;i+=0x8000) binary+=String.fromCharCode(...bytes.subarray(i,Math.min(i+0x8000,bytes.length)));
+ const moderation=await fetch("https://api.openai.com/v1/moderations",{method:"POST",headers:{"Authorization":"Bearer "+apiKey,"Content-Type":"application/json"},body:JSON.stringify({model:"omni-moderation-latest",input:[{type:"image_url",image_url:{url:"data:"+contentType+";base64,"+btoa(binary)}}]})});
+ if(!moderation.ok) throw new Error("Moderation service unavailable."); const data=await moderation.json(),result=data?.results?.[0];if(!result)throw new Error("Moderation returned an invalid response.");
+ if(result.categories?.["sexual/minors"]===true||Number(result.category_scores?.sexual??0)>=0.85)throw new Error("This image appears to contain explicit content that is not allowed.");
 }
 
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4", "video/webm", "video/quicktime"]);
@@ -82,7 +83,11 @@ Deno.serve(async (req: Request) => {
       if (bytes.length === 0 || bytes.length > 5 * 1024 * 1024) {
         return json({ error: "Each photo must be greater than 0 bytes and no larger than 5 MB." }, 400);
       }
-      stage = "moderate-profile-image";\n      await moderateImageBytes(bytes, contentType);\n      const objectKey = `users/${user.id}/${crypto.randomUUID()}-${requestedName}`;
+      stage = "moderate-profile-image";
+      await moderateImageBytes(bytes, contentType);
+      stage = "moderate-profile-image";
+      await moderateImageBytes(bytes, contentType);
+      const objectKey = `users/${user.id}/${crypto.randomUUID()}-${requestedName}`;
       stage = "upload-to-backblaze";
       await s3.send(new PutObjectCommand({ Bucket: bucket, Key: objectKey, Body: bytes, ContentType: contentType }));
       return json({ objectKey, uploaded: true });

@@ -11610,7 +11610,7 @@ async function loadCurrentMemberOrientation() {
   if ($("lgbtqLifestyleFlag")) $("lgbtqLifestyleFlag").checked = !!data?.answers?.lgbtq_lifestyle;
   currentMemberCommunity = String(data?.answers?.dating_community || "");
   if ($("sexualOrientation")) $("sexualOrientation").value = currentMemberOrientation;
-  if (!currentMemberCommunity) currentMemberCommunity = "lgbtq";
+  // No fallback community assignment.
   const hasSavedCommunity = ["lgbtq", "straight"].includes(currentMemberCommunity);
   const communitySetupFields = $("datingCommunitySetupFields");
   if (communitySetupFields) communitySetupFields.hidden = hasSavedCommunity;
@@ -11629,7 +11629,7 @@ Object.defineProperty(window, "currentMemberCommunity", {
 });
 
 function syncDatingCommunityFields() {
-  const community = currentMemberCommunity || "lgbtq";
+  const community = currentMemberCommunity || "";
   const straight = community === "straight";
   const orientationSection = $("sexualOrientationSection");
   const roleSection = $("queerRolePreferencesSection");
@@ -12025,9 +12025,9 @@ const { error: datingDetailsError } = await db.from("member_dating_details").ups
 }, { onConflict: "user_id" });
 if (datingDetailsError) throw datingDetailsError;
 
-const newCommunity = currentMemberCommunity || "lgbtq";
+const newCommunity = currentMemberCommunity || "";
 const newOrientation = $("sexualOrientation")?.value || currentMemberOrientation;
-if (newOrientation !== currentMemberOrientation || newCommunity !== currentMemberCommunity || !!$("lgbtqLifestyleFlag")?.checked !== !!(await db.from("member_onboarding").select("answers").eq("user_id", currentUser.id).maybeSingle()).data?.answers?.lgbtq_lifestyle) {
+const { data: onboardingRecord, error: onboardingReadError } = await db.from("member_onboarding").select("answers").eq("user_id", currentUser.id).maybeSingle();\n  if (onboardingReadError) throw onboardingReadError;\nconst lifestyleFlag = !!$("lgbtqLifestyleFlag")?.checked;\nif (newOrientation !== currentMemberOrientation || newCommunity !== currentMemberCommunity || lifestyleFlag !== !!onboardingRecord?.answers?.lgbtq_lifestyle) {
   const { data: onboardingRecord, error: onboardingReadError } = await db.from("member_onboarding")
     .select("answers").eq("user_id", currentUser.id).maybeSingle();
   if (onboardingReadError) throw onboardingReadError;
@@ -12036,7 +12036,7 @@ if (newOrientation !== currentMemberOrientation || newCommunity !== currentMembe
     ...(onboardingRecord?.answers || {}),
     sexual_orientation: newOrientation,
     dating_community: newCommunity,
-    lgbtq_lifestyle: !!$("lgbtqLifestyleFlag")?.checked
+    lgbtq_lifestyle: lifestyleFlag
   };
   const { error: onboardingSaveError } = await db.from("member_onboarding").upsert({
     user_id: currentUser.id,
@@ -12204,7 +12204,7 @@ async function loadNearby(){
 
   const list=$("profileList");
   list.replaceChildren();
-  if (!currentMemberCommunity) currentMemberCommunity = "lgbtq";
+  // No fallback community assignment.
   status("discoverStatus","Finding people near you ...");
   const discoverLoadingStatus = $("discoverStatus");
   if (discoverLoadingStatus) {
@@ -13970,7 +13970,7 @@ async function loadPremiumNearby(){
   } catch (communityLoadError) {
     console.warn("Could not refresh private dating-community choice before Nearby:", communityLoadError);
   }
-  if (!currentMemberCommunity) currentMemberCommunity = "lgbtq";
+  // No fallback community assignment.
   premiumNearbyLoadInProgress=true;
   const list=$("nearbyMembersList");
   list.replaceChildren();
@@ -21046,7 +21046,7 @@ list.innerHTML=rows.length?rows.map(x=>'<article class="event-card">'+(x.posterU
 async function load(){
 if(!currentUser?.id)throw Error("Please sign in to view Events.");
 await loadCurrentMemberOrientation();
-if(!currentMemberCommunity)currentMemberCommunity="lgbtq";
+// No fallback community assignment.
 const {data:p,error:pe}=await db.from("profiles").select("is_verified").eq("id",currentUser.id).maybeSingle();if(pe)throw pe;
 verifiedMember=p?.is_verified===true;
 const info=E("eventsCreatePanel")?.querySelector(".events-info-card"),form=E("eventSubmissionForm");

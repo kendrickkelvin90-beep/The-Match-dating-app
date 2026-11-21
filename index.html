@@ -4658,6 +4658,62 @@ textarea.match-dialog-input{min-height:112px;resize:vertical}
   }
 }
 
+
+/* ACTIVE MATCH CHAT VISIBILITY RECOVERY: reserve space below the header card,
+   and explicitly size the message history and composer in the mounted thread. */
+#chatPage:not(.hidden) {
+  display:flex!important;
+  flex-direction:column!important;
+  box-sizing:border-box!important;
+  height:100dvh!important;
+  min-height:100dvh!important;
+  padding-top:0!important;
+  padding-bottom:calc(8px + env(safe-area-inset-bottom))!important;
+  overflow:hidden!important;
+}
+#chatPage:not(.hidden) #chatHeader {
+  position:relative!important;
+  inset:auto!important;
+  flex:0 0 auto!important;
+  width:100%!important;
+}
+#chatPage:not(.hidden) #chatPageContent {
+  display:flex!important;
+  flex:1 1 0!important;
+  min-height:0!important;
+  height:auto!important;
+  width:100%!important;
+  overflow:hidden!important;
+}
+#chatPage:not(.hidden) #activeConversation:not(.hidden) {
+  display:flex!important;
+  visibility:visible!important;
+  flex:1 1 0!important;
+  min-height:0!important;
+  height:auto!important;
+  width:100%!important;
+  overflow:hidden!important;
+  flex-direction:column!important;
+}
+#chatPage:not(.hidden) #chatMessages {
+  display:flex!important;
+  visibility:visible!important;
+  flex:1 1 0!important;
+  min-height:0!important;
+  height:auto!important;
+  max-height:none!important;
+  overflow-y:auto!important;
+}
+#chatPage:not(.hidden) #chatComposer {
+  display:flex!important;
+  visibility:visible!important;
+  flex:0 0 auto!important;
+  width:100%!important;
+  min-height:56px!important;
+  position:relative!important;
+  z-index:5!important;
+}
+
 </style>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>

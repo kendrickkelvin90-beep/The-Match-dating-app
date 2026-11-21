@@ -18584,16 +18584,57 @@ async function loadChatMessages(){
 
   // Chat access is independent of Discover/Nearby community boundaries.
   // The chat-specific RPC checks blocks and active moderation only.
-  const blockCheck = await db.rpc("can_chat_with_member", {
-    target_user_id: requestedChatUserId
-  });
+  let blockCheck;
+  try {
+    blockCheck = await db.rpc("can_chat_with_member", {
+      target_user_id: requestedChatUserId
+    });
+  } catch (permissionError) {
+    if (!isCurrentChatLoad()) return;
+    console.error("Chat permission check failed:", permissionError);
+    const conversation = $("activeConversation");
+    const messages = $("chatMessages");
+    conversation?.classList.remove("hidden");
+    if (conversation) conversation.style.display = "flex";
+    messages?.classList.remove("hidden");
+    if (messages) {
+      messages.style.display = "flex";
+      messages.style.minHeight = "120px";
+      messages.replaceChildren();
+      const notice = document.createElement("p");
+      notice.textContent = "Could not load this conversation. Please try refreshing.";
+      notice.dataset.chatLoadNotice = "true";
+      messages.appendChild(notice);
+    }
+    status("chatPageStatus", "Chat access could not be checked. Please try again.", true);
+    return;
+  }
 
   // Ignore results from an older request or a conversation no longer open.
   if (!isCurrentChatLoad()) return;
 
 
 
-  if(blockCheck.error) throw blockCheck.error;
+  if(blockCheck.error) {
+    if (!isCurrentChatLoad()) return;
+    console.error("Chat permission check failed:", blockCheck.error);
+    const conversation = $("activeConversation");
+    const messages = $("chatMessages");
+    conversation?.classList.remove("hidden");
+    if (conversation) conversation.style.display = "flex";
+    messages?.classList.remove("hidden");
+    if (messages) {
+      messages.style.display = "flex";
+      messages.style.minHeight = "120px";
+      messages.replaceChildren();
+      const notice = document.createElement("p");
+      notice.textContent = "Could not load this conversation. Please try refreshing.";
+      notice.dataset.chatLoadNotice = "true";
+      messages.appendChild(notice);
+    }
+    status("chatPageStatus", "Chat access could not be checked. Please try again.", true);
+    return;
+  }
 
   
   

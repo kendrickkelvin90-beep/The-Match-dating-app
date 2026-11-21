@@ -11872,20 +11872,8 @@ status("profileStatus","Your profile is loaded. Check your details and save when
 
   // Members can access The Match only after both requirements are met:
   // at least two saved profile photos and all required profile details.
-  const hasSavedDatingCommunity = true;
-  const communityNotice = $("datingCommunityRequiredNotice");
-  if (communityNotice) communityNotice.style.display = hasSavedDatingCommunity ? "none" : "block";
-
   const savedProfileIsReady =
-    hasRequiredProfilePhotos && profileDetailsAreComplete() && hasSavedDatingCommunity;
-
-  if (!hasSavedDatingCommunity) {
-    status(
-      "profileStatus",
-      "Welcome back. Please choose your private dating community and save your profile to continue.",
-      true
-    );
-  }
+    hasRequiredProfilePhotos && profileDetailsAreComplete();
 
   if (savedProfileIsReady) {
     show("discover", false);

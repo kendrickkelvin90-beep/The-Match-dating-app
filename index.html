@@ -18535,32 +18535,40 @@ if (conversationListNode && activeConversationNode instanceof HTMLElement) {
     };
 
 
-    const {data: chatProfile, error: profileError} = await db
-      .from("profiles")
-      .select("city,location_sharing")
-      .eq("id",userId)
-      .maybeSingle();
-
-    if(profileError) throw profileError;
-
-    if(chatProfile){
-      $("chatPartnerLocation").textContent =
-        chatProfile.location_sharing && chatProfile.city
-          ? chatProfile.city
-          : "Location hidden";
+    // Header profile/location/photo requests are auxiliary: their failure must
+    // not interrupt opening or loading the actual conversation.
+    try {
+      const {data: chatProfile, error: profileError} = await db
+        .from("profiles")
+        .select("city,location_sharing")
+        .eq("id",userId)
+        .maybeSingle();
+      if(profileError) throw profileError;
+      if(chatProfile){
+        $("chatPartnerLocation").textContent =
+          chatProfile.location_sharing && chatProfile.city
+            ? chatProfile.city
+            : "Location hidden";
+      }
+    } catch(profileLoadError) {
+      console.warn("Chat partner location unavailable; chat continues:", profileLoadError);
+      $("chatPartnerLocation").textContent = "Location unavailable";
     }
 
-    const {data: chatPhotos, error: photoError} = await db
-      .from("profile_photos")
-      .select("storage_path,position")
-      .eq("user_id",userId)
-      .order("position")
-      .limit(1);
-
-    if(photoError) throw photoError;
-
-    if(chatPhotos && chatPhotos.length){
-      $("chatPartnerAvatar").src = await resolveProfilePhotoUrl(chatPhotos[0].storage_path);
+    try {
+      const {data: chatPhotos, error: photoError} = await db
+        .from("profile_photos")
+        .select("storage_path,position")
+        .eq("user_id",userId)
+        .order("position")
+        .limit(1);
+      if(photoError) throw photoError;
+      if(chatPhotos && chatPhotos.length){
+        $("chatPartnerAvatar").src = await resolveProfilePhotoUrl(chatPhotos[0].storage_path);
+      }
+    } catch(photoLoadError) {
+      console.warn("Chat partner photo unavailable; chat continues:", photoLoadError);
+      // Leave the avatar blank/fallback; do not interrupt message loading.
     }
 
     if(chatRefreshTimer) clearInterval(chatRefreshTimer);

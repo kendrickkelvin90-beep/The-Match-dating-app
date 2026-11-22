@@ -6453,12 +6453,6 @@ button:disabled,input:disabled,select:disabled,textarea:disabled{opacity:.58;cur
     <button type="button" class="btn secondary" data-toggle-password="confirmPassword" aria-label="Show password" aria-pressed="false" style="width:auto;padding:10px 14px;">👁</button>
   </div>
 </div>
-<div
-  id="authCaptcha"
-  data-sitekey="0x4AAAAAAFia9mw39tR1pGuq"
-  data-callback="onTurnstileSuccess"
-  data-expired-callback="onTurnstileExpired">
-</div>
 <button class="btn primary" id="submit" type="submit">Create account</button>
 </form>
 <div class="google-auth-divider" aria-hidden="true"><span>OR</span></div>
@@ -6479,12 +6473,6 @@ button:disabled,input:disabled,select:disabled,textarea:disabled{opacity:.58;cur
 <form id="resetForm">
 <label for="resetEmail">Email address</label>
 <input id="resetEmail" type="email" required>
-<div
-  id="resetCaptcha"
-  data-sitekey="0x4AAAAAAFia9mw39tR1pGuq"
-  data-callback="onResetTurnstileSuccess"
-  data-expired-callback="onResetTurnstileExpired">
-</div>
 <button class="btn primary" type="submit">Send reset link</button>
 </form>
 <form id="newPasswordForm" class="hidden">
@@ -8340,98 +8328,7 @@ async function deleteB2Upload(category, storagePath) {
   if (error || !result?.deleted) throw error || new Error(result?.error || "Could not clean up the B2 upload.");
 }
 
-let authCaptchaToken = "";
-let resetCaptchaToken = "";
-let authCaptchaIssuedAt = 0;
-let resetCaptchaIssuedAt = 0;
-
-window.onTurnstileSuccess = token => {
-  authCaptchaToken = token || "";
-  authCaptchaIssuedAt = token ? Date.now() : 0;
-};
-
-window.onTurnstileExpired = () => {
-  authCaptchaToken = "";
-  authCaptchaIssuedAt = 0;
-};
-
-window.onTurnstileError = () => {
-  authCaptchaToken = "";
-  authCaptchaIssuedAt = 0;
-  status("authStatus", "Security verification could not load. Please reload the page or try again.", true);
-};
-
-window.onResetTurnstileSuccess = token => {
-  resetCaptchaToken = token || "";
-  resetCaptchaIssuedAt = token ? Date.now() : 0;
-};
-
-window.onResetTurnstileExpired = () => {
-  resetCaptchaToken = "";
-  resetCaptchaIssuedAt = 0;
-};  
-  
-let authCaptchaWidgetId = null;
-let resetCaptchaWidgetId = null;
-
-function renderAuthCaptcha() {
-  if (authCaptchaWidgetId !== null) return;
-
-  if (!window.turnstile) {
-    if (!window.__matchAuthCaptchaWait) {
-      window.__matchAuthCaptchaWait = true;
-      setTimeout(() => {
-        window.__matchAuthCaptchaWait = false;
-        renderAuthCaptcha();
-      }, 1000);
-    }
-    return;
-  }
-
-  try {
-    authCaptchaWidgetId = window.turnstile.render("#authCaptcha", {
-      sitekey: "0x4AAAAAAFia9mw39tR1pGuq",
-      callback: window.onTurnstileSuccess,
-      "expired-callback": window.onTurnstileExpired,
-      "error-callback": window.onTurnstileError
-    });
-  } catch (error) {
-    console.error("Auth Turnstile render failed:", error);
-    status("authStatus", "Security verification failed to initialize. Please reload and try again.", true);
-    authCaptchaWidgetId = null;
-  }
-}
-
-function resetAuthCaptchaAfterFailure() {
-  authCaptchaToken = "";
-  authCaptchaIssuedAt = 0;
-  if (window.turnstile && authCaptchaWidgetId !== null) {
-    try { window.turnstile.reset(authCaptchaWidgetId); }
-    catch (error) { console.warn("Auth CAPTCHA reset failed:", error); }
-  }
-}
-
-
-function renderResetCaptcha() {
-  if (!window.turnstile) {
-    setTimeout(renderResetCaptcha, 500);
-    return;
-  }
-
-  if (resetCaptchaWidgetId !== null) {
-    window.turnstile.reset(resetCaptchaWidgetId);
-    resetCaptchaToken = "";
-    return;
-  }
-
-  resetCaptchaWidgetId = window.turnstile.render("#resetCaptcha", {
-    sitekey: "0x4AAAAAAFia9mw39tR1pGuq",
-    callback: window.onResetTurnstileSuccess,
-    "expired-callback": window.onResetTurnstileExpired
-  });
-}
-
-
+// CAPTCHA widget integration removed from client auth forms.
 const $=id=>document.getElementById(id);
 let loginMode=false,currentUser=null,approxLocation=null;
 Object.defineProperty(window,"currentUser",{configurable:true,get:()=>currentUser});
@@ -10459,7 +10356,6 @@ $("confirmPassword").value="";
 $("switch").textContent=isLogin?"New here? Create an account":"Already registered? Log in";
 status("authStatus","");
 show("auth");
-  renderAuthCaptcha();
 }
 
 document.querySelectorAll("[data-toggle-password]").forEach(button=>{
@@ -10809,21 +10705,11 @@ $("authForm").onsubmit = async e => {
       }
     }
 
-const captchaToken = authCaptchaToken;
-if (!captchaToken || !authCaptchaIssuedAt || Date.now() - authCaptchaIssuedAt > 240000) {
-  resetAuthCaptchaAfterFailure();
-  status("authStatus", "Please complete the security verification before continuing. If it is not visible, reload the page.", true);
-  button.disabled = false;
-  return;
-}
-
-// Keep the CAPTCHA widget/token intact while the auth request is in flight.
-// Reset it only after Supabase has processed this single-use token.
     const result = loginMode
   ? await db.auth.signInWithPassword({
       email,
       password,
-      options: { captchaToken }
+      options: {}
     })
   
 : await db.auth.signUp({
@@ -10831,7 +10717,6 @@ if (!captchaToken || !authCaptchaIssuedAt || Date.now() - authCaptchaIssuedAt > 
     password,
     options: {
       emailRedirectTo: SITE_URL,
-      captchaToken,
       data: {
         referral_code: new URLSearchParams(window.location.search)
           .get("ref")
@@ -10840,12 +10725,6 @@ if (!captchaToken || !authCaptchaIssuedAt || Date.now() - authCaptchaIssuedAt > 
       }
     }
   });
-
-authCaptchaToken = "";
-authCaptchaIssuedAt = 0;
-if (window.turnstile && authCaptchaWidgetId !== null) {
-  window.turnstile.reset(authCaptchaWidgetId);
-}
 
     if (result.error) throw result.error;
 
@@ -10919,8 +10798,6 @@ if (window.turnstile && authCaptchaWidgetId !== null) {
     }
   } catch (error) {
     console.error("Signup/login error:", error);
-    // CAPTCHA tokens are single-use; renew after any failed auth request.
-    resetAuthCaptchaAfterFailure();
     const isRestrictedLogin = loginMode && /banned|ban duration|user is banned|user_banned|suspended/i.test(String(error?.message || "") + " " + String(error?.code || ""));
     if (isRestrictedLogin) {
       status("authStatus", "Your account is currently suspended or restricted. You cannot access The Match while this restriction is active.", true);
@@ -10966,29 +10843,10 @@ $("resetBack").onclick=()=>show("welcome");
 $("resetForm").onsubmit=async e=>{
 e.preventDefault();
 try{
-const captchaToken = resetCaptchaToken;
-if (!captchaToken || !resetCaptchaIssuedAt || Date.now() - resetCaptchaIssuedAt > 240000) {
-  resetCaptchaToken = "";
-  resetCaptchaIssuedAt = 0;
-  if (window.turnstile && resetCaptchaWidgetId !== null) {
-    window.turnstile.reset(resetCaptchaWidgetId);
-  }
-  status("resetStatus", "Your CAPTCHA has expired. Please complete the check again.", true);
-  return;
-}
-
-// Reset immediately because Turnstile tokens can only be verified once.
-resetCaptchaToken = "";
-resetCaptchaIssuedAt = 0;
-if (window.turnstile && resetCaptchaWidgetId !== null) {
-  window.turnstile.reset(resetCaptchaWidgetId);
-}
-
 let r = await db.auth.resetPasswordForEmail(
   $("resetEmail").value.trim(),
   {
-    redirectTo: SITE_URL,
-    captchaToken
+    redirectTo: SITE_URL
   }
 );
 if(r.error)throw r.error;

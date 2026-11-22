@@ -18878,7 +18878,7 @@ if (data) {
 // Mark incoming messages as read concurrently. Each receipt remains an
 // individual server-authorized RPC; failures are logged without blocking
 // the rendering of the rest of the conversation.
-chatDiagnostic("pre-render");
+chatDiagnostic("read-receipts");
 const unreadIncomingIds = (data || [])
   .filter(message => message.receiver_id === me && !message.read_at)
   .map(message => message.id);

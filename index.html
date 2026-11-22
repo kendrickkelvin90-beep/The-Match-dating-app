@@ -18707,9 +18707,23 @@ async function loadChatMessages(){
   // Normalize the RPC result without treating string-encoded true as denied.
   const chatPermissionGranted = blockCheck.data === true || blockCheck.data === "true";
   if(!chatPermissionGranted){
-    $("activeConversation").classList.add("hidden");
-    $("chatMessages").replaceChildren();
-    activeChatUserId = null;
+    // Keep the chat shell mounted so a permission result cannot collapse the
+    // entire viewport into a blank page. Display an explicit access notice.
+    const conversation = $("activeConversation");
+    const messages = $("chatMessages");
+    conversation?.classList.remove("hidden");
+    if (conversation) conversation.style.display = "flex";
+    messages?.classList.remove("hidden");
+    if (messages) {
+      messages.dataset.loading = "false";
+      messages.style.display = "flex";
+      messages.replaceChildren();
+      const notice = document.createElement("p");
+      notice.dataset.chatLoadNotice = "true";
+      notice.textContent = "This conversation is unavailable because either member has blocked the other.";
+      notice.style.cssText = "margin:auto;padding:14px;text-align:center;";
+      messages.appendChild(notice);
+    }
     const accessStatus = $("chatPageStatus");
     status("chatPageStatus","This conversation is unavailable because either member has blocked the other.");
     if (accessStatus) {
@@ -19477,6 +19491,28 @@ for (const gift of chatGifts || []) {
     // should not interrupt the conversation.
   } catch(e) {
     console.error("Conversation render/load failed:", e);
+    // Recover from render/query errors instead of leaving the thread in a
+    // perpetual loading state or an empty collapsed viewport.
+    if (!isCurrentChatLoad()) return;
+    chat.dataset.loading = "false";
+    activeConversation?.classList.remove("hidden");
+    if (activeConversation) {
+      activeConversation.style.display = "flex";
+      activeConversation.style.flexDirection = "column";
+      activeConversation.style.minHeight = "0";
+    }
+    chat.classList.remove("hidden");
+    chat.style.display = "flex";
+    chat.style.minHeight = "120px";
+    chat.style.flex = "1 1 auto";
+    if (!chat.children.length || chat.querySelector("[data-empty-message]")) {
+      chat.replaceChildren();
+      const notice = document.createElement("p");
+      notice.dataset.chatLoadNotice = "true";
+      notice.textContent = "Messages could not be loaded. Please try refreshing.";
+      notice.style.cssText = "margin:auto;padding:14px;text-align:center;";
+      chat.appendChild(notice);
+    }
     const errorStatus = $("chatPageStatus");
     if (errorStatus) {
       errorStatus.textContent = "Could not load messages: " + friendly(e);

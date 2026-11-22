@@ -18644,6 +18644,14 @@ show("messages");
 
 async function loadChatMessages(){
   if (!currentUser || !activeChatUserId) return;
+  let chatDiagnosticStage = "starting";
+  const chatDiagnostic = (stage, details = {}) => {
+    chatDiagnosticStage = stage;
+    console.debug("[TheMatch chat diagnostic]", stage, details);
+    const statusNode = $("chatPageStatus");
+    if (statusNode) statusNode.dataset.chatDiagnosticStage = stage;
+  };
+  chatDiagnostic("starting", { conversation: activeChatUserId });
 
   
   const requestedChatUserId = activeChatUserId;
@@ -18658,6 +18666,7 @@ async function loadChatMessages(){
   // Chat access is independent of Discover/Nearby community boundaries.
   // The chat-specific RPC checks blocks and active moderation only.
   let blockCheck;
+  chatDiagnostic("permission-check");
   try {
     blockCheck = await db.rpc("can_chat_with_member", {
       target_user_id: requestedChatUserId
@@ -18815,6 +18824,7 @@ async function loadChatMessages(){
       }
       return rows;
     }
+    chatDiagnostic("fetching-message-history");
     const [sentHistory, receivedHistory] = await Promise.all([
       fetchAllDirection(me, them),
       fetchAllDirection(them, me)
@@ -18827,6 +18837,7 @@ async function loadChatMessages(){
 // reading every hidden-message row belonging to the member on every refresh.
 let hiddenRows = [];
 const visiblePageMessageIds = (data || []).map(message => message.id);
+chatDiagnostic("hidden-message-lookup");
 if (visiblePageMessageIds.length) {
   const { data: rows, error: hiddenError } = await db
     .from("message_hidden_for")
@@ -18846,6 +18857,7 @@ const hiddenMessageIds = new Set(
 );
 let reactionRows = [];
 const reactionMessageIds = (data || []).map(message => message.id).filter(Boolean);
+chatDiagnostic("reaction-lookup");
 if (reactionMessageIds.length) {
   const { data: rows, error: reactionError } = await db.from("message_reactions")
     .select("message_id,user_id,emoji")
@@ -18874,6 +18886,7 @@ if (data) {
 // Mark incoming messages as read concurrently. Each receipt remains an
 // individual server-authorized RPC; failures are logged without blocking
 // the rendering of the rest of the conversation.
+chatDiagnostic("read-receipts");
 const unreadIncomingIds = (data || [])
   .filter(message => message.receiver_id === me && !message.read_at)
   .map(message => message.id);
@@ -18904,6 +18917,7 @@ Promise.all(
       console.warn("Unread count refresh failed; chat rendering continues:", error)
     );
 
+        chatDiagnostic("rendering-messages", { count: data?.length || 0 });
         chat.dataset.loading = "false";
         if (!data || !data.length) {
       if (!chat.querySelector("[data-empty-message]")) {
@@ -19154,6 +19168,7 @@ bubble.appendChild(reactionBar);
 insertBubbleInTimeOrder(bubble, message.created_at);
       });
     }
+chatDiagnostic("loading-media");
 // Display private photo and video attachments in the conversation.
 const { data: mediaRows, error: mediaError } = await db
   .from("chat_media")
@@ -19374,6 +19389,7 @@ for (const media of mediaRows || []) {
 
   insertBubbleInTimeOrder(bubble, media.created_at);
         }
+chatDiagnostic("loading-gifts");
 // Load gift rows independently of the catalogue relationship. This avoids
 // an embedded PostgREST relationship/RLS join preventing either participant
 // from seeing an otherwise readable gift transaction.
@@ -19482,6 +19498,7 @@ for (const gift of chatGifts || []) {
   }
 }
 
+    chatDiagnostic("complete");
     // Preserve a member's reading position. Only follow the latest message
     // when they were already at the bottom or this is the first load.
     if (wasNearBottom) chat.scrollTop = chat.scrollHeight;
@@ -19489,6 +19506,7 @@ for (const gift of chatGifts || []) {
     // failures still surface below, but routine success/loading notices
     // should not interrupt the conversation.
   } catch(e) {
+    chatDiagnostic("failed", { error: e?.message || String(e) });
     console.error("Conversation render/load failed:", e);
     const errorStatus = $("chatPageStatus");
     if (errorStatus) {

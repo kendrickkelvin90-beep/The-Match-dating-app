@@ -18536,6 +18536,36 @@ $("chatMessages").replaceChildren();
     activeConversationNode.style.height = "auto";
     activeConversationNode.style.overflow = "hidden";
     chatContent.appendChild(activeConversationNode);
+
+    // CHAT_DOM_MOUNT_RECOVERY: explicitly restore the core chat elements after
+    // moving the conversation out of the Messages panel. This prevents stale
+    // hidden/display/grid state from suppressing the messages or composer.
+    const chatMessagesNode = $("chatMessages");
+    const chatComposerNode = $("chatComposer");
+    const chatInputNode = $("chatMessageInput");
+    const sendChatNode = $("sendChatMessage");
+    [activeConversationNode, chatMessagesNode, chatComposerNode, chatInputNode, sendChatNode]
+      .filter(Boolean).forEach(node => node.classList.remove("hidden"));
+    Object.assign(activeConversationNode.style, {
+      display: "flex", flexDirection: "column", flex: "1 1 auto",
+      minHeight: "0", height: "auto", width: "100%", overflow: "hidden"
+    });
+    Object.assign(chatMessagesNode.style, {
+      display: "flex", flexDirection: "column", flex: "1 1 auto",
+      minHeight: "0", height: "auto", maxHeight: "none",
+      width: "100%", overflowY: "auto"
+    });
+    Object.assign(chatComposerNode.style, {
+      display: "flex", flex: "0 0 auto", width: "100%",
+      minHeight: "56px", visibility: "visible"
+    });
+    Object.assign(chatInputNode.style, {
+      display: "block", visibility: "visible", flex: "1 1 0%",
+      minWidth: "0", width: "auto"
+    });
+    Object.assign(sendChatNode.style, {
+      display: "block", visibility: "visible"
+    });
     chatContent.style.display = "flex";
     chatContent.style.flex = "1 1 auto";
     chatContent.style.width = "100%";

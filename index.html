@@ -18870,21 +18870,26 @@ const unreadIncomingIds = (data || [])
   .filter(message => message.receiver_id === me && !message.read_at)
   .map(message => message.id);
 
-const receiptResults = await Promise.all(
+// Update read receipts in the background. Rendering must not wait for
+// receipt RPCs: a slow receipt endpoint should never leave the chat blank.
+Promise.all(
   unreadIncomingIds.map(async messageId => {
-    const { error: receiptError } = await db.rpc(
-      "mark_message_receipt",
-      {
-        p_message_id: messageId,
-        p_mark_read: true
+    try {
+      const { error: receiptError } = await db.rpc(
+        "mark_message_receipt",
+        {
+          p_message_id: messageId,
+          p_mark_read: true
+        }
+      );
+      if (receiptError) {
+        console.error("Could not update message receipt:", receiptError);
       }
-    );
-
-    if (receiptError) {
-      console.error("Could not update message receipt:", receiptError);
+    } catch (receiptError) {
+      console.error("Message receipt request failed:", receiptError);
     }
   })
-);
+).catch(error => console.warn("Read-receipt updates failed:", error));
 
     // Refresh the unread-message count.
     updateAccountCounts().catch(error =>

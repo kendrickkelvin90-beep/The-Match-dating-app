@@ -6195,6 +6195,58 @@ body.light-theme #chatMediaPreview{background:#F7F5EF!important;color:#28251F!im
 body.light-theme #chatMediaPreviewStage{background:#EEEAE1!important;border-color:#E2D9C8!important}
 button:focus-visible,a:focus-visible,[role="button"]:focus-visible{outline:2px solid var(--tm-accent)!important;outline-offset:3px!important}
 button:disabled,input:disabled,select:disabled,textarea:disabled{opacity:.58;cursor:not-allowed}
+
+/* MATCH_CHAT_VIEWPORT_RECOVERY_V1: keep the chat page and its children in a bounded, full-height flex layout. */
+#chatPage:not(.hidden) {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1000 !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+#chatPage #chatHeader { flex: 0 0 auto !important; }
+#chatPage #chatPageContent {
+  display: flex !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: 0 !important;
+  max-height: none !important;
+  overflow: hidden !important;
+  padding-top: 70px !important;
+  box-sizing: border-box !important;
+}
+#chatPage #activeConversation {
+  display: flex !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: 0 !important;
+  max-height: none !important;
+  overflow: hidden !important;
+}
+#chatPage #chatMessages {
+  display: flex !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: 0 !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  visibility: visible !important;
+}
+#chatPage #chatComposer {
+  display: flex !important;
+  flex: 0 0 auto !important;
+  visibility: visible !important;
+  min-height: 56px !important;
+}
+#chatPage #chatPageStatus,
+#chatPage #backFromChatPage { flex: 0 0 auto !important; }
 </style>
 </head>
 <body>

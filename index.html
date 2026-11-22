@@ -10793,14 +10793,8 @@ if (!captchaToken || !authCaptchaIssuedAt || Date.now() - authCaptchaIssuedAt > 
   return;
 }
 
-// Turnstile tokens are single-use. Consume this token once and immediately
-// reset the widget so the next login/signup attempt receives a fresh token.
-authCaptchaToken = "";
-authCaptchaIssuedAt = 0;
-if (window.turnstile && authCaptchaWidgetId !== null) {
-  window.turnstile.reset(authCaptchaWidgetId);
-}
-
+// Keep the CAPTCHA widget/token intact while the auth request is in flight.
+// Reset it only after Supabase has processed this single-use token.
     const result = loginMode
   ? await db.auth.signInWithPassword({
       email,
@@ -10823,6 +10817,11 @@ if (window.turnstile && authCaptchaWidgetId !== null) {
     }
   });
 
+authCaptchaToken = "";
+authCaptchaIssuedAt = 0;
+if (window.turnstile && authCaptchaWidgetId !== null) {
+  window.turnstile.reset(authCaptchaWidgetId);
+}
 
     if (result.error) throw result.error;
 

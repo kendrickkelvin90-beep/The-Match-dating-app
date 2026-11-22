@@ -8355,6 +8355,12 @@ window.onTurnstileExpired = () => {
   authCaptchaIssuedAt = 0;
 };
 
+window.onTurnstileError = () => {
+  authCaptchaToken = "";
+  authCaptchaIssuedAt = 0;
+  status("authStatus", "Security verification could not load. Please reload the page or try again.", true);
+};
+
 window.onResetTurnstileSuccess = token => {
   resetCaptchaToken = token || "";
   resetCaptchaIssuedAt = token ? Date.now() : 0;
@@ -8372,15 +8378,37 @@ function renderAuthCaptcha() {
   if (authCaptchaWidgetId !== null) return;
 
   if (!window.turnstile) {
-    setTimeout(renderAuthCaptcha, 500);
+    if (!window.__matchAuthCaptchaWait) {
+      window.__matchAuthCaptchaWait = true;
+      setTimeout(() => {
+        window.__matchAuthCaptchaWait = false;
+        renderAuthCaptcha();
+      }, 1000);
+    }
     return;
   }
 
-  authCaptchaWidgetId = window.turnstile.render("#authCaptcha", {
-    sitekey: "0x4AAAAAAFia9mw39tR1pGuq",
-    callback: window.onTurnstileSuccess,
-    "expired-callback": window.onTurnstileExpired
-  });
+  try {
+    authCaptchaWidgetId = window.turnstile.render("#authCaptcha", {
+      sitekey: "0x4AAAAAAFia9mw39tR1pGuq",
+      callback: window.onTurnstileSuccess,
+      "expired-callback": window.onTurnstileExpired,
+      "error-callback": window.onTurnstileError
+    });
+  } catch (error) {
+    console.error("Auth Turnstile render failed:", error);
+    status("authStatus", "Security verification failed to initialize. Please reload and try again.", true);
+    authCaptchaWidgetId = null;
+  }
+}
+
+function resetAuthCaptchaAfterFailure() {
+  authCaptchaToken = "";
+  authCaptchaIssuedAt = 0;
+  if (window.turnstile && authCaptchaWidgetId !== null) {
+    try { window.turnstile.reset(authCaptchaWidgetId); }
+    catch (error) { console.warn("Auth CAPTCHA reset failed:", error); }
+  }
 }
 
 
@@ -10783,12 +10811,8 @@ $("authForm").onsubmit = async e => {
 
 const captchaToken = authCaptchaToken;
 if (!captchaToken || !authCaptchaIssuedAt || Date.now() - authCaptchaIssuedAt > 240000) {
-  authCaptchaToken = "";
-  authCaptchaIssuedAt = 0;
-  if (window.turnstile && authCaptchaWidgetId !== null) {
-    window.turnstile.reset(authCaptchaWidgetId);
-  }
-  status("authStatus", "Your CAPTCHA has expired. Please complete the check again.", true);
+  resetAuthCaptchaAfterFailure();
+  status("authStatus", "Please complete the security verification before continuing. If it is not visible, reload the page.", true);
   button.disabled = false;
   return;
 }
@@ -10895,6 +10919,8 @@ if (window.turnstile && authCaptchaWidgetId !== null) {
     }
   } catch (error) {
     console.error("Signup/login error:", error);
+    // CAPTCHA tokens are single-use; renew after any failed auth request.
+    resetAuthCaptchaAfterFailure();
     const isRestrictedLogin = loginMode && /banned|ban duration|user is banned|user_banned|suspended/i.test(String(error?.message || "") + " " + String(error?.code || ""));
     if (isRestrictedLogin) {
       status("authStatus", "Your account is currently suspended or restricted. You cannot access The Match while this restriction is active.", true);

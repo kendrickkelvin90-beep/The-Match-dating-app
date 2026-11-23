@@ -168,6 +168,8 @@ jobs:
               raise SystemExit("Server-side Discover visibility enforcement is missing")
           print("Verified pronouns and Discover visibility UI wiring")
 
+          PY
+
       - name: Prepare isolated Discover schema and synthetic fixtures
         env:
           PGPASSWORD: postgres

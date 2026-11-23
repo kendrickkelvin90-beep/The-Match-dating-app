@@ -24834,6 +24834,88 @@ body.light-theme #chatPage:not(.hidden) .chat-empty-state,[data-empty-message]{b
   padding-bottom: 90px !important;
   box-sizing: border-box !important;
 }
+
+/* CHAT VIEWPORT HEIGHT RECOVERY — final mobile layout overrides.
+   The previous stylesheet contains a height:0 !important rule for the
+   chat content, which can collapse the thread below its header. */
+#chatPage:not(.hidden) {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  max-height: 100dvh !important;
+  padding: 0 12px calc(12px + env(safe-area-inset-bottom)) !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+#chatPage:not(.hidden) #chatHeader {
+  position: relative !important;
+  inset: auto !important;
+  flex: 0 0 70px !important;
+  width: 100% !important;
+}
+#chatPage:not(.hidden) #chatPageContent {
+  display: flex !important;
+  position: relative !important;
+  flex: 1 1 0% !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  padding: 0 0 82px !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+#chatPage:not(.hidden) #activeConversation:not(.hidden) {
+  display: flex !important;
+  flex: 1 1 0% !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  flex-direction: column !important;
+}
+#chatPage:not(.hidden) #chatMessages {
+  display: flex !important;
+  flex: 1 1 0% !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  box-sizing: border-box !important;
+}
+#chatPage:not(.hidden) #chatComposer {
+  position: fixed !important;
+  left: 12px !important;
+  right: 12px !important;
+  bottom: max(14px, env(safe-area-inset-bottom)) !important;
+  display: flex !important;
+  width: auto !important;
+  min-height: 58px !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 10002 !important;
+  box-sizing: border-box !important;
+}
+#chatPage:not(.hidden) #chatComposer #chatMessageInput {
+  display: block !important;
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  visibility: visible !important;
+}
+#chatPage:not(.hidden) #chatComposer #sendChatMessage {
+  display: inline-flex !important;
+  flex: 0 0 44px !important;
+  visibility: visible !important;
+}
 </style>
 <script id="profile-home-dashboard-controller">
 (function(){

@@ -24916,6 +24916,103 @@ body.light-theme #chatPage:not(.hidden) .chat-empty-state,[data-empty-message]{b
   flex: 0 0 44px !important;
   visibility: visible !important;
 }
+
+/* CHAT LAYOUT CLEANUP: use one flex column and remove stacked bottom
+   padding/fixed positioning that was shrinking the visible conversation. */
+#chatPage:not(.hidden) {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  margin: 0 !important;
+  padding: 0 12px env(safe-area-inset-bottom) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  z-index: 1100 !important;
+}
+#chatPage:not(.hidden) #chatHeader {
+  position: relative !important;
+  inset: auto !important;
+  flex: 0 0 70px !important;
+  min-height: 70px !important;
+  width: 100% !important;
+}
+#chatPage:not(.hidden) #chatPageContent {
+  display: flex !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+#chatPage:not(.hidden) #activeConversation:not(.hidden) {
+  display: flex !important;
+  flex: 1 1 0% !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+#chatPage:not(.hidden) #chatMessages {
+  display: flex !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 12px 8px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+  box-sizing: border-box !important;
+}
+#chatPage:not(.hidden) #chatComposer {
+  position: relative !important;
+  inset: auto !important;
+  display: flex !important;
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  min-height: 60px !important;
+  margin: 0 !important;
+  padding: 6px !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 3 !important;
+  box-sizing: border-box !important;
+}
+#chatPage:not(.hidden) #chatComposer #chatMessageInput {
+  display: block !important;
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  width: auto !important;
+  visibility: visible !important;
+}
+#chatPage:not(.hidden) #chatComposer #sendChatMessage,
+#chatPage:not(.hidden) #chatComposer #chatEmojiToggle,
+#chatPage:not(.hidden) #chatComposer #chatMediaButton {
+  display: inline-flex !important;
+  visibility: visible !important;
+}
+#chatPage:not(.hidden) #backFromChatPage {
+  display: none !important;
+}
 </style>
 <script id="profile-home-dashboard-controller">
 (function(){

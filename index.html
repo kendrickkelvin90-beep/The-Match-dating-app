@@ -18407,8 +18407,14 @@ $("chatMessages").replaceChildren();
 
  
     const chatContent = $("chatPageContent");
-    chatContent.replaceChildren();
     const activeConversationNode = $("activeConversation");
+    if (!chatContent || !activeConversationNode) {
+      throw new Error("The conversation panel could not be mounted.");
+    }
+    // Keep a reference to the conversation node before clearing the chat shell.
+    // replaceChildren(node) moves an existing node safely, even if it is already
+    // inside chatPageContent; clearing first would detach it and lose its ID.
+    chatContent.replaceChildren(activeConversationNode);
     activeConversationNode.classList.remove("hidden");
     activeConversationNode.style.display = "flex";
     activeConversationNode.style.flexDirection = "column";

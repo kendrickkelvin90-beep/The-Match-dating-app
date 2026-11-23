@@ -18086,7 +18086,7 @@ const firstPhotoByUser = new Map();
       
       preview.dataset.messagePreview = "true";
       const latestBody = conversation.latest?.body || "";
-      const isGiftPreview = /^\[\[MATCH_GIFT:[0-9a-f-]{36}\\]\\]$/i.test(latestBody);
+      const isGiftPreview = /^\[\[MATCH_GIFT:[0-9a-f-]{36}\]\]$/i.test(latestBody);
       preview.textContent = conversation.latest
         ? (
             isGiftPreview
@@ -18912,7 +18912,7 @@ Promise.all(
       data.forEach(message => {
         // Gift system entries are delivery signals; the authoritative gift row
         // below renders the actual card and redeem action, not a raw marker.
-        if (/^\[\[MATCH_GIFT:[0-9a-f-]{36}\\]\\]$/i.test(message.body || "")) return;
+        if (/^\[\[MATCH_GIFT:[0-9a-f-]{36}\]\]$/i.test(message.body || "")) return;
         const mine = message.sender_id === me;
         if (mine) {
           const pendingBubble = Array.from(

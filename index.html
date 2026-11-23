@@ -25070,6 +25070,105 @@ body:has(#chatPage:not(.hidden)) > main > #chatPage.panel:not(.hidden) {
 }
 </style>
 
+<style id="chat-composer-mobile-final-fix">
+/* Keep the chat header, scrollable history and composer in one mobile flex layout. */
+#chatPage:not(.hidden) #chatPageContent,
+#chatPage:not(.hidden) #activeConversation:not(.hidden) {
+  display:flex!important;
+  flex:1 1 0!important;
+  flex-direction:column!important;
+  min-width:0!important;
+  min-height:0!important;
+  width:100%!important;
+  height:auto!important;
+  max-height:none!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+#chatPage:not(.hidden) #chatMessages {
+  display:flex!important;
+  flex:1 1 0!important;
+  min-width:0!important;
+  min-height:0!important;
+  height:auto!important;
+  max-height:none!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  -webkit-overflow-scrolling:touch!important;
+  box-sizing:border-box!important;
+}
+#chatPage:not(.hidden) #chatComposer {
+  position:relative!important;
+  inset:auto!important;
+  display:flex!important;
+  flex:0 0 auto!important;
+  flex-wrap:nowrap!important;
+  align-items:center!important;
+  gap:7px!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:64px!important;
+  margin:0!important;
+  padding:8px!important;
+  visibility:visible!important;
+  opacity:1!important;
+  box-sizing:border-box!important;
+}
+#chatPage:not(.hidden) #chatComposer #chatMessageInput {
+  display:block!important;
+  flex:1 1 0!important;
+  width:0!important;
+  min-width:0!important;
+  max-width:none!important;
+  min-height:48px!important;
+  max-height:112px!important;
+  height:auto!important;
+  margin:0!important;
+  padding:11px 10px!important;
+  line-height:1.35!important;
+  resize:none!important;
+  overflow-y:auto!important;
+  box-sizing:border-box!important;
+}
+#chatPage:not(.hidden) #chatComposer #chatEmojiToggle {
+  display:inline-flex!important;
+  flex:0 0 36px!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:36px!important;
+  min-width:36px!important;
+  height:42px!important;
+  margin:0!important;
+}
+#chatPage:not(.hidden) #chatComposer #chatMediaButton {
+  display:inline-flex!important;
+  flex:0 0 40px!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:40px!important;
+  min-width:40px!important;
+  height:42px!important;
+  margin:0!important;
+}
+#chatPage:not(.hidden) #chatComposer #sendChatMessage {
+  display:inline-flex!important;
+  flex:0 0 44px!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:44px!important;
+  min-width:44px!important;
+  height:44px!important;
+  margin:0!important;
+}
+@media(max-width:390px) {
+  #chatPage:not(.hidden) {padding-left:8px!important;padding-right:8px!important}
+  #chatPage:not(.hidden) #chatComposer {gap:5px!important;padding:6px!important}
+  #chatPage:not(.hidden) #chatComposer #chatEmojiToggle {flex-basis:32px!important;width:32px!important;min-width:32px!important}
+  #chatPage:not(.hidden) #chatComposer #chatMediaButton {flex-basis:36px!important;width:36px!important;min-width:36px!important}
+  #chatPage:not(.hidden) #chatComposer #sendChatMessage {flex-basis:42px!important;width:42px!important;min-width:42px!important}
+}
+</style>
+
 </body>
 </html>
 

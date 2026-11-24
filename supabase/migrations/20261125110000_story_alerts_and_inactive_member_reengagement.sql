@@ -163,10 +163,11 @@ grant execute on function public.process_inactive_member_reminders() to postgres
 
 do $schedule$
 begin
+  -- Supabase Cron uses UTC; 07:15 UTC is 08:15 in Nigeria (WAT).
   if not exists(select 1 from cron.job where jobname = 'inactive-member-reengagement') then
     perform cron.schedule(
       'inactive-member-reengagement',
-      '15 8 * * *',
+      '15 7 * * *',
       $$select public.process_inactive_member_reminders();$$
     );
   end if;

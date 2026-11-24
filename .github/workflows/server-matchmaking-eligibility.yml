@@ -25,9 +25,11 @@ on:
       - "supabase/tests/profile_discover_visibility_pronouns.sql"
       - "supabase/tests/profile_pause_discovery.sql"
       - "supabase/migrations/20261118100000_strict_dating_community_separation.sql"
+      - "supabase/migrations/20261124120000_preference_based_separated_dating_lanes.sql"
       - "supabase/migrations/20261118110000_keep_dating_community_private.sql"
       - "supabase/migrations/20261118120000_shared_dating_details_strict_community_guard.sql"
       - "supabase/migrations/20261118121000_enforce_community_for_passes_and_story_views.sql"
+      - "supabase/migrations/20261124120000_preference_based_separated_dating_lanes.sql"
       - "supabase/migrations/20261117160000_secure_view_once_media_delivery.sql"
       - "supabase/functions/open-view-once-chat-media/**"
       - "supabase/tests/view_once_media_*.sql"
@@ -249,19 +251,13 @@ jobs:
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/migrations/20261118140000_admin_community_readiness_diagnostics.sql
 
-      - name: Test two-way dating community separation
-        env:
-          PGPASSWORD: postgres
-        run: |
-          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
-            -f supabase/tests/server_dating_community_separation.sql
-
       - name: Test protected admin community readiness diagnostics
         env:
           PGPASSWORD: postgres
         run: |
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/tests/admin_community_readiness_diagnostics.sql
+
       - name: Apply shared-detail and interaction community guards
         env:
           PGPASSWORD: postgres
@@ -271,3 +267,17 @@ jobs:
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/migrations/20261118121000_enforce_community_for_passes_and_story_views.sql
           psql -h localhost -U postgres -d match_test -At -F '|' -v ON_ERROR_STOP=1 -c "SELECT pg_get_functiondef('public.get_shared_dating_details(uuid[])'::regprocedure) LIKE '%member_dating_community(candidate.id)%' AS shared_details_community_guard, EXISTS (SELECT 1 FROM pg_trigger WHERE tgname='enforce_same_dating_community_on_pass' AND NOT tgisinternal) AS pass_community_trigger, (to_regclass('public.story_views') IS NULL OR EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='story_views' AND policyname='Members can record their own story views' AND with_check LIKE '%can_view_story_from_owner%')) AS story_view_audience_guard" | grep -Fx 't|t|t'
+
+      - name: Apply orientation-derived dating lane migration
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/migrations/20261124120000_preference_based_separated_dating_lanes.sql
+
+      - name: Test orientation-derived dating lane separation
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/tests/server_dating_community_separation.sql

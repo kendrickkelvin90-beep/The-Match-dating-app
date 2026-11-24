@@ -127,7 +127,7 @@ begin
   if v_lane is null then return new; end if;
 
   insert into public.notifications(
-    user_id, type, title, body, related_user_id, is_read, action_url
+    user_id, type, title, body, related_user_id, is_read, action_url, action_label
   )
   select distinct candidate.user_id,
     'story_uploaded',
@@ -135,7 +135,8 @@ begin
     v_name || ' just shared a new Story. Want to check it out? Open Discover to watch.',
     new.user_id,
     false,
-    '/#discover'
+    '/#discover',
+    'Watch Story'
   from (
     select m.sender_id as user_id
     from public.messages m
@@ -285,11 +286,13 @@ begin
       )
     for update of activity skip locked
   ), inserted as (
-    insert into public.notifications(user_id,type,title,body,is_read)
+    insert into public.notifications(user_id,type,title,body,is_read,action_url,action_label)
     select user_id, 'member_welcome_back',
       'We saved you a place ❤️',
       'Hi ' || display_name || ', your connections are waiting. Come back to The Match when you are ready.',
-      false
+      false,
+      '/#discover',
+      'Open Discover'
     from due
     returning user_id
   ), state_update as (

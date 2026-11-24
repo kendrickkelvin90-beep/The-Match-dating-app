@@ -25,6 +25,10 @@ on:
       - "supabase/tests/profile_discover_visibility_pronouns.sql"
       - "supabase/tests/profile_pause_discovery.sql"
       - "supabase/migrations/20261118100000_strict_dating_community_separation.sql"
+      - "supabase/migrations/20261103165000_nearby_profiles_secure_for_all_users.sql"
+      - "supabase/migrations/20261124150000_nearby_orientation_lane_preference_guard.sql"
+      - "supabase/tests/nearby_dating_lane_separation.sql"
+      - "supabase/migrations/20261124120000_preference_based_separated_dating_lanes.sql"
       - "supabase/migrations/20261118110000_keep_dating_community_private.sql"
       - "supabase/migrations/20261118120000_shared_dating_details_strict_community_guard.sql"
       - "supabase/migrations/20261118121000_enforce_community_for_passes_and_story_views.sql"
@@ -167,6 +171,13 @@ jobs:
           if "candidate.discover_visibility" not in visibility_migration or "matches_only" not in visibility_migration:
               raise SystemExit("Server-side Discover visibility enforcement is missing")
           print("Verified pronouns and Discover visibility UI wiring")
+          if 'key: "dating_community"' in html or 'id="datingCommunityRequiredNotice"' in html or '$("datingCommunity")' in html:
+              raise SystemExit("The old manual dating-community selector must not return")
+          if "deriveDatingLaneFromOrientation" not in html or 'key: "sexual_orientation"' not in html or "registration_answers:" not in html:
+              raise SystemExit("Registration must collect and persist private sexual orientation before account creation")
+          if 'id="sexualOrientation"' in html or '$("sexualOrientation")?.addEventListener' in html:
+              raise SystemExit("Sexual orientation must not remain editable in profile settings")
+          print("Verified registration-collected orientation, automatic lanes, and no editable profile orientation")
 
       - name: Prepare isolated Discover schema and synthetic fixtures
         env:
@@ -174,6 +185,8 @@ jobs:
         run: |
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/tests/server_matchmaking_eligibility_setup.sql
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -c "ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS nearby_current_city text, ADD COLUMN IF NOT EXISTS nearby_current_state text"
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1  -f supabase/migrations/20261103165000_nearby_profiles_secure_for_all_users.sql
 
       - name: Apply eligibility and general-dating migrations to disposable PostgreSQL
         env:
@@ -249,19 +262,13 @@ jobs:
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/migrations/20261118140000_admin_community_readiness_diagnostics.sql
 
-      - name: Test two-way dating community separation
-        env:
-          PGPASSWORD: postgres
-        run: |
-          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
-            -f supabase/tests/server_dating_community_separation.sql
-
       - name: Test protected admin community readiness diagnostics
         env:
           PGPASSWORD: postgres
         run: |
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/tests/admin_community_readiness_diagnostics.sql
+
       - name: Apply shared-detail and interaction community guards
         env:
           PGPASSWORD: postgres
@@ -271,3 +278,43 @@ jobs:
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/migrations/20261118121000_enforce_community_for_passes_and_story_views.sql
           psql -h localhost -U postgres -d match_test -At -F '|' -v ON_ERROR_STOP=1 -c "SELECT pg_get_functiondef('public.get_shared_dating_details(uuid[])'::regprocedure) LIKE '%member_dating_community(candidate.id)%' AS shared_details_community_guard, EXISTS (SELECT 1 FROM pg_trigger WHERE tgname='enforce_same_dating_community_on_pass' AND NOT tgisinternal) AS pass_community_trigger, (to_regclass('public.story_views') IS NULL OR EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='story_views' AND policyname='Members can record their own story views' AND with_check LIKE '%can_view_story_from_owner%')) AS story_view_audience_guard" | grep -Fx 't|t|t'
+
+      - name: Apply orientation-derived dating lane migration
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/migrations/20261124120000_preference_based_separated_dating_lanes.sql
+
+      - name: Test orientation-derived dating lane separation
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/tests/server_dating_community_separation.sql
+
+      - name: Apply registration identity immutability guard
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/migrations/20261124170000_lock_registration_identity_answers.sql
+
+      - name: Test registration identity immutability
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/tests/registration_identity_immutability.sql
+
+      - name: Apply Nearby orientation and reciprocal-preference guard
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1  -f supabase/migrations/20261124150000_nearby_orientation_lane_preference_guard.sql
+
+      - name: Test Nearby dating-lane separation, reciprocal preferences, and 50 km limit
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1  -f supabase/tests/nearby_dating_lane_separation.sql

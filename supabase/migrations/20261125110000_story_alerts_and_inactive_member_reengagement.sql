@@ -199,12 +199,12 @@ revoke all on private.member_activity_state from public, anon, authenticated, se
 create index if not exists member_activity_state_last_seen_at_idx
   on private.member_activity_state(last_seen_at);
 
--- Seed existing members from their most recent Auth sign-in so the first
--- reminder cycle has a sensible baseline before they next open the app.
+-- Seed only confirmed members who have signed in at least once; never nudge
+-- accounts that were created but never actually used the app.
 insert into private.member_activity_state(user_id,last_seen_at,updated_at)
-select id, coalesce(last_sign_in_at,created_at), now()
+select id, last_sign_in_at, now()
 from auth.users
-where confirmed_at is not null
+where confirmed_at is not null and last_sign_in_at is not null
 on conflict(user_id) do nothing;
 
 create table if not exists public.member_reengagement_state (

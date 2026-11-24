@@ -313,7 +313,7 @@ begin
     perform cron.schedule(
       'inactive-member-reengagement',
       '15 7 * * *',
-      $select private.process_inactive_member_reminders();$
+      $command$select private.process_inactive_member_reminders();$command$
     );
   end if;
 end;

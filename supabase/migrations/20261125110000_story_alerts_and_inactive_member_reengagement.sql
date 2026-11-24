@@ -202,6 +202,7 @@ revoke all on private.member_activity_state from public, anon, authenticated, se
 insert into private.member_activity_state(user_id,last_seen_at,updated_at)
 select id, coalesce(last_sign_in_at,created_at), now()
 from auth.users
+where confirmed_at is not null
 on conflict(user_id) do nothing;
 
 create table if not exists public.member_reengagement_state (

@@ -27,10 +27,11 @@
  function makeDialog(){
   if(dialog)return;
   dialog=document.createElement("div");dialog.id="tmAdminChatDialog";
-  dialog.innerHTML='<section class="tm-chat-shell" role="dialog" aria-modal="true" aria-labelledby="tmAdminChatTitle"><header class="tm-chat-head"><h2 id="tmAdminChatTitle">Private chat review</h2><button type="button" data-close>Close</button></header><div class="tm-chat-tools"><input type="search" maxlength="200" placeholder="Search names, member IDs or message text" aria-label="Search all chats"><button type="button" data-search>Search</button></div><p class="tm-chat-notice">Restricted administrator access. Every review request is recorded in the audit log. Members should be informed that authorised administrators may review chats for safety. These chats are not end-to-end encrypted.</p><div class="tm-chat-results" aria-live="polite">Search or load recent messages.</div><div style="padding:12px 16px;border-top:1px solid #343039"><button type="button" data-more>Load older messages</button></div></section>';
+  dialog.innerHTML='<section class="tm-chat-shell" role="dialog" aria-modal="true" aria-labelledby="tmAdminChatTitle"><header class="tm-chat-head"><h2 id="tmAdminChatTitle">Private chat review</h2><button type="button" data-close>Close</button></header><div class="tm-chat-tools"><input type="search" maxlength="200" placeholder="Search names, member IDs or message text" aria-label="Search all chats"><button type="button" data-search>Search</button></div><p class="tm-chat-notice">Restricted administrator access. Every review request is recorded in the audit log. Members are informed in the privacy notice that authorised administrators may review chats. These chats are not end-to-end encrypted.</p><div class="tm-chat-results" aria-live="polite">Search or load recent messages.</div><div style="padding:12px 16px;border-top:1px solid #343039"><button type="button" data-more>Load older messages</button></div></section>';
   document.body.appendChild(dialog);
   search=dialog.querySelector("input");results=dialog.querySelector(".tm-chat-results");
   dialog.querySelector("[data-close]").onclick=()=>dialog.classList.remove("open");
+  document.addEventListener("keydown",e=>{if(e.key==="Escape")dialog.classList.remove("open");});
   dialog.addEventListener("click",e=>{if(e.target===dialog)dialog.classList.remove("open");});
   dialog.querySelector("[data-search]").onclick=()=>{before=null;load(true);};
   dialog.querySelector("[data-more]").onclick=()=>load(false);
@@ -45,7 +46,7 @@
    if(error)throw error;
    const rows=data||[];
    if(reset)results.replaceChildren();
-   if(!rows.length&&reset){results.textContent="No messages found.";return;}
+   if(!rows.length&&reset){results.textContent="No messages found.";button.hidden=true;return;}
    rows.forEach(row=>{
     const item=document.createElement("article");item.className="tm-chat-message";
     const heading=document.createElement("strong");heading.textContent=row.sender_name+" → "+row.receiver_name;
@@ -55,24 +56,30 @@
    });
    if(rows.length)before={created_at:rows[rows.length-1].created_at,id:rows[rows.length-1].message_id};
    button.hidden=rows.length<50;
-  }catch(error){results.textContent="Chat review unavailable: "+(error?.message||"Please try again.");}
+  }catch(error){results.textContent="Chat review unavailable: "+(error?.message||"Please try again.");button.hidden=true;}
   finally{loading=false;button.disabled=false;}
  }
  async function attachAdminControl(){
   const panel=document.getElementById("adminPanel");
   if(!panel||panel.querySelector("[data-open-admin-chat-review]")||adminCheckInProgress||adminCheckAttempted)return;
   adminCheckInProgress=true;
-  const {data,error}=await db.rpc("is_match_admin");
-  adminCheckInProgress=false;
-  adminCheckAttempted=true;
-  if(error||data!==true)return;
-  makeDialog();
-  const actions=panel.querySelector(".admin-top-actions")||panel.querySelector(".admin-topbar");
-  if(!actions)return;
-  const button=document.createElement("button");button.type="button";button.dataset.openAdminChatReview="true";
-  button.textContent="Review member chats";button.className="admin-refresh-button";
-  button.addEventListener("click",()=>{dialog.classList.add("open");before=null;load(true);});
-  actions.appendChild(button);
+  try{
+   const {data,error}=await db.rpc("is_match_admin");
+   adminCheckAttempted=true;
+   if(error||data!==true)return;
+   const actions=panel.querySelector(".admin-top-actions")||panel.querySelector(".admin-topbar");
+   if(!actions)return;
+   makeDialog();
+   const button=document.createElement("button");button.type="button";button.dataset.openAdminChatReview="true";
+   button.textContent="Chat review";button.className="admin-refresh-button";
+   button.addEventListener("click",()=>{dialog.classList.add("open");before=null;load(true);});
+   actions.appendChild(button);
+  }catch(error){
+   adminCheckAttempted=true;
+   console.warn("Admin chat review access check unavailable",error);
+  }finally{
+   adminCheckInProgress=false;
+  }
  }
  function watch(){
   attachAdminControl().catch(error=>console.warn("Admin chat review control unavailable",error));

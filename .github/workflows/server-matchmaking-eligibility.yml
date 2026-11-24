@@ -169,6 +169,11 @@ jobs:
           if "candidate.discover_visibility" not in visibility_migration or "matches_only" not in visibility_migration:
               raise SystemExit("Server-side Discover visibility enforcement is missing")
           print("Verified pronouns and Discover visibility UI wiring")
+          if 'key: "dating_community"' in html or 'id="datingCommunityRequiredNotice"' in html or '$("datingCommunity")' in html:
+              raise SystemExit("The old manual dating-community selector must not return")
+          if "deriveDatingLaneFromOrientation" not in html or "sexual_orientation: newOrientation" not in html:
+              raise SystemExit("Frontend dating lanes must be derived from the private sexual-orientation answer")
+          print("Verified automatic orientation-derived dating lanes and no manual community selector")
 
       - name: Prepare isolated Discover schema and synthetic fixtures
         env:

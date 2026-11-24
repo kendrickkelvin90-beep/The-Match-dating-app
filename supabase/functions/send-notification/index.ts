@@ -34,6 +34,18 @@ function getServiceRoleJwt(req: Request): string | null {
   }
 }
 
+function getSafeNotificationUrl(value: unknown): string {
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//") || value.includes("\\\\")) {
+    return APP_URL;
+  }
+  try {
+    const destination = new URL(value, APP_URL);
+    return destination.origin === new URL(APP_URL).origin ? destination.toString() : APP_URL;
+  } catch {
+    return APP_URL;
+  }
+}
+
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (character) => ({
     "&": "&amp;",
@@ -146,6 +158,7 @@ Deno.serve(async (req: Request) => {
     const body = String(notification?.body ?? "You have a new notification.").slice(0, 500);
     const notificationId = String(notification?.id ?? "");
     const type = String(notification?.type ?? "activity").slice(0, 80);
+    const notificationUrl = getSafeNotificationUrl(notification?.action_url);
 
     const failures: string[] = [];
     const oneSignalKey = Deno.env.get("ONESIGNAL_REST_API_KEY");
@@ -169,7 +182,7 @@ Deno.serve(async (req: Request) => {
           chrome_web_icon: `https://match.beyondthebinarymedia.online/icons/file_00000000194481f48390cd96271ae5c9.png`,
           // Android web-push uses the badge in the notification shade.
           chrome_web_badge: `https://match.beyondthebinarymedia.online/icons/file_00000000194481f48390cd96271ae5c9.png`,
-          url: APP_URL,
+          url: notificationUrl,
           data: {
             notification_id: notificationId,
             type,

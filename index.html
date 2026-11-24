@@ -10719,11 +10719,7 @@ $("authForm").onsubmit = async e => {
           .get("ref")
           ?.trim()
           .toUpperCase() || null,
-        registration_answers: Object.fromEntries(
-          Object.entries(onboardingAnswers).filter(([key]) =>
-            !["phone_number", "recovery_email"].includes(key)
-          )
-        )
+        registration_answers: { ...onboardingAnswers }
       }
     }
   });
@@ -10762,6 +10758,7 @@ $("authForm").onsubmit = async e => {
       const savedRegistrationAnswers = !loginMode && Object.keys(onboardingAnswers).length
         ? onboardingAnswers
         : (user.user_metadata?.registration_answers || {});
+      const privateContactAnswers = savedRegistrationAnswers;
       if (Object.keys(savedRegistrationAnswers).length) {
         const answers = { ...savedRegistrationAnswers };
 
@@ -10787,13 +10784,13 @@ $("authForm").onsubmit = async e => {
 
         if (onboardingError) throw onboardingError;
 
-        if (!loginMode && (onboardingAnswers.phone_number || onboardingAnswers.recovery_email)) {
+        if (privateContactAnswers.phone_number || privateContactAnswers.recovery_email) {
           const { error: detailsError } = await db
             .from("member_private_details")
             .upsert({
               user_id: user.id,
-              phone_number: onboardingAnswers.phone_number || null,
-              recovery_email: onboardingAnswers.recovery_email || null,
+              phone_number: privateContactAnswers.phone_number || null,
+              recovery_email: privateContactAnswers.recovery_email || null,
               updated_at: now
             }, { onConflict: "user_id" });
 

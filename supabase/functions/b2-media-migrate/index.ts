@@ -230,9 +230,9 @@ Deno.serve(async (req: Request) => {
       .eq("failed_permanently", true);
     if (permanentCountError) throw new Error("Could not verify permanently failed media records.");
 
-    if (isCron && category === "stories" && remaining === 0) {
+    if (isCron && category === "stories") {
       const { error: completionError } = await admin.rpc("complete_b2_story_migration");
-      if (completionError) console.error("Story migration completed but scheduler cleanup failed.");
+      if (completionError) console.error("Story migration batch finished but scheduler state could not be updated.");
     }
 
     return json({

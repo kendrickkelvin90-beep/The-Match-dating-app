@@ -7,6 +7,10 @@ create table if not exists public.admin_chat_review_audit (
   id bigint generated always as identity primary key,
   admin_user_id uuid not null references auth.users(id) on delete restrict,
   search_term text,
+  review_reason text not null check (review_reason in (
+    'routine_safety_review','member_report','support_request',
+    'moderation_investigation','compliance_review'
+  )),
   requested_limit integer not null check (requested_limit between 1 and 100),
   accessed_at timestamptz not null default now()
 );
@@ -25,7 +29,8 @@ create or replace function public.admin_list_chat_messages(
   p_search text default null,
   p_before timestamptz default null,
   p_before_id uuid default null,
-  p_limit integer default 50
+  p_limit integer default 50,
+  p_reason text default 'routine_safety_review'
 )
 returns table(
   message_id uuid,
@@ -46,13 +51,17 @@ declare
   v_admin uuid := auth.uid();
   v_search text := nullif(btrim(coalesce(p_search, '')), '');
   v_limit integer := greatest(1, least(coalesce(p_limit, 50), 100));
+  v_reason text := coalesce(nullif(btrim(p_reason), ''), 'routine_safety_review');
 begin
   if v_admin is null or not public.is_match_admin() then
     raise exception 'Administrator access required.' using errcode = '42501';
   end if;
+  if v_reason not in ('routine_safety_review','member_report','support_request','moderation_investigation','compliance_review') then
+    raise exception 'Choose a valid chat review purpose.' using errcode = '22023';
+  end if;
 
-  insert into public.admin_chat_review_audit(admin_user_id, search_term, requested_limit)
-  values (v_admin, left(v_search, 200), v_limit);
+  insert into public.admin_chat_review_audit(admin_user_id, search_term, review_reason, requested_limit)
+  values (v_admin, left(v_search, 200), v_reason, v_limit);
 
   return query
   select m.id, m.sender_id,
@@ -78,7 +87,7 @@ begin
 end;
 $function$;
 
-revoke all on function public.admin_list_chat_messages(text,timestamptz,uuid,integer)
+revoke all on function public.admin_list_chat_messages(text,timestamptz,uuid,integer,text)
   from public, anon;
 grant execute on function public.admin_list_chat_messages(text,timestamptz,uuid,integer)
   to authenticated;

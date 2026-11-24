@@ -8660,7 +8660,10 @@ function notificationCategory(notification) {
 }
 
 function notificationIcon(notification) {
+  const type = String(notification.type || "").toLowerCase();
   const category = notificationCategory(notification);
+  if (type === "story_uploaded") return "◉";
+  if (type === "member_welcome_back") return "✦";
   if (category === "messages") return "☏";
   if (category === "likes") return "♥";
   if (category === "matches") return "♡♡";

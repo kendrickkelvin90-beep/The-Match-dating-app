@@ -79,29 +79,10 @@
  }
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",watch,{once:true});else watch();
  const observer=new MutationObserver(watch);observer.observe(document.documentElement,{childList:true,subtree:true});
- // B2 story migration resumes automatically when an administrator opens the app.
- let migrationRunning=false;
- async function migrateStoryBatch(){
-  if(migrationRunning)return;migrationRunning=true;
-  try{
-   const {data:admin,error:adminError}=await db.rpc("is_match_admin");
-   if(adminError||admin!==true){window.matchStoryMigrationStarted=false;return;}
-   const {data,error}=await db.functions.invoke("b2-media-migrate",{body:{category:"stories",limit:2}});
-   if(error)throw error;
-   if(data?.failures?.length){window.matchStoryMigrationStarted=false;console.warn("Some legacy stories could not be migrated; originals remain safe.",data.failures);return;}
-   if(Number(data?.remaining)>0){
-    window.setTimeout(()=>{migrationRunning=false;migrateStoryBatch();},15000);
-   }else{
-    console.info("The Match legacy Story media migration is complete.");
-   }
-  }catch(error){window.matchStoryMigrationStarted=false;console.warn("Automatic Story migration paused; it will retry on a later admin session.",error);}
-  finally{if(!window.matchStoryMigrationScheduled)migrationRunning=false;}
- }
- function startMigration(){
-  if(window.matchStoryMigrationStarted)return;
-  window.matchStoryMigrationStarted=true;
-  migrateStoryBatch();
- }
- db.auth.getUser().then(({data})=>{if(data?.user)startMigration();}).catch(()=>{});
- db.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_IN"&&session?.user){adminCheckAttempted=false;watch();startMigration();}});
+ db.auth.onAuthStateChange((event,session)=>{
+  if(event==="SIGNED_IN"&&session?.user){
+   adminCheckAttempted=false;
+   watch();
+  }
+ });
 })();

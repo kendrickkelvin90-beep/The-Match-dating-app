@@ -173,9 +173,11 @@ jobs:
           print("Verified pronouns and Discover visibility UI wiring")
           if 'key: "dating_community"' in html or 'id="datingCommunityRequiredNotice"' in html or '$("datingCommunity")' in html:
               raise SystemExit("The old manual dating-community selector must not return")
-          if "deriveDatingLaneFromOrientation" not in html or "sexual_orientation: newOrientation" not in html:
-              raise SystemExit("Frontend dating lanes must be derived from the private sexual-orientation answer")
-          print("Verified automatic orientation-derived dating lanes and no manual community selector")
+          if "deriveDatingLaneFromOrientation" not in html or 'key: "sexual_orientation"' not in html or "registration_answers:" not in html:
+              raise SystemExit("Registration must collect and persist private sexual orientation before account creation")
+          if 'id="sexualOrientation"' in html or '$("sexualOrientation")?.addEventListener' in html:
+              raise SystemExit("Sexual orientation must not remain editable in profile settings")
+          print("Verified registration-collected orientation, automatic lanes, and no editable profile orientation")
 
       - name: Prepare isolated Discover schema and synthetic fixtures
         env:
@@ -290,6 +292,20 @@ jobs:
         run: |
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/tests/server_dating_community_separation.sql
+
+      - name: Apply registration identity immutability guard
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/migrations/20261124170000_lock_registration_identity_answers.sql
+
+      - name: Test registration identity immutability
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
+            -f supabase/tests/registration_identity_immutability.sql
 
       - name: Apply Nearby orientation and reciprocal-preference guard
         env:

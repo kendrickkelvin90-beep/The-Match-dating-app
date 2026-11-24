@@ -6530,16 +6530,16 @@ button:disabled,input:disabled,select:disabled,textarea:disabled{opacity:.58;cur
 <input id="displayName" maxlength="60" required placeholder="What should members call you?">
 <label for="age">Age (18+) *</label>
 <input id="age" type="number" min="18" max="120" required placeholder="Your age">
-<label for="gender">Gender identity *</label>
-<select id="gender" required>
+<label for="gender">Gender identity (from registration)</label>
+<select id="gender" required disabled aria-describedby="registrationIdentityNotice">
 <option value="">Choose one</option>
 <option>Man</option><option>Woman</option><option>Non-binary</option>
 <option>Trans man</option><option>Trans woman</option>
 <option>Genderqueer</option><option>Prefer to self-describe</option>
 <option>Prefer not to say</option>
 </select>
-<label for="interest">Interested in *</label>
-<select id="interest" required>
+<label for="interest">Interested in (from registration)</label>
+<select id="interest" required disabled aria-describedby="registrationIdentityNotice">
 <option value="">Choose who you'd like to meet</option>
 <option>Men</option><option>Women</option><option>Men and women</option><option>All genders</option>
 <option>Non-binary people</option><option>Not sure yet</option>
@@ -6557,21 +6557,7 @@ button:disabled,input:disabled,select:disabled,textarea:disabled{opacity:.58;cur
 </select>
 <p class="small">Pronouns are optional and appear on your public profile only when you choose them.</p>
 
- <div id="sexualOrientationSection">
- <label for="sexualOrientation">Sexual orientation (private)</label>
-<select id="sexualOrientation">
-  <option value="Prefer not to say">Prefer not to say</option>
-  <option value="Straight / heterosexual">Straight / heterosexual</option>
-  <option value="Gay">Gay</option>
-  <option value="Lesbian">Lesbian</option>
-  <option value="Bisexual">Bisexual</option>
-  <option value="Pansexual">Pansexual</option>
-  <option value="Queer">Queer</option>
-  <option value="Asexual">Asexual</option>
-  <option value="Another orientation">Another orientation</option>
-</select>
-<p class="small">This is private and is used to tailor discovery. It is not shown on your public profile.</p>
- </div>
+ <p class="small" id="registrationIdentityNotice">Your gender identity, dating interests and sexual orientation are collected during registration. They are not editable from profile settings.</p>
 
 <div class="member-card" id="queerRolePreferencesSection">
   <h2>Optional role preferences</h2>
@@ -10399,6 +10385,24 @@ const onboardingQuestions = [
     ]
   },
   {
+    key: "gender_identity",
+    title: "How do you describe your gender identity?",
+    help: "This helps The Match understand who you are and supports compatibility.",
+    options: ["Man", "Woman", "Non-binary", "Trans man", "Trans woman", "Genderqueer", "Prefer to self-describe", "Prefer not to say"]
+  },
+  {
+    key: "interested_in",
+    title: "Who are you interested in dating?",
+    help: "Choose the genders you would like to meet. Matches must also be interested in your gender.",
+    options: ["Men", "Women", "Men and women", "All genders", "Non-binary people", "Not sure yet"]
+  },
+  {
+    key: "sexual_orientation",
+    title: "How do you identify your sexual orientation?",
+    help: "This answer is private. The Match uses it to assign your dating lane and tailor discovery. It will not be an editable profile field.",
+    options: ["Straight / heterosexual", "Gay", "Lesbian", "Bisexual", "Pansexual", "Queer", "Asexual", "Questioning", "Another orientation", "Prefer not to say"]
+  },
+  {
     key: "relationship_goal",
     title: "What kind of connection are you looking for?",
     options: ["A relationship", "Dating", "Friendship", "Something casual", "Still figuring it out"]
@@ -10714,7 +10718,12 @@ $("authForm").onsubmit = async e => {
         referral_code: new URLSearchParams(window.location.search)
           .get("ref")
           ?.trim()
-          .toUpperCase() || null
+          .toUpperCase() || null,
+        registration_answers: Object.fromEntries(
+          Object.entries(onboardingAnswers).filter(([key]) =>
+            !["phone_number", "recovery_email"].includes(key)
+          )
+        )
       }
     }
   });
@@ -10750,8 +10759,11 @@ $("authForm").onsubmit = async e => {
       }
 
 
-      if (!loginMode && Object.keys(onboardingAnswers).length) {
-        const answers = { ...onboardingAnswers };
+      const savedRegistrationAnswers = !loginMode && Object.keys(onboardingAnswers).length
+        ? onboardingAnswers
+        : (user.user_metadata?.registration_answers || {});
+      if (Object.keys(savedRegistrationAnswers).length) {
+        const answers = { ...savedRegistrationAnswers };
 
         // Keep private contact details out of the general answers.
         delete answers.phone_number;
@@ -10765,26 +10777,33 @@ $("authForm").onsubmit = async e => {
             user_id: user.id,
             current_step: 3,
             answers,
-            safety_accepted: onboardingAnswers.respect_boundaries === "yes"
-              && onboardingAnswers.community_safety === "yes",
-            terms_accepted: onboardingAnswers.terms_accepted === "yes",
-            age_confirmed: onboardingAnswers.age_confirmed === "yes",
+            safety_accepted: answers.respect_boundaries === "yes"
+              && answers.community_safety === "yes",
+            terms_accepted: answers.terms_accepted === "yes",
+            age_confirmed: answers.age_confirmed === "yes",
             completed_at: now,
             updated_at: now
           }, { onConflict: "user_id" });
 
         if (onboardingError) throw onboardingError;
 
-        const { error: detailsError } = await db
-          .from("member_private_details")
-          .upsert({
-            user_id: user.id,
-            phone_number: onboardingAnswers.phone_number || null,
-            recovery_email: onboardingAnswers.recovery_email || null,
-            updated_at: now
-          }, { onConflict: "user_id" });
+        if (!loginMode && (onboardingAnswers.phone_number || onboardingAnswers.recovery_email)) {
+          const { error: detailsError } = await db
+            .from("member_private_details")
+            .upsert({
+              user_id: user.id,
+              phone_number: onboardingAnswers.phone_number || null,
+              recovery_email: onboardingAnswers.recovery_email || null,
+              updated_at: now
+            }, { onConflict: "user_id" });
 
-        if (detailsError) throw detailsError;
+          if (detailsError) throw detailsError;
+        }
+        if (user.user_metadata?.registration_answers) {
+          db.auth.updateUser({ data: { registration_answers: null } }).catch(error =>
+            console.warn("Could not clear temporary registration answers:", error)
+          );
+        }
       }
 
       await showProfile(user, loginMode);
@@ -11664,6 +11683,8 @@ function profileBioHasPhoneNumber(value) {
 let currentMemberOrientation = "";
 let currentMemberCommunity = "";
 let currentMemberLegacyCommunity = "";
+let currentMemberGenderIdentity = "";
+let currentMemberInterestedIn = "";
 
 function deriveDatingLaneFromOrientation(orientation, legacyCommunity = "") {
   const normalized = String(orientation || "").trim().toLowerCase();
@@ -11690,8 +11711,16 @@ async function loadCurrentMemberOrientation() {
   currentMemberOrientation = String(data?.answers?.sexual_orientation || "Prefer not to say");
   currentMemberLegacyCommunity = String(data?.answers?.dating_community || "");
   currentMemberCommunity = deriveDatingLaneFromOrientation(currentMemberOrientation, currentMemberLegacyCommunity);
+  const { data: registeredProfile, error: registeredProfileError } = await db.from("profiles")
+    .select("gender_identity,interested_in").eq("id", currentUser.id).maybeSingle();
+  if (registeredProfileError) throw registeredProfileError;
+  currentMemberGenderIdentity = String(data?.answers?.gender_identity || registeredProfile?.gender_identity || "");
+  currentMemberInterestedIn = String(data?.answers?.interested_in || registeredProfile?.interested_in || "");
+  if ($("gender") && currentMemberGenderIdentity) $("gender").value = currentMemberGenderIdentity;
+  if ($("interest") && currentMemberInterestedIn) $("interest").value = currentMemberInterestedIn;
+  if ($("gender")) $("gender").disabled = !!(data?.answers?.gender_identity || registeredProfile?.gender_identity);
+  if ($("interest")) $("interest").disabled = !!(data?.answers?.interested_in || registeredProfile?.interested_in);
   if ($("lgbtqLifestyleFlag")) $("lgbtqLifestyleFlag").checked = !!data?.answers?.lgbtq_lifestyle;
-  if ($("sexualOrientation")) $("sexualOrientation").value = currentMemberOrientation;
   syncDatingCommunityFields();
   return currentMemberOrientation;
 }
@@ -11719,14 +11748,6 @@ function syncDatingCommunityFields() {
   const discoveryRoleCard = $("discoveryRolePreferenceCard");
   if (discoveryRoleCard) discoveryRoleCard.hidden = community !== "lgbtq";
 }
-
-$("sexualOrientation")?.addEventListener("change", () => {
-  currentMemberCommunity = deriveDatingLaneFromOrientation(
-    $("sexualOrientation")?.value,
-    currentMemberLegacyCommunity
-  );
-  syncDatingCommunityFields();
-});
 
 async function loadMyDatingDetails() {
   if (!currentUser?.id) return;
@@ -11995,16 +12016,16 @@ if(profileBioHasPhoneNumber($("bio").value)) {
 }
 
 // The existing private orientation determines which dating lane is used.
-const newOrientation = $("sexualOrientation")?.value || currentMemberOrientation || "Prefer not to say";
-const newCommunity = deriveDatingLaneFromOrientation(newOrientation, currentMemberLegacyCommunity);
+const newOrientation = currentMemberOrientation || "Prefer not to say";
+const newCommunity = currentMemberCommunity || deriveDatingLaneFromOrientation(newOrientation, currentMemberLegacyCommunity);
 
 // Role preferences are optional for the expanded general dating platform.
 let p={
 id:currentUser.id,
 display_name:$("displayName").value.trim(),
 age:age,
-gender_identity:$("gender").value,
-interested_in:$("interest").value,
+gender_identity:currentMemberGenderIdentity || $("gender").value,
+interested_in:currentMemberInterestedIn || $("interest").value,
 pronouns:$("profilePronouns").value || null,
   
 sexual_roles:newCommunity === "lgbtq" && document.querySelector('input[name="sexualRole"]:checked')
@@ -12087,10 +12108,9 @@ if (datingDetailsError) throw datingDetailsError;
 const { data: onboardingRecord, error: onboardingReadError } = await db.from("member_onboarding").select("answers").eq("user_id", currentUser.id).maybeSingle();
 if (onboardingReadError) throw onboardingReadError;
 const lifestyleFlag = !!$("lgbtqLifestyleFlag")?.checked;
-if (newOrientation !== currentMemberOrientation || lifestyleFlag !== !!onboardingRecord?.answers?.lgbtq_lifestyle) {
+if (lifestyleFlag !== !!onboardingRecord?.answers?.lgbtq_lifestyle) {
   const updatedAnswers = {
     ...(onboardingRecord?.answers || {}),
-    sexual_orientation: newOrientation,
     lgbtq_lifestyle: lifestyleFlag
   };
   const { error: onboardingSaveError } = await db.from("member_onboarding").upsert({
@@ -12100,9 +12120,6 @@ if (newOrientation !== currentMemberOrientation || lifestyleFlag !== !!onboardin
   }, { onConflict: "user_id" });
   if (onboardingSaveError) throw onboardingSaveError;
 
-  currentMemberOrientation = newOrientation;
-  currentMemberLegacyCommunity = String(onboardingRecord?.answers?.dating_community || currentMemberLegacyCommunity || "");
-  currentMemberCommunity = deriveDatingLaneFromOrientation(newOrientation, currentMemberLegacyCommunity);
   syncDatingCommunityFields();
 }
 

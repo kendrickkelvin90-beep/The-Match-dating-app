@@ -50,6 +50,26 @@ begin
 end;
 $lane_assignment$;
 
+-- Explicitly cover the agreed undisclosed-orientation behavior:
+-- legacy members keep their saved lane, while new undisclosed members are
+-- not guessed into either dating lane.
+insert into public.member_onboarding(user_id, answers)
+values
+  ('00000000-0000-4000-8000-000000000014', '{"sexual_orientation":"Prefer not to say","dating_community":"lgbtq"}'::jsonb),
+  ('00000000-0000-4000-8000-000000000015', '{"sexual_orientation":"Prefer not to say"}'::jsonb)
+on conflict (user_id) do update set answers = excluded.answers;
+
+do $undisclosed_orientation$
+begin
+  if private.member_dating_community('00000000-0000-4000-8000-000000000014') <> 'lgbtq' then
+    raise exception 'An existing undisclosed member must retain their saved legacy lane';
+  end if;
+  if private.member_dating_community('00000000-0000-4000-8000-000000000015') is not null then
+    raise exception 'A new undisclosed member must not be guessed into either dating lane';
+  end if;
+end;
+$undisclosed_orientation$;
+
 -- Make the fixture deterministic even when this SQL test is run after
 -- other regression files in the same disposable database.
 delete from public.likes

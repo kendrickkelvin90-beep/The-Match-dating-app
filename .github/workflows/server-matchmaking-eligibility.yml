@@ -184,8 +184,7 @@ jobs:
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/tests/server_matchmaking_eligibility_setup.sql
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -c "ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS nearby_current_city text, ADD COLUMN IF NOT EXISTS nearby_current_state text"
-          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \\
-            -f supabase/migrations/20261103165000_nearby_profiles_secure_for_all_users.sql
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1  -f supabase/migrations/20261103165000_nearby_profiles_secure_for_all_users.sql
 
       - name: Apply eligibility and general-dating migrations to disposable PostgreSQL
         env:
@@ -296,12 +295,10 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: |
-          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \\
-            -f supabase/migrations/20261124150000_nearby_orientation_lane_preference_guard.sql
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1  -f supabase/migrations/20261124150000_nearby_orientation_lane_preference_guard.sql
 
       - name: Test Nearby dating-lane separation, reciprocal preferences, and 50 km limit
         env:
           PGPASSWORD: postgres
         run: |
-          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \\
-            -f supabase/tests/nearby_dating_lane_separation.sql
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1  -f supabase/tests/nearby_dating_lane_separation.sql

@@ -23,7 +23,7 @@
  body.light-theme #tmAdminChatDialog .tm-chat-message p{color:#24202a}
  `;
  document.head.appendChild(style);
- let dialog=null,search=null,results=null,before=null,loading=false;
+ let dialog=null,search=null,results=null,before=null,loading=false,adminCheckInProgress=false,adminCheckAttempted=false;
  function makeDialog(){
   if(dialog)return;
   dialog=document.createElement("div");dialog.id="tmAdminChatDialog";
@@ -60,8 +60,11 @@
  }
  async function attachAdminControl(){
   const panel=document.getElementById("adminPanel");
-  if(!panel||panel.querySelector("[data-open-admin-chat-review]"))return;
+  if(!panel||panel.querySelector("[data-open-admin-chat-review]")||adminCheckInProgress||adminCheckAttempted)return;
+  adminCheckInProgress=true;
   const {data,error}=await db.rpc("is_match_admin");
+  adminCheckInProgress=false;
+  adminCheckAttempted=true;
   if(error||data!==true)return;
   makeDialog();
   const actions=panel.querySelector(".admin-top-actions")||panel.querySelector(".admin-topbar");
@@ -100,5 +103,5 @@
   migrateStoryBatch();
  }
  db.auth.getUser().then(({data})=>{if(data?.user)startMigration();}).catch(()=>{});
- db.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_IN"&&session?.user)startMigration();});
+ db.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_IN"&&session?.user){adminCheckAttempted=false;watch();startMigration();}});
 })();

@@ -37,6 +37,11 @@ The worker:
 
 The Story reader already supports `b2://` references through the authenticated `b2-media-access` Edge Function. The scheduler is activated by the database migration and the updated Edge Function deployment. After that one-time rollout, the media migration itself runs unattended, including when no one is signed in or has the app open.
 
+
+## Member activity reminders
+
+The re-engagement scheduler uses a separate private app-presence record, not `member_consistency.last_active_date` (which remains reserved for daily check-in streaks and rewards). The lightweight `member-presence.js` client records presence on sign-in/app start, when the app returns to the foreground, and during member interaction, with a ten-minute write throttle. Existing members are seeded from their last Auth sign-in. The daily job sends a friendly reminder after seven days without app activity, at most twice and at least fourteen days apart; returning to the app resets the reminder sequence. Banned and currently suspended accounts are excluded.
+
 ## Completion and verification
 
 - Confirm the scheduled job appears in Supabase Cron as `automatic-b2-story-media-migration`.

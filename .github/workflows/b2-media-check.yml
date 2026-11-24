@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "supabase/functions/b2-media-migrate/**"
+      - "supabase/functions/send-notification/**"
       - "supabase/migrations/*automatic_b2_story_media_migration*"
       - "supabase/config.toml"
       - ".github/workflows/b2-media-check.yml"
@@ -17,4 +18,6 @@ jobs:
         with:
           deno-version: v2.x
       - name: Type-check the scheduled B2 migration worker
-        run: deno check supabase/functions/b2-media-migrate/index.ts
+        run: |
+          deno check supabase/functions/b2-media-migrate/index.ts
+          deno check supabase/functions/send-notification/index.ts

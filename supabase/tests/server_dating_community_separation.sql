@@ -50,6 +50,32 @@ begin
 end;
 $lane_assignment$;
 
+-- Make the fixture deterministic even when this SQL test is run after
+-- other regression files in the same disposable database.
+delete from public.likes
+where liker_id in (
+  '00000000-0000-4000-8000-000000000001',
+  '00000000-0000-4000-8000-000000000002',
+  '00000000-0000-4000-8000-000000000010'
+)
+or liked_id in (
+  '00000000-0000-4000-8000-000000000001',
+  '00000000-0000-4000-8000-000000000002',
+  '00000000-0000-4000-8000-000000000010'
+);
+
+delete from public.messages
+where sender_id in (
+  '00000000-0000-4000-8000-000000000001',
+  '00000000-0000-4000-8000-000000000002',
+  '00000000-0000-4000-8000-000000000010'
+)
+or receiver_id in (
+  '00000000-0000-4000-8000-000000000001',
+  '00000000-0000-4000-8000-000000000002',
+  '00000000-0000-4000-8000-000000000010'
+);
+
 -- Keep the two LGBTQ+ fixtures mutually compatible so this test isolates
 -- lane eligibility rather than unrelated partner-preference filters.
 update public.profiles

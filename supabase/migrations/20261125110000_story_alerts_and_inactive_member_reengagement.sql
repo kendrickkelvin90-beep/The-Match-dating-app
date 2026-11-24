@@ -136,7 +136,7 @@ begin
     new.user_id,
     false,
     '/#discover',
-    'Watch Story'
+    'Check it out'
   from (
     select m.sender_id as user_id
     from public.messages m

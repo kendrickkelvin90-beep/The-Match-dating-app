@@ -14362,7 +14362,8 @@ async function loadStories(){
 discardStoryButton.type = "button";
 discardStoryButton.textContent = "Discard Story";
 discardStoryButton.style.cssText =
-  "position:absolute;top:max(12px,env(safe-area-inset-top));right:62px;z-index:5;padding:9px 12px;border:0;border-radius:18px;background:#b91c1c;color:white;font-weight:600;";
+  "position:absolute;top:max(12px,env(safe-area-inset-top));right:62px;z-index:1000010;padding:9px 12px;border:0;border-radius:18px;background:#b91c1c;color:white;font-weight:600;pointer-events:auto;touch-action:manipulation;";
+discardStoryButton.addEventListener("click", event => event.stopPropagation());
 discardStoryButton.style.display = story.user_id === currentUser.id ? "block" : "none";
 
 if (story.user_id === currentUser.id) {

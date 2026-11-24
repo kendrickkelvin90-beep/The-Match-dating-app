@@ -82,7 +82,7 @@
   if(migrationRunning)return;migrationRunning=true;
   try{
    const {data:admin,error:adminError}=await db.rpc("is_match_admin");
-   if(adminError||admin!==true)return;
+   if(adminError||admin!==true){window.matchStoryMigrationStarted=false;return;}
    const {data,error}=await db.functions.invoke("b2-media-migrate",{body:{category:"stories",limit:2}});
    if(error)throw error;
    if(data?.failures?.length){console.warn("Some legacy stories could not be migrated; originals remain safe.",data.failures);return;}
@@ -91,7 +91,7 @@
    }else{
     console.info("The Match legacy Story media migration is complete.");
    }
-  }catch(error){console.warn("Automatic Story migration paused; it will retry on a later admin session.",error);}
+  }catch(error){window.matchStoryMigrationStarted=false;console.warn("Automatic Story migration paused; it will retry on a later admin session.",error);}
   finally{if(!window.matchStoryMigrationScheduled)migrationRunning=false;}
  }
  function startMigration(){

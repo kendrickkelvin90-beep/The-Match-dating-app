@@ -185,6 +185,24 @@ create trigger stories_notify_connected_members
 after insert on public.stories
 for each row execute function public.notify_connected_members_of_story();
 
+-- Track actual app presence separately from the daily check-in streak.
+-- The existing member_consistency.last_active_date is a rewards/check-in date,
+-- so it must not be repurposed as a general activity timestamp.
+create table if not exists private.member_activity_state (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  last_seen_at timestamptz not null,
+  updated_at timestamptz not null default now()
+);
+alter table private.member_activity_state enable row level security;
+revoke all on private.member_activity_state from public, anon, authenticated, service_role;
+
+-- Seed existing members from their most recent Auth sign-in so the first
+-- reminder cycle has a sensible baseline before they next open the app.
+insert into private.member_activity_state(user_id,last_seen_at,updated_at)
+select id, coalesce(last_sign_in_at,created_at), now()
+from auth.users
+on conflict(user_id) do nothing;
+
 create table if not exists public.member_reengagement_state (
   user_id uuid primary key references auth.users(id) on delete cascade,
   reminders_sent integer not null default 0 check (reminders_sent between 0 and 2),
@@ -194,15 +212,41 @@ create table if not exists public.member_reengagement_state (
 alter table public.member_reengagement_state enable row level security;
 revoke all on public.member_reengagement_state from public, anon, authenticated;
 
-create or replace function public.reset_reengagement_on_activity()
+-- Called on app start, sign-in, and when the member returns to the foreground.
+-- The RPC takes no user ID, so a member can update only their own presence.
+create or replace function public.record_member_presence()
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare v_uid uuid := auth.uid();
+begin
+  if v_uid is null then
+    raise exception 'Sign in to record activity.' using errcode = '42501';
+  end if;
+
+  insert into private.member_activity_state(user_id,last_seen_at,updated_at)
+  values(v_uid,now(),now())
+  on conflict(user_id) do update
+    set last_seen_at = excluded.last_seen_at,
+        updated_at = excluded.updated_at
+    where private.member_activity_state.last_seen_at < now() - interval '10 minutes';
+
+  return true;
+end;
+$function$;
+revoke all on function public.record_member_presence() from public, anon;
+grant execute on function public.record_member_presence() to authenticated;
+
+create or replace function private.reset_reengagement_on_activity()
 returns trigger
 language plpgsql
 security definer
 set search_path = ''
 as $function$
 begin
-  if new.last_active_date is distinct from old.last_active_date
-     and new.last_active_date > old.last_active_date then
+  if new.last_seen_at > old.last_seen_at then
     update public.member_reengagement_state
       set reminders_sent = 0, last_reminded_at = null, updated_at = now()
       where user_id = new.user_id;
@@ -210,13 +254,13 @@ begin
   return new;
 end;
 $function$;
-revoke all on function public.reset_reengagement_on_activity() from public, anon, authenticated;
-drop trigger if exists member_consistency_reset_reengagement on public.member_consistency;
-create trigger member_consistency_reset_reengagement
-after update of last_active_date on public.member_consistency
-for each row execute function public.reset_reengagement_on_activity();
+revoke all on function private.reset_reengagement_on_activity() from public, anon, authenticated;
+drop trigger if exists member_activity_reset_reengagement on private.member_activity_state;
+create trigger member_activity_reset_reengagement
+after update of last_seen_at on private.member_activity_state
+for each row execute function private.reset_reengagement_on_activity();
 
-create or replace function public.process_inactive_member_reminders()
+create or replace function private.process_inactive_member_reminders()
 returns integer
 language plpgsql
 security definer
@@ -225,20 +269,21 @@ as $function$
 declare v_count integer := 0;
 begin
   with due as (
-    select mc.user_id, coalesce(nullif(btrim(p.display_name), ''), 'there') as display_name
-    from public.member_consistency mc
-    left join public.profiles p on p.id = mc.user_id
-    left join public.member_reengagement_state state on state.user_id = mc.user_id
-    where mc.last_active_date <= (now() at time zone 'Africa/Lagos')::date - 7
-      and mc.last_active_date >= (now() at time zone 'Africa/Lagos')::date - 60
+    select activity.user_id,
+           coalesce(nullif(btrim(p.display_name), ''), 'there') as display_name
+    from private.member_activity_state activity
+    left join public.profiles p on p.id = activity.user_id
+    left join public.member_reengagement_state state on state.user_id = activity.user_id
+    where activity.last_seen_at <= now() - interval '7 days'
+      and activity.last_seen_at >= now() - interval '60 days'
       and coalesce(state.reminders_sent, 0) < 2
       and (state.last_reminded_at is null or state.last_reminded_at < now() - interval '14 days')
       and not exists (
         select 1 from public.member_moderation mm
-        where mm.user_id = mc.user_id
+        where mm.user_id = activity.user_id
           and (mm.status = 'banned' or (mm.status = 'suspended' and mm.expires_at > now()))
       )
-    for update of mc skip locked
+    for update of activity skip locked
   ), inserted as (
     insert into public.notifications(user_id,type,title,body,is_read)
     select user_id, 'member_welcome_back',
@@ -259,8 +304,7 @@ begin
   return v_count;
 end;
 $function$;
-revoke all on function public.process_inactive_member_reminders() from public, anon, authenticated;
-grant execute on function public.process_inactive_member_reminders() to postgres;
+revoke all on function private.process_inactive_member_reminders() from public, anon, authenticated;
 
 do $schedule$
 begin
@@ -269,7 +313,7 @@ begin
     perform cron.schedule(
       'inactive-member-reengagement',
       '15 7 * * *',
-      $$select public.process_inactive_member_reminders();$$
+      $select private.process_inactive_member_reminders();$
     );
   end if;
 end;

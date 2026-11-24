@@ -196,6 +196,8 @@ create table if not exists private.member_activity_state (
 );
 alter table private.member_activity_state enable row level security;
 revoke all on private.member_activity_state from public, anon, authenticated, service_role;
+create index if not exists member_activity_state_last_seen_at_idx
+  on private.member_activity_state(last_seen_at);
 
 -- Seed existing members from their most recent Auth sign-in so the first
 -- reminder cycle has a sensible baseline before they next open the app.

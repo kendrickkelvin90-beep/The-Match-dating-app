@@ -62,9 +62,17 @@ begin
     raise exception 'Service role required' using errcode = '42501';
   end if;
 
+  -- Keep the schedule alive while any legacy Story is still eligible for a
+  -- future retry. Stop only when all remaining legacy records are marked as
+  -- permanently failed; their originals remain in Supabase for admin review.
   if exists (
-    select 1 from public.stories
-    where media_url is not null and media_url not like 'b2://%'
+    select 1
+    from public.stories s
+    left join public.b2_media_migration_failures f
+      on f.category = 'stories' and f.record_id = s.id
+    where s.media_url is not null
+      and s.media_url not like 'b2://%'
+      and (f.record_id is null or not f.failed_permanently)
   ) then
     return false;
   end if;
@@ -106,8 +114,9 @@ end;
 $vault$;
 
 -- The database invokes the worker once a minute, but only while a Story is
--- eligible. Failed records back off and are retried; permanently failed items
--- remain in Supabase and are visible to administrators for investigation.
+-- due for migration or retry. Failed records back off and are retried up to
+-- five times; permanently failed items remain in Supabase and are visible to
+-- administrators for investigation. The job stops when no retryable rows remain.
 select cron.schedule(
   'automatic-b2-story-media-migration',
   '* * * * *',

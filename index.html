@@ -10755,54 +10755,6 @@ $("authForm").onsubmit = async e => {
       }
 
 
-      const savedRegistrationAnswers = !loginMode && Object.keys(onboardingAnswers).length
-        ? onboardingAnswers
-        : (user.user_metadata?.registration_answers || {});
-      const privateContactAnswers = savedRegistrationAnswers;
-      if (Object.keys(savedRegistrationAnswers).length) {
-        const answers = { ...savedRegistrationAnswers };
-
-        // Keep private contact details out of the general answers.
-        delete answers.phone_number;
-        delete answers.recovery_email;
-
-        const now = new Date().toISOString();
-
-        const { error: onboardingError } = await db
-          .from("member_onboarding")
-          .upsert({
-            user_id: user.id,
-            current_step: 3,
-            answers,
-            safety_accepted: answers.respect_boundaries === "yes"
-              && answers.community_safety === "yes",
-            terms_accepted: answers.terms_accepted === "yes",
-            age_confirmed: answers.age_confirmed === "yes",
-            completed_at: now,
-            updated_at: now
-          }, { onConflict: "user_id" });
-
-        if (onboardingError) throw onboardingError;
-
-        if (privateContactAnswers.phone_number || privateContactAnswers.recovery_email) {
-          const { error: detailsError } = await db
-            .from("member_private_details")
-            .upsert({
-              user_id: user.id,
-              phone_number: privateContactAnswers.phone_number || null,
-              recovery_email: privateContactAnswers.recovery_email || null,
-              updated_at: now
-            }, { onConflict: "user_id" });
-
-          if (detailsError) throw detailsError;
-        }
-        if (user.user_metadata?.registration_answers) {
-          db.auth.updateUser({ data: { registration_answers: null } }).catch(error =>
-            console.warn("Could not clear temporary registration answers:", error)
-          );
-        }
-      }
-
       await showProfile(user, loginMode);
     }
   } catch (error) {
@@ -11799,10 +11751,52 @@ document.querySelectorAll('input[name="datingInterest"]').forEach(input => {
   input.addEventListener("change", refreshDatingInterestCounter);
 });
 
+async function persistPendingRegistrationAnswers(user) {
+  const pending = user?.user_metadata?.registration_answers;
+  if (!user?.id || !pending || typeof pending !== "object" || !Object.keys(pending).length) return;
+
+  const answers = { ...pending };
+  const phoneNumber = answers.phone_number || null;
+  const recoveryEmail = answers.recovery_email || null;
+  delete answers.phone_number;
+  delete answers.recovery_email;
+
+  const now = new Date().toISOString();
+  const { error: onboardingError } = await db.from("member_onboarding").upsert({
+    user_id: user.id,
+    current_step: 3,
+    answers,
+    safety_accepted: answers.respect_boundaries === "yes" && answers.community_safety === "yes",
+    terms_accepted: answers.terms_accepted === "yes",
+    age_confirmed: answers.age_confirmed === "yes",
+    completed_at: now,
+    updated_at: now
+  }, { onConflict: "user_id" });
+  if (onboardingError) throw onboardingError;
+
+  if (phoneNumber || recoveryEmail) {
+    const { error: detailsError } = await db.from("member_private_details").upsert({
+      user_id: user.id,
+      phone_number: phoneNumber,
+      recovery_email: recoveryEmail,
+      updated_at: now
+    }, { onConflict: "user_id" });
+    if (detailsError) throw detailsError;
+  }
+
+  const { error: metadataError } = await db.auth.updateUser({
+    data: { registration_answers: null }
+  });
+  if (metadataError) {
+    console.warn("Registration answers were saved, but temporary metadata could not be cleared:", metadataError);
+  }
+}
+
 async function showProfile(user, restoreToDiscover = false){
 if (!(await enforceMemberModeration(user))) return;
 currentUser=user;
 try {
+  await persistPendingRegistrationAnswers(user);
   await loadCurrentMemberOrientation();
 } catch (orientationError) {
   console.warn("Member orientation could not be loaded; member discovery remains locked until it can be verified.", orientationError);

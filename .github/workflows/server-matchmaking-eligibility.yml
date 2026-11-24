@@ -25,6 +25,9 @@ on:
       - "supabase/tests/profile_discover_visibility_pronouns.sql"
       - "supabase/tests/profile_pause_discovery.sql"
       - "supabase/migrations/20261118100000_strict_dating_community_separation.sql"
+      - "supabase/migrations/20261103165000_nearby_profiles_secure_for_all_users.sql"
+      - "supabase/migrations/20261124150000_nearby_orientation_lane_preference_guard.sql"
+      - "supabase/tests/nearby_dating_lane_separation.sql"
       - "supabase/migrations/20261124120000_preference_based_separated_dating_lanes.sql"
       - "supabase/migrations/20261118110000_keep_dating_community_private.sql"
       - "supabase/migrations/20261118120000_shared_dating_details_strict_community_guard.sql"
@@ -180,6 +183,9 @@ jobs:
         run: |
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/tests/server_matchmaking_eligibility_setup.sql
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -c "ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS nearby_current_city text, ADD COLUMN IF NOT EXISTS nearby_current_state text"
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \\
+            -f supabase/migrations/20261103165000_nearby_profiles_secure_for_all_users.sql
 
       - name: Apply eligibility and general-dating migrations to disposable PostgreSQL
         env:
@@ -285,3 +291,17 @@ jobs:
         run: |
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/tests/server_dating_community_separation.sql
+
+      - name: Apply Nearby orientation and reciprocal-preference guard
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \\
+            -f supabase/migrations/20261124150000_nearby_orientation_lane_preference_guard.sql
+
+      - name: Test Nearby dating-lane separation, reciprocal preferences, and 50 km limit
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \\
+            -f supabase/tests/nearby_dating_lane_separation.sql

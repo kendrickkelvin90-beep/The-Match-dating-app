@@ -3,10 +3,7 @@ name: B2 media migration checks
 on:
   pull_request:
     paths:
-      - "supabase/functions/b2-media-access/**"
       - "supabase/functions/b2-media-migrate/**"
-      - "supabase/functions/b2-media-upload/**"
-      - "supabase/functions/b2-media/**"
       - "supabase/migrations/*automatic_b2_story_media_migration*"
       - "supabase/config.toml"
       - ".github/workflows/b2-media-check.yml"
@@ -19,9 +16,5 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - name: Type-check B2 Edge Functions
-        run: |
-          deno check supabase/functions/b2-media/index.ts
-          deno check supabase/functions/b2-media-access/index.ts
-          deno check supabase/functions/b2-media-migrate/index.ts
-          deno check supabase/functions/b2-media-upload/index.ts
+      - name: Type-check the scheduled B2 migration worker
+        run: deno check supabase/functions/b2-media-migrate/index.ts

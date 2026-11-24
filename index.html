@@ -6524,12 +6524,6 @@ button:disabled,input:disabled,select:disabled,textarea:disabled{opacity:.58;cur
 <h2 id="greeting">Welcome ❤️</h2>
 <p class="small">Complete your profile to meet people. Location is optional.</p>
 <form id="profileForm">
-<div id="datingCommunityRequiredNotice" role="alert" aria-live="polite" class="member-card" style="display:none;border:1px solid rgba(210,173,104,.75);background:rgba(210,173,104,.09);padding:14px;margin:12px 0">
-  <strong style="color:var(--tm-gold-bright)">Finish your private dating-community setup</strong>
-  <p class="small" style="margin:7px 0 0">Your account needs one private choice before Discover, Nearby, likes and community stories can work. Choose LGBTQ+ or Straight yourself below, then save your profile. This choice is never inferred from your gender or orientation and is not shown publicly.</p>
-  <p class="small" id="datingCommunityRecoveryStatus" style="margin:8px 0 0">Your existing profile and photos are kept. You only need to confirm your dating community.</p>
-  <button type="button" class="btn secondary" id="openDatingCommunitySetup" style="margin-top:10px">Choose my dating community</button>
-</div>
 <div class="profile-onboarding-progress" id="profileOnboardingProgress" aria-label="Profile setup progress"><div class="profile-onboarding-top"><span id="profileStepLabel">STEP 1 OF 3</span><span id="profileStepPercent">33%</span></div><div class="profile-onboarding-track"><span id="profileStepProgress" style="width:33%"></span></div><p id="profileStepHint">Start with the basics so members know who you are.</p></div>
 <section class="profile-onboarding-step" data-profile-step="1" aria-label="Basic profile"><div class="profile-step-heading"><span>01</span><div><h3>About you</h3><p>Let’s start with the essentials.</p></div></div>
 <label for="displayName">Display name *</label>
@@ -6562,7 +6556,7 @@ button:disabled,input:disabled,select:disabled,textarea:disabled{opacity:.58;cur
   <option value="use my name">Use my name</option>
 </select>
 <p class="small">Pronouns are optional and appear on your public profile only when you choose them.</p>
-<div id="datingCommunitySetupFields" hidden></div>
+
  <div id="sexualOrientationSection">
  <label for="sexualOrientation">Sexual orientation (private)</label>
 <select id="sexualOrientation">
@@ -7724,7 +7718,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     <h3>🛡️ Profile privacy</h3>
     <label for="discoverVisibilitySelect">Who can discover my profile?</label>
     <select id="discoverVisibilitySelect">
-      <option value="everyone">Everyone in my eligible dating community</option>
+      <option value="everyone">Everyone in my eligible dating lane</option>
       <option value="matches_only">Existing matches only</option>
     </select>
     <p class="small" id="discoverVisibilityStatus" role="status" aria-live="polite">This controls new Discover recommendations only. Existing matches and chats remain available.</p>
@@ -7824,17 +7818,17 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
       </div>
 
       <div class="admin-section-heading admin-queue-heading" style="margin-top:18px">
-        <div><p class="admin-eyebrow">MEMBER ACTIVATION</p><h3>Dating-community readiness</h3></div>
-        <span class="admin-data-note">Private choices · aggregate counts only</span>
+        <div><p class="admin-eyebrow">MEMBER ACTIVATION</p><h3>Dating-lane readiness</h3></div>
+        <span class="admin-data-note">Orientation-derived lanes · aggregate counts only</span>
       </div>
       <div class="admin-metrics-grid">
-        <article class="admin-metric-card"><p class="admin-metric-label">LGBTQ+ community</p><p class="admin-metric-value" id="adminLgbtqCommunityCount">—</p><span class="admin-metric-foot">Members who selected LGBTQ+</span></article>
-        <article class="admin-metric-card"><p class="admin-metric-label">Straight community</p><p class="admin-metric-value" id="adminStraightCommunityCount">—</p><span class="admin-metric-foot">Members who selected Straight</span></article>
-        <article class="admin-metric-card admin-metric-attention"><p class="admin-metric-label">Need community choice</p><p class="admin-metric-value" id="adminCommunitySetupNeeded">—</p><span class="admin-metric-foot">Legacy accounts needing their own choice</span></article>
+        <article class="admin-metric-card"><p class="admin-metric-label">LGBTQ+ lane</p><p class="admin-metric-value" id="adminLgbtqCommunityCount">—</p><span class="admin-metric-foot">Members whose orientation places them in this lane</span></article>
+        <article class="admin-metric-card"><p class="admin-metric-label">Straight lane</p><p class="admin-metric-value" id="adminStraightCommunityCount">—</p><span class="admin-metric-foot">Members whose orientation places them in this lane</span></article>
+        <article class="admin-metric-card admin-metric-attention"><p class="admin-metric-label">Need orientation</p><p class="admin-metric-value" id="adminCommunitySetupNeeded">—</p><span class="admin-metric-foot">Profiles without a disclosed orientation or legacy lane</span></article>
         <article class="admin-metric-card"><p class="admin-metric-label">Fresh Nearby locations</p><p class="admin-metric-value" id="adminFreshNearbyCount">—</p><span class="admin-metric-foot">Consent-based updates in last 7 days</span></article>
-        <article class="admin-metric-card admin-metric-attention"><p class="admin-metric-label">Legacy profiles with fresh GPS</p><p class="admin-metric-value" id="adminLegacyFreshLocationCount">—</p><span class="admin-metric-foot">Need to choose a dating community</span></article>
+        <article class="admin-metric-card admin-metric-attention"><p class="admin-metric-label">Legacy profiles with fresh GPS</p><p class="admin-metric-value" id="adminLegacyFreshLocationCount">—</p><span class="admin-metric-foot">Need orientation to assign a lane</span></article>
       </div>
-      <p class="admin-data-note">Members who have not chosen a community are not included in either dating feed. Never assign a community on their behalf.</p>
+      <p class="admin-data-note">Members without a disclosed orientation or legacy lane are not included in either dating feed. Never infer a member's orientation.</p>
 
       <div class="admin-section-heading admin-queue-heading">
         <div><p class="admin-eyebrow">ACTION CENTRE</p><h3>Requests &amp; moderation</h3></div>
@@ -8071,7 +8065,7 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
 <label for="eventReportDetails">Additional details (optional)</label><textarea id="eventReportDetails" maxlength="1000" placeholder="Tell us what concerns you. Avoid sharing unnecessary personal information."></textarea>
 <button type="button" id="submitEventReport" class="btn secondary">Submit private report</button><p id="eventReportStatus" class="status" role="status"></p></div>
 </div></div>
-<div id="eventsCreatePanel" class="hidden"><div class="events-host-intro"><span class="events-host-kicker">HOST WITH THE MATCH</span><h3>Bring your community together.</h3><p>Submit your event for review. Once approved, it will be visible only to members of your saved dating community.</p><div class="events-host-steps"><span><b>01</b> Submit details</span><span><b>02</b> Payment review</span><span><b>03</b> Go live</span></div></div><div class="events-info-card"><strong>Verified organisers only</strong><p>Every event must be ticketed. The organiser promotion fee starts at ₦10,000 and is separate from attendee ticket payments.</p></div>
+<div id="eventsCreatePanel" class="hidden"><div class="events-host-intro"><span class="events-host-kicker">HOST WITH THE MATCH</span><h3>Bring your community together.</h3><p>Submit your event for review. Once approved, it will be visible only to members in your eligible dating lane.</p><div class="events-host-steps"><span><b>01</b> Submit details</span><span><b>02</b> Payment review</span><span><b>03</b> Go live</span></div></div><div class="events-info-card"><strong>Verified organisers only</strong><p>Every event must be ticketed. The organiser promotion fee starts at ₦10,000 and is separate from attendee ticket payments.</p></div>
 <form id="eventSubmissionForm" class="events-form">
 <label for="eventTitle">Event name</label><input id="eventTitle" maxlength="100" required>
 <label for="eventDescription">About this event</label><textarea id="eventDescription" maxlength="2000" minlength="20" required></textarea><label for="eventPoster">Event poster (optional)</label><input id="eventPoster" type="file" accept="image/jpeg,image/png,image/webp"><small class="events-field-help">JPG, PNG or WebP · maximum 5 MB. Your poster stays private until approval.</small><div id="eventPosterPreview" class="hidden" style="margin:12px 0 18px;padding:12px;border:1px solid #b99555;border-radius:14px;background:#171510"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px"><strong style="color:#e4c47f;font-size:13px">Selected flyer preview</strong><button id="removeEventPoster" type="button" style="border:1px solid #6c5940;border-radius:20px;background:#211b12;color:#f1d49a;padding:6px 11px">Remove</button></div><img id="eventPosterPreviewImage" alt="Preview of selected event flyer" style="display:block;width:100%;max-height:320px;object-fit:contain;border-radius:9px;background:#080808"><p id="eventPosterFileName" style="margin:8px 0 0;color:#c9c0af;font-size:12px;overflow-wrap:anywhere"></p></div>
@@ -10405,13 +10399,6 @@ const onboardingQuestions = [
     ]
   },
   {
-    key: "dating_community",
-    title: "Which dating community would you like to join?",
-    help: "This private choice controls which members can appear in your dating discovery. You can change it later in your profile.",
-    options: ["LGBTQ+ community", "Straight community"],
-    values: ["lgbtq", "straight"]
-  },
-  {
     key: "relationship_goal",
     title: "What kind of connection are you looking for?",
     options: ["A relationship", "Dating", "Friendship", "Something casual", "Still figuring it out"]
@@ -11676,32 +11663,41 @@ function profileBioHasPhoneNumber(value) {
 
 let currentMemberOrientation = "";
 let currentMemberCommunity = "";
+let currentMemberLegacyCommunity = "";
+
+function deriveDatingLaneFromOrientation(orientation, legacyCommunity = "") {
+  const normalized = String(orientation || "").trim().toLowerCase();
+  if (["straight / heterosexual", "straight", "heterosexual", "heterosexual / straight", "hetero"].includes(normalized)) {
+    return "straight";
+  }
+  if (normalized && !["prefer not to say", "prefer not to disclose", "rather not say", "not disclosed", "not listed", "unknown"].includes(normalized)) {
+    return "lgbtq";
+  }
+  const legacy = String(legacyCommunity || "").trim().toLowerCase();
+  return ["straight", "lgbtq"].includes(legacy) ? legacy : "";
+}
 
 async function loadCurrentMemberOrientation() {
   if (!currentUser?.id) {
     currentMemberOrientation = "";
     currentMemberCommunity = "";
+    currentMemberLegacyCommunity = "";
     return currentMemberOrientation;
   }
   const { data, error } = await db.from("member_onboarding")
     .select("answers").eq("user_id", currentUser.id).maybeSingle();
   if (error) throw error;
   currentMemberOrientation = String(data?.answers?.sexual_orientation || "Prefer not to say");
+  currentMemberLegacyCommunity = String(data?.answers?.dating_community || "");
+  currentMemberCommunity = deriveDatingLaneFromOrientation(currentMemberOrientation, currentMemberLegacyCommunity);
   if ($("lgbtqLifestyleFlag")) $("lgbtqLifestyleFlag").checked = !!data?.answers?.lgbtq_lifestyle;
-  currentMemberCommunity = String(data?.answers?.dating_community || "");
   if ($("sexualOrientation")) $("sexualOrientation").value = currentMemberOrientation;
-  // No fallback community assignment.
-  const hasSavedCommunity = ["lgbtq", "straight"].includes(currentMemberCommunity);
-  const communitySetupFields = $("datingCommunitySetupFields");
-  if (communitySetupFields) communitySetupFields.hidden = hasSavedCommunity;
-  const communityNotice = $("datingCommunityRequiredNotice");
-  if (communityNotice) communityNotice.style.display = hasSavedCommunity ? "none" : "block";
   syncDatingCommunityFields();
   return currentMemberOrientation;
 }
 
-// Events is loaded in a separate script block, so explicitly expose this
-// authenticated community loader and its read-only community state.
+// Keep this bridge for existing Events and Nearby callers; the lane itself is
+// derived from the member's private orientation, not a signup community choice.
 window.loadCurrentMemberOrientation = loadCurrentMemberOrientation;
 Object.defineProperty(window, "currentMemberCommunity", {
   configurable: true,
@@ -11710,14 +11706,11 @@ Object.defineProperty(window, "currentMemberCommunity", {
 
 function syncDatingCommunityFields() {
   const community = currentMemberCommunity || "";
-  const straight = community === "straight";
   const orientationSection = $("sexualOrientationSection");
-  if (orientationSection) orientationSection.hidden = !community || community === "straight";
+  if (orientationSection) orientationSection.hidden = false;
   const roleSection = $("queerRolePreferencesSection");
-  if (orientationSection) orientationSection.hidden = straight;
   if (roleSection) roleSection.hidden = community !== "lgbtq";
 
-  // Do not default an unknown member into the LGBTQ+ discovery controls.
   const straightDiscovery = $("straightDiscoveryPreferences");
   const queerDiscovery = $("queerDiscoveryPreferences");
   if (straightDiscovery) straightDiscovery.hidden = community !== "straight";
@@ -11725,31 +11718,14 @@ function syncDatingCommunityFields() {
 
   const discoveryRoleCard = $("discoveryRolePreferenceCard");
   if (discoveryRoleCard) discoveryRoleCard.hidden = community !== "lgbtq";
-
-  if (straight && $("sexualOrientation")) {
-    $("sexualOrientation").value = "Straight / heterosexual";
-  } else if (community === "lgbtq" && $("sexualOrientation")?.value === "Straight / heterosexual") {
-    $("sexualOrientation").value = "Prefer not to say";
-  }
 }
 
-$("datingCommunity")?.addEventListener("change", () => {
-  // The select is an unsaved draft. Keep the persisted community unchanged
-  // until the profile save and onboarding upsert both succeed.
+$("sexualOrientation")?.addEventListener("change", () => {
+  currentMemberCommunity = deriveDatingLaneFromOrientation(
+    $("sexualOrientation")?.value,
+    currentMemberLegacyCommunity
+  );
   syncDatingCommunityFields();
-  const recoveryStatus = $("datingCommunityRecoveryStatus");
-  const nextCommunity = $("datingCommunity")?.value;
-  if (recoveryStatus) {
-    recoveryStatus.textContent = ["lgbtq", "straight"].includes(nextCommunity)
-      ? "Choice selected. Tap Save profile below to restore access to member discovery."
-      : "Choose the dating community you personally identify with. Your choice stays private.";
-  }
-});
-$("openDatingCommunitySetup")?.addEventListener("click", () => {
-  const selector = $("datingCommunity");
-  if (!selector) return;
-  selector.scrollIntoView({ behavior: "smooth", block: "center" });
-  selector.focus({ preventScroll: true });
 });
 
 async function loadMyDatingDetails() {
@@ -11811,9 +11787,10 @@ currentUser=user;
 try {
   await loadCurrentMemberOrientation();
 } catch (orientationError) {
-  console.warn("Member community preferences could not be loaded; member discovery remains locked until they can be verified.", orientationError);
+  console.warn("Member orientation could not be loaded; member discovery remains locked until it can be verified.", orientationError);
   currentMemberOrientation = "";
   currentMemberCommunity = "";
+  currentMemberLegacyCommunity = "";
 }
 const queerRoleSection = $("queerRolePreferencesSection");
 if (queerRoleSection) queerRoleSection.hidden = currentMemberCommunity !== "lgbtq";
@@ -12010,9 +11987,6 @@ if(age<18||age>120)throw Error("The Match is for adults aged 18 and above.");
 if(!$("displayName").value.trim())throw Error("Please enter your display name.");
 if(!$("gender").value.trim())throw Error("Please select your gender identity.");
 if(!$("interest").value.trim())throw Error("Please select who you're interested in.");
-if(!["lgbtq","straight"].includes($("datingCommunity")?.value || currentMemberCommunity)) {
-  throw Error("Please choose your dating community before saving.");
-}
 if(!$("city").value.trim())throw Error("Please enter your city.");
 if(!$("bio").value.trim())throw Error("Please tell members a little about yourself.");
   
@@ -12020,7 +11994,11 @@ if(profileBioHasPhoneNumber($("bio").value)) {
   throw Error("For your safety, phone numbers are not allowed in profile details. Please remove the number and save again.");
 }
 
-// Role preferences are optional for the expanded general dating community.
+// The existing private orientation determines which dating lane is used.
+const newOrientation = $("sexualOrientation")?.value || currentMemberOrientation || "Prefer not to say";
+const newCommunity = deriveDatingLaneFromOrientation(newOrientation, currentMemberLegacyCommunity);
+
+// Role preferences are optional for the expanded general dating platform.
 let p={
 id:currentUser.id,
 display_name:$("displayName").value.trim(),
@@ -12029,7 +12007,7 @@ gender_identity:$("gender").value,
 interested_in:$("interest").value,
 pronouns:$("profilePronouns").value || null,
   
-sexual_roles:$("datingCommunity")?.value === "lgbtq" && document.querySelector('input[name="sexualRole"]:checked')
+sexual_roles:newCommunity === "lgbtq" && document.querySelector('input[name="sexualRole"]:checked')
   ? [document.querySelector('input[name="sexualRole"]:checked').value]
   : [],
 gender_presentation:Array.from(document.querySelectorAll('input[name="genderPresentation"]:checked')).map(el=>el.value),
@@ -12106,16 +12084,13 @@ const { error: datingDetailsError } = await db.from("member_dating_details").ups
 }, { onConflict: "user_id" });
 if (datingDetailsError) throw datingDetailsError;
 
-const newCommunity = currentMemberCommunity || "";
-const newOrientation = $("sexualOrientation")?.value || currentMemberOrientation;
 const { data: onboardingRecord, error: onboardingReadError } = await db.from("member_onboarding").select("answers").eq("user_id", currentUser.id).maybeSingle();
 if (onboardingReadError) throw onboardingReadError;
 const lifestyleFlag = !!$("lgbtqLifestyleFlag")?.checked;
-if (newOrientation !== currentMemberOrientation || newCommunity !== currentMemberCommunity || lifestyleFlag !== !!onboardingRecord?.answers?.lgbtq_lifestyle) {
+if (newOrientation !== currentMemberOrientation || lifestyleFlag !== !!onboardingRecord?.answers?.lgbtq_lifestyle) {
   const updatedAnswers = {
     ...(onboardingRecord?.answers || {}),
     sexual_orientation: newOrientation,
-    dating_community: newCommunity,
     lgbtq_lifestyle: lifestyleFlag
   };
   const { error: onboardingSaveError } = await db.from("member_onboarding").upsert({
@@ -12126,12 +12101,8 @@ if (newOrientation !== currentMemberOrientation || newCommunity !== currentMembe
   if (onboardingSaveError) throw onboardingSaveError;
 
   currentMemberOrientation = newOrientation;
-  currentMemberCommunity = newCommunity;
-  // Community is a one-time private account choice; hide setup after saving.
-  const communitySetupFields = $("datingCommunitySetupFields");
-  if (communitySetupFields) communitySetupFields.hidden = true;
-  const communityNotice = $("datingCommunityRequiredNotice");
-  if (communityNotice) communityNotice.style.display = "none";
+  currentMemberLegacyCommunity = String(onboardingRecord?.answers?.dating_community || currentMemberLegacyCommunity || "");
+  currentMemberCommunity = deriveDatingLaneFromOrientation(newOrientation, currentMemberLegacyCommunity);
   syncDatingCommunityFields();
 }
 
@@ -12279,13 +12250,13 @@ async function loadNearby(){
   try {
     await loadCurrentMemberOrientation();
   } catch (communityLoadError) {
-    console.warn("Could not refresh private dating-community choice:", communityLoadError);
+    console.warn("Could not refresh orientation-derived dating lane:", communityLoadError);
   }
 
   const list=$("profileList");
   list.replaceChildren();
   if (!["lgbtq","straight"].includes(currentMemberCommunity)) {
-    status("discoverStatus","Choose your private dating community in your profile to access Discover.",true);
+    status("discoverStatus","Select your private sexual orientation in your profile to enter the correct dating lane. It stays hidden from other members.",true);
     return;
   }
   // No fallback community assignment.
@@ -14052,10 +14023,10 @@ async function loadPremiumNearby(){
   try {
     await loadCurrentMemberOrientation();
   } catch (communityLoadError) {
-    console.warn("Could not refresh private dating-community choice before Nearby:", communityLoadError);
+    console.warn("Could not refresh orientation-derived dating lane before Nearby:", communityLoadError);
   }
   // No fallback community assignment.
-  if (!["lgbtq","straight"].includes(currentMemberCommunity)) { status("nearbyMembersStatus","Choose your private dating community in your profile to access Nearby.",true); return; }
+  if (!["lgbtq","straight"].includes(currentMemberCommunity)) { status("nearbyMembersStatus","Select your private sexual orientation in your profile to enter the correct dating lane. It stays hidden from other members.",true); return; }
   premiumNearbyLoadInProgress=true;
   const list=$("nearbyMembersList");
   list.replaceChildren();
@@ -14101,7 +14072,7 @@ async function loadPremiumNearby(){
     if(!nearbyViewerIsPremium){
       status("nearbyMembersStatus",mapCount
         ? "The Nearby map is ready. Subscribe to Premium to view profiles and cards."
-        : "No eligible members in your private dating community have shared a fresh location within 50 km yet.");
+        : "No eligible members in your dating lane have shared a fresh location within 50 km yet.");
       return;
     }
     const {data:peopleData,error:peopleError}=await db.rpc("premium_nearby_profiles_secure",{p_max_distance_km:50});
@@ -14111,7 +14082,7 @@ async function loadPremiumNearby(){
     let people=[...uniquePeople.values()].map(p=>({...p,_distance:p.distance_km==null?null:Number(p.distance_km)}));
     for(let i=people.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[people[i],people[j]]=[people[j],people[i]];}
     if(!people.length){
-      status("nearbyMembersStatus",mapCount?"The map has eligible pins, but no member cards are available yet.":"No eligible members in your private dating community have shared a fresh location within 50 km yet.");
+      status("nearbyMembersStatus",mapCount?"The map has eligible pins, but no member cards are available yet.":"No eligible members in your dating lane have shared a fresh location within 50 km yet.");
       return;
     }
     const nearbyMemberIds=people.map(person=>person.id);
@@ -16256,7 +16227,7 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
     if (!straightMode && !lgbtqMode) {
       status(
         "discoveryPreferencesStatus",
-        "Choose your dating community in your profile before setting discovery preferences.",
+        "Select your private sexual orientation in your profile before setting discovery preferences.",
         true
       );
       return;
@@ -16371,7 +16342,7 @@ $("backFromDiscoveryPreferences").addEventListener("click", () => {
 
       status(
         "discoveryPreferencesStatus",
-        "Optional filters reset. Your private dating community and mutual matching rules still apply."
+        "Optional filters reset. Your dating lane and mutual matching rules still apply."
       );
     } catch (error) {
       console.error("Could not completely reset discovery preferences:", error);
@@ -21418,7 +21389,7 @@ async function load(){
 if(!currentUser?.id)throw Error("Please sign in to view Events.");
 await loadCurrentMemberOrientation();
 // No fallback community assignment.
-if(!["lgbtq","straight"].includes(currentMemberCommunity)){E("eventsPageStatus").textContent="Choose your private dating community in your profile to access community Events.";eventsCache=[];renderEvents();return;}
+if(!["lgbtq","straight"].includes(currentMemberCommunity)){E("eventsPageStatus").textContent="Select your private sexual orientation in your profile to enter the correct Events lane.";eventsCache=[];renderEvents();return;}
 const {data:p,error:pe}=await db.from("profiles").select("is_verified").eq("id",currentUser.id).maybeSingle();if(pe)throw pe;
 verifiedMember=p?.is_verified===true;
 const info=E("eventsCreatePanel")?.querySelector(".events-info-card"),form=E("eventSubmissionForm");
@@ -21508,7 +21479,7 @@ window.openPublishedEventById = async function(eventId) {
   try {
     await load();
     const permittedEvent=eventsCache.find(event=>event.id===eventId);
-    if(!permittedEvent){E("eventsPageStatus").textContent="This event is not available to your dating community.";return;}
+    if(!permittedEvent){E("eventsPageStatus").textContent="This event is not available in your dating lane.";return;}
     await openDetails(eventId);
   } catch (error) {
     E("eventsPageStatus").textContent = "This event could not be opened. Please refresh Events and try again.";

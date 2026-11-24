@@ -41,7 +41,7 @@
   const button=dialog.querySelector("[data-more]");button.disabled=true;
   if(reset)results.textContent="Loading private messages…";
   try{
-   const {data,error}=await db.rpc("admin_list_chat_messages",{p_search:search.value.trim()||null,p_before:before,p_limit:50});
+   const {data,error}=await db.rpc("admin_list_chat_messages",{p_search:search.value.trim()||null,p_before:before?.created_at||null,p_before_id:before?.id||null,p_limit:50});
    if(error)throw error;
    const rows=data||[];
    if(reset)results.replaceChildren();
@@ -53,7 +53,7 @@
     const body=document.createElement("p");body.textContent=row.message_body||"[No text content]";
     item.append(heading,time,body);results.appendChild(item);
    });
-   if(rows.length)before=rows[rows.length-1].created_at;
+   if(rows.length)before={created_at:rows[rows.length-1].created_at,id:rows[rows.length-1].message_id};
    button.hidden=rows.length<50;
   }catch(error){results.textContent="Chat review unavailable: "+(error?.message||"Please try again.");}
   finally{loading=false;button.disabled=false;}
@@ -85,7 +85,7 @@
    if(adminError||admin!==true){window.matchStoryMigrationStarted=false;return;}
    const {data,error}=await db.functions.invoke("b2-media-migrate",{body:{category:"stories",limit:2}});
    if(error)throw error;
-   if(data?.failures?.length){console.warn("Some legacy stories could not be migrated; originals remain safe.",data.failures);return;}
+   if(data?.failures?.length){window.matchStoryMigrationStarted=false;console.warn("Some legacy stories could not be migrated; originals remain safe.",data.failures);return;}
    if(Number(data?.remaining)>0){
     window.setTimeout(()=>{migrationRunning=false;migrateStoryBatch();},15000);
    }else{

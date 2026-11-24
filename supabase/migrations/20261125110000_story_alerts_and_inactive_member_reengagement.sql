@@ -11,8 +11,61 @@ alter table public.notifications add constraint notifications_type_check
     'event_published','premium_expiring','premium_expiring_soon','member_welcome_back'
   ]));
 
--- Story alerts go only to members who already have a mutual like or conversation
--- with the poster, and who belong to the same private dating lane.
+-- Reusable audience check for a specific viewer/owner pair. The regular
+-- RLS helper uses auth.uid() and cannot be called for each notification recipient
+-- from a multi-recipient trigger, so this mirrors its "everyone" eligibility.
+create or replace function private.can_view_story_between(
+  p_viewer_id uuid,
+  p_owner_id uuid
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+  select
+    p_viewer_id is not null
+    and p_owner_id is not null
+    and p_owner_id <> p_viewer_id
+    and exists (
+      select 1
+      from public.profiles viewer
+      join public.profiles owner on owner.id = p_owner_id
+      join public.member_onboarding viewer_onboarding on viewer_onboarding.user_id = viewer.id
+      join public.member_onboarding owner_onboarding on owner_onboarding.user_id = owner.id
+      where viewer.id = p_viewer_id
+        and public.is_match_profile_complete(viewer.id)
+        and public.is_match_profile_complete(owner.id)
+        and viewer.age >= 18
+        and owner.age >= 18
+        and private.match_preference_accepts_gender(viewer.interested_in, owner.gender_identity)
+        and private.match_preference_accepts_gender(owner.interested_in, viewer.gender_identity)
+        and private.member_meets_partner_preferences(viewer.id, owner.id)
+        and private.member_meets_partner_preferences(owner.id, viewer.id)
+        and private.member_dating_community(viewer.id) is not null
+        and private.member_dating_community(owner.id) = private.member_dating_community(viewer.id)
+        and (select count(*) from public.profile_photos viewer_photo where viewer_photo.user_id = viewer.id) >= 2
+        and (select count(*) from public.profile_photos owner_photo where owner_photo.user_id = owner.id) >= 2
+        and not exists (
+          select 1 from public.member_blocks block_record
+          where (block_record.blocker_id = viewer.id and block_record.blocked_id = owner.id)
+             or (block_record.blocker_id = owner.id and block_record.blocked_id = viewer.id)
+        )
+        and not exists (
+          select 1 from public.member_moderation moderation
+          where moderation.user_id in (viewer.id, owner.id)
+            and (
+              moderation.status = 'banned'
+              or (moderation.status = 'suspended' and moderation.expires_at > now())
+            )
+        )
+    );
+$function$;
+
+revoke all on function private.can_view_story_between(uuid,uuid) from public, anon, authenticated;
+
+-- Story alerts go only to members who can actually view the Story under its audience rules.
 create or replace function public.notify_connected_members_of_story()
 returns trigger
 language plpgsql
@@ -60,7 +113,14 @@ begin
       )
   ) candidate
   where candidate.user_id <> new.user_id
-    and private.member_dating_community(candidate.user_id) = v_lane
+    and (
+      (new.audience = 'everyone' and private.can_view_story_between(candidate.user_id, new.user_id))
+      or (
+        new.audience = 'matches'
+        and public.can_interact_with_member(candidate.user_id)
+        and public.are_users_mutual_matches(candidate.user_id, new.user_id)
+      )
+    )
     and not exists (
       select 1 from public.member_blocks b
       where (b.blocker_id = candidate.user_id and b.blocked_id = new.user_id)

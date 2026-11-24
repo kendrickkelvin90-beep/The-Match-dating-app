@@ -8761,25 +8761,26 @@ function renderMemberNotifications() {
       const actions = document.createElement("div");
       actions.className = "notification-actions";
       actions.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin-top:12px";
-      const renew = document.createElement("button");
-      renew.type = "button";
-      renew.className = "btn primary";
-      renew.textContent = notification.action_label || "Yes, Renew";
-      renew.addEventListener("click", async event => {
+      const isDiscoverAction = notification.type === "story_uploaded" || notification.type === "member_welcome_back";
+      const primary = document.createElement("button");
+      primary.type = "button";
+      primary.className = "btn primary";
+      primary.textContent = notification.action_label || (isDiscoverAction ? "Open Discover" : "Yes, Renew");
+      primary.addEventListener("click", async event => {
         event.stopPropagation();
         if (!(await markRead())) return;
-        show("premium");
+        show(isDiscoverAction ? "discover" : "premium");
       });
       const dismiss = document.createElement("button");
       dismiss.type = "button";
       dismiss.className = "btn secondary";
-      dismiss.textContent = "No, Thanks";
+      dismiss.textContent = isDiscoverAction ? "Not now" : "No, Thanks";
       dismiss.addEventListener("click", async event => {
         event.stopPropagation();
         if (!(await markRead())) return;
         actions.remove();
       });
-      actions.append(renew, dismiss);
+      actions.append(primary, dismiss);
       copy.appendChild(actions);
     }
     if (isPublishedEvent) {

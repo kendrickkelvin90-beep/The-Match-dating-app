@@ -80,7 +80,7 @@ $function$;
 
 revoke all on function public.admin_list_chat_messages(text,timestamptz,uuid,integer)
   from public, anon;
-grant execute on function public.admin_list_chat_messages(text,timestamptz,integer)
+grant execute on function public.admin_list_chat_messages(text,timestamptz,uuid,integer)
   to authenticated;
 
 comment on table public.admin_chat_review_audit is

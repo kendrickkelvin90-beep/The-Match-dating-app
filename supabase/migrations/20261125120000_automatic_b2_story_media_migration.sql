@@ -25,7 +25,12 @@ create policy b2_media_migration_failures_admin_read
   for select to authenticated
   using (public.is_match_admin());
 
-create or replace function public.verify_b2_story_migration_cron_token(p_token text)
+create or replace function public.verify_b2_story_migration_cron_signature(
+  p_timestamp bigint,
+  p_category text,
+  p_limit integer,
+  p_signature text
+)
 returns boolean
 language plpgsql
 security definer
@@ -33,23 +38,36 @@ set search_path = ''
 as $function$
 declare
   v_expected text;
+  v_token text;
 begin
   if coalesce(auth.jwt() ->> 'role', '') <> 'service_role' then
     return false;
   end if;
+  if p_category <> 'stories' or p_limit <> 2 or p_signature is null then
+    return false;
+  end if;
+  if p_timestamp is null
+     or abs(extract(epoch from clock_timestamp())::bigint - p_timestamp) > 300 then
+    return false;
+  end if;
 
-  select decrypted_secret into v_expected
+  select decrypted_secret into v_token
   from vault.decrypted_secrets
   where name = 'b2_story_migration_cron_token';
 
-  return v_expected is not null
-    and p_token is not null
-    and extensions.digest(v_expected, 'sha256') = extensions.digest(p_token, 'sha256');
+  if v_token is null then return false; end if;
+  v_expected := encode(
+    extensions.hmac(p_timestamp::text || ':' || p_category || ':' || p_limit::text, v_token, 'sha256'),
+    'hex'
+  );
+  return lower(p_signature) = v_expected;
 end;
 $function$;
 
-revoke all on function public.verify_b2_story_migration_cron_token(text) from public, anon, authenticated;
-grant execute on function public.verify_b2_story_migration_cron_token(text) to service_role;
+revoke all on function public.verify_b2_story_migration_cron_signature(bigint,text,integer,text)
+  from public, anon, authenticated;
+grant execute on function public.verify_b2_story_migration_cron_signature(bigint,text,integer,text)
+  to service_role;
 
 create or replace function public.complete_b2_story_migration()
 returns boolean
@@ -121,32 +139,49 @@ select cron.schedule(
   'automatic-b2-story-media-migration',
   '* * * * *',
   $job$
+    with scheduler_secrets as (
+      select
+        (select decrypted_secret from vault.decrypted_secrets where name = 'b2_story_migration_cron_token') as scheduler_token,
+        (select decrypted_secret from vault.decrypted_secrets where name = 'match_b2_story_scheduler_apikey') as public_api_key,
+        floor(extract(epoch from clock_timestamp()))::bigint as request_timestamp
+    )
     select net.http_post(
       url := 'https://rxbdmgzmwhjnkcclyrcq.supabase.co/functions/v1/b2-media-migrate',
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
-        'apikey', (select decrypted_secret from vault.decrypted_secrets where name = 'match_b2_story_scheduler_apikey'),
-        'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'match_b2_story_scheduler_apikey'),
-        'x-match-cron-token', (select decrypted_secret from vault.decrypted_secrets where name = 'b2_story_migration_cron_token')
+        'apikey', scheduler_secrets.public_api_key,
+        'Authorization', 'Bearer ' || scheduler_secrets.public_api_key,
+        'x-match-cron-timestamp', scheduler_secrets.request_timestamp::text,
+        'x-match-cron-signature', encode(
+          extensions.hmac(
+            scheduler_secrets.request_timestamp::text || ':stories:2',
+            scheduler_secrets.scheduler_token,
+            'sha256'
+          ),
+          'hex'
+        )
       ),
       body := '{"category":"stories","limit":2}'::jsonb,
       timeout_milliseconds := 55000
     )
-    where exists (
-      select 1
-      from public.stories s
-      left join public.b2_media_migration_failures f
-        on f.category = 'stories' and f.record_id = s.id
-      where s.media_url is not null
-        and s.media_url not like 'b2://%'
-        and (
-          f.record_id is null
-          or (
-            not f.failed_permanently
-            and (f.next_retry_at is null or f.next_retry_at <= now())
+    from scheduler_secrets
+    where scheduler_secrets.scheduler_token is not null
+      and scheduler_secrets.public_api_key is not null
+      and exists (
+        select 1
+        from public.stories s
+        left join public.b2_media_migration_failures f
+          on f.category = 'stories' and f.record_id = s.id
+        where s.media_url is not null
+          and s.media_url not like 'b2://%'
+          and (
+            f.record_id is null
+            or (
+              not f.failed_permanently
+              and (f.next_retry_at is null or f.next_retry_at <= now())
+            )
           )
-        )
-    );
+      );
   $job$
 );
 

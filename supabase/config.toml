@@ -1,0 +1,5 @@
+# The migration worker authenticates both administrator JWTs and a private
+# Vault-backed scheduler token inside the handler. Gateway JWT verification is
+# disabled only so pg_cron can call it; unauthenticated requests are rejected.
+[functions.b2-media-migrate]
+verify_jwt = false

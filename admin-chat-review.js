@@ -1,4 +1,4 @@
-/* The Match — audited administrator chat review and background Story migration. */
+/* The Match — audited administrator chat review. */
 (function(){
  "use strict";
  const db=window.db;

@@ -35,7 +35,7 @@ function getServiceRoleJwt(req: Request): string | null {
 }
 
 function getSafeNotificationUrl(value: unknown): string {
-  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//") || value.includes("\\\\")) {
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) {
     return APP_URL;
   }
   try {

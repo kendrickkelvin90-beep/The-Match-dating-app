@@ -166,6 +166,20 @@ as $function$
   left join private.profile_locations other_loc on other_loc.user_id = p.id
   where auth.uid() is not null
     and p.id <> auth.uid()
+    and public.is_match_profile_complete(auth.uid())
+    and public.is_match_profile_complete(p.id)
+    and (
+      select pg_catalog.count(*)
+      from public.profile_photos viewer_photo
+      where viewer_photo.user_id = auth.uid()
+    ) >= 2
+    and (
+      select pg_catalog.count(*)
+      from public.profile_photos candidate_photo
+      where candidate_photo.user_id = p.id
+    ) >= 2
+    and coalesce(p.profile_paused, false) is false
+    and coalesce(p.discover_visibility, 'everyone') = 'everyone'
     and private.member_dating_community(auth.uid()) is not null
     and private.member_dating_community(p.id) =
         private.member_dating_community(auth.uid())
@@ -253,8 +267,31 @@ begin
   where id = new.liked_id;
 
   if not private.match_preference_accepts_gender(v_liker_preference, v_liked_gender)
-     or not private.match_preference_accepts_gender(v_liked_preference, v_liker_gender) then
+     or not private.match_preference_accepts_gender(v_liked_preference, v_liker_gender)
+     or not private.member_meets_partner_preferences(new.liker_id, new.liked_id)
+     or not private.member_meets_partner_preferences(new.liked_id, new.liker_id) then
     raise exception 'This member does not meet both members'' dating preferences.'
+      using errcode = '23514';
+  end if;
+
+  if exists (
+    select 1
+    from public.member_blocks block_record
+    where (block_record.blocker_id = new.liker_id and block_record.blocked_id = new.liked_id)
+       or (block_record.blocker_id = new.liked_id and block_record.blocked_id = new.liker_id)
+  ) or exists (
+    select 1
+    from public.member_moderation moderation
+    where moderation.user_id in (new.liker_id, new.liked_id)
+      and (
+        moderation.status = 'banned'
+        or (
+          moderation.status = 'suspended'
+          and moderation.expires_at > pg_catalog.now()
+        )
+      )
+  ) then
+    raise exception 'This interaction is not available.'
       using errcode = '23514';
   end if;
 

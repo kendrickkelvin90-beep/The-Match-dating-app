@@ -1,47 +1,70 @@
 \set ON_ERROR_STOP on
 
--- Explicit community labels are independent of sexual orientation and gender.
-update public.member_onboarding
-set answers = answers || '{"dating_community":"lgbtq"}'::jsonb
-where user_id in (
-  '00000000-0000-4000-8000-000000000001',
-  '00000000-0000-4000-8000-000000000007',
-  '00000000-0000-4000-8000-000000000010'
-);
+-- Legacy community values are retained for compatibility, but a disclosed
+-- sexual orientation now determines the member's dating lane automatically.
 update public.member_onboarding
 set answers = answers || '{"dating_community":"straight"}'::jsonb
 where user_id in (
+  '00000000-0000-4000-8000-000000000001',
   '00000000-0000-4000-8000-000000000002',
   '00000000-0000-4000-8000-000000000003',
   '00000000-0000-4000-8000-000000000004',
   '00000000-0000-4000-8000-000000000005',
   '00000000-0000-4000-8000-000000000006',
+  '00000000-0000-4000-8000-000000000007',
   '00000000-0000-4000-8000-000000000008',
   '00000000-0000-4000-8000-000000000009',
+  '00000000-0000-4000-8000-000000000010',
   '00000000-0000-4000-8000-000000000011',
   '00000000-0000-4000-8000-000000000012'
 );
 
--- Candidate 7 is heterosexual by orientation but explicitly joined LGBTQ+;
--- this verifies community is not inferred from orientation.
+-- User 1's saved legacy label says straight, but their current orientation
+-- places them in LGBTQ+. User 7's old label says straight too, and their
+-- straight orientation keeps them in the straight lane. Orientation wins.
+update public.member_onboarding
+set answers = jsonb_set(answers, '{sexual_orientation}', '"Bisexual"')
+where user_id = '00000000-0000-4000-8000-000000000001';
+
 update public.member_onboarding
 set answers = jsonb_set(answers, '{sexual_orientation}', '"Straight / heterosexual"')
 where user_id = '00000000-0000-4000-8000-000000000007';
 
--- Make the two LGBTQ+ fixtures mutually compatible so this test isolates
--- community eligibility rather than unrelated partner-preference filters.
+-- A new member with an orientation but no legacy dating_community choice is
+-- assigned automatically; no additional community selection is required.
+update public.member_onboarding
+set answers = (answers - 'dating_community')
+where user_id = '00000000-0000-4000-8000-000000000013';
+
+do $lane_assignment$
+begin
+  if private.member_dating_community('00000000-0000-4000-8000-000000000001') <> 'lgbtq' then
+    raise exception 'Bisexual orientation must automatically place the member in the LGBTQ+ lane';
+  end if;
+  if private.member_dating_community('00000000-0000-4000-8000-000000000007') <> 'straight' then
+    raise exception 'Straight orientation must automatically place the member in the straight lane';
+  end if;
+  if private.member_dating_community('00000000-0000-4000-8000-000000000013') <> 'straight' then
+    raise exception 'A new member must be assigned from orientation without a dating_community answer';
+  end if;
+end;
+$lane_assignment$;
+
+-- Keep the two LGBTQ+ fixtures mutually compatible so this test isolates
+-- lane eligibility rather than unrelated partner-preference filters.
 update public.profiles
 set interested_in = 'All genders'
-where id = '00000000-0000-4000-8000-000000000007';
+where id = '00000000-0000-4000-8000-000000000010';
+
 insert into public.member_dating_details(user_id, partner_preferences)
 values
   ('00000000-0000-4000-8000-000000000001', '{}'::jsonb),
-  ('00000000-0000-4000-8000-000000000007', '{}'::jsonb)
+  ('00000000-0000-4000-8000-000000000010', '{}'::jsonb)
 on conflict (user_id) do update
 set partner_preferences = '{}'::jsonb;
 
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
-do $community$
+do $lgbtq_lane$
 declare
   found_ids uuid[];
 begin
@@ -49,32 +72,29 @@ begin
     into found_ids
   from public.matchmaking_eligible_candidate_ids();
 
-  if found_ids is distinct from array[
-    '00000000-0000-4000-8000-000000000007'::uuid,
-    '00000000-0000-4000-8000-000000000010'::uuid
-  ] then
-    raise exception 'LGBTQ+ viewer should see only LGBTQ+ candidates, regardless of orientation; got %', found_ids;
+  if found_ids is distinct from array['00000000-0000-4000-8000-000000000010'::uuid] then
+    raise exception 'LGBTQ+ viewer should see compatible LGBTQ+ candidates only; got %', found_ids;
   end if;
 
   if public.can_interact_with_member('00000000-0000-4000-8000-000000000002') then
-    raise exception 'LGBTQ+ viewer must not interact with a Straight member';
+    raise exception 'A new cross-lane interaction must be rejected';
   end if;
-  if not public.can_interact_with_member('00000000-0000-4000-8000-000000000007') then
-    raise exception 'LGBTQ+ viewer should interact with a compatible LGBTQ+ member';
+  if not public.can_interact_with_member('00000000-0000-4000-8000-000000000010') then
+    raise exception 'A compatible same-lane member should be interactable';
   end if;
 
   if private.can_view_story_from_owner('00000000-0000-4000-8000-000000000002') then
-    raise exception 'Everyone Story access must reject a member from the other community';
+    raise exception 'Everyone Stories must not cross dating lanes';
   end if;
-  if not private.can_view_story_from_owner('00000000-0000-4000-8000-000000000007') then
-    raise exception 'Everyone Story access should allow a compatible same-community member';
+  if not private.can_view_story_from_owner('00000000-0000-4000-8000-000000000010') then
+    raise exception 'Everyone Stories should allow a compatible member in the same lane';
   end if;
 end;
-$community$;
+$lgbtq_lane$;
 
--- Reverse direction: a Straight member must never see LGBTQ+ candidates.
+-- Reverse direction: a straight member sees only compatible straight members.
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000002',false);
-do $straight$
+do $straight_lane$
 declare
   found_ids uuid[];
 begin
@@ -83,12 +103,13 @@ begin
   from public.matchmaking_eligible_candidate_ids();
 
   if found_ids is distinct from array['00000000-0000-4000-8000-000000000003'::uuid] then
-    raise exception 'Straight viewer should see only Straight candidates; got %', found_ids;
+    raise exception 'Straight viewer should see straight candidates only; got %', found_ids;
   end if;
 end;
-$straight$;
+$straight_lane$;
 
--- The database trigger rejects cross-community likes even if a client bypasses UI.
+-- Even a direct authenticated insert cannot bypass the lane boundary or
+-- reciprocal gender-preference checks.
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
 set role authenticated;
 do $likes$
@@ -96,15 +117,52 @@ begin
   begin
     insert into public.likes(liker_id, liked_id)
     values (auth.uid(), '00000000-0000-4000-8000-000000000002');
-    raise exception 'Cross-community like unexpectedly succeeded';
+    raise exception 'Cross-lane like unexpectedly succeeded';
   exception when check_violation then
     null;
   end;
 
   insert into public.likes(liker_id, liked_id)
-  values (auth.uid(), '00000000-0000-4000-8000-000000000007');
+  values (auth.uid(), '00000000-0000-4000-8000-000000000010');
 end;
 $likes$;
+
+do $passes$
+begin
+  begin
+    insert into public.profile_passes(passer_id, passed_id)
+    values (auth.uid(), '00000000-0000-4000-8000-000000000002');
+    raise exception 'Cross-lane pass unexpectedly succeeded';
+  exception when check_violation then
+    null;
+  end;
+end;
+$passes$;
 reset role;
 
-select 'strict dating community separation tests passed' as result;
+-- Existing conversations survive a later lane classification change, while
+-- they do not make either member visible in the other's new Discover lane.
+insert into public.messages(sender_id, receiver_id, body)
+values (
+  '00000000-0000-4000-8000-000000000001',
+  '00000000-0000-4000-8000-000000000002',
+  'Existing conversation preserved'
+);
+
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
+do $existing_connection$
+begin
+  if not public.can_interact_with_member('00000000-0000-4000-8000-000000000002') then
+    raise exception 'Existing cross-lane conversation must remain accessible';
+  end if;
+  if exists (
+    select 1
+    from public.discover_profiles_secure()
+    where id = '00000000-0000-4000-8000-000000000002'
+  ) then
+    raise exception 'An existing conversation must not put a cross-lane member into Discover';
+  end if;
+end;
+$existing_connection$;
+
+select 'orientation-derived separated dating lane tests passed' as result;

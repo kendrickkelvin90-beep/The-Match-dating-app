@@ -16,11 +16,9 @@
    lastAttemptAt=Date.now();
    const {error}=await db.rpc("record_member_presence");
    if(error){
-    lastAttemptAt=0;
     console.warn("Member presence could not be recorded.",error.message);
    }
   }catch(error){
-   lastAttemptAt=0;
    console.warn("Member presence could not be recorded.",error?.message||error);
   }finally{
    inFlight=false;

@@ -26,7 +26,13 @@
 
 New browser uploads use short-lived presigned PUT URLs so large videos do not pass through a Supabase Edge Function. Before enabling the new upload code, configure the B2 bucket's CORS rules to allow the app origin `https://match.beyondthebinarymedia.online`, method `PUT`, and request header `Content-Type`. Keep the origin restricted to the production app domain; do not use a wildcard origin. Signed GET downloads do not require exposing the bucket publicly.
 
-## Running the worker (after application B2 read support is deployed)
+## Automatic Story migration
+
+The Story reader already supports `b2://` media references, and new Story uploads are routed to B2. The app now starts a background migration automatically when an administrator signs in. It processes two legacy Story objects per batch, waits briefly between batches, resumes on a later admin session after a transient failure, verifies the B2 copy before changing the database reference, and leaves the original Supabase object untouched. No migration button is required. Keep the administrator session signed in while the first migration run is progressing.
+
+The browser-driven worker pauses when the administrator closes the app or signs out; it resumes automatically on the next administrator sign-in. A fully unattended server-side schedule would require a separately provisioned, securely stored server credential and is not enabled by this change.
+
+## Manual worker fallback (for diagnostics only)
 
 Call the `b2-media-migrate` Edge Function with the signed-in administrator session:
 
@@ -36,7 +42,7 @@ Call the `b2-media-migrate` Edge Function with the signed-in administrator sessi
 
 Repeat with each category key: `stories`, `chat_media`, `verification_selfies`, and `event_posters`. Continue a category until its returned `remaining` count is zero. For `chat_media`, `remaining` excludes View Once records; those are separately reported as `excludedViewOnce`. A failed item is returned in `failures`; inspect and resolve it before continuing.
 
-**Do not run the worker until the matching app read path has been deployed.** The current production app only resolves B2 profile-photo paths. Stories, chat media, verification selfies, and event posters still use Supabase Storage reads. Migrating those references before their readers are updated would make those assets temporarily unavailable.
+The current Story reader resolves B2 URLs through the authenticated `b2-media-access` function. Chat media, verification selfies, and event posters still require their own read-path rollout before their existing records can safely be migrated. Do not migrate those categories as part of the Story worker.
 
 ## Completion checks
 

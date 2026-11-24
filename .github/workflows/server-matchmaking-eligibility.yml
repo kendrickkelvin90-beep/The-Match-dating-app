@@ -29,7 +29,6 @@ on:
       - "supabase/migrations/20261118110000_keep_dating_community_private.sql"
       - "supabase/migrations/20261118120000_shared_dating_details_strict_community_guard.sql"
       - "supabase/migrations/20261118121000_enforce_community_for_passes_and_story_views.sql"
-      - "supabase/migrations/20261124120000_preference_based_separated_dating_lanes.sql"
       - "supabase/migrations/20261117160000_secure_view_once_media_delivery.sql"
       - "supabase/functions/open-view-once-chat-media/**"
       - "supabase/tests/view_once_media_*.sql"

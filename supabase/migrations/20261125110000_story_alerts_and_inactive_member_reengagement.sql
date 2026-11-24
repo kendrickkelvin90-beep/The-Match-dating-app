@@ -65,6 +65,48 @@ $function$;
 
 revoke all on function private.can_view_story_between(uuid,uuid) from public, anon, authenticated;
 
+-- Match-audience Story access requires a mutual like in addition to the
+-- connection checks. This explicit pair helper also works when a trusted
+-- server-side insert has no end-user auth.uid() context.
+create or replace function private.can_view_story_match_between(
+  p_viewer_id uuid,
+  p_owner_id uuid
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+  select
+    p_viewer_id is not null
+    and p_owner_id is not null
+    and p_viewer_id <> p_owner_id
+    and exists (
+      select 1 from public.likes a
+      where a.liker_id = p_viewer_id and a.liked_id = p_owner_id
+    )
+    and exists (
+      select 1 from public.likes b
+      where b.liker_id = p_owner_id and b.liked_id = p_viewer_id
+    )
+    and not exists (
+      select 1 from public.member_blocks block_record
+      where (block_record.blocker_id = p_viewer_id and block_record.blocked_id = p_owner_id)
+         or (block_record.blocker_id = p_owner_id and block_record.blocked_id = p_viewer_id)
+    )
+    and not exists (
+      select 1 from public.member_moderation moderation
+      where moderation.user_id in (p_viewer_id, p_owner_id)
+        and (
+          moderation.status = 'banned'
+          or (moderation.status = 'suspended' and moderation.expires_at > now())
+        )
+    );
+$function$;
+
+revoke all on function private.can_view_story_match_between(uuid,uuid) from public, anon, authenticated;
+
 -- Story alerts go only to members who can actually view the Story under its audience rules.
 create or replace function public.notify_connected_members_of_story()
 returns trigger
@@ -117,8 +159,7 @@ begin
       (new.audience = 'everyone' and private.can_view_story_between(candidate.user_id, new.user_id))
       or (
         new.audience = 'matches'
-        and public.can_interact_with_member(candidate.user_id)
-        and public.are_users_mutual_matches(candidate.user_id, new.user_id)
+        and private.can_view_story_match_between(candidate.user_id, new.user_id)
       )
     )
     and not exists (

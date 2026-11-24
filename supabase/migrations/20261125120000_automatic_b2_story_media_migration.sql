@@ -128,6 +128,17 @@ begin
       null
     );
   end if;
+
+  if not exists (
+    select 1 from vault.secrets where name = 'b2_story_migration_cluster_id'
+  ) then
+    perform vault.create_secret(
+      (pg_control_system()).system_identifier::text,
+      'b2_story_migration_cluster_id',
+      'Database-cluster identity guard so copied preview branches cannot call the production migration endpoint',
+      null
+    );
+  end if;
 end;
 $vault$;
 
@@ -143,6 +154,8 @@ select cron.schedule(
       select
         (select decrypted_secret from vault.decrypted_secrets where name = 'b2_story_migration_cron_token') as scheduler_token,
         (select decrypted_secret from vault.decrypted_secrets where name = 'match_b2_story_scheduler_apikey') as public_api_key,
+        (select decrypted_secret from vault.decrypted_secrets where name = 'b2_story_migration_cluster_id') as saved_cluster_id,
+        (pg_control_system()).system_identifier::text as current_cluster_id,
         floor(extract(epoch from clock_timestamp()))::bigint as request_timestamp
     )
     select net.http_post(
@@ -167,6 +180,7 @@ select cron.schedule(
     from scheduler_secrets
     where scheduler_secrets.scheduler_token is not null
       and scheduler_secrets.public_api_key is not null
+      and scheduler_secrets.saved_cluster_id = scheduler_secrets.current_cluster_id
       and exists (
         select 1
         from public.stories s

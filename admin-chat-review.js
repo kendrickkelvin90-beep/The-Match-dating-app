@@ -10,8 +10,9 @@
  #tmAdminChatDialog .tm-chat-shell{width:min(100%,900px);max-height:92dvh;display:flex;flex-direction:column;overflow:hidden;border:1px solid #8c7040;border-radius:20px;background:#101014;color:#f8f5ef;box-shadow:0 24px 80px #0009}
  #tmAdminChatDialog .tm-chat-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px;border-bottom:1px solid #343039}
  #tmAdminChatDialog h2{margin:0;font-size:20px}
- #tmAdminChatDialog .tm-chat-tools{display:flex;gap:8px;padding:12px 16px}
- #tmAdminChatDialog input{flex:1;min-width:0;padding:12px;border-radius:10px;border:1px solid #5b5660;background:#1d1b22;color:#fff}
+ #tmAdminChatDialog .tm-chat-tools{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px}
+ #tmAdminChatDialog input{flex:1;min-width:180px;padding:12px;border-radius:10px;border:1px solid #5b5660;background:#1d1b22;color:#fff}
+ #tmAdminChatDialog select{min-width:170px;max-width:100%;padding:12px;border-radius:10px;border:1px solid #5b5660;background:#1d1b22;color:#fff}
  #tmAdminChatDialog button{padding:10px 14px;border:1px solid #7c6743;border-radius:10px;background:#25222a;color:#fff}
  #tmAdminChatDialog .tm-chat-notice{margin:0;padding:0 16px 12px;color:#d7c8a8;font-size:12px;line-height:1.5}
  #tmAdminChatDialog .tm-chat-results{overflow:auto;padding:0 16px 16px}
@@ -23,13 +24,13 @@
  body.light-theme #tmAdminChatDialog .tm-chat-message p{color:#24202a}
  `;
  document.head.appendChild(style);
- let dialog=null,search=null,results=null,before=null,loading=false,adminCheckInProgress=false,adminCheckAttempted=false;
+ let dialog=null,search=null,reason=null,results=null,before=null,loading=false,adminCheckInProgress=false,adminCheckAttempted=false;
  function makeDialog(){
   if(dialog)return;
   dialog=document.createElement("div");dialog.id="tmAdminChatDialog";
-  dialog.innerHTML='<section class="tm-chat-shell" role="dialog" aria-modal="true" aria-labelledby="tmAdminChatTitle"><header class="tm-chat-head"><h2 id="tmAdminChatTitle">Private chat review</h2><button type="button" data-close>Close</button></header><div class="tm-chat-tools"><input type="search" maxlength="200" placeholder="Search names, member IDs or message text" aria-label="Search all chats"><button type="button" data-search>Search</button></div><p class="tm-chat-notice">Restricted administrator access. Every review request is recorded in the audit log. Members are informed in the privacy notice that authorised administrators may review chats. These chats are not end-to-end encrypted.</p><div class="tm-chat-results" aria-live="polite">Search or load recent messages.</div><div style="padding:12px 16px;border-top:1px solid #343039"><button type="button" data-more>Load older messages</button></div></section>';
+  dialog.innerHTML='<section class="tm-chat-shell" role="dialog" aria-modal="true" aria-labelledby="tmAdminChatTitle"><header class="tm-chat-head"><h2 id="tmAdminChatTitle">Private chat review</h2><button type="button" data-close>Close</button></header><div class="tm-chat-tools"><input type="search" maxlength="200" placeholder="Search names, member IDs or message text" aria-label="Search all chats"><button type="button" data-search>Search</button></div><p class="tm-chat-notice">Restricted administrator access. Choose a review purpose before searching; every request and its purpose are recorded in the audit log. Members are informed in the privacy notice that authorised administrators may review chats. These chats are not end-to-end encrypted.</p><div class="tm-chat-results" aria-live="polite">Search or load recent messages.</div><div style="padding:12px 16px;border-top:1px solid #343039"><button type="button" data-more>Load older messages</button></div></section>';
   document.body.appendChild(dialog);
-  search=dialog.querySelector("input");results=dialog.querySelector(".tm-chat-results");
+  search=dialog.querySelector("input");reason=dialog.querySelector("select");results=dialog.querySelector(".tm-chat-results");
   dialog.querySelector("[data-close]").onclick=()=>dialog.classList.remove("open");
   document.addEventListener("keydown",e=>{if(e.key==="Escape")dialog.classList.remove("open");});
   dialog.addEventListener("click",e=>{if(e.target===dialog)dialog.classList.remove("open");});
@@ -42,7 +43,7 @@
   const button=dialog.querySelector("[data-more]");button.disabled=true;
   if(reset)results.textContent="Loading private messages…";
   try{
-   const {data,error}=await db.rpc("admin_list_chat_messages",{p_search:search.value.trim()||null,p_before:before?.created_at||null,p_before_id:before?.id||null,p_limit:50});
+   const {data,error}=await db.rpc("admin_list_chat_messages",{p_search:search.value.trim()||null,p_before:before?.created_at||null,p_before_id:before?.id||null,p_limit:50,p_reason:reason.value});
    if(error)throw error;
    const rows=data||[];
    if(reset)results.replaceChildren();

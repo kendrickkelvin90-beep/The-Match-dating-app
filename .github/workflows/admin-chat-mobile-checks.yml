@@ -1,0 +1,37 @@
+name: Admin chat and mobile interaction checks
+
+on:
+  pull_request:
+    paths:
+      - "admin-chat-review.js"
+      - "disable-zoom.js"
+      - "member-presence.js"
+      - "index.html"
+      - "supabase/migrations/*admin_chat*"
+      - "supabase/migrations/*story_alerts*"
+      - "supabase/migrations/*automatic_b2_story*"
+      - ".github/workflows/admin-chat-mobile-checks.yml"
+  push:
+    branches:
+      - main
+      - feature/admin-chat-zoom-engagement-story-migration
+    paths:
+      - "admin-chat-review.js"
+      - "disable-zoom.js"
+      - "index.html"
+      - "supabase/migrations/*admin_chat*"
+      - "supabase/migrations/*story_alerts*"
+
+jobs:
+  javascript-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check JavaScript syntax
+        run: |
+          node --check admin-chat-review.js
+          node --check disable-zoom.js
+          node --check member-presence.js

@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#050505">
 <title>The Match ❤️</title>
   <link rel="manifest" href="/manifest.webmanifest">
@@ -7424,7 +7424,8 @@ body.light-theme .voice-call-history-person strong { color:#30291d; }
     <button type="button" class="message-inbox-filter" data-message-filter="unread" aria-pressed="false">Unread</button>
     <button type="button" class="message-inbox-filter" data-message-filter="favorites" aria-pressed="false">★ Favorites</button>
   </div>
-  <p class="small">Chat privately with your mutual matches.</p>
+  <p class="small">Chat one-to-one with your mutual matches.</p>
+  <p class="small" id="chatPrivacyNotice">Messages are not end-to-end encrypted. Authorised Match administrators may review them for safety, moderation and support.</p>
   <button class="btn secondary" type="button" onclick="show('premium')">Want to know if your message has been seen? Tap here to explore Premium.</button>
 
   <div id="conversationList"></div>
@@ -8659,7 +8660,10 @@ function notificationCategory(notification) {
 }
 
 function notificationIcon(notification) {
+  const type = String(notification.type || "").toLowerCase();
   const category = notificationCategory(notification);
+  if (type === "story_uploaded") return "◉";
+  if (type === "member_welcome_back") return "✦";
   if (category === "messages") return "☏";
   if (category === "likes") return "♥";
   if (category === "matches") return "♡♡";
@@ -8760,25 +8764,26 @@ function renderMemberNotifications() {
       const actions = document.createElement("div");
       actions.className = "notification-actions";
       actions.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin-top:12px";
-      const renew = document.createElement("button");
-      renew.type = "button";
-      renew.className = "btn primary";
-      renew.textContent = notification.action_label || "Yes, Renew";
-      renew.addEventListener("click", async event => {
+      const isDiscoverAction = notification.type === "story_uploaded" || notification.type === "member_welcome_back";
+      const primary = document.createElement("button");
+      primary.type = "button";
+      primary.className = "btn primary";
+      primary.textContent = notification.action_label || (isDiscoverAction ? "Open Discover" : "Yes, Renew");
+      primary.addEventListener("click", async event => {
         event.stopPropagation();
         if (!(await markRead())) return;
-        show("premium");
+        show(isDiscoverAction ? "discover" : "premium");
       });
       const dismiss = document.createElement("button");
       dismiss.type = "button";
       dismiss.className = "btn secondary";
-      dismiss.textContent = "No, Thanks";
+      dismiss.textContent = isDiscoverAction ? "Not now" : "No, Thanks";
       dismiss.addEventListener("click", async event => {
         event.stopPropagation();
         if (!(await markRead())) return;
         actions.remove();
       });
-      actions.append(renew, dismiss);
+      actions.append(primary, dismiss);
       copy.appendChild(actions);
     }
     if (isPublishedEvent) {
@@ -25158,6 +25163,9 @@ body:has(#chatPage:not(.hidden)) > main > #chatPage.panel:not(.hidden) {
 }
 </style>
 
+  <script src="/disable-zoom.js" defer></script>
+  <script src="/member-presence.js" defer></script>
+  <script src="/admin-chat-review.js" defer></script>
 </body>
 </html>
 

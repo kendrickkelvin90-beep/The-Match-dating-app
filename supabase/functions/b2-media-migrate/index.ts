@@ -12,7 +12,7 @@ const json = (body: unknown, status = 200, origin = "") =>
     headers: {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": origin,
-      "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+      "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-match-cron-timestamp, x-match-cron-signature",
       "Access-Control-Allow-Methods": "POST, OPTIONS",
       "Vary": "Origin",
     },
@@ -63,7 +63,7 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", {
     headers: {
       "Access-Control-Allow-Origin": origin,
-      "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+      "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-match-cron-timestamp, x-match-cron-signature",
       "Access-Control-Allow-Methods": "POST, OPTIONS",
       "Vary": "Origin",
     },
@@ -73,40 +73,80 @@ Deno.serve(async (req: Request) => {
   try {
     const authHeader = req.headers.get("Authorization") || "";
     const token = authHeader.replace(/^Bearer\s+/i, "");
-    if (!token || token === authHeader) return json({ error: "Authentication required" }, 401, origin);
-
-    const url = Deno.env.get("SUPABASE_URL")!;
-    const anon = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const caller = createClient(url, anon, {
-      auth: { autoRefreshToken: false, persistSession: false },
-      global: { headers: { Authorization: `Bearer ${token}` } },
-    });
-    const { data: userData, error: authError } = await caller.auth.getUser(token);
-    if (authError || !userData.user) return json({ error: "Invalid session" }, 401, origin);
-    const { data: isAdmin, error: adminError } = await caller.rpc("is_match_admin");
-    if (adminError || isAdmin !== true) return json({ error: "Admin access required" }, 403, origin);
-
+    const cronTimestampHeader = req.headers.get("x-match-cron-timestamp") || "";
+    const cronSignature = req.headers.get("x-match-cron-signature") || "";
     const body = await req.json().catch(() => null);
     const category = body?.category as Category;
     if (!category || !(category in categories)) {
       return json({ error: "Choose a supported media category." }, 400, origin);
     }
-    const limit = Math.max(1, Math.min(2, Number.isInteger(body?.limit) ? body.limit : 2));
-    const config = categories[category];
+    const requestedLimit = Number.isInteger(body?.limit) ? body.limit : 2;
+    const limit = Math.max(1, Math.min(2, requestedLimit));
+    const url = Deno.env.get("SUPABASE_URL")!;
+    const anon = Deno.env.get("SUPABASE_ANON_KEY")!;
     const admin = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+    let isCron = false;
+
+    if (cronTimestampHeader || cronSignature) {
+      const timestamp = Number(cronTimestampHeader);
+      if (!cronTimestampHeader || !cronSignature || !Number.isSafeInteger(timestamp)) {
+        return json({ error: "Invalid migration scheduler signature" }, 401, origin);
+      }
+      const { data: validSignature, error: signatureError } = await admin.rpc(
+        "verify_b2_story_migration_cron_signature",
+        {
+          p_timestamp: timestamp,
+          p_category: category,
+          p_limit: requestedLimit,
+          p_signature: cronSignature,
+        },
+      );
+      if (signatureError || validSignature !== true) {
+        return json({ error: "Invalid or expired migration scheduler signature" }, 401, origin);
+      }
+      isCron = true;
+    } else {
+      if (!token || token === authHeader) return json({ error: "Authentication required" }, 401, origin);
+      const caller = createClient(url, anon, {
+        auth: { autoRefreshToken: false, persistSession: false },
+        global: { headers: { Authorization: `Bearer ${token}` } },
+      });
+      const { data: userData, error: authError } = await caller.auth.getUser(token);
+      if (authError || !userData.user) return json({ error: "Invalid session" }, 401, origin);
+      const { data: isAdmin, error: adminError } = await caller.rpc("is_match_admin");
+      if (adminError || isAdmin !== true) return json({ error: "Admin access required" }, 403, origin);
+    }
+
+    if (isCron && category !== "stories") {
+      return json({ error: "The automatic scheduler is restricted to Story media." }, 403, origin);
+    }
+    const config = categories[category];
     const s3 = getStorageClient();
     const bucket = Deno.env.get("B2_BUCKET_NAME")!;
+
+    const { data: priorFailures, error: priorFailuresError } = await admin
+      .from("b2_media_migration_failures")
+      .select("record_id,attempts,failed_permanently,next_retry_at")
+      .eq("category", category);
+    if (priorFailuresError) throw new Error("Could not inspect previous migration failures.");
+    const nowMs = Date.now();
+    const blockedIds = (priorFailures || [])
+      .filter((item) => item.failed_permanently ||
+        (item.next_retry_at && new Date(item.next_retry_at).getTime() > nowMs))
+      .map((item) => String(item.record_id));
 
     let rowsQuery = admin
       .from(config.table)
       .select("*")
       .not(config.pathColumn, "like", "b2://%")
       .not(config.pathColumn, "is", null);
+    if (blockedIds.length) rowsQuery = rowsQuery.not(config.idColumn, "in", `(${blockedIds.join(",")})`);
     // View Once still relies on its existing atomic Supabase access workflow.
     // Keep those files in the private bucket until that workflow is migrated.
     if (category === "chat_media") rowsQuery = rowsQuery.eq("view_once", false);
+    if (category === "stories") rowsQuery = rowsQuery.gt("expires_at", new Date().toISOString());
     const { data: rows, error: listError } = await rowsQuery
       .order("created_at", { ascending: true })
       .limit(limit);
@@ -153,7 +193,28 @@ Deno.serve(async (req: Request) => {
         migrated++;
       } catch (error) {
         failed++;
-        failures.push(`${row[config.idColumn]}: ${error instanceof Error ? error.message : "migration failed"}`);
+        const recordId = String(row[config.idColumn] || "");
+        const reason = error instanceof Error ? error.message : "migration failed";
+        failures.push(`${recordId}: ${reason}`);
+        if (recordId) {
+          const { data: previous } = await admin.from("b2_media_migration_failures")
+            .select("attempts")
+            .eq("category", category)
+            .eq("record_id", recordId)
+            .maybeSingle();
+          const attempts = Number(previous?.attempts || 0) + 1;
+          const failedPermanently = attempts >= 5;
+          const retryDelayMs = Math.min(6 * 60 * 60 * 1000, 5 * 60 * 1000 * (2 ** (attempts - 1)));
+          await admin.from("b2_media_migration_failures").upsert({
+            category,
+            record_id: recordId,
+            attempts,
+            last_error: reason.slice(0, 500),
+            next_retry_at: failedPermanently ? null : new Date(Date.now() + retryDelayMs).toISOString(),
+            failed_permanently: failedPermanently,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: "category,record_id" });
+        }
       }
     }
 
@@ -163,6 +224,7 @@ Deno.serve(async (req: Request) => {
       .not(config.pathColumn, "like", "b2://%")
       .not(config.pathColumn, "is", null);
     if (category === "chat_media") countQuery = countQuery.eq("view_once", false);
+    if (category === "stories") countQuery = countQuery.gt("expires_at", new Date().toISOString());
     const { count: remaining, error: countError } = await countQuery;
     if (countError) throw new Error("Migration ran, but remaining count could not be verified.");
     let excludedViewOnce = 0;
@@ -174,6 +236,17 @@ Deno.serve(async (req: Request) => {
       if (error) throw new Error("Could not count View Once media excluded from migration.");
       excludedViewOnce = count ?? 0;
     }
+    const { count: permanentlyFailed, error: permanentCountError } = await admin
+      .from("b2_media_migration_failures")
+      .select("record_id", { count: "exact", head: true })
+      .eq("category", category)
+      .eq("failed_permanently", true);
+    if (permanentCountError) throw new Error("Could not verify permanently failed media records.");
+
+    if (isCron && category === "stories") {
+      const { error: completionError } = await admin.rpc("complete_b2_story_migration");
+      if (completionError) console.error("Story migration batch finished but scheduler state could not be updated.");
+    }
 
     return json({
       success: failed === 0,
@@ -182,6 +255,7 @@ Deno.serve(async (req: Request) => {
       migrated,
       failed,
       remaining: remaining ?? null,
+      permanentlyFailed: permanentlyFailed ?? 0,
       excludedViewOnce,
       failures,
       note: "Legacy objects are intentionally retained. Delete them only after application reads have been verified.",

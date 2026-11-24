@@ -146,6 +146,7 @@ Deno.serve(async (req: Request) => {
     // View Once still relies on its existing atomic Supabase access workflow.
     // Keep those files in the private bucket until that workflow is migrated.
     if (category === "chat_media") rowsQuery = rowsQuery.eq("view_once", false);
+    if (category === "stories") rowsQuery = rowsQuery.gt("expires_at", new Date().toISOString());
     const { data: rows, error: listError } = await rowsQuery
       .order("created_at", { ascending: true })
       .limit(limit);
@@ -223,6 +224,7 @@ Deno.serve(async (req: Request) => {
       .not(config.pathColumn, "like", "b2://%")
       .not(config.pathColumn, "is", null);
     if (category === "chat_media") countQuery = countQuery.eq("view_once", false);
+    if (category === "stories") countQuery = countQuery.gt("expires_at", new Date().toISOString());
     const { count: remaining, error: countError } = await countQuery;
     if (countError) throw new Error("Migration ran, but remaining count could not be verified.");
     let excludedViewOnce = 0;

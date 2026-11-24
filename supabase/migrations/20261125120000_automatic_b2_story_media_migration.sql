@@ -43,7 +43,7 @@ begin
   if coalesce(auth.jwt() ->> 'role', '') <> 'service_role' then
     return false;
   end if;
-  if p_category <> 'stories' or p_limit <> 2 or p_signature is null then
+  if p_category is distinct from 'stories' or p_limit is distinct from 2 or p_signature is null then
     return false;
   end if;
   if p_timestamp is null

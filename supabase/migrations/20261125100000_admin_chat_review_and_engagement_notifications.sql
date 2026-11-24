@@ -24,6 +24,7 @@ create policy admin_chat_review_audit_admin_read
 create or replace function public.admin_list_chat_messages(
   p_search text default null,
   p_before timestamptz default null,
+  p_before_id uuid default null,
   p_limit integer default 50
 )
 returns table(
@@ -77,7 +78,7 @@ begin
 end;
 $function$;
 
-revoke all on function public.admin_list_chat_messages(text,timestamptz,integer)
+revoke all on function public.admin_list_chat_messages(text,timestamptz,uuid,integer)
   from public, anon;
 grant execute on function public.admin_list_chat_messages(text,timestamptz,integer)
   to authenticated;

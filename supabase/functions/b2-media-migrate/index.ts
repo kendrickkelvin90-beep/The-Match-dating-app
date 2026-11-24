@@ -12,7 +12,7 @@ const json = (body: unknown, status = 200, origin = "") =>
     headers: {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": origin,
-      "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-match-cron-token",
+      "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-match-cron-timestamp, x-match-cron-signature",
       "Access-Control-Allow-Methods": "POST, OPTIONS",
       "Vary": "Origin",
     },
@@ -63,7 +63,7 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", {
     headers: {
       "Access-Control-Allow-Origin": origin,
-      "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-match-cron-token",
+      "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-match-cron-timestamp, x-match-cron-signature",
       "Access-Control-Allow-Methods": "POST, OPTIONS",
       "Vary": "Origin",
     },
@@ -73,7 +73,15 @@ Deno.serve(async (req: Request) => {
   try {
     const authHeader = req.headers.get("Authorization") || "";
     const token = authHeader.replace(/^Bearer\s+/i, "");
-    const cronToken = req.headers.get("x-match-cron-token") || "";
+    const cronTimestampHeader = req.headers.get("x-match-cron-timestamp") || "";
+    const cronSignature = req.headers.get("x-match-cron-signature") || "";
+    const body = await req.json().catch(() => null);
+    const category = body?.category as Category;
+    if (!category || !(category in categories)) {
+      return json({ error: "Choose a supported media category." }, 400, origin);
+    }
+    const requestedLimit = Number.isInteger(body?.limit) ? body.limit : 2;
+    const limit = Math.max(1, Math.min(2, requestedLimit));
     const url = Deno.env.get("SUPABASE_URL")!;
     const anon = Deno.env.get("SUPABASE_ANON_KEY")!;
     const admin = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
@@ -81,13 +89,22 @@ Deno.serve(async (req: Request) => {
     });
     let isCron = false;
 
-    if (cronToken) {
-      const { data: validCronToken, error: cronAuthError } = await admin.rpc(
-        "verify_b2_story_migration_cron_token",
-        { p_token: cronToken },
+    if (cronTimestampHeader || cronSignature) {
+      const timestamp = Number(cronTimestampHeader);
+      if (!cronTimestampHeader || !cronSignature || !Number.isSafeInteger(timestamp)) {
+        return json({ error: "Invalid migration scheduler signature" }, 401, origin);
+      }
+      const { data: validSignature, error: signatureError } = await admin.rpc(
+        "verify_b2_story_migration_cron_signature",
+        {
+          p_timestamp: timestamp,
+          p_category: category,
+          p_limit: requestedLimit,
+          p_signature: cronSignature,
+        },
       );
-      if (cronAuthError || validCronToken !== true) {
-        return json({ error: "Invalid migration scheduler credential" }, 401, origin);
+      if (signatureError || validSignature !== true) {
+        return json({ error: "Invalid or expired migration scheduler signature" }, 401, origin);
       }
       isCron = true;
     } else {
@@ -102,15 +119,9 @@ Deno.serve(async (req: Request) => {
       if (adminError || isAdmin !== true) return json({ error: "Admin access required" }, 403, origin);
     }
 
-    const body = await req.json().catch(() => null);
-    const category = body?.category as Category;
-    if (!category || !(category in categories)) {
-      return json({ error: "Choose a supported media category." }, 400, origin);
-    }
     if (isCron && category !== "stories") {
       return json({ error: "The automatic scheduler is restricted to Story media." }, 403, origin);
     }
-    const limit = Math.max(1, Math.min(2, Number.isInteger(body?.limit) ? body.limit : 2));
     const config = categories[category];
     const s3 = getStorageClient();
     const bucket = Deno.env.get("B2_BUCKET_NAME")!;

@@ -4,6 +4,20 @@
 
 begin;
 
+-- Existing members already supplied these values in their profile. Copy them
+-- into their private onboarding record before locking the registration fields.
+update public.member_onboarding onboarding
+set answers = onboarding.answers || jsonb_strip_nulls(jsonb_build_object(
+  'gender_identity', profile.gender_identity,
+  'interested_in', profile.interested_in
+))
+from public.profiles profile
+where onboarding.user_id = profile.id
+  and (
+    (nullif(onboarding.answers ->> 'gender_identity', '') is null and profile.gender_identity is not null)
+    or (nullif(onboarding.answers ->> 'interested_in', '') is null and profile.interested_in is not null)
+  );
+
 create or replace function private.prevent_registration_identity_changes()
 returns trigger
 language plpgsql

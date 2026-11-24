@@ -8990,17 +8990,13 @@ function show(id, addToHistory = true) {
     id = "profile";
     setTimeout(() => {
       if (!hasRequiredProfilePhotos) {
-        status(
-          "photoStatus",
-          "Please upload at least 2 profile photos before using The Match.",
-          true
-        );
+        const message = "Please upload at least 2 profile photos before using The Match. You can add them from your Profile.";
+        status("photoStatus", message, true);
+        alert(message);
       } else if (!profileDetailsAreComplete()) {
-        status(
-          "profileStatus",
-          "Please complete all required profile details and save your profile before using The Match.",
-          true
-        );
+        const message = "Please complete and save your profile details before continuing to Discover, Nearby, Likes or other matchmaking features. Go to Edit profile, fill in the required fields, and save.";
+        status("profileStatus", message, true);
+        alert(message);
       }
     }, 0);
   }
@@ -16792,7 +16788,10 @@ if(countError)throw countError;
         likeBack.textContent="❤️ Like Back";
 
         
-        likeBack.onclick=async()=>{
+        likeBack.onclick=async(event)=>{
+          event?.preventDefault?.();
+          event?.stopPropagation?.();
+          if (likeBack.disabled) return;
           likeBack.disabled=true;
           status("likesStatus","Checking for your match...");
 

@@ -64,7 +64,7 @@ begin
   from public.messages m
   left join public.profiles sender on sender.id = m.sender_id
   left join public.profiles receiver on receiver.id = m.receiver_id
-  where (p_before is null or m.created_at < p_before)
+  where (p_before is null or (m.created_at, m.id) < (p_before, p_before_id))
     and (
       v_search is null
       or m.body ilike '%' || v_search || '%'

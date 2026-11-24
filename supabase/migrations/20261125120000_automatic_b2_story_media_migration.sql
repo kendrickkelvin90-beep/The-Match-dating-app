@@ -90,6 +90,7 @@ begin
       on f.category = 'stories' and f.record_id = s.id
     where s.media_url is not null
       and s.media_url not like 'b2://%'
+      and s.expires_at > now()
       and (f.record_id is null or not f.failed_permanently)
   ) then
     return false;
@@ -158,36 +159,29 @@ select cron.schedule(
         (pg_control_system()).system_identifier::text as current_cluster_id,
         floor(extract(epoch from clock_timestamp()))::bigint as request_timestamp
     )
-    select net.http_post(
-      url := 'https://rxbdmgzmwhjnkcclyrcq.supabase.co/functions/v1/b2-media-migrate',
-      headers := jsonb_build_object(
-        'Content-Type', 'application/json',
-        'apikey', scheduler_secrets.public_api_key,
-        'Authorization', 'Bearer ' || scheduler_secrets.public_api_key,
-        'x-match-cron-timestamp', scheduler_secrets.request_timestamp::text,
-        'x-match-cron-signature', encode(
-          extensions.hmac(
-            scheduler_secrets.request_timestamp::text || ':stories:2',
-            scheduler_secrets.scheduler_token,
-            'sha256'
-          ),
-          'hex'
-        )
-      ),
-      body := '{"category":"stories","limit":2}'::jsonb,
-      timeout_milliseconds := 55000
-    )
-    from scheduler_secrets
-    where scheduler_secrets.scheduler_token is not null
-      and scheduler_secrets.public_api_key is not null
-      and scheduler_secrets.saved_cluster_id = scheduler_secrets.current_cluster_id
-      and exists (
+    select case
+      when not exists (
         select 1
         from public.stories s
         left join public.b2_media_migration_failures f
           on f.category = 'stories' and f.record_id = s.id
         where s.media_url is not null
           and s.media_url not like 'b2://%'
+          and s.expires_at > now()
+          and (f.record_id is null or not f.failed_permanently)
+      ) then cron.unschedule('automatic-b2-story-media-migration')::text
+      when exists (
+        select 1 from scheduler_secrets
+        where saved_cluster_id is distinct from current_cluster_id
+      ) then cron.unschedule('automatic-b2-story-media-migration')::text
+      when exists (
+        select 1
+        from public.stories s
+        left join public.b2_media_migration_failures f
+          on f.category = 'stories' and f.record_id = s.id
+        where s.media_url is not null
+          and s.media_url not like 'b2://%'
+          and s.expires_at > now()
           and (
             f.record_id is null
             or (
@@ -195,7 +189,33 @@ select cron.schedule(
               and (f.next_retry_at is null or f.next_retry_at <= now())
             )
           )
-      );
+      ) then (
+        select net.http_post(
+          url := 'https://rxbdmgzmwhjnkcclyrcq.supabase.co/functions/v1/b2-media-migrate',
+          headers := jsonb_build_object(
+            'Content-Type', 'application/json',
+            'apikey', scheduler_secrets.public_api_key,
+            'Authorization', 'Bearer ' || scheduler_secrets.public_api_key,
+            'x-match-cron-timestamp', scheduler_secrets.request_timestamp::text,
+            'x-match-cron-signature', encode(
+              extensions.hmac(
+                scheduler_secrets.request_timestamp::text || ':stories:2',
+                scheduler_secrets.scheduler_token,
+                'sha256'
+              ),
+              'hex'
+            )
+          ),
+          body := '{"category":"stories","limit":2}'::jsonb,
+          timeout_milliseconds := 55000
+        )::text
+        from scheduler_secrets
+        where scheduler_secrets.scheduler_token is not null
+          and scheduler_secrets.public_api_key is not null
+          and scheduler_secrets.saved_cluster_id = scheduler_secrets.current_cluster_id
+      )
+      else null
+    end;
   $job$
 );
 

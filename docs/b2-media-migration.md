@@ -2,7 +2,8 @@
 
 ## Safety rules
 
-- Legacy Story media is migrated by a Supabase server-side scheduled worker; no administrator needs to keep the app open or press a migration button.
+- Active legacy Story media is migrated by a Supabase server-side scheduled worker; no administrator needs to keep the app open or press a migration button.
+- Expired Stories are not copied to B2 because members can no longer view them; their existing Supabase objects are left untouched.
 - The worker copies each object to B2 first, then conditionally updates the matching database reference.
 - Original Supabase Storage objects are retained. This migration never deletes source files.
 - B2 object keys are deterministic for each source row, so retrying a partially completed copy is safe.
@@ -21,7 +22,7 @@
 | Verification selfies | verification-selfies | verification_requests.selfie_path | b2:// |
 | Event posters | event-posters | match_event_poster_assets.storage_path | b2:// |
 
-Profile photos are already using B2. This automated job targets legacy Story records only; other categories remain outside its scope.
+Profile photos and new Story uploads already use B2. This automated job targets active legacy Story records only; expired Stories and other media categories remain outside its scope.
 
 ## Automatic Story migration
 

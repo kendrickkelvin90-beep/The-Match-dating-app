@@ -166,6 +166,30 @@ end;
 $passes$;
 reset role;
 
+-- Shared dating details use the same derived lane and reciprocal
+-- compatibility rules as Discover; a caller cannot request cross-lane details.
+update public.member_dating_details
+set share_interests = true
+where user_id = '00000000-0000-4000-8000-000000000010';
+
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
+do $shared_details$
+declare
+  visible_ids uuid[];
+begin
+  select array_agg(user_id order by user_id)
+    into visible_ids
+  from public.get_shared_dating_details(array[
+    '00000000-0000-4000-8000-000000000002'::uuid,
+    '00000000-0000-4000-8000-000000000010'::uuid
+  ]);
+
+  if visible_ids is distinct from array['00000000-0000-4000-8000-000000000010'::uuid] then
+    raise exception 'Shared dating details must stay within the compatible dating lane; got %', visible_ids;
+  end if;
+end;
+$shared_details$;
+
 -- Existing conversations survive a later lane classification change, while
 -- they do not make either member visible in the other's new Discover lane.
 insert into public.messages(sender_id, receiver_id, body)

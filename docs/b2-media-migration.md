@@ -25,7 +25,7 @@ Profile photos are already using B2. This automated job targets legacy Story rec
 
 ## Automatic Story migration
 
-The migration uses Supabase Cron (`pg_cron`) and `pg_net` to invoke the existing `b2-media-migrate` Edge Function once per minute while eligible legacy Story rows remain. The scheduler credential is generated inside the database and stored encrypted in Supabase Vault. The Edge Function validates that credential through a service-role-only database function. No B2 credential or scheduler token is placed in browser code or committed to the repository.
+The migration uses Supabase Cron (`pg_cron`) and `pg_net` to invoke the existing `b2-media-migrate` Edge Function once per minute while eligible legacy Story rows remain. The scheduler credential is generated inside the database and stored encrypted in Supabase Vault. Each scheduled request carries a short-lived HMAC signature, not the underlying token; the Edge Function validates it through a service-role-only database function. A database-cluster identity guard prevents copied preview branches from calling the production endpoint. No B2 credential or scheduler token is placed in browser code or committed to the repository.
 
 The worker:
 1. Selects up to two eligible legacy Story records.

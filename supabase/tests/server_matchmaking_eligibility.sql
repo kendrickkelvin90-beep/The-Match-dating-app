@@ -192,8 +192,8 @@ begin
   if found_ids is distinct from array['00000000-0000-4000-8000-000000000002'::uuid] then
     raise exception 'Distance filter did not preserve the production Discover result: %', found_ids;
   end if;
-  -- A bisexual viewer can discover straight and bisexual members; the
-  -- straight-only audience gate is not applied to bisexual members.
+  -- A bisexual member belongs to the LGBTQ+ dating lane and must not
+  -- receive profiles from the straight lane, even when gender preferences fit.
   update public.member_onboarding
   set answers = jsonb_set(answers, '{sexual_orientation}', '"Bisexual"')
   where user_id = '00000000-0000-4000-8000-000000000001';
@@ -202,12 +202,8 @@ begin
     into found_ids
   from public.matchmaking_eligible_candidate_ids();
 
-  if found_ids is distinct from array[
-    '00000000-0000-4000-8000-000000000002'::uuid,
-    '00000000-0000-4000-8000-000000000007'::uuid,
-    '00000000-0000-4000-8000-000000000010'::uuid
-  ] then
-    raise exception 'Bisexual members should retain access to compatible straight and bisexual members: %', found_ids;
+  if found_ids is distinct from array['00000000-0000-4000-8000-000000000010'::uuid] then
+    raise exception 'Bisexual members should see compatible LGBTQ+ lane members only: %', found_ids;
   end if;
 
   if not private.match_preference_accepts_gender('Men and women', 'Man')

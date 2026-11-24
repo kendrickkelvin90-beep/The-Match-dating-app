@@ -8277,35 +8277,45 @@ async function uploadMediaToB2(category, file) {
   if (!file || !file.size || file.size > 25 * 1024 * 1024) {
     throw new Error("Choose a file between 1 byte and 25 MB.");
   }
-  // Send the file as an actual binary request body. The Supabase Functions
-  // client can wrap browser File objects differently across mobile browsers;
-  // using fetch + ArrayBuffer keeps Android uploads byte-for-byte and avoids
-  // the request failing after a successful CORS preflight.
+  // Upload media to B2 through the authenticated upload function. Retry
+  // temporary connection/service failures without changing the object payload.
   const projectUrl = "https://rxbdmgzmwhjnkcclyrcq.supabase.co";
   const publishableKey = "sb_publishable_5OirCcmy8L5n3isPvi-P0w_Dgeb13U_";
-  let response;
-  try {
-    response = await fetch(projectUrl + "/functions/v1/b2-media-upload", {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer " + accessToken,
-        "apikey": publishableKey,
-        "x-category": category,
-        "x-action": "upload-binary",
-        "x-file-name": file.name || "media",
-        "Content-Type": file.type
-      },
-      body: await file.arrayBuffer()
-    });
-  } catch (networkError) {
-    console.error("B2 binary upload request failed before a response:", networkError);
-    throw new Error("The secure flyer upload could not reach Supabase. Your selected flyer is still here; check your connection and try again.");
+  const body = await file.arrayBuffer();
+  let lastError;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    let response;
+    try {
+      response = await fetch(projectUrl + "/functions/v1/b2-media-upload", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + accessToken,
+          "apikey": publishableKey,
+          "x-category": category,
+          "x-action": "upload-binary",
+          "x-file-name": file.name || "media",
+          "Content-Type": file.type
+        },
+        body
+      });
+    } catch (networkError) {
+      lastError = networkError;
+    }
+    if (response) {
+      const result = await response.json().catch(() => ({}));
+      if (response.ok && result?.storagePath) return result.storagePath;
+      const transient = [408, 425, 429, 500, 502, 503, 504, 520, 522, 524].includes(response.status);
+      if (!transient || attempt === 2) {
+        throw new Error(result?.error || ("B2 media upload failed (HTTP " + response.status + ")."));
+      }
+      lastError = new Error(result?.error || ("Temporary upload service error (HTTP " + response.status + ")."));
+    }
+    if (attempt === 2) break;
+    status("storiesStatus", "Upload connection interrupted. Retrying (" + (attempt + 2) + "/3)...");
+    await new Promise(resolve => setTimeout(resolve, 900 * (attempt + 1)));
   }
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok || !result?.storagePath) {
-    throw new Error(result?.error || ("Secure flyer upload failed (HTTP " + response.status + ")."));
-  }
-  return result.storagePath;
+  console.error("B2 media upload failed after retries:", lastError);
+  throw new Error("Could not connect to the B2 media upload service after 3 attempts. Your selected file is still here; please try again.");
 }
 
 // The Events module is a separate script closure and must use the same
@@ -15477,7 +15487,7 @@ $("storyMediaFile").onchange = async () => {
   }
 
   const invalidFile = files.find(file =>
-    !allowedTypes.includes(file.type) || file.size > 50 * 1024 * 1024
+    !allowedTypes.includes(file.type) || file.size > 25 * 1024 * 1024
   );
 
   if (invalidFile) {
@@ -15485,7 +15495,7 @@ $("storyMediaFile").onchange = async () => {
       "storiesStatus",
       !allowedTypes.includes(invalidFile.type)
         ? "Use JPG, PNG, WebP, MP4 or WebM files only."
-        : "Each photo/video must be 50 MB or smaller.",
+        : "Each photo/video must be 25 MB or smaller.",
       true
     );
     input.value = "";

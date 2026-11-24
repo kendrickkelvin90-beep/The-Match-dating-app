@@ -1,6 +1,16 @@
 -- Friendly Story activity alerts and a capped inactive-member re-engagement sequence.
 begin;
 
+alter table public.notifications drop constraint if exists notifications_type_check;
+alter table public.notifications add constraint notifications_type_check
+  check (type = any (array[
+    'verification_approved','verification_rejected','verification_reminder',
+    'verification_grace_expired','like','message','premium_welcome',
+    'premium_expired','story_uploaded','story_limit','membership_payment_rejected',
+    'coins_credited','coin_purchase_rejected','account_suspended','account_banned',
+    'event_published','premium_expiring','premium_expiring_soon','member_welcome_back'
+  ]));
+
 -- Story alerts go only to members who already have a mutual like or conversation
 -- with the poster, and who belong to the same private dating lane.
 create or replace function public.notify_connected_members_of_story()

@@ -30,24 +30,24 @@ begin
   where polrelid = 'public.chat_media'::regclass
     and polname = 'Members send chat media to permitted conversations';
 
-  if pg_catalog.position('public.can_interact_with_member(target_user_id)' in chat_definition) = 0 then
+  if pg_catalog.strpos(chat_definition, 'public.can_interact_with_member(target_user_id)') = 0 then
     raise exception 'Chat permission must include the private lane interaction guard';
   end if;
 
-  if pg_catalog.position('from public.messages existing_message' in interaction_definition) = 0
-     or pg_catalog.position('from public.likes sent_like' in interaction_definition) = 0 then
+  if pg_catalog.strpos(interaction_definition, 'from public.messages existing_message') = 0
+     or pg_catalog.strpos(interaction_definition, 'from public.likes sent_like') = 0 then
     raise exception 'Existing conversations and mutual matches must remain permitted';
   end if;
 
-  if message_policy is null or pg_catalog.position('can_chat_with_member(receiver_id)' in message_policy) = 0 then
+  if message_policy is null or pg_catalog.strpos(message_policy, 'can_chat_with_member(receiver_id)') = 0 then
     raise exception 'Premium and mutual-match message inserts must use the protected chat guard';
   end if;
 
-  if media_policy is null or pg_catalog.position('can_chat_with_member(receiver_id)' in media_policy) = 0 then
+  if media_policy is null or pg_catalog.strpos(media_policy, 'can_chat_with_member(receiver_id)') = 0 then
     raise exception 'Chat media inserts must use the protected chat guard';
   end if;
 
-  if pg_catalog.position('can_chat_with_member(p_recipient_id)' in pg_catalog.lower(gift_definition)) = 0 then
+  if pg_catalog.strpos(pg_catalog.lower(gift_definition), 'can_chat_with_member(p_recipient_id)') = 0 then
     raise exception 'Gift sends must use the protected chat guard';
   end if;
 end;

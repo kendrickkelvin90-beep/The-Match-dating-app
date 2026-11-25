@@ -40,6 +40,9 @@ from (
 cross join generate_series(1,2) photo_no
 on conflict (storage_path) do nothing;
 
+delete from public.member_moderation
+where user_id = '00000000-0000-4000-8000-000000000001';
+
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
 
 do $fair_rotation$

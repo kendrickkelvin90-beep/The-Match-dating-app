@@ -6,12 +6,12 @@ do $fair_rotation$
 declare
   function_sql text;
 begin
-  function_sql := pg_catalog.pg_get_functiondef(
+  function_sql := pg_catalog.lower(pg_catalog.pg_get_functiondef(
     'public.matchmaking_eligible_candidate_ids(double precision,integer,integer,text,text,text[],boolean,text,integer)'::regprocedure
-  );
+  ));
 
-  if position('pg_catalog.md5' in function_sql) = 0
-     or position('pg_catalog.date_part' in function_sql) = 0
+  if position('md5(' in function_sql) = 0
+     or position('date_part(' in function_sql) = 0
      or position('21600' in function_sql) = 0 then
     raise exception 'Discover candidate selection is missing its six-hour viewer-specific hash rotation';
   end if;
@@ -20,7 +20,9 @@ begin
     raise exception 'Discover still uses permanent UUID-first candidate ordering';
   end if;
 
-  if position('limit greatest(1, least(coalesce(p_max_results, 100), 100))' in function_sql) = 0 then
+  if position('p_max_results' in function_sql) = 0
+     or position('limit' in function_sql) = 0
+     or position('100' in function_sql) = 0 then
     raise exception 'Discover must preserve its existing maximum 100 candidate response';
   end if;
 

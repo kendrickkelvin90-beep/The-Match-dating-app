@@ -27,6 +27,9 @@ on:
       - "supabase/migrations/20261118100000_strict_dating_community_separation.sql"
       - "supabase/migrations/20261103165000_nearby_profiles_secure_for_all_users.sql"
       - "supabase/migrations/20261124150000_nearby_orientation_lane_preference_guard.sql"
+      - "supabase/migrations/20261125130000_fair_discover_rotation_and_orientation_lane_events.sql"
+      - "supabase/tests/orientation_lane_events.sql"
+      - "supabase/tests/discover_fair_rotation.sql"
       - "supabase/tests/nearby_dating_lane_separation.sql"
       - "supabase/migrations/20261124120000_preference_based_separated_dating_lanes.sql"
       - "supabase/migrations/20261118110000_keep_dating_community_private.sql"
@@ -50,6 +53,7 @@ on:
       - feat/profile-pause-discovery-control
       - feat/profile-visibility-pronouns
       - feat/legacy-community-recovery-diagnostics
+      - fix/discover-fair-rotation-events-orientation-lanes
     paths:
       - "supabase/migrations/20261116130000_server_matchmaking_eligibility_gate.sql"
       - "supabase/migrations/20261116150000_general_dating_optional_roles.sql"
@@ -303,6 +307,30 @@ jobs:
         run: |
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 \
             -f supabase/tests/server_dating_community_separation.sql
+
+      - name: Prepare event schema and apply orientation-lane event migrations
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -c "CREATE TABLE IF NOT EXISTS public.notifications (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL, type text NOT NULL, title text, body text, related_user_id uuid, is_read boolean NOT NULL DEFAULT false, action_url text, action_label text)"
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261102090000_match_events.sql
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261103090000_match_event_privacy.sql
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261103100000_match_event_private_venues.sql
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -c "CREATE TABLE IF NOT EXISTS public.match_event_poster_assets (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), event_id uuid NOT NULL, organiser_id uuid NOT NULL)"
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -c "CREATE TABLE IF NOT EXISTS public.match_event_ticket_types (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), event_id uuid NOT NULL, is_active boolean NOT NULL DEFAULT true)"
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261119210000_notify_members_when_event_is_published.sql
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261125130000_fair_discover_rotation_and_orientation_lane_events.sql
+      - name: Test fair Discover candidate rotation
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -f supabase/tests/discover_fair_rotation.sql
+
+      - name: Test orientation-derived event creation, notifications, and RLS isolation
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -f supabase/tests/orientation_lane_events.sql
 
       - name: Apply registration identity immutability guard
         env:

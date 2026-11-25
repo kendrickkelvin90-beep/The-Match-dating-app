@@ -194,6 +194,18 @@ jobs:
           if "if (currentMemberOrientationMissing)" not in html:
               raise SystemExit("Session restoration must open the missing-orientation completion screen")
           print("Verified one-time private orientation recovery for existing accounts")
+          if 'member_can_interact_with_discover_profile' not in html:
+              raise SystemExit("Discover must check server-side interaction eligibility for each profile")
+          if "This profile is view-only until its member completes orientation." not in html:
+              raise SystemExit("Unassigned profiles need a clear view-only notice")
+          if "if (!canInteractWithPerson) return;" not in html or 'continueButton.textContent = "Next profile"' not in html:
+              raise SystemExit("Unassigned profiles must not support swipe actions and need safe next-profile navigation")
+          if "if (canInteractWithPerson) {\n        actions.append(pass,superLike,like);" not in html:
+              raise SystemExit("Like, Pass and Super Like controls must only render for interaction-eligible profiles")
+          if "refreshFirstMessageTicketState = appendDiscoverFirstMessageComposer" not in html:
+              raise SystemExit("First-message ticket must be gated by interaction eligibility")
+          print("Verified unassigned profiles are view-only in Discover")
+
 
       - name: Prepare isolated Discover schema and synthetic fixtures
         env:

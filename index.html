@@ -12478,38 +12478,34 @@ let people = (peopleData || []).filter(person => eligibleIds.has(person.id)).map
     if (viewerPremium && savedPreferences.verifiedOnly) people = people.filter(person => person.is_verified || ["basic","enhanced"].includes(person.verification_level));
     if (viewerPremium && savedPreferences.recentlyActive) people = people.filter(person => isUserOnline(person.id));
 
-    // Randomize Discover profile order.
-    for (let i = people.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [people[i], people[j]] = [people[j], people[i]];
-    }
-    // Rank the Discover stack with the server-computed compatibility score.
-    // Optional discovery toggles add weight to the dimensions the member asked
-    // us to prioritise; ties retain the randomized order above.
-    const lifestyleWeight = savedPreferences.lifestyleDiscovery ? 0.20 : 0;
-    const interestWeight = savedPreferences.prioritiseSharedInterests ? 0.10 : 0;
-    const compatibilityWeight = 0.70;
-    const totalRankWeight = compatibilityWeight + lifestyleWeight + interestWeight;
-    const discoverRank = person => {
-      const compatibility = Math.max(0, Math.min(100, Number(person._compatibilityPercent) || 0));
-      const lifestyle = Math.max(0, Math.min(100, (Number(person._lifestyleMatchCount) || 0) / 11 * 100));
-      const interests = Math.max(0, Math.min(100, Number(person._interestMatchPercent) || 0));
-      return (
-        compatibility * compatibilityWeight +
-        lifestyle * lifestyleWeight +
-        interests * interestWeight
-      ) / totalRankWeight;
+    // Keep compatibility signals meaningful while making each refreshed feed feel fresh.
+    // Higher compatibility/lifestyle/interest scores improve a profile's chance
+    // of appearing earlier, but no longer lock members into the same fixed order.
+    const shuffleDiscoverProfiles = profiles => {
+      const lifestyleWeight = savedPreferences.lifestyleDiscovery ? 0.20 : 0;
+      const interestWeight = savedPreferences.prioritiseSharedInterests ? 0.10 : 0;
+      const compatibilityWeight = 0.70;
+      const totalRankWeight = compatibilityWeight + lifestyleWeight + interestWeight;
+      return profiles.map(person => {
+        const compatibility = Math.max(0, Math.min(100, Number(person._compatibilityPercent) || 0));
+        const lifestyle = Math.max(0, Math.min(100, (Number(person._lifestyleMatchCount) || 0) / 11 * 100));
+        const interests = Math.max(0, Math.min(100, Number(person._interestMatchPercent) || 0));
+        const rank = (
+          compatibility * compatibilityWeight +
+          lifestyle * lifestyleWeight +
+          interests * interestWeight
+        ) / totalRankWeight;
+        // Exponential-race ordering gives higher-ranked profiles better odds
+        // without forcing them into an identical order on every refresh.
+        const preferenceWeight = 0.5 + rank / 100;
+        const shuffleKey = -Math.log(Math.max(Math.random(), Number.EPSILON)) / preferenceWeight;
+        return { ...person, _discoverWeightedRank: rank, _discoverShuffleKey: shuffleKey };
+      }).sort((a, b) => a._discoverShuffleKey - b._discoverShuffleKey)
+        .map(({ _discoverShuffleKey, ...person }) => person);
     };
-    people = people
-      .map(person => ({ ...person, _discoverWeightedRank: discoverRank(person) }))
-      .sort((a, b) =>
-        b._discoverWeightedRank - a._discoverWeightedRank ||
-        (b._compatibilityDimensions || 0) - (a._compatibilityDimensions || 0) ||
-        (b._sharedInterestCount || 0) - (a._sharedInterestCount || 0)
-      );
+    people = shuffleDiscoverProfiles(people);
 
-
-
+    
     const { data: myLikes, error: myLikesError } = await db
   .from("likes")
   .select("liked_id")
@@ -12632,33 +12628,8 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
     !recentlyPassed.has(p.id)
   );
 
-  // Randomize equal-ranked candidates, then use the same weighted model as
-  // the primary Discover feed so expanded-range results behave consistently.
-  for (let i = people.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [people[i], people[j]] = [people[j], people[i]];
-  }
-  const expandedLifestyleWeight = savedPreferences.lifestyleDiscovery ? 0.20 : 0;
-  const expandedInterestWeight = savedPreferences.prioritiseSharedInterests ? 0.10 : 0;
-  const expandedCompatibilityWeight = 0.70;
-  const expandedTotalWeight = expandedCompatibilityWeight + expandedLifestyleWeight + expandedInterestWeight;
-  const expandedDiscoverRank = person => {
-    const compatibility = Math.max(0, Math.min(100, Number(person._compatibilityPercent) || 0));
-    const lifestyle = Math.max(0, Math.min(100, (Number(person._lifestyleMatchCount) || 0) / 11 * 100));
-    const interests = Math.max(0, Math.min(100, Number(person._interestMatchPercent) || 0));
-    return (
-      compatibility * expandedCompatibilityWeight +
-      lifestyle * expandedLifestyleWeight +
-      interests * expandedInterestWeight
-    ) / expandedTotalWeight;
-  };
-  people = people
-    .map(person => ({ ...person, _discoverWeightedRank: expandedDiscoverRank(person) }))
-    .sort((a, b) =>
-      b._discoverWeightedRank - a._discoverWeightedRank ||
-      (b._compatibilityDimensions || 0) - (a._compatibilityDimensions || 0) ||
-      (b._sharedInterestCount || 0) - (a._sharedInterestCount || 0)
-    );
+  // Use the same randomized, preference-weighted ordering for expanded-range results.
+  people = shuffleDiscoverProfiles(people);
 }
 
 // Published community events are additional Discover cards, never dating profiles.

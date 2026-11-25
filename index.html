@@ -6109,46 +6109,73 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
 }
 </style>
 <style id="tm-discover-loader-and-compact-chat">
-/* The Match Connection Pulse: an original constellation-style loading identity. */
+/* Romantic Glow Pulse — soft, original and deliberately non-radar-like. */
 #discover #discoverStatus.tm-discover-loading {
   position:relative!important; inset:auto!important; z-index:1!important;
   display:flex!important; flex-direction:column!important; align-items:center!important;
-  justify-content:center!important; gap:18px!important; width:100%!important;
-  min-height:clamp(220px,38vh,340px)!important; margin:12px 0 18px!important;
-  padding:22px 16px!important; border:0!important; border-radius:0!important;
+  justify-content:center!important; gap:15px!important; width:100%!important;
+  min-height:clamp(210px,35vh,310px)!important; margin:10px 0 16px!important;
+  padding:20px 16px!important; border:0!important; border-radius:0!important;
   background:transparent!important; color:#e9e4e8!important;
   text-align:center!important; font-size:15px!important; line-height:1.4!important;
 }
-#discover .tm-connection-pulse {
-  display:block; width:min(78vw,230px); height:auto; overflow:visible;
-  filter:drop-shadow(0 0 13px rgba(207,174,119,.12));
+#discover .tm-romantic-glow {
+  display:block; width:min(72vw,210px); height:auto; overflow:visible;
+  filter:drop-shadow(0 8px 24px rgba(212,175,55,.16));
 }
-#discover .tm-connection-pulse .tm-network-line {
-  fill:none; stroke:rgba(205,174,126,.48); stroke-width:1.35;
-  stroke-linecap:round; stroke-dasharray:5 7;
-  animation:tmConnectionLineFlow 5s linear infinite;
-}
-#discover .tm-connection-pulse .tm-network-line:nth-child(2n) { animation-delay:-2.5s; }
-#discover .tm-connection-pulse .tm-network-node {
-  fill:#d9bd91; stroke:rgba(255,235,202,.72); stroke-width:1.1;
+#discover .tm-romantic-glow .tm-glow-halo {
+  fill:none; stroke-linecap:round; stroke-width:2.1;
   transform-box:fill-box; transform-origin:center;
-  animation:tmConnectionNodeGlow 2.6s ease-in-out infinite;
 }
-#discover .tm-connection-pulse .tm-network-node:nth-of-type(2n) { animation-delay:-1.3s; }
-#discover .tm-connection-pulse .tm-network-node-accent {
-  fill:#d98fa8; stroke:rgba(255,218,231,.72);
+#discover .tm-romantic-glow .tm-glow-halo-gold {
+  stroke:rgba(212,175,55,.62); animation:tmRomanticHalo 3.8s cubic-bezier(.4,0,.2,1) infinite;
+}
+#discover .tm-romantic-glow .tm-glow-halo-rose {
+  stroke:rgba(244,194,194,.72); stroke-width:1.7;
+  animation:tmRomanticHalo 4.6s cubic-bezier(.4,0,.2,1) -1.2s infinite;
+}
+#discover .tm-romantic-glow .tm-glow-core {
+  fill:url(#tmRomanticCore); filter:url(#tmRomanticBlur);
+  animation:tmRomanticBreath 3.2s cubic-bezier(.4,0,.2,1) infinite;
+}
+#discover .tm-romantic-glow .tm-glow-heart {
+  fill:#f4c2c2; stroke:#f8dfc7; stroke-width:1.1;
+  filter:drop-shadow(0 0 7px rgba(244,194,194,.48));
+  transform-box:fill-box; transform-origin:center;
+  animation:tmRomanticBreath 2.8s cubic-bezier(.4,0,.2,1) infinite;
+}
+#discover .tm-romantic-glow .tm-glow-spark {
+  fill:#e8ca87; filter:drop-shadow(0 0 5px rgba(212,175,55,.7));
+  animation:tmRomanticSpark 3.6s ease-in-out infinite;
 }
 #discover .tm-discover-loading-label {
-  color:#d5d0d3; font-size:15px; font-weight:550; letter-spacing:.01em;
+  color:#d9d1d5; font-size:15px; font-weight:550; letter-spacing:.01em;
+  animation:tmRomanticText 2.8s cubic-bezier(.4,0,.2,1) infinite;
 }
-@keyframes tmConnectionLineFlow { to { stroke-dashoffset:-48; } }
-@keyframes tmConnectionNodeGlow {
-  0%,100% { opacity:.58; transform:scale(.88); }
-  50% { opacity:1; transform:scale(1.18); }
+#discover #refreshNearby[hidden] { display:none!important; }
+#discover #refreshNearby.tm-discover-refresh-ready {
+  display:block!important; width:max-content!important; margin:10px auto 8px!important;
 }
+#discover #discoverStatus.tm-discover-empty {
+  display:block!important; width:100%!important; text-align:center!important;
+  margin:12px auto 8px!important;
+}
+@keyframes tmRomanticHalo {
+  0%,100% { opacity:.42; transform:scale(.94) rotate(-3deg); }
+  50% { opacity:.92; transform:scale(1.04) rotate(3deg); }
+}
+@keyframes tmRomanticBreath {
+  0%,100% { opacity:.68; transform:scale(.96); }
+  50% { opacity:1; transform:scale(1.045); }
+}
+@keyframes tmRomanticSpark {
+  0%,100% { opacity:.55; transform:scale(.82) rotate(0deg); }
+  50% { opacity:1; transform:scale(1.12) rotate(18deg); }
+}
+@keyframes tmRomanticText { 0%,100% { opacity:.68; } 50% { opacity:1; } }
 @media(prefers-reduced-motion:reduce) {
-  #discover .tm-connection-pulse .tm-network-line,
-  #discover .tm-connection-pulse .tm-network-node { animation:none!important; }
+  #discover .tm-romantic-glow *,
+  #discover .tm-discover-loading-label { animation:none!important; }
 }
 
 /* Compact message bubbles: timestamp and three-dot menu share one footer row. */
@@ -12285,13 +12312,19 @@ async function loadNearby(){
     return;
   }
   // No fallback community assignment.
+  const discoverRefreshButton = $("refreshNearby");
+  if (discoverRefreshButton) {
+    discoverRefreshButton.hidden = true;
+    discoverRefreshButton.classList.remove("tm-discover-refresh-ready");
+  }
+  $("discoverStatus")?.classList.remove("tm-discover-empty");
   status("discoverStatus","Finding people near you ...");
   const discoverLoadingStatus = $("discoverStatus");
   if (discoverLoadingStatus) {
     discoverLoadingStatus.classList.add("tm-discover-loading");
     discoverLoadingStatus.setAttribute("role", "status");
     discoverLoadingStatus.setAttribute("aria-live", "polite");
-    discoverLoadingStatus.innerHTML = '<svg class="tm-connection-pulse" viewBox="0 0 240 150" role="img" aria-label="A constellation of connections forming"><path class="tm-network-line" d="M24 93 L67 43 L112 70 L157 29 L213 67 M24 93 L79 119 L112 70 L166 111 L213 67 M67 43 L79 119 M157 29 L166 111 M67 43 L157 29 M79 119 L166 111"/><path class="tm-network-line" d="M24 93 L112 70 L213 67 M67 43 L166 111 M157 29 L79 119"/><circle class="tm-network-node" cx="24" cy="93" r="4.2"/><circle class="tm-network-node tm-network-node-accent" cx="67" cy="43" r="5"/><circle class="tm-network-node" cx="112" cy="70" r="6"/><circle class="tm-network-node tm-network-node-accent" cx="157" cy="29" r="4.5"/><circle class="tm-network-node" cx="213" cy="67" r="5.2"/><circle class="tm-network-node" cx="79" cy="119" r="4"/><circle class="tm-network-node tm-network-node-accent" cx="166" cy="111" r="4.8"/></svg><span class="tm-discover-loading-label">Finding your kind of connection…</span>';
+    discoverLoadingStatus.innerHTML = '<svg class="tm-romantic-glow" viewBox="0 0 220 170" role="img" aria-label="A soft glowing heart surrounded by gentle curved light"><defs><radialGradient id="tmRomanticCore"><stop offset="0" stop-color="#f4c2c2" stop-opacity=".68"/><stop offset=".55" stop-color="#d4af37" stop-opacity=".2"/><stop offset="1" stop-color="#d4af37" stop-opacity="0"/></radialGradient><filter id="tmRomanticBlur" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="8"/></filter></defs><ellipse class="tm-glow-core" cx="110" cy="84" rx="48" ry="39"/><path class="tm-glow-halo tm-glow-halo-gold" d="M31 94 C34 48 72 24 119 31 C162 37 191 66 186 104"/><path class="tm-glow-halo tm-glow-halo-rose" d="M47 119 C60 148 103 153 143 134 C170 121 180 100 171 78"/><path class="tm-glow-heart" d="M110 112 C101 104 78 89 78 72 C78 55 98 49 110 65 C122 49 142 55 142 72 C142 89 119 104 110 112Z"/><path class="tm-glow-spark" d="M54 47 L57 56 L66 59 L57 62 L54 71 L51 62 L42 59 L51 56Z"/><path class="tm-glow-spark" d="M169 43 L171 49 L177 51 L171 53 L169 59 L167 53 L161 51 L167 49Z"/><circle class="tm-glow-spark" cx="181" cy="119" r="2.5"/></svg><span class="tm-discover-loading-label">Finding your kind of connection…</span>';
   }
 
   try{
@@ -12683,6 +12716,12 @@ if (discoverMemberIds.length) {
 
 if (!people.length && !discoverEventCards.length) {
   status("discoverStatus", "No profiles or published events are available right now. Check back soon.");
+  $("discoverStatus")?.classList.remove("tm-discover-loading");
+  $("discoverStatus")?.classList.add("tm-discover-empty");
+  if (discoverRefreshButton) {
+    discoverRefreshButton.hidden = false;
+    discoverRefreshButton.classList.add("tm-discover-refresh-ready");
+  }
   return;
 }
   
@@ -13668,12 +13707,20 @@ superLike.onclick=async()=>{
     window.__matchRenderDiscoverPerson = showPerson;
 
     status("discoverStatus","");
-    $("discoverStatus")?.classList.remove("tm-discover-loading");
+    $("discoverStatus")?.classList.remove("tm-discover-loading","tm-discover-empty");
+    if (discoverRefreshButton) {
+      discoverRefreshButton.hidden = false;
+      discoverRefreshButton.classList.add("tm-discover-refresh-ready");
+    }
     await showPerson();
 
   }catch(e){
     $("discoverStatus")?.classList.remove("tm-discover-loading");
     status("discoverStatus","Could not load members: "+friendly(e),true);
+    if (discoverRefreshButton) {
+      discoverRefreshButton.hidden = false;
+      discoverRefreshButton.classList.add("tm-discover-refresh-ready");
+    }
   }
 }
 

@@ -178,6 +178,15 @@ jobs:
           if 'id="sexualOrientation"' in html or '$("sexualOrientation")?.addEventListener' in html:
               raise SystemExit("Sexual orientation must not remain editable in profile settings")
           print("Verified registration-collected orientation, automatic lanes, and no editable profile orientation")
+          if "function showMissingOrientationSetup()" not in html:
+              raise SystemExit("Existing members missing a registration orientation need a one-time completion screen")
+          if "currentMemberOrientationMissing = !savedOrientation" not in html:
+              raise SystemExit("Missing orientation must be distinguished from an explicit undisclosed answer and legacy saved lane")
+          if "Save privately and continue" not in html or "sexual_orientation: select.value" not in html:
+              raise SystemExit("Private orientation completion must save the selected answer to member_onboarding")
+          if "if (currentMemberOrientationMissing)" not in html:
+              raise SystemExit("Session restoration must open the missing-orientation completion screen")
+          print("Verified one-time private orientation recovery for existing accounts")
 
       - name: Prepare isolated Discover schema and synthetic fixtures
         env:

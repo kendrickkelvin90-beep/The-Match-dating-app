@@ -13037,7 +13037,7 @@ if(discoverPanel){
 const card=document.createElement("div");
 card.className="member-card discover-option3-card";
 card.dataset.memberId = p.id;
-card.style.cssText="position:relative;z-index:2;display:block;width:100%;max-width:none;height:54vh;min-height:320px;max-height:560px;box-sizing:border-box;margin:0;padding:0;border:1px solid rgba(224,190,116,.82);border-radius:26px;background:#080808;box-shadow:0 12px 34px rgba(0,0,0,.42),0 0 0 1px rgba(224,190,116,.10);touch-action:pan-y;overflow:hidden;will-change:transform,opacity;animation:discoverCardEnter 260ms cubic-bezier(.2,.75,.25,1) both;";
+card.style.cssText="position:relative;z-index:2;display:block;width:100%;max-width:none;height:72vh;min-height:320px;max-height:720px;box-sizing:border-box;margin:0;padding:0;border:0;border-radius:24px;background:#080808;box-shadow:none;touch-action:pan-y;overflow:hidden;will-change:transform,opacity;animation:none;transition:none;";
 
 
 
@@ -13808,9 +13808,11 @@ superLike.onclick=async()=>{
         card.style.setProperty("max-width", "100%", "important");
         card.style.setProperty("margin-left", "0", "important");
         card.style.setProperty("margin-right", "0", "important");
-        card.style.setProperty("border", "1px solid rgba(224,190,116,.88)", "important");
-        card.style.setProperty("border-radius", "28px", "important");
-        card.style.setProperty("box-shadow", "0 12px 34px rgba(0,0,0,.42), 0 0 0 1px rgba(224,190,116,.10)", "important");
+        card.style.setProperty("border", "0", "important");
+        card.style.setProperty("border-radius", "24px", "important");
+        card.style.setProperty("box-shadow", "none", "important");
+        card.style.setProperty("transition", "none", "important");
+        card.style.setProperty("animation", "none", "important");
         card.style.setProperty("height", availableHeight + "px", "important");
         card.style.setProperty("min-height", "0", "important");
         card.style.setProperty("max-height", "none", "important");
@@ -13823,51 +13825,14 @@ superLike.onclick=async()=>{
           fitDiscoverCardToViewport();
         });
       };
-      const waitForDiscoverScrollToSettle = () => {
-        let previousX = window.scrollX;
-        let previousY = window.scrollY;
-        let stableFrames = 0;
-        let checkedFrames = 0;
-        const checkScrollStability = () => {
-          if (!card.isConnected) return;
-          checkedFrames += 1;
-          const currentX = window.scrollX;
-          const currentY = window.scrollY;
-          if (Math.abs(currentX - previousX) < 1 &&
-              Math.abs(currentY - previousY) < 1) {
-            stableFrames += 1;
-          } else {
-            stableFrames = 0;
-          }
-          previousX = currentX;
-          previousY = currentY;
-          // Require several consecutive stable frames, with a bounded wait
-          // for WebViews that keep reporting tiny scroll-position changes.
-          if (stableFrames >= 5 || checkedFrames >= 90) {
-            discoverInitialFitReady = true;
-            scheduleDiscoverCardFit();
-            return;
-          }
-          requestAnimationFrame(checkScrollStability);
-        };
-        requestAnimationFrame(checkScrollStability);
-      };
+      // Size the card as soon as it enters the DOM. Do not wait for scrolling,
+      // scroll-settle timers, or a later viewport event to make it full-size.
+      if (document.scrollingElement) document.scrollingElement.scrollTop = discoverScrollPosition;
+      window.scrollTo(0, discoverScrollPosition);
+      discoverInitialFitReady = true;
+      fitDiscoverCardToViewport();
       requestAnimationFrame(() => {
-        if (document.scrollingElement) document.scrollingElement.scrollTop = discoverScrollPosition;
-        window.scrollTo(0, discoverScrollPosition);
-        // Let WebView finish restoring scroll and applying its layout/anchor pass
-        // before starting the stable-frame check.
-        setTimeout(waitForDiscoverScrollToSettle, 450);
-        // Android WebViews can report the final visual viewport after the first
-        // scroll-settle pass. Refit after that layout pass as well.
-        setTimeout(() => {
-          discoverInitialFitReady = true;
-          scheduleDiscoverCardFit();
-        }, 900);
-        setTimeout(() => {
-          discoverInitialFitReady = true;
-          scheduleDiscoverCardFit();
-        }, 1500);
+        if (card.isConnected) fitDiscoverCardToViewport();
       });
       window.addEventListener("resize", scheduleDiscoverCardFit, { passive: true });
       // After the initial fit, only viewport resizing can change card height.
@@ -25745,6 +25710,28 @@ body:has(#chatPage:not(.hidden)) > main > #chatPage.panel:not(.hidden) {
 }
 </style>
 
+
+
+<style id="discover-immediate-full-size-no-frame">
+/* Immediate full-size Discover card; no scroll-triggered grow/shrink. */
+#discover #profileList,
+#discover #profileList > .discover-profile-card-stack {
+  border:0!important; outline:0!important; background:transparent!important;
+  box-shadow:none!important; border-radius:0!important;
+}
+#discover #profileList > .discover-profile-card-stack {
+  width:100%!important; max-width:none!important; margin:0 auto 12px!important;
+  padding:0 0 13px!important; box-sizing:border-box!important;
+}
+#discover #profileList > .discover-profile-card-stack > .discover-option3-card {
+  width:100%!important; max-width:none!important; margin:0!important;
+  border:0!important; outline:0!important; box-shadow:none!important;
+  animation:none!important; transition:none!important;
+}
+#discover .discover-photo-arrow {
+  top:18%!important; transform:translateY(-50%)!important; z-index:8!important;
+}
+</style>
 </body>
 </html>
 

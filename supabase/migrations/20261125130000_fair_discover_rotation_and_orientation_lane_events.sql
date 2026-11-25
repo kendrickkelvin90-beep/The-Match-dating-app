@@ -318,6 +318,7 @@ using (
 -- Responses and reports remain private to their owner; their event must also
 -- belong to the member's current lane.
 drop policy if exists "Members can respond privately to published events" on public.match_event_responses;
+drop policy if exists "Members manage only their own private event response" on public.match_event_responses;
 create policy "Members can respond privately to published events in their lane"
 on public.match_event_responses
 for insert to authenticated
@@ -353,9 +354,6 @@ for insert to authenticated
 with check (
   reporter_id = (select auth.uid())
   and status = 'open'
-  and admin_note is null
-  and reviewed_by is null
-  and reviewed_at is null
   and exists (
     select 1 from public.match_events event
     where event.id = match_event_reports.event_id

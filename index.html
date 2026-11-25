@@ -6109,35 +6109,47 @@ body.light-theme #discover .discover-likes-shortcut #likesCount {
 }
 </style>
 <style id="tm-discover-loader-and-compact-chat">
-/* Discover loading state: Tinder-inspired radar, branded for The Match. */
+/* The Match Connection Pulse: an original constellation-style loading identity. */
 #discover #discoverStatus.tm-discover-loading {
   position:relative!important; inset:auto!important; z-index:1!important;
   display:flex!important; flex-direction:column!important; align-items:center!important;
-  justify-content:center!important; gap:20px!important; width:100%!important;
-  min-height:clamp(300px,52vh,500px)!important; margin:12px 0 18px!important;
+  justify-content:center!important; gap:18px!important; width:100%!important;
+  min-height:clamp(220px,38vh,340px)!important; margin:12px 0 18px!important;
   padding:22px 16px!important; border:0!important; border-radius:0!important;
   background:transparent!important; color:#e9e4e8!important;
   text-align:center!important; font-size:15px!important; line-height:1.4!important;
 }
-#discover .tm-discover-radar {
-  position:relative; display:grid; place-items:center; width:clamp(210px,64vw,300px);
-  aspect-ratio:1; border:1px solid rgba(198,161,91,.12); border-radius:50%;
-  background:radial-gradient(circle,rgba(198,161,91,.10) 0 34%,rgba(198,161,91,.045) 35% 62%,transparent 63%);
+#discover .tm-connection-pulse {
+  display:block; width:min(78vw,230px); height:auto; overflow:visible;
+  filter:drop-shadow(0 0 13px rgba(207,174,119,.12));
 }
-#discover .tm-discover-radar-ring {
-  position:absolute; inset:8%; border:1px solid rgba(198,161,91,.16); border-radius:50%;
-  animation:tmDiscoverRadarPulse 2.8s ease-out infinite;
+#discover .tm-connection-pulse .tm-network-line {
+  fill:none; stroke:rgba(205,174,126,.48); stroke-width:1.35;
+  stroke-linecap:round; stroke-dasharray:5 7;
+  animation:tmConnectionLineFlow 5s linear infinite;
 }
-#discover .tm-discover-radar-ring-two { inset:22%; animation-delay:1.4s; }
-#discover .tm-discover-radar-core {
-  display:grid; place-items:center; width:clamp(76px,24vw,104px); aspect-ratio:1; overflow:hidden;
-  border:1px solid rgba(246,223,170,.65); border-radius:50%;
-  background:linear-gradient(145deg,#f1d69a,#b88b42); box-shadow:0 0 34px rgba(198,161,91,.22);
+#discover .tm-connection-pulse .tm-network-line:nth-child(2n) { animation-delay:-2.5s; }
+#discover .tm-connection-pulse .tm-network-node {
+  fill:#d9bd91; stroke:rgba(255,235,202,.72); stroke-width:1.1;
+  transform-box:fill-box; transform-origin:center;
+  animation:tmConnectionNodeGlow 2.6s ease-in-out infinite;
 }
-#discover .tm-discover-radar-core img { display:block; width:72%; height:72%; object-fit:contain; border-radius:50%; }
-#discover .tm-discover-loading-label { color:#d5d0d3; font-size:15px; font-weight:550; letter-spacing:.01em; }
-@keyframes tmDiscoverRadarPulse { 0% { transform:scale(.84); opacity:.72; } 100% { transform:scale(1.12); opacity:0; } }
-@media(prefers-reduced-motion:reduce) { #discover .tm-discover-radar-ring { animation:none!important; } }
+#discover .tm-connection-pulse .tm-network-node:nth-of-type(2n) { animation-delay:-1.3s; }
+#discover .tm-connection-pulse .tm-network-node-accent {
+  fill:#d98fa8; stroke:rgba(255,218,231,.72);
+}
+#discover .tm-discover-loading-label {
+  color:#d5d0d3; font-size:15px; font-weight:550; letter-spacing:.01em;
+}
+@keyframes tmConnectionLineFlow { to { stroke-dashoffset:-48; } }
+@keyframes tmConnectionNodeGlow {
+  0%,100% { opacity:.58; transform:scale(.88); }
+  50% { opacity:1; transform:scale(1.18); }
+}
+@media(prefers-reduced-motion:reduce) {
+  #discover .tm-connection-pulse .tm-network-line,
+  #discover .tm-connection-pulse .tm-network-node { animation:none!important; }
+}
 
 /* Compact message bubbles: timestamp and three-dot menu share one footer row. */
 #chatPage #chatMessages { gap:2px!important; padding:10px 8px!important; }
@@ -12279,7 +12291,7 @@ async function loadNearby(){
     discoverLoadingStatus.classList.add("tm-discover-loading");
     discoverLoadingStatus.setAttribute("role", "status");
     discoverLoadingStatus.setAttribute("aria-live", "polite");
-    discoverLoadingStatus.innerHTML = '<span class="tm-discover-radar" aria-hidden="true"><span class="tm-discover-radar-ring tm-discover-radar-ring-one"></span><span class="tm-discover-radar-ring tm-discover-radar-ring-two"></span><span class="tm-discover-radar-core"><img src="/icons/file_00000000194481f48390cd96271ae5c9.png" alt=""></span></span><span class="tm-discover-loading-label">Finding people near you ...</span>';
+    discoverLoadingStatus.innerHTML = '<svg class="tm-connection-pulse" viewBox="0 0 240 150" role="img" aria-label="A constellation of connections forming"><path class="tm-network-line" d="M24 93 L67 43 L112 70 L157 29 L213 67 M24 93 L79 119 L112 70 L166 111 L213 67 M67 43 L79 119 M157 29 L166 111 M67 43 L157 29 M79 119 L166 111"/><path class="tm-network-line" d="M24 93 L112 70 L213 67 M67 43 L166 111 M157 29 L79 119"/><circle class="tm-network-node" cx="24" cy="93" r="4.2"/><circle class="tm-network-node tm-network-node-accent" cx="67" cy="43" r="5"/><circle class="tm-network-node" cx="112" cy="70" r="6"/><circle class="tm-network-node tm-network-node-accent" cx="157" cy="29" r="4.5"/><circle class="tm-network-node" cx="213" cy="67" r="5.2"/><circle class="tm-network-node" cx="79" cy="119" r="4"/><circle class="tm-network-node tm-network-node-accent" cx="166" cy="111" r="4.8"/></svg><span class="tm-discover-loading-label">Finding your kind of connection…</span>';
   }
 
   try{

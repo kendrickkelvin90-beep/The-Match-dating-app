@@ -17,8 +17,8 @@
   <style>
   /* The Match — Premium Discover refresh */
 @keyframes discoverCardEnter {
-  from { opacity: 0; transform: translate3d(0, 18px, 0) scale(.985); }
-  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  from { opacity: 0; transform: translate3d(0, 12px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -60,10 +60,12 @@
 
 #discover #profileList {
   display: grid;
-  grid-template-columns: minmax(0, 560px);
-  justify-content: center;
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: stretch;
   gap: 12px;
-  margin-top: 18px;
+  margin-top: 12px;
+  padding: 0 16px;
+  box-sizing: border-box;
 }
 
 #discover #profileList > * {
@@ -81,9 +83,7 @@
 }
 
 @media (max-width: 360px) {
-  #discover #profileList {
-    gap: 8px;
-  }
+  #discover #profileList { gap: 8px; padding-left: 16px; padding-right: 16px; }
 }
 
 #storyMediaFile {
@@ -12914,7 +12914,7 @@ if(discoverPanel){
 const card=document.createElement("div");
 card.className="member-card discover-option3-card";
 card.dataset.memberId = p.id;
-card.style.cssText="position:relative;display:block;width:calc(100vw - 28px);max-width:calc(100vw - 28px);height:calc(100dvh - 220px);min-height:360px;max-height:none;box-sizing:border-box;margin:0 14px;padding:0;border:1px solid rgba(224,190,116,.82);border-radius:28px;background:#080808;box-shadow:0 12px 34px rgba(0,0,0,.42),0 0 0 1px rgba(224,190,116,.10);touch-action:pan-y;overflow:hidden;will-change:transform,opacity;animation:discoverCardEnter 260ms cubic-bezier(.2,.75,.25,1) both;";
+card.style.cssText="position:relative;z-index:2;display:block;width:100%;max-width:none;height:54vh;min-height:320px;max-height:560px;box-sizing:border-box;margin:0;padding:0;border:1px solid rgba(224,190,116,.82);border-radius:26px;background:#080808;box-shadow:0 12px 34px rgba(0,0,0,.42),0 0 0 1px rgba(224,190,116,.10);touch-action:pan-y;overflow:hidden;will-change:transform,opacity;animation:discoverCardEnter 260ms cubic-bezier(.2,.75,.25,1) both;";
 
 
 
@@ -13573,7 +13573,17 @@ superLike.onclick=async()=>{
       infoOverlay.appendChild(actions);
       photoBox.appendChild(infoOverlay);
       card.appendChild(photoBox);
-      list.replaceChildren(card);
+      const cardStack = document.createElement("div");
+      cardStack.className = "discover-profile-card-stack";
+      cardStack.style.cssText = "position:relative;isolation:isolate;width:100%;max-width:100%;margin:0 auto 12px;padding:0 0 9px;box-sizing:border-box;";
+      const rearCard = document.createElement("div");
+      rearCard.setAttribute("aria-hidden", "true");
+      rearCard.style.cssText = "position:absolute;z-index:0;left:9px;right:9px;top:7px;bottom:1px;border:1px solid rgba(214,180,110,.28);border-radius:25px;background:linear-gradient(145deg,#29251d,#121212);box-shadow:0 8px 20px rgba(0,0,0,.22);";
+      const rearCardSecond = document.createElement("div");
+      rearCardSecond.setAttribute("aria-hidden", "true");
+      rearCardSecond.style.cssText = "position:absolute;z-index:0;left:17px;right:17px;top:13px;bottom:-5px;border:1px solid rgba(214,180,110,.16);border-radius:24px;background:#171613;";
+      cardStack.append(rearCardSecond, rearCard, card);
+      list.replaceChildren(cardStack);
       // Discover's card is rendered before Android WebView has necessarily
       // completed its scroll restoration. Do not measure until the viewport
       // scroll position has settled; otherwise the stored card height is short
@@ -13606,13 +13616,13 @@ superLike.onclick=async()=>{
         const bottomEdge = navVisible
           ? Math.min(navRect.top, viewportOffsetTop + viewportHeight - navRect.height)
           : viewportOffsetTop + viewportHeight;
-        const availableHeight = Math.max(360, Math.floor(bottomEdge - cardRect.top - 10));
+        const availableHeight = Math.max(320, Math.min(560, Math.floor(Math.min(viewportHeight * 0.54, bottomEdge - cardRect.top - 12))));
         card.style.setProperty("box-sizing", "border-box", "important");
-        card.style.setProperty("width", "calc(100vw - 28px)", "important");
+        card.style.setProperty("width", "100%", "important");
         card.style.setProperty("min-width", "0", "important");
-        card.style.setProperty("max-width", "calc(100vw - 28px)", "important");
-        card.style.setProperty("margin-left", "14px", "important");
-        card.style.setProperty("margin-right", "14px", "important");
+        card.style.setProperty("max-width", "100%", "important");
+        card.style.setProperty("margin-left", "0", "important");
+        card.style.setProperty("margin-right", "0", "important");
         card.style.setProperty("border", "1px solid rgba(224,190,116,.88)", "important");
         card.style.setProperty("border-radius", "28px", "important");
         card.style.setProperty("box-shadow", "0 12px 34px rgba(0,0,0,.42), 0 0 0 1px rgba(224,190,116,.10)", "important");

@@ -63,4 +63,27 @@ begin
 end;
 $registration_identity_lock$;
 
-select 'registration identity immutability tests passed' as result;
+-- A legacy member whose orientation answer is genuinely missing may complete
+-- it once. The same trigger must still reject changes after that first save.
+alter table public.member_onboarding
+  disable trigger prevent_registration_identity_changes;
+update public.member_onboarding
+set answers = answers - 'sexual_orientation'
+where user_id = '00000000-0000-4000-8000-000000000015';
+alter table public.member_onboarding
+  enable trigger prevent_registration_identity_changes;
+
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000015',false);
+update public.member_onboarding
+set answers = answers || '{"sexual_orientation":"Gay"}'::jsonb
+where user_id = '00000000-0000-4000-8000-000000000015';
+
+do $missing_orientation_recovery$
+begin
+  if private.member_dating_community('00000000-0000-4000-8000-000000000015') <> 'lgbtq' then
+    raise exception 'A member completing a missing orientation must be assigned to the correct lane';
+  end if;
+end;
+$missing_orientation_recovery$;
+
+select 'registration identity immutability and missing-orientation recovery tests passed' as result;

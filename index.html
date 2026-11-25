@@ -13028,6 +13028,15 @@ if (!people.length && !discoverEventCards.length) {
       } catch (inventoryError) {
         console.warn("Could not check Super Like inventory; keeping the action locked.", inventoryError);
       }
+
+      // Premium members may send Super Likes without spending coin inventory.
+      // The database RPC independently enforces this entitlement.
+      let hasSuperLikeAccess = hasSuperLikeInventory;
+      try {
+        if (await matchIsPremium(currentUser.id)) hasSuperLikeAccess = true;
+      } catch (premiumError) {
+        console.warn("Could not verify Premium Super Like access; coin inventory remains the fallback.", premiumError);
+      }
       
 
 const discoverPanel=document.getElementById("discover");
@@ -13534,7 +13543,7 @@ superLike.setAttribute("aria-label", hasSuperLikeInventory
   : "Super Like locked. Purchase Super Likes in the Coin Store to enable.");
 superLike.disabled = !hasSuperLikeInventory;
 superLike.style.cssText="flex:0 0 clamp(78px,25vw,100px);width:clamp(78px,25vw,100px);height:clamp(78px,25vw,100px);min-height:clamp(78px,25vw,100px);max-width:clamp(78px,25vw,100px);padding:0;border-radius:50%;border:1px solid rgba(255,232,175,.95);background:radial-gradient(circle at 35% 20%,#fff6d5 0%,#e6c27a 48%,#b98a3f 100%);color:#241707;font-size:43px;font-weight:900;line-height:1;box-shadow:0 6px 22px rgba(230,183,77,.32),inset 0 1px 0 rgba(255,255,255,.65);text-shadow:0 1px 1px rgba(255,255,255,.45);";
-if (!hasSuperLikeInventory) superLike.style.cssText += "opacity:.32;filter:grayscale(.75);box-shadow:none;cursor:not-allowed;";
+if (!hasSuperLikeAccess) superLike.style.cssText += "opacity:.32;filter:grayscale(.75);box-shadow:none;cursor:not-allowed;";
 
 if (!currentDiscoverIsPremium && currentDailySwipesUsed >= 20) {
   like.disabled = true;
@@ -13565,7 +13574,11 @@ like.onclick=async()=>{
     const matchPromise = db.rpc("check_mutual_like",{p_other_user_id:p.id});
 
     const [{error:likeError}, {data:reverseLike,error:matchError}] =
-      await Promise.all([likePromise, matchPromise, exitAnimation]).then(results => [results[0], results[1]]);
+      await Promise.all([
+        likePromise,
+        matchPromise.catch(error => ({data:false,error})),
+        exitAnimation
+      ]).then(results => [results[0], results[1]]);
 
     if(likeError){
       if (/DAILY_SWIPE_LIMIT/i.test(likeError.message)) {
@@ -13583,12 +13596,12 @@ like.onclick=async()=>{
       card.style.opacity = "1";
       return;
     }
-    if(matchError) throw matchError;
+    if(matchError) console.warn('Like was saved, but mutual-like status could not be checked.', matchError);
 
     // Update the swipe counter without delaying the next card.
     void refreshDailyLikeCounter();
 
-    if(reverseLike){
+    if(!matchError && reverseLike){
       const {data:myProfile}=await db
         .from("profiles")
         .select("display_name")
@@ -13636,7 +13649,7 @@ like.onclick=async()=>{
       return;
     }
 
-    status("discoverStatus","Like sent successfully! ❤️");
+    status("discoverStatus",matchError ? "Like saved successfully! Mutual-match status will refresh shortly. ❤️" : "Like sent successfully! ❤️");
     personIndex++;
     await showPerson();
 
@@ -13688,7 +13701,7 @@ superLike.onclick=async()=>{
   like.disabled=true;
   pass.disabled=true;
   const targetId=p.id;
-  if (!hasSuperLikeInventory) return;
+  if (!hasSuperLikeAccess) return;
   try {
     const { data: authData, error: authError } = await db.auth.getUser();
     if (authError) throw authError;

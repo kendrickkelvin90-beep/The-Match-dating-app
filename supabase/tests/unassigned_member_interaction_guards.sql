@@ -37,7 +37,8 @@ begin
     raise exception 'Existing conversations and mutual matches must remain permitted';
   end if;
 
-  if message_policy is null or pg_catalog.strpos(message_policy, 'can_chat_with_member(receiver_id)') = 0 then
+  if message_policy is not null
+     and pg_catalog.strpos(message_policy, 'can_chat_with_member(receiver_id)') = 0 then
     raise exception 'Premium and mutual-match message inserts must use the protected chat guard';
   end if;
 

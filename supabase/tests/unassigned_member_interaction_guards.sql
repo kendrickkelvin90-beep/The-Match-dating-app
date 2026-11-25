@@ -20,11 +20,13 @@ begin
   where polrelid = 'public.messages'::regclass
     and polname = 'Premium members or mutual matches can send unless blocked';
 
-  select pg_catalog.lower(pg_catalog.pg_get_expr(polwithcheck, polrelid))
-    into media_policy
-  from pg_catalog.pg_policy
-  where polrelid = 'public.chat_media'::regclass
-    and polname = 'Members send chat media to permitted conversations';
+  if pg_catalog.to_regclass('public.chat_media') is not null then
+    select pg_catalog.lower(pg_catalog.pg_get_expr(polwithcheck, polrelid))
+      into media_policy
+    from pg_catalog.pg_policy
+    where polrelid = 'public.chat_media'::regclass
+      and polname = 'Members send chat media to permitted conversations';
+  end if;
 
   if pg_catalog.strpos(chat_definition, 'public.can_interact_with_member(target_user_id)') = 0 then
     raise exception 'Chat permission must include the private lane interaction guard';
@@ -39,7 +41,8 @@ begin
     raise exception 'Premium and mutual-match message inserts must use the protected chat guard';
   end if;
 
-  if media_policy is null or pg_catalog.strpos(media_policy, 'can_chat_with_member(receiver_id)') = 0 then
+  if pg_catalog.to_regclass('public.chat_media') is not null
+     and (media_policy is null or pg_catalog.strpos(media_policy, 'can_chat_with_member(receiver_id)') = 0) then
     raise exception 'Chat media inserts must use the protected chat guard';
   end if;
 

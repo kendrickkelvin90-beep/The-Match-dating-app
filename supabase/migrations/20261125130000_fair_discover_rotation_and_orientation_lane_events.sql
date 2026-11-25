@@ -195,7 +195,7 @@ begin
   order by
     pg_catalog.md5(
       v_viewer_id::text || ':' || candidate_id::text || ':' ||
-      pg_catalog.floor(pg_catalog.extract(epoch from pg_catalog.now()) / 21600)::bigint::text
+      pg_catalog.floor(pg_catalog.date_part('epoch', pg_catalog.now()) / 21600)::bigint::text
     ),
     candidate_id
   limit greatest(1, least(coalesce(p_max_results, 100), 100));

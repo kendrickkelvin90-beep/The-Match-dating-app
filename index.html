@@ -13905,8 +13905,9 @@ superLike.onclick=async()=>{
     status("discoverStatus","");
     $("discoverStatus")?.classList.remove("tm-discover-loading","tm-discover-empty");
     if (discoverRefreshButton) {
-      discoverRefreshButton.hidden = false;
-      discoverRefreshButton.classList.add("tm-discover-refresh-ready");
+      // Keep the refresh control out of the active profile-card layout.
+      discoverRefreshButton.hidden = true;
+      discoverRefreshButton.classList.remove("tm-discover-refresh-ready");
     }
     await showPerson();
 

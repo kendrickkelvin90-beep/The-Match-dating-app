@@ -1,9 +1,12 @@
 \set ON_ERROR_STOP on
 
--- The fixture from server_dating_community_separation.sql leaves user 10
--- with a disclosed LGBTQ+ orientation and no legacy dating_community value.
--- This proves event creation, publication, notification, and visibility use
--- the same orientation-derived lane as Discover.
+-- User 10 has a disclosed LGBTQ+ orientation. Remove the legacy lane key so
+-- this specifically verifies that an orientation-only account can organise.
+-- Event visibility and notifications must use the same lane as Discover.
+
+update public.member_onboarding
+set answers = answers - 'dating_community'
+where user_id = '00000000-0000-4000-8000-000000000010';
 
 insert into auth.users(id)
 values

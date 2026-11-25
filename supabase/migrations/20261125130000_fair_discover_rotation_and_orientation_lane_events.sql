@@ -135,8 +135,8 @@ begin
       and private.member_meets_partner_preferences(v_viewer_id, candidate.id)
       and private.member_meets_partner_preferences(candidate.id, v_viewer_id)
       )
-      -- Members are shown only others who explicitly selected the same private
-      -- dating community. Community is never inferred from orientation or gender.
+      -- Members are shown only others in the same private lane derived from
+      -- their saved orientation; the orientation answer itself is never exposed.
       and (
         p_connection_goal is null
         or exists (

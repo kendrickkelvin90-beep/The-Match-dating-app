@@ -12981,6 +12981,20 @@ if (!people.length && !discoverEventCards.length) {
       }
       if (personIndex > 0) discoverPhotoCache.delete(people[personIndex - 1]?.id);
 
+      // The server exposes only a yes/no permission check; orientation itself stays private.
+      // Fail closed if the check cannot be completed.
+      let canInteractWithPerson = false;
+      try {
+        const { data: interactionAllowed, error: interactionError } = await db.rpc(
+          "member_can_interact_with_discover_profile",
+          { target_user_id: p.id }
+        );
+        if (interactionError) throw interactionError;
+        canInteractWithPerson = interactionAllowed === true;
+      } catch (interactionError) {
+        console.warn("Discover interaction permission could not be verified; keeping this profile view-only.", interactionError);
+      }
+
       // Super Likes are a coin-store entitlement, not a Premium membership benefit.
       // Check inventory for every member and default to locked if the lookup fails.
       let hasSuperLikeInventory = false;
@@ -13412,7 +13426,15 @@ detailsToggle.onclick = () => {
   detailsToggle.setAttribute("aria-expanded", String(!expanded));
 };
 
-const refreshFirstMessageTicketState = appendDiscoverFirstMessageComposer(detailsPanel, p.id, p.display_name);
+let refreshFirstMessageTicketState = null;
+if (canInteractWithPerson) {
+  refreshFirstMessageTicketState = appendDiscoverFirstMessageComposer(detailsPanel, p.id, p.display_name);
+} else {
+  const readOnlyNotice = document.createElement("p");
+  readOnlyNotice.textContent = "This profile is view-only until its member completes orientation. Likes, passes, Super Likes and first messages are unavailable for now.";
+  readOnlyNotice.style.cssText = "margin:12px 0 4px;padding:12px 14px;border-radius:14px;background:rgba(224,190,116,.10);border:1px solid rgba(224,190,116,.28);color:#ead9b6;font-size:13px;line-height:1.5;";
+  detailsPanel.appendChild(readOnlyNotice);
+}
 infoOverlay.append(detailsToggle, detailsPanel);
 
 const actions = document.createElement("div");
@@ -13664,7 +13686,23 @@ superLike.onclick=async()=>{
 
 
 
-      actions.append(pass,superLike,like);
+      if (canInteractWithPerson) {
+        actions.append(pass,superLike,like);
+      } else {
+        const continueButton = document.createElement("button");
+        continueButton.type = "button";
+        continueButton.className = "btn secondary";
+        continueButton.textContent = "Next profile";
+        continueButton.setAttribute("aria-label", "Continue to the next profile without liking or passing");
+        continueButton.style.cssText = "min-width:150px;min-height:48px;padding:12px 24px;border-radius:999px;border:1px solid rgba(224,190,116,.55);background:linear-gradient(145deg,#211d15,#111);color:#f0d9a8;font-size:14px;font-weight:750;";
+        continueButton.onclick = async () => {
+          continueButton.disabled = true;
+          await animateCardExit("right");
+          personIndex++;
+          await showPerson();
+        };
+        actions.appendChild(continueButton);
+      }
       actions.style.cssText="display:flex;justify-content:center;align-items:center;gap:clamp(10px,4vw,26px);width:100%;margin:12px 0 0;padding:0;";
       infoOverlay.appendChild(actions);
       photoBox.appendChild(infoOverlay);
@@ -13798,6 +13836,7 @@ superLike.onclick=async()=>{
       },{passive:true});
 
       card.addEventListener("touchend",async event=>{
+        if (!canInteractWithPerson) return;
         const dx=event.changedTouches[0].clientX-startX;
         const dy=event.changedTouches[0].clientY-startY;
         if(Math.abs(dx)<90||Math.abs(dx)<Math.abs(dy))return;

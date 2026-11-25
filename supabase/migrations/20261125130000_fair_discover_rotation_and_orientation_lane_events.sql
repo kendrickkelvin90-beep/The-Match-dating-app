@@ -214,6 +214,20 @@ comment on function public.matchmaking_eligible_candidate_ids(
 ) is
   'Returns only eligible candidate IDs from the orientation-derived dating lane. A viewer-specific six-hour hash rotation prevents the capped 100-member window from being permanently biased toward low UUIDs; reciprocal preferences, moderation, blocks, profile completeness, photos, and filters remain enforced.';
 
+-- RLS policies run as the authenticated member, while the underlying
+-- lane resolver remains private. This wrapper reveals only the caller's lane.
+create or replace function public.current_member_dating_community()
+returns text
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+  select private.member_dating_community(auth.uid());
+$function$;
+revoke all on function public.current_member_dating_community() from public, anon;
+grant execute on function public.current_member_dating_community() to authenticated;
+
 -- Reclassify existing events from each organiser's current private lane.
 -- Drop the immutable-audience trigger only for this controlled migration backfill.
 drop trigger if exists match_events_set_community on public.match_events;
@@ -257,7 +271,7 @@ on public.match_events
 for select to authenticated
 using (
   (status = 'published'
-    and community = private.member_dating_community((select auth.uid())))
+    and community = public.current_member_dating_community())
   or organiser_id = (select auth.uid())
   or is_match_admin()
 );
@@ -274,7 +288,7 @@ using (
     select 1 from public.match_events event
     where event.id = match_event_poster_assets.event_id
       and event.status = 'published'
-      and event.community = private.member_dating_community((select auth.uid()))
+      and event.community = public.current_member_dating_community()
   )
 );
 
@@ -289,7 +303,7 @@ using (
       select 1 from public.match_events event
       where event.id = match_event_ticket_types.event_id
         and event.status = 'published'
-        and event.community = private.member_dating_community((select auth.uid()))
+        and event.community = public.current_member_dating_community()
     )
   )
   or exists (
@@ -313,7 +327,7 @@ with check (
     select 1 from public.match_events event
     where event.id = match_event_responses.event_id
       and event.status = 'published'
-      and event.community = private.member_dating_community((select auth.uid()))
+      and event.community = public.current_member_dating_community()
   )
 );
 
@@ -328,7 +342,7 @@ with check (
     select 1 from public.match_events event
     where event.id = match_event_responses.event_id
       and event.status = 'published'
-      and event.community = private.member_dating_community((select auth.uid()))
+      and event.community = public.current_member_dating_community()
   )
 );
 
@@ -346,7 +360,7 @@ with check (
     select 1 from public.match_events event
     where event.id = match_event_reports.event_id
       and event.status = 'published'
-      and event.community = private.member_dating_community((select auth.uid()))
+      and event.community = public.current_member_dating_community()
   )
 );
 

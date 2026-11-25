@@ -36,6 +36,7 @@ on:
       - "supabase/functions/open-view-once-chat-media/**"
       - "supabase/tests/view_once_media_*.sql"
       - "supabase/tests/server_dating_community_separation.sql"
+      - "supabase/tests/registration_identity_immutability.sql"
       - "index.html"
       - "supabase/tests/server_matchmaking_eligibility*.sql"
       - ".github/workflows/server-matchmaking-eligibility.yml"
@@ -71,6 +72,7 @@ on:
       - "supabase/migrations/20261118100000_strict_dating_community_separation.sql"
       - "supabase/migrations/20261118110000_keep_dating_community_private.sql"
       - "supabase/tests/server_dating_community_separation.sql"
+      - "supabase/tests/registration_identity_immutability.sql"
       - "index.html"
       - "supabase/tests/server_matchmaking_eligibility*.sql"
       - ".github/workflows/server-matchmaking-eligibility.yml"
@@ -178,6 +180,15 @@ jobs:
           if 'id="sexualOrientation"' in html or '$("sexualOrientation")?.addEventListener' in html:
               raise SystemExit("Sexual orientation must not remain editable in profile settings")
           print("Verified registration-collected orientation, automatic lanes, and no editable profile orientation")
+          if "function showMissingOrientationSetup()" not in html:
+              raise SystemExit("Existing members missing a registration orientation need a one-time completion screen")
+          if "currentMemberOrientationMissing = !savedOrientation" not in html:
+              raise SystemExit("Missing orientation must be distinguished from an explicit undisclosed answer and legacy saved lane")
+          if "Save privately and continue" not in html or "sexual_orientation: select.value" not in html:
+              raise SystemExit("Private orientation completion must save the selected answer to member_onboarding")
+          if "if (currentMemberOrientationMissing)" not in html:
+              raise SystemExit("Session restoration must open the missing-orientation completion screen")
+          print("Verified one-time private orientation recovery for existing accounts")
 
       - name: Prepare isolated Discover schema and synthetic fixtures
         env:

@@ -11674,6 +11674,7 @@ function profileBioHasPhoneNumber(value) {
 }
 
 let currentMemberOrientation = "";
+let currentMemberOrientationMissing = false;
 let currentMemberCommunity = "";
 let currentMemberLegacyCommunity = "";
 let currentMemberGenderIdentity = "";
@@ -11694,6 +11695,7 @@ function deriveDatingLaneFromOrientation(orientation, legacyCommunity = "") {
 async function loadCurrentMemberOrientation() {
   if (!currentUser?.id) {
     currentMemberOrientation = "";
+    currentMemberOrientationMissing = false;
     currentMemberCommunity = "";
     currentMemberLegacyCommunity = "";
     return currentMemberOrientation;
@@ -11701,8 +11703,10 @@ async function loadCurrentMemberOrientation() {
   const { data, error } = await db.from("member_onboarding")
     .select("answers").eq("user_id", currentUser.id).maybeSingle();
   if (error) throw error;
-  currentMemberOrientation = String(data?.answers?.sexual_orientation || "Prefer not to say");
+  const savedOrientation = String(data?.answers?.sexual_orientation || "").trim();
   currentMemberLegacyCommunity = String(data?.answers?.dating_community || "");
+  currentMemberOrientationMissing = !savedOrientation && !["straight", "lgbtq"].includes(currentMemberLegacyCommunity.trim().toLowerCase());
+  currentMemberOrientation = savedOrientation || "Prefer not to say";
   currentMemberCommunity = deriveDatingLaneFromOrientation(currentMemberOrientation, currentMemberLegacyCommunity);
   const { data: registeredProfile, error: registeredProfileError } = await db.from("profiles")
     .select("gender_identity,interested_in").eq("id", currentUser.id).maybeSingle();
@@ -11716,6 +11720,120 @@ async function loadCurrentMemberOrientation() {
   if ($("lgbtqLifestyleFlag")) $("lgbtqLifestyleFlag").checked = !!data?.answers?.lgbtq_lifestyle;
   syncDatingCommunityFields();
   return currentMemberOrientation;
+}
+
+async function showMissingOrientationSetup() {
+  if (!currentUser?.id || !currentMemberOrientationMissing) return false;
+
+  document.getElementById("missingOrientationSetup")?.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "missingOrientationSetup";
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-labelledby", "missingOrientationTitle");
+  overlay.style.cssText = "position:fixed;inset:0;z-index:30000;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.88);backdrop-filter:blur(10px);";
+  const card = document.createElement("section");
+  card.style.cssText = "width:100%;max-width:460px;max-height:calc(100dvh - 40px);overflow:auto;box-sizing:border-box;padding:24px;border:1px solid rgba(210,173,104,.38);border-radius:22px;background:linear-gradient(155deg,#191615,#090909);color:#f7f1e7;box-shadow:0 24px 80px #000c;";
+  const title = document.createElement("h2");
+  title.id = "missingOrientationTitle";
+  title.textContent = "Complete your private dating setup";
+  title.style.cssText = "margin:0 0 10px;color:#e7c985;font-size:22px;line-height:1.25;";
+  const description = document.createElement("p");
+  description.textContent = "Choose your sexual orientation so we can place you in the correct dating lane. This answer stays private and is never displayed on your public profile or to other members.";
+  description.style.cssText = "margin:0 0 18px;color:#c8c0b4;font-size:14px;line-height:1.6;";
+  const label = document.createElement("label");
+  label.htmlFor = "missingOrientationChoice";
+  label.textContent = "Your sexual orientation";
+  label.style.cssText = "display:block;margin-bottom:8px;color:#e7c985;font-size:13px;font-weight:700;";
+  const select = document.createElement("select");
+  select.id = "missingOrientationChoice";
+  select.required = true;
+  select.style.cssText = "width:100%;min-height:50px;padding:12px 14px;border:1px solid rgba(210,173,104,.38);border-radius:12px;background:#111;color:#fff;font-size:15px;box-sizing:border-box;";
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "Select your orientation";
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  select.appendChild(placeholder);
+  ["Straight / heterosexual", "Gay", "Lesbian", "Bisexual", "Pansexual", "Queer", "Asexual", "Questioning", "Another orientation"].forEach(value => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value;
+    select.appendChild(option);
+  });
+  const privacyNote = document.createElement("p");
+  privacyNote.textContent = "This is a one-time completion for accounts with a missing registration answer. It cannot be edited in Profile settings.";
+  privacyNote.style.cssText = "margin:12px 0 18px;color:#999187;font-size:12px;line-height:1.5;";
+  const feedback = document.createElement("p");
+  feedback.setAttribute("role", "status");
+  feedback.setAttribute("aria-live", "polite");
+  feedback.style.cssText = "min-height:18px;margin:0 0 12px;color:#e7c985;font-size:13px;line-height:1.45;";
+  const save = document.createElement("button");
+  save.type = "button";
+  save.textContent = "Save privately and continue";
+  save.disabled = true;
+  save.style.cssText = "width:100%;min-height:50px;border:0;border-radius:13px;background:linear-gradient(135deg,#e7c985,#b78d48);color:#17120a;font-size:15px;font-weight:800;";
+  select.addEventListener("change", () => { save.disabled = !select.value; });
+  save.addEventListener("click", async () => {
+    if (!currentUser?.id || !select.value || save.disabled) return;
+    save.disabled = true;
+    select.disabled = true;
+    save.textContent = "Saving securely…";
+    feedback.textContent = "";
+    try {
+      const { data: record, error: readError } = await db.from("member_onboarding")
+        .select("answers").eq("user_id", currentUser.id).maybeSingle();
+      if (readError) throw readError;
+      const answers = record?.answers && typeof record.answers === "object" ? record.answers : {};
+      if (String(answers.sexual_orientation || "").trim()) {
+        throw new Error("An orientation is already saved for this account. Please refresh The Match to continue.");
+      }
+      const { error: saveError } = await db.from("member_onboarding").upsert({
+        user_id: currentUser.id,
+        answers: { ...answers, sexual_orientation: select.value },
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id" });
+      if (saveError) throw saveError;
+      await loadCurrentMemberOrientation();
+      if (!["lgbtq", "straight"].includes(currentMemberCommunity)) {
+        throw new Error("We saved your answer, but could not confirm your dating lane. Please refresh and try again.");
+      }
+      overlay.remove();
+      status("discoverStatus", "Your private dating setup is complete. Finding people for you…");
+      if (!$("discover")?.classList.contains("hidden")) {
+        await Promise.allSettled([loadNearby(), loadStories()]);
+      }
+      return true;
+    } catch (error) {
+      console.error("Private orientation completion failed:", error);
+      feedback.textContent = friendly(error) || "Could not save your answer. Please try again.";
+      select.disabled = false;
+      save.disabled = !select.value;
+      save.textContent = "Save privately and continue";
+    }
+    return false;
+  });
+  const signOut = document.createElement("button");
+  signOut.type = "button";
+  signOut.textContent = "Sign out";
+  signOut.style.cssText = "width:100%;min-height:44px;margin-top:9px;border:1px solid rgba(210,173,104,.24);border-radius:12px;background:transparent;color:#c9c1b6;font-weight:600;";
+  signOut.addEventListener("click", async () => {
+    signOut.disabled = true;
+    const { error } = await db.auth.signOut();
+    if (error) {
+      signOut.disabled = false;
+      feedback.textContent = friendly(error);
+      return;
+    }
+    overlay.remove();
+    currentUser = null;
+    show("welcome", false);
+  });
+  card.append(title, description, label, select, privacyNote, feedback, save, signOut);
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+  select.focus();
+  return true;
 }
 
 // Keep this bridge for existing Events and Nearby callers; the lane itself is
@@ -11845,6 +11963,7 @@ try {
 } catch (orientationError) {
   console.warn("Member orientation could not be loaded; member discovery remains locked until it can be verified.", orientationError);
   currentMemberOrientation = "";
+  currentMemberOrientationMissing = false;
   currentMemberCommunity = "";
   currentMemberLegacyCommunity = "";
 }
@@ -12000,6 +12119,12 @@ status("profileStatus","Your profile is loaded. Check your details and save when
   // Nearby and Stories are secondary feeds: a slow or stalled feed request
   // must never keep every page hidden behind the startup screen.
   $("matchSessionRestoreScreen")?.remove();
+
+  // Existing accounts with no saved orientation get a one-time private completion step.
+  // Legacy members with an already-saved lane are not interrupted.
+  if (currentMemberOrientationMissing) {
+    void showMissingOrientationSetup();
+  }
 
   if (savedProfileIsReady) {
     void Promise.allSettled([loadNearby(), loadStories()]).then(results => {

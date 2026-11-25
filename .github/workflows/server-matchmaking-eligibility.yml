@@ -1,4 +1,4 @@
-name: Server matchmaking and chat reply/reaction verification # also covers unassigned Discover and chat guards
+name: Server matchmaking and chat reply/reaction verification # also covers unassigned Discover, chat, and media permission guards
 
 on:
   pull_request:

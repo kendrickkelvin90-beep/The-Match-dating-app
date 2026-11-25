@@ -12001,11 +12001,9 @@ if (queerRoleSection) queerRoleSection.hidden = currentMemberCommunity !== "lgbt
     await loadNotificationBadge();
 
     await checkMatchAdmin();
-let email=user.email||"";
-let fallback=(email.split("@")[0]||"Member")
-.replace(/[._-]+/g," ")
-.replace(/\b\w/g,ch=>ch.toUpperCase());
-$("greeting").textContent="Welcome, "+fallback+"! ❤️";
+// Never derive a public greeting or profile name from the member's email.
+let fallback="Member";
+$("greeting").textContent="Welcome! ❤️";
 // Show the signed-in member's own active Special Profile Badge on My Profile.
 // This is display-only: it never purchases, consumes, or changes inventory.
 const { data: ownActiveBadgeRows, error: ownActiveBadgeError } = await db.rpc(
@@ -12044,6 +12042,10 @@ let r=await db.from("profiles")
 if(r.error)throw r.error;
 if(r.data){
 let p=r.data;
+const savedDisplayName = String(p.display_name || "").trim();
+$("greeting").textContent = savedDisplayName
+  ? "Welcome, " + savedDisplayName + "! ❤️"
+  : "Welcome! ❤️";
 $("displayName").value=p.display_name||fallback;
 $("age").value=p.age||"";
 $("gender").value=p.gender_identity||"";

@@ -13054,7 +13054,7 @@ const photo=document.createElement("img");
 photo.alt="Profile photo";
 
 photo.className="discover-option3-image";
-photo.style.cssText="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 32%;background:#080808;display:none;z-index:1;";
+photo.style.cssText="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 20%;background:#080808;display:none;z-index:1;";
 // Enforce full-card cropping at runtime so older/global CSS cannot restore letterboxing.
 photo.style.setProperty("position","absolute","important");
 photo.style.setProperty("inset","0","important");
@@ -13062,7 +13062,7 @@ photo.style.setProperty("width","100%","important");
 photo.style.setProperty("height","100%","important");
 photo.style.setProperty("max-width","none","important");
 photo.style.setProperty("object-fit","cover","important");
-photo.style.setProperty("object-position","center center","important");
+photo.style.setProperty("object-position","center 20%","important");
 photo.style.setProperty("border-radius","inherit","important");
 photoBox.style.setProperty("position","absolute","important");
 photoBox.style.setProperty("inset","0","important");
@@ -13146,7 +13146,7 @@ if (isNewHere) {
         button.setAttribute("aria-label", label);
         button.disabled = photoUrls.length < 2;
         button.style.cssText =
-          "position:absolute;top:45%;z-index:8;display:flex;align-items:center;" +
+          "position:absolute;top:30%;z-index:8;display:flex;align-items:center;" +
           "justify-content:center;" +
           (direction < 0 ? "left:10px;" : "right:10px;") +
           "width:46px;height:46px;padding:0;border:1px solid rgba(255,255,255,.55);" +
@@ -13629,7 +13629,39 @@ like.onclick=async()=>{
     card.style.transition = "transform 180ms ease, opacity 180ms ease";
     card.style.transform = "translate3d(0,0,0)";
     card.style.opacity = "1";
-    status("discoverStatus","Couldn't complete your like: "+friendly(error),true);
+    const likeErrorMessage = String(error?.message || error || "");
+    if (/orientation/i.test(likeErrorMessage) &&
+        /complete|missing|required|before/i.test(likeErrorMessage)) {
+      const notice = $("discoverStatus");
+      status("discoverStatus","Your private dating orientation needs to be completed before you can like profiles.",true);
+      if (notice) {
+        const orientationButton = document.createElement("button");
+        orientationButton.type = "button";
+        orientationButton.textContent = "Complete dating orientation";
+        orientationButton.className = "discover-orientation-action";
+        orientationButton.addEventListener("click", async () => {
+          orientationButton.disabled = true;
+          try {
+            await loadCurrentMemberOrientation();
+            if (currentMemberOrientationMissing) {
+              await showMissingOrientationSetup();
+            } else if (["lgbtq", "straight"].includes(currentMemberCommunity)) {
+              status("discoverStatus","Your private orientation is already saved. Refresh profiles to continue.");
+            } else {
+              status("discoverStatus","Choose an orientation other than “Prefer not to say” to enter a dating lane.",true);
+              orientationButton.disabled = false;
+            }
+          } catch (orientationError) {
+            status("discoverStatus","Could not check your private dating setup: " + friendly(orientationError),true);
+            orientationButton.disabled = false;
+          }
+        });
+        notice.appendChild(document.createTextNode(" "));
+        notice.appendChild(orientationButton);
+      }
+    } else {
+      status("discoverStatus","Couldn't complete your like: "+friendly(error),true);
+    }
     like.disabled=false;
     pass.disabled=false;
   }
@@ -25370,6 +25402,80 @@ body:has(#chatPage:not(.hidden)) > main > #chatPage.panel:not(.hidden) {
   <script src="/disable-zoom.js" defer></script>
   <script src="/member-presence.js" defer></script>
   <script src="/admin-chat-review.js" defer></script>
+
+<style id="discover-card-framing-and-orientation-notice">
+/* Keep Discover faces comfortably framed instead of cropping the forehead. */
+#discover #profileList > .discover-option3-card > .discover-option3-photo > .discover-option3-image {
+  object-fit:cover!important;
+  object-position:center 20%!important;
+}
+
+/* Keep photo navigation in the upper photo area, clear of View details. */
+#discover #profileList > .discover-option3-card .discover-photo-arrow {
+  top:30%!important;
+  transform:translateY(-50%)!important;
+  z-index:5!important;
+}
+
+/* A deliberate dark fade sits behind profile details and all three actions. */
+#discover #profileList > .discover-option3-card .discover-option3-overlay {
+  background:linear-gradient(
+    180deg,
+    rgba(0,0,0,0) 0%,
+    rgba(0,0,0,.04) 34%,
+    rgba(0,0,0,.22) 47%,
+    rgba(0,0,0,.62) 64%,
+    rgba(0,0,0,.90) 82%,
+    rgba(5,5,5,.98) 100%
+  )!important;
+  padding-bottom:max(20px,env(safe-area-inset-bottom))!important;
+}
+#discover #profileList > .discover-option3-card .discover-floating-actions {
+  position:relative!important;
+  z-index:2!important;
+  margin-top:14px!important;
+  padding:8px 0 2px!important;
+}
+#discover #profileList > .discover-option3-card .discover-floating-actions button {
+  flex-shrink:0!important;
+}
+
+/* Clear, padded notice with a direct route to the private orientation selector. */
+#discover #discoverStatus:not(:empty) {
+  display:block!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  margin:12px 0 16px!important;
+  padding:15px 16px!important;
+  border:1px solid rgba(210,173,104,.48)!important;
+  border-radius:16px!important;
+  background:linear-gradient(145deg,rgba(23,20,15,.98),rgba(10,10,10,.98))!important;
+  color:#f0dfbd!important;
+  font-size:13px!important;
+  line-height:1.6!important;
+  box-shadow:0 8px 22px rgba(0,0,0,.24)!important;
+}
+#discover #discoverStatus .discover-orientation-action {
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-height:38px!important;
+  margin:10px 0 0!important;
+  padding:8px 13px!important;
+  border:1px solid rgba(224,190,116,.72)!important;
+  border-radius:11px!important;
+  background:linear-gradient(135deg,#e6c77f,#c49b54)!important;
+  color:#17120a!important;
+  font-size:12px!important;
+  font-weight:850!important;
+  line-height:1.25!important;
+  box-shadow:none!important;
+}
+#discover #discoverStatus .discover-orientation-action:disabled {
+  opacity:.65!important;
+}
+</style>
+
 </body>
 </html>
 

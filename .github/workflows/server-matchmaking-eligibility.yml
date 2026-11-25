@@ -1,4 +1,4 @@
-name: Server matchmaking and chat reply/reaction verification
+name: Server matchmaking and chat reply/reaction verification # also covers unassigned Discover, chat, and media permission guards
 
 on:
   pull_request:
@@ -29,6 +29,8 @@ on:
       - "supabase/migrations/20261124150000_nearby_orientation_lane_preference_guard.sql"
       - "supabase/migrations/20261125130000_fair_discover_rotation_and_orientation_lane_events.sql"
       - "supabase/migrations/20261125160000_show_unassigned_discover_profiles_read_only.sql"
+      - "supabase/migrations/20261125170000_restrict_new_chats_to_assigned_dating_lane.sql"
+      - "supabase/tests/unassigned_member_interaction_guards.sql"
       - "supabase/tests/orientation_lane_events.sql"
       - "supabase/tests/discover_fair_rotation.sql"
       - "supabase/tests/nearby_dating_lane_separation.sql"
@@ -334,11 +336,18 @@ jobs:
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261119210000_notify_members_when_event_is_published.sql
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261125130000_fair_discover_rotation_and_orientation_lane_events.sql
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261125160000_show_unassigned_discover_profiles_read_only.sql
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261125170000_restrict_new_chats_to_assigned_dating_lane.sql
       - name: Test fair Discover candidate rotation
         env:
           PGPASSWORD: postgres
         run: |
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -f supabase/tests/discover_fair_rotation.sql
+
+      - name: Test unassigned-member chat interaction guard
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -f supabase/tests/unassigned_member_interaction_guards.sql
 
       - name: Test orientation-derived event creation, notifications, and RLS isolation
         env:

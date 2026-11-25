@@ -12432,6 +12432,19 @@ async function loadNearby(){
 
   const list=$("profileList");
   list.replaceChildren();
+
+  // Keep Stories at the top of Discover. Move secondary tools below the active
+  // profile so the first card follows Stories without an extra toolbar block.
+  const refreshProfilesButton = $("refreshNearby");
+  const discoverTools = document.querySelector("#discover .discover-premium-tools");
+  const discoverIntro = discoverTools?.previousElementSibling;
+  if (refreshProfilesButton) {
+    list.after(
+      refreshProfilesButton,
+      ...(discoverIntro?.matches(".small") ? [discoverIntro] : []),
+      ...(discoverTools ? [discoverTools] : [])
+    );
+  }
   if (!["lgbtq","straight"].includes(currentMemberCommunity)) {
     status("discoverStatus","Select your private sexual orientation in your profile to enter the correct dating lane. It stays hidden from other members.",true);
     return;
@@ -12449,7 +12462,7 @@ async function loadNearby(){
     discoverLoadingStatus.classList.add("tm-discover-loading");
     discoverLoadingStatus.setAttribute("role", "status");
     discoverLoadingStatus.setAttribute("aria-live", "polite");
-    discoverLoadingStatus.innerHTML = '<svg class="tm-romantic-glow" viewBox="0 0 220 170" role="img" aria-label="A soft glowing heart surrounded by gentle curved light"><defs><radialGradient id="tmRomanticCore"><stop offset="0" stop-color="#f4c2c2" stop-opacity=".68"/><stop offset=".55" stop-color="#d4af37" stop-opacity=".2"/><stop offset="1" stop-color="#d4af37" stop-opacity="0"/></radialGradient><filter id="tmRomanticBlur" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="8"/></filter></defs><ellipse class="tm-glow-core" cx="110" cy="84" rx="48" ry="39"/><path class="tm-glow-halo tm-glow-halo-gold" d="M31 94 C34 48 72 24 119 31 C162 37 191 66 186 104"/><path class="tm-glow-halo tm-glow-halo-rose" d="M47 119 C60 148 103 153 143 134 C170 121 180 100 171 78"/><path class="tm-glow-heart" d="M110 112 C101 104 78 89 78 72 C78 55 98 49 110 65 C122 49 142 55 142 72 C142 89 119 104 110 112Z"/><path class="tm-glow-spark" d="M54 47 L57 56 L66 59 L57 62 L54 71 L51 62 L42 59 L51 56Z"/><path class="tm-glow-spark" d="M169 43 L171 49 L177 51 L171 53 L169 59 L167 53 L161 51 L167 49Z"/><circle class="tm-glow-spark" cx="181" cy="119" r="2.5"/></svg><span class="tm-discover-loading-label">Finding your kind of connection…</span>';
+    discoverLoadingStatus.innerHTML = '<svg class="tm-romantic-glow" viewBox="0 0 220 170" role="img" aria-label="A soft glowing heart surrounded by gentle curved light"><defs><radialGradient id="tmRomanticCore"><stop offset="0" stop-color="#f4c2c2" stop-opacity=".68"/><stop offset=".55" stop-color="#d4af37" stop-opacity=".2"/><stop offset="1" stop-color="#d4af37" stop-opacity="0"/></radialGradient><filter id="tmRomanticBlur" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="8"/></filter></defs><ellipse class="tm-glow-core" cx="110" cy="84" rx="48" ry="39"/><path class="tm-glow-halo tm-glow-halo-gold" d="M31 94 C34 48 72 24 119 31 C162 37 191 66 186 104"/><path class="tm-glow-halo tm-glow-halo-rose" d="M47 119 C60 148 103 153 143 134 C170 121 180 100 171 78"/><path class="tm-glow-heart" d="M110 112 C101 104 78 89 78 72 C78 55 98 49 110 65 C122 49 142 55 142 72 C142 89 119 104 110 112Z"/><path class="tm-glow-spark" d="M54 47 L57 56 L66 59 L57 62 L54 71 L51 62 L42 59 L51 56Z"/><path class="tm-glow-spark" d="M169 43 L171 49 L177 51 L171 53 L169 59 L167 53 L161 51 L167 49Z"/><circle class="tm-glow-spark" cx="181" cy="119" r="2.5"/></svg><span class="tm-discover-loading-label">Finding your kind of connection...</span>';
   }
 
   try{
@@ -13721,19 +13734,25 @@ superLike.onclick=async()=>{
       if (canInteractWithPerson) {
         actions.append(pass,superLike,like);
       } else {
-        const continueButton = document.createElement("button");
-        continueButton.type = "button";
-        continueButton.className = "btn secondary";
-        continueButton.textContent = "Next profile";
-        continueButton.setAttribute("aria-label", "Continue to the next profile without liking or passing");
-        continueButton.style.cssText = "min-width:150px;min-height:48px;padding:12px 24px;border-radius:999px;border:1px solid rgba(224,190,116,.55);background:linear-gradient(145deg,#211d15,#111);color:#f0d9a8;font-size:14px;font-weight:750;";
-        continueButton.onclick = async () => {
-          continueButton.disabled = true;
+        // Unassigned profiles stay read-only. Keep the same three-button card
+        // layout, but make X a no-save skip so members can continue browsing.
+        pass.disabled = false;
+        pass.textContent = "✕";
+        pass.title = "Skip this profile";
+        pass.setAttribute("aria-label", "Skip this profile without saving a pass");
+        pass.onclick = async () => {
+          if (pass.disabled) return;
+          pass.disabled = true;
           await animateCardExit("right");
           personIndex++;
           await showPerson();
         };
-        actions.appendChild(continueButton);
+        like.textContent = "♥";
+        like.disabled = true;
+        like.title = "Complete your private dating orientation before liking profiles";
+        superLike.disabled = true;
+        superLike.title = "Complete your private dating orientation before using Super Likes";
+        actions.append(pass,superLike,like);
       }
       actions.style.cssText="display:flex;justify-content:center;align-items:center;gap:clamp(10px,4vw,26px);width:100%;margin:12px 0 0;padding:0;";
       infoOverlay.appendChild(actions);
@@ -13782,7 +13801,7 @@ superLike.onclick=async()=>{
         const bottomEdge = navVisible
           ? Math.min(navRect.top, viewportOffsetTop + viewportHeight - navRect.height)
           : viewportOffsetTop + viewportHeight;
-        const availableHeight = Math.max(320, Math.min(560, Math.floor(Math.min(viewportHeight * 0.54, bottomEdge - cardRect.top - 12))));
+        const availableHeight = Math.max(320, Math.min(720, Math.floor(Math.min(viewportHeight * 0.78, bottomEdge - cardRect.top - 16))));
         card.style.setProperty("box-sizing", "border-box", "important");
         card.style.setProperty("width", "100%", "important");
         card.style.setProperty("min-width", "0", "important");
@@ -13886,8 +13905,9 @@ superLike.onclick=async()=>{
     status("discoverStatus","");
     $("discoverStatus")?.classList.remove("tm-discover-loading","tm-discover-empty");
     if (discoverRefreshButton) {
-      discoverRefreshButton.hidden = false;
-      discoverRefreshButton.classList.add("tm-discover-refresh-ready");
+      // Keep the refresh control out of the active profile-card layout.
+      discoverRefreshButton.hidden = true;
+      discoverRefreshButton.classList.remove("tm-discover-refresh-ready");
     }
     await showPerson();
 
@@ -25473,6 +25493,255 @@ body:has(#chatPage:not(.hidden)) > main > #chatPage.panel:not(.hidden) {
 }
 #discover #discoverStatus .discover-orientation-action:disabled {
   opacity:.65!important;
+}
+</style>
+
+
+<style id="discover-layout-reset-nov2026">
+/* The Match Discover reset: one layout system, one consistent card size. */
+#discover #discoverStatus.tm-discover-loading {
+  position:relative!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:8px!important;
+  width:100%!important;
+  min-height:clamp(180px,27vh,240px)!important;
+  margin:8px 0 12px!important;
+  padding:8px 0!important;
+  border:0!important;
+  outline:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#eee5e8!important;
+  text-align:center!important;
+}
+#discover #discoverStatus.tm-discover-loading .tm-romantic-glow {
+  width:min(54vw,164px)!important;
+  height:auto!important;
+  margin:0 auto!important;
+  filter:drop-shadow(0 7px 22px rgba(212,175,55,.18))!important;
+}
+#discover #discoverStatus.tm-discover-loading .tm-discover-loading-label {
+  display:block!important;
+  margin:0!important;
+  color:#e9dce2!important;
+  font-size:14px!important;
+  font-weight:600!important;
+  letter-spacing:.01em!important;
+  text-align:center!important;
+}
+#discover #refreshNearby[hidden] {display:none!important}
+#discover #refreshNearby.tm-discover-refresh-ready,
+#discover #refreshNearby:not([hidden]) {
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:max-content!important;
+  min-width:154px!important;
+  min-height:43px!important;
+  margin:12px auto 14px!important;
+  padding:0 18px!important;
+  border:1px solid rgba(218,190,130,.65)!important;
+  border-radius:13px!important;
+  background:linear-gradient(135deg,#e6c77f,#c49b54)!important;
+  color:#17120a!important;
+  font-size:13px!important;
+  font-weight:750!important;
+}
+#discover #profileList {
+  display:block!important;
+  width:100%!important;
+  max-width:none!important;
+  margin:8px 0 0!important;
+  padding:0 16px 14px!important;
+  box-sizing:border-box!important;
+  overflow:visible!important;
+}
+#discover #profileList:empty {display:none!important}
+#discover #profileList > .discover-profile-card-stack {
+  position:relative!important;
+  isolation:isolate!important;
+  display:block!important;
+  width:100%!important;
+  max-width:none!important;
+  margin:0 auto 12px!important;
+  padding:0 0 13px!important;
+  box-sizing:border-box!important;
+}
+#discover #profileList > .discover-profile-card-stack > .discover-option3-card {
+  display:block!important;
+  position:relative!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  margin:0!important;
+  padding:0!important;
+  border:1px solid rgba(211,177,112,.62)!important;
+  border-radius:23px!important;
+  overflow:hidden!important;
+  background:#080808!important;
+  box-shadow:0 15px 36px rgba(0,0,0,.42),0 0 0 1px rgba(211,177,112,.08)!important;
+  animation:none!important;
+}
+#discover .discover-option3-photo,
+#discover .discover-option3-photo > .discover-option3-image {
+  position:absolute!important;
+  inset:0!important;
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  height:100%!important;
+  margin:0!important;
+  padding:0!important;
+  object-fit:cover!important;
+  object-position:center 20%!important;
+  border:0!important;
+  border-radius:inherit!important;
+  box-sizing:border-box!important;
+}
+#discover .discover-option3-overlay {
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  bottom:0!important;
+  z-index:6!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:0!important;
+  padding:96px 14px max(16px,env(safe-area-inset-bottom))!important;
+  border:0!important;
+  border-radius:0 0 22px 22px!important;
+  background:linear-gradient(
+    180deg,
+    rgba(4,4,4,0) 0%,
+    rgba(4,4,4,.06) 23%,
+    rgba(4,4,4,.28) 43%,
+    rgba(4,4,4,.72) 66%,
+    rgba(4,4,4,.94) 86%,
+    rgba(4,4,4,.99) 100%
+  )!important;
+  pointer-events:none!important;
+}
+#discover .discover-option3-overlay > * {pointer-events:auto!important}
+#discover .discover-option3-overlay h2 {
+  margin:0 0 5px!important;
+  color:#fff!important;
+  font-size:clamp(25px,6.5vw,32px)!important;
+  font-weight:850!important;
+  line-height:1.12!important;
+  text-shadow:0 2px 13px rgba(0,0,0,.92)!important;
+}
+#discover .discover-option3-overlay .distance {
+  margin:0 0 10px!important;
+  color:#f0d69c!important;
+  font-size:13px!important;
+  font-weight:700!important;
+  text-shadow:0 2px 10px rgba(0,0,0,.95)!important;
+}
+#discover .discover-option3-overlay button[aria-expanded] {
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:100%!important;
+  min-height:44px!important;
+  margin:0 0 9px!important;
+  padding:9px 13px!important;
+  border:1px solid rgba(225,196,133,.64)!important;
+  border-radius:13px!important;
+  background:rgba(12,10,8,.84)!important;
+  color:#f1d99f!important;
+  font-size:14px!important;
+  font-weight:750!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+}
+#discover .discover-option3-overlay .discover-floating-actions {
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:clamp(22px,7vw,34px)!important;
+  width:100%!important;
+  margin:8px 0 0!important;
+  padding:0!important;
+}
+#discover .discover-option3-overlay .discover-floating-actions button {
+  display:inline-flex!important;
+  flex:0 0 66px!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:66px!important;
+  min-width:66px!important;
+  max-width:66px!important;
+  height:66px!important;
+  min-height:66px!important;
+  max-height:66px!important;
+  margin:0!important;
+  padding:0!important;
+  border-radius:50%!important;
+  line-height:1!important;
+  font-size:29px!important;
+  box-shadow:0 7px 19px rgba(0,0,0,.36)!important;
+}
+#discover .discover-option3-overlay .discover-floating-actions .btn.secondary {
+  border:1px solid rgba(240,232,220,.7)!important;
+  background:linear-gradient(145deg,#262326,#090909)!important;
+  color:#fff!important;
+}
+#discover .discover-option3-overlay .discover-floating-actions .discover-super-like {
+  border:1px solid rgba(255,231,177,.95)!important;
+  background:radial-gradient(circle at 34% 22%,#fff2c6,#e5bd69 52%,#a9762d)!important;
+  color:#211708!important;
+}
+#discover .discover-option3-overlay .discover-floating-actions .btn.primary {
+  border:1px solid rgba(255,230,174,.95)!important;
+  background:linear-gradient(145deg,#f3d28a,#bd8b43)!important;
+  color:#191207!important;
+}
+#discover .discover-option3-overlay .discover-floating-actions button:disabled {
+  opacity:.42!important;
+  filter:saturate(.55)!important;
+}
+#discover .discover-photo-arrow {
+  top:24%!important;
+  z-index:7!important;
+  width:42px!important;
+  height:42px!important;
+  min-width:42px!important;
+  min-height:42px!important;
+  border:1px solid rgba(235,216,176,.68)!important;
+  border-radius:50%!important;
+  background:rgba(5,5,5,.68)!important;
+  color:#fff!important;
+  font-size:27px!important;
+  box-shadow:0 4px 14px rgba(0,0,0,.35)!important;
+}
+#discover .discover-photo-arrow-previous {left:10px!important}
+#discover .discover-photo-arrow-next {right:10px!important}
+#discover .discover-profile-card-stack > [aria-hidden="true"] {
+  border-color:rgba(211,177,112,.3)!important;
+}
+#discover .discover-profile-card-stack > [aria-hidden="true"]:first-child {
+  bottom:2px!important;
+}
+#discover .discover-profile-card-stack > [aria-hidden="true"]:nth-child(2) {
+  bottom:7px!important;
+}
+@media(max-width:380px) {
+  #discover #profileList {padding-left:16px!important;padding-right:16px!important}
+  #discover .discover-option3-overlay {padding-left:12px!important;padding-right:12px!important}
+  #discover .discover-option3-overlay .discover-floating-actions {gap:clamp(16px,6vw,24px)!important}
+  #discover .discover-option3-overlay .discover-floating-actions button {
+    flex-basis:60px!important;width:60px!important;min-width:60px!important;
+    max-width:60px!important;height:60px!important;min-height:60px!important;max-height:60px!important;
+  }
+}
+@media(prefers-reduced-motion:reduce) {
+  #discover .discover-option3-card {animation:none!important;transition:none!important}
 }
 </style>
 

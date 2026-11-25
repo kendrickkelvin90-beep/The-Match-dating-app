@@ -200,10 +200,14 @@ jobs:
               raise SystemExit("Discover must check server-side interaction eligibility for each profile")
           if "This profile is view-only until its member completes orientation." not in html:
               raise SystemExit("Unassigned profiles need a clear view-only notice")
-          if "if (!canInteractWithPerson) return;" not in html or 'continueButton.textContent = "Next profile"' not in html:
-              raise SystemExit("Unassigned profiles must not support swipe actions and need safe next-profile navigation")
+          if "if (!canInteractWithPerson) return;" not in html or "Skip this profile without saving a pass" not in html:
+              raise SystemExit("Unassigned profiles must remain read-only while allowing a no-save skip")
+          if 'continueButton.textContent = "Next profile"' in html:
+              raise SystemExit("The oversized Next profile action must not return to Discover cards")
           if "if (canInteractWithPerson) {\n        actions.append(pass,superLike,like);" not in html:
-              raise SystemExit("Like, Pass and Super Like controls must only render for interaction-eligible profiles")
+              raise SystemExit("Interaction-eligible profiles must retain the normal three action controls")
+          if "like.disabled = true;" not in html or "superLike.disabled = true;" not in html or "actions.append(pass,superLike,like);" not in html:
+              raise SystemExit("Unassigned profiles must show the same three controls with Like and Super Like disabled")
           if "refreshFirstMessageTicketState = appendDiscoverFirstMessageComposer" not in html:
               raise SystemExit("First-message ticket must be gated by interaction eligibility")
           print("Verified unassigned profiles are view-only in Discover")

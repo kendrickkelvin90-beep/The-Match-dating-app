@@ -11695,6 +11695,7 @@ function deriveDatingLaneFromOrientation(orientation, legacyCommunity = "") {
 async function loadCurrentMemberOrientation() {
   if (!currentUser?.id) {
     currentMemberOrientation = "";
+    currentMemberOrientationMissing = false;
     currentMemberCommunity = "";
     currentMemberLegacyCommunity = "";
     return currentMemberOrientation;

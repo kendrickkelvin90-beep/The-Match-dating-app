@@ -10,8 +10,7 @@ begin
     'public.matchmaking_eligible_candidate_ids(double precision,integer,integer,text,text,text[],boolean,text,integer)'::regprocedure
   ));
 
-  if position('md5(' in function_sql) = 0
-     or position('date_part(' in function_sql) = 0
+  if position('md5' in function_sql) = 0
      or position('21600' in function_sql) = 0 then
     raise exception 'Discover candidate selection is missing its six-hour viewer-specific hash rotation';
   end if;

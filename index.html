@@ -13736,6 +13736,7 @@ superLike.onclick=async()=>{
       } else {
         // Unassigned profiles stay read-only. Keep the same three-button card
         // layout, but make X a no-save skip so members can continue browsing.
+        pass.disabled = false;
         pass.textContent = "✕";
         pass.title = "Skip this profile";
         pass.setAttribute("aria-label", "Skip this profile without saving a pass");
@@ -13746,6 +13747,7 @@ superLike.onclick=async()=>{
           personIndex++;
           await showPerson();
         };
+        like.textContent = "♥";
         like.disabled = true;
         like.title = "Complete your private dating orientation before liking profiles";
         superLike.disabled = true;

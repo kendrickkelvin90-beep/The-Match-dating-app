@@ -402,3 +402,4 @@ commit;
 -- Follow-up: 20261125170000_restrict_new_chats_to_assigned_dating_lane.sql
 -- applies the same private lane boundary to new messages and chat media,
 -- while preserving established conversations.
+-- CI also verifies the follow-up new-chat permission guard.

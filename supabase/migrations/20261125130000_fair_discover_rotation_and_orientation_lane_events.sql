@@ -249,6 +249,7 @@ create trigger match_events_set_community
 before insert or update on public.match_events
 for each row execute function public.set_match_event_community();
 
+drop policy if exists "Published events and own submissions are visible" on public.match_events;
 drop policy if exists "Members can view published events" on public.match_events;
 drop policy if exists "Members can view published events in their own community" on public.match_events;
 create policy "Members can view published events in their own orientation lane"

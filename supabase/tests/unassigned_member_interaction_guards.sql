@@ -14,10 +14,6 @@ begin
   interaction_definition := pg_catalog.lower(pg_catalog.pg_get_functiondef(
     'public.can_interact_with_member(uuid)'::regprocedure
   ));
-  gift_definition := pg_catalog.lower(pg_catalog.pg_get_functiondef(
-    'public.send_member_gift(uuid,text,text,uuid)'::regprocedure
-  ));
-
   select pg_catalog.lower(pg_catalog.pg_get_expr(polwithcheck, polrelid))
     into message_policy
   from pg_catalog.pg_policy
@@ -47,8 +43,13 @@ begin
     raise exception 'Chat media inserts must use the protected chat guard';
   end if;
 
-  if pg_catalog.strpos(pg_catalog.lower(gift_definition), 'can_chat_with_member(p_recipient_id)') = 0 then
-    raise exception 'Gift sends must use the protected chat guard';
+  if pg_catalog.to_regprocedure('public.send_member_gift(uuid,text,text,uuid)') is not null then
+    gift_definition := pg_catalog.lower(pg_catalog.pg_get_functiondef(
+      'public.send_member_gift(uuid,text,text,uuid)'::regprocedure
+    ));
+    if pg_catalog.strpos(gift_definition, 'can_chat_with_member(p_recipient_id)') = 0 then
+      raise exception 'Gift sends must use the protected chat guard';
+    end if;
   end if;
 end;
 $unassigned_chat_guard$;

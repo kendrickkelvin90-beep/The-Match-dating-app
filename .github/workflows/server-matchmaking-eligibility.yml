@@ -28,6 +28,7 @@ on:
       - "supabase/migrations/20261103165000_nearby_profiles_secure_for_all_users.sql"
       - "supabase/migrations/20261124150000_nearby_orientation_lane_preference_guard.sql"
       - "supabase/migrations/20261125130000_fair_discover_rotation_and_orientation_lane_events.sql"
+      - "supabase/migrations/20261125160000_show_unassigned_discover_profiles_read_only.sql"
       - "supabase/tests/orientation_lane_events.sql"
       - "supabase/tests/discover_fair_rotation.sql"
       - "supabase/tests/nearby_dating_lane_separation.sql"
@@ -193,6 +194,18 @@ jobs:
           if "if (currentMemberOrientationMissing)" not in html:
               raise SystemExit("Session restoration must open the missing-orientation completion screen")
           print("Verified one-time private orientation recovery for existing accounts")
+          if 'member_can_interact_with_discover_profile' not in html:
+              raise SystemExit("Discover must check server-side interaction eligibility for each profile")
+          if "This profile is view-only until its member completes orientation." not in html:
+              raise SystemExit("Unassigned profiles need a clear view-only notice")
+          if "if (!canInteractWithPerson) return;" not in html or 'continueButton.textContent = "Next profile"' not in html:
+              raise SystemExit("Unassigned profiles must not support swipe actions and need safe next-profile navigation")
+          if "if (canInteractWithPerson) {\n        actions.append(pass,superLike,like);" not in html:
+              raise SystemExit("Like, Pass and Super Like controls must only render for interaction-eligible profiles")
+          if "refreshFirstMessageTicketState = appendDiscoverFirstMessageComposer" not in html:
+              raise SystemExit("First-message ticket must be gated by interaction eligibility")
+          print("Verified unassigned profiles are view-only in Discover")
+
 
       - name: Prepare isolated Discover schema and synthetic fixtures
         env:
@@ -320,6 +333,7 @@ jobs:
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -c "CREATE TABLE IF NOT EXISTS public.match_event_ticket_types (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), event_id uuid NOT NULL, is_active boolean NOT NULL DEFAULT true)"
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261119210000_notify_members_when_event_is_published.sql
           psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261125130000_fair_discover_rotation_and_orientation_lane_events.sql
+          psql -h localhost -U postgres -d match_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261125160000_show_unassigned_discover_profiles_read_only.sql
       - name: Test fair Discover candidate rotation
         env:
           PGPASSWORD: postgres

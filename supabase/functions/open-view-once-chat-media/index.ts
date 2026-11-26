@@ -84,10 +84,10 @@ Deno.serve(async (req: Request) => {
       console.error("Could not inspect View Once media:", mediaError.message);
       return json({ error: "Could not open this media." }, 500, cors.headers);
     }
-    if (!media || media.receiver_id !== authData.user.id || media.view_once !== true) {
+    if (!media || (media.receiver_id !== authData.user.id && media.sender_id !== authData.user.id) || media.view_once !== true) {
       return json({ error: "Media not found or access denied." }, 404, cors.headers);
     }
-    if (media.opened_at) return json({ error: "This View Once media has already been opened." }, 409, cors.headers);
+    if (media.receiver_id === authData.user.id && media.opened_at) return json({ error: "This View Once media has already been opened." }, 409, cors.headers);
 
     let signedUrl = "";
     if (typeof media.storage_path === "string" && media.storage_path.startsWith("b2://")) {

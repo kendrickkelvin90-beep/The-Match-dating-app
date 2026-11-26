@@ -93,7 +93,7 @@ Deno.serve(async (req: Request) => {
     if (typeof media.storage_path === "string" && media.storage_path.startsWith("b2://")) {
       const objectKey = media.storage_path.slice(5);
       const expectedPrefix = `users/${media.sender_id}/chat_media/`;
-      if (!objectKey.startsWith(expectedPrefix) || objectKey.includes("..") || objectKey.includes("\\\\") || objectKey.length > 500) {
+      if (!objectKey.startsWith(expectedPrefix) || objectKey.includes("..") || objectKey.includes("\\") || objectKey.length > 500) {
         return json({ error: "Media storage reference is invalid." }, 403, cors.headers);
       }
       const bucket = Deno.env.get("B2_BUCKET_NAME") || "";

@@ -1,8 +1,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { S3Client, GetObjectCommand } from "npm:@aws-sdk/client-s3";
+import { getSignedUrl } from "npm:@aws-sdk/s3-request-presigner";
 
-const allowedOrigins = new Set([
-  "https://match.beyondthebinarymedia.online",
-]);
+const allowedOrigins = new Set(["https://match.beyondthebinarymedia.online"]);
 
 function corsHeaders(req: Request) {
   const origin = req.headers.get("Origin") || "";
@@ -25,6 +25,22 @@ function json(body: Record<string, unknown>, status: number, headers: Record<str
   });
 }
 
+function createB2Client() {
+  const endpoint = Deno.env.get("B2_S3_ENDPOINT") || "";
+  const keyId = Deno.env.get("B2_KEY_ID") || "";
+  const appKey = Deno.env.get("B2_APPLICATION_KEY") || "";
+  if (!endpoint || !keyId || !appKey) throw new Error("B2 media access is not configured.");
+  const host = new URL(endpoint).hostname;
+  const region = Deno.env.get("B2_REGION") || host.match(/^s3\.([a-z0-9-]+)\.backblazeb2\.com$/)?.[1];
+  if (!region) throw new Error("B2 region is not configured.");
+  return new S3Client({
+    region,
+    endpoint,
+    forcePathStyle: true,
+    credentials: { accessKeyId: keyId, secretAccessKey: appKey },
+  });
+}
+
 Deno.serve(async (req: Request) => {
   const cors = corsHeaders(req);
   if (!cors.allowed) return json({ error: "Origin not allowed." }, 403, cors.headers);
@@ -33,10 +49,8 @@ Deno.serve(async (req: Request) => {
 
   try {
     const authorization = req.headers.get("Authorization") || "";
-    const token = authorization.replace(/^Bearer\s+/i, "");
-    if (!token || token === authorization) {
-      return json({ error: "Sign in first." }, 401, cors.headers);
-    }
+    const token = authorization.replace(/^Bearer\\s+/i, "");
+    if (!token || token === authorization) return json({ error: "Sign in first." }, 401, cors.headers);
 
     const url = Deno.env.get("SUPABASE_URL");
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
@@ -51,9 +65,7 @@ Deno.serve(async (req: Request) => {
       global: { headers: { Authorization: `Bearer ${token}` } },
     });
     const { data: authData, error: authError } = await caller.auth.getUser(token);
-    if (authError || !authData.user) {
-      return json({ error: "Your session is invalid. Sign in again." }, 401, cors.headers);
-    }
+    if (authError || !authData.user) return json({ error: "Your session is invalid. Sign in again." }, 401, cors.headers);
 
     const body = await req.json().catch(() => null) as { media_id?: unknown } | null;
     const mediaId = typeof body?.media_id === "string" ? body.media_id : "";
@@ -62,12 +74,9 @@ Deno.serve(async (req: Request) => {
     const admin = createClient(url, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
-
-    // Read only enough metadata to prepare a short-lived URL. The atomic RPC
-    // below decides which concurrent opener wins; losing callers never receive it.
     const { data: media, error: mediaError } = await admin
       .from("chat_media")
-      .select("id, receiver_id, storage_path, view_once, opened_at")
+      .select("id, sender_id, receiver_id, storage_path, view_once, opened_at")
       .eq("id", mediaId)
       .maybeSingle();
 
@@ -78,35 +87,44 @@ Deno.serve(async (req: Request) => {
     if (!media || media.receiver_id !== authData.user.id || media.view_once !== true) {
       return json({ error: "Media not found or access denied." }, 404, cors.headers);
     }
-    if (media.opened_at) {
-      return json({ error: "This View Once media has already been opened." }, 409, cors.headers);
+    if (media.opened_at) return json({ error: "This View Once media has already been opened." }, 409, cors.headers);
+
+    let signedUrl = "";
+    if (typeof media.storage_path === "string" && media.storage_path.startsWith("b2://")) {
+      const objectKey = media.storage_path.slice(5);
+      const expectedPrefix = `users/${media.sender_id}/chat_media/`;
+      if (!objectKey.startsWith(expectedPrefix) || objectKey.includes("..") || objectKey.includes("\\\\") || objectKey.length > 500) {
+        return json({ error: "Media storage reference is invalid." }, 403, cors.headers);
+      }
+      const bucket = Deno.env.get("B2_BUCKET_NAME") || "";
+      if (!bucket) return json({ error: "B2 media access is not configured." }, 500, cors.headers);
+      const s3 = createB2Client();
+      signedUrl = await getSignedUrl(s3, new GetObjectCommand({ Bucket: bucket, Key: objectKey }), { expiresIn: 60 });
+    } else {
+      // Transitional compatibility: old attachments remain readable until
+      // their B2 copy and database pointer have been verified.
+      const { data: signed, error: signError } = await admin.storage
+        .from("chat-media")
+        .createSignedUrl(media.storage_path, 60);
+      if (signError || !signed?.signedUrl) {
+        console.error("Could not sign legacy View Once media:", signError?.message || "No signed URL returned");
+        return json({ error: "Could not prepare this media for viewing." }, 500, cors.headers);
+      }
+      signedUrl = signed.signedUrl;
     }
 
-    const { data: signed, error: signError } = await admin.storage
-      .from("chat-media")
-      .createSignedUrl(media.storage_path, 60);
-
-    if (signError || !signed?.signedUrl) {
-      console.error("Could not sign View Once media:", signError?.message || "No signed URL returned");
-      return json({ error: "Could not prepare this media for viewing." }, 500, cors.headers);
-    }
-
-    // This SECURITY DEFINER RPC locks the row, rechecks eligibility and marks
-    // the receiver's one permitted opening. Only the successful caller receives
-    // the signed URL; concurrent/replayed claims are rejected.
+    // The atomic RPC decides which concurrent opener wins. Only that caller
+    // receives the short-lived URL; a replay or losing concurrent request gets none.
     const { data: claimed, error: claimError } = await caller.rpc(
       "claim_view_once_chat_media",
       { p_media_id: mediaId },
     );
-
     if (claimError || !claimed?.length) {
-      return json({
-        error: claimError?.message || "This View Once media has already been opened.",
-      }, 409, cors.headers);
+      return json({ error: claimError?.message || "This View Once media has already been opened." }, 409, cors.headers);
     }
 
     return json({
-      signedUrl: signed.signedUrl,
+      signedUrl,
       mediaType: claimed[0].media_type,
       expiresIn: 60,
     }, 200, cors.headers);

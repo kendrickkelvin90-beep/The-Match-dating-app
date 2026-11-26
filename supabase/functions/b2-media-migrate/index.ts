@@ -150,7 +150,10 @@ Deno.serve(async (req: Request) => {
     const { data: rows, error: listError } = await rowsQuery
       .order("created_at", { ascending: true })
       .limit(limit);
-    if (listError) {\n      console.error("Could not list legacy media records:", JSON.stringify({ message: listError.message, code: listError.code, details: listError.details, hint: listError.hint }));\n      throw new Error("Could not list legacy media records: " + listError.message);\n    }
+    if (listError) {
+      console.error("Could not list legacy media records:", JSON.stringify({ message: listError.message, code: listError.code, details: listError.details, hint: listError.hint }));
+      throw new Error("Could not list legacy media records: " + listError.message);
+    }
 
     let migrated = 0;
     let failed = 0;

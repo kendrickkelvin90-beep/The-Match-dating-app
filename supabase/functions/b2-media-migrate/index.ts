@@ -82,6 +82,7 @@ Deno.serve(async (req: Request) => {
     }
     const requestedLimit = Number.isInteger(body?.limit) ? body.limit : 2;
     const limit = Math.max(1, Math.min(2, requestedLimit));
+    const includeViewOnce = category === "chat_media" && body?.includeViewOnce === true;
     const url = Deno.env.get("SUPABASE_URL")!;
     const anon = Deno.env.get("SUPABASE_ANON_KEY")!;
     const admin = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
@@ -145,7 +146,7 @@ Deno.serve(async (req: Request) => {
     if (blockedIds.length) rowsQuery = rowsQuery.not(config.idColumn, "in", `(${blockedIds.join(",")})`);
     // View Once still relies on its existing atomic Supabase access workflow.
     // Keep those files in the private bucket until that workflow is migrated.
-    if (category === "chat_media") rowsQuery = rowsQuery.eq("view_once", false);
+    if (category === "chat_media") rowsQuery = rowsQuery.eq("view_once", includeViewOnce);
     if (category === "stories") rowsQuery = rowsQuery.gt("expires_at", new Date().toISOString());
     const { data: rows, error: listError } = await rowsQuery
       .order("created_at", { ascending: true })
@@ -226,12 +227,12 @@ Deno.serve(async (req: Request) => {
       .select(category === "event_posters" ? "event_id" : "id", { count: "exact", head: true })
       .not(config.pathColumn, "like", "b2://%")
       .not(config.pathColumn, "is", null);
-    if (category === "chat_media") countQuery = countQuery.eq("view_once", false);
+    if (category === "chat_media") countQuery = countQuery.eq("view_once", includeViewOnce);
     if (category === "stories") countQuery = countQuery.gt("expires_at", new Date().toISOString());
     const { count: remaining, error: countError } = await countQuery;
     if (countError) throw new Error("Migration ran, but remaining count could not be verified.");
     let excludedViewOnce = 0;
-    if (category === "chat_media") {
+    if (category === "chat_media" && !includeViewOnce) {
       const { count, error } = await admin.from("chat_media")
         .select("id", { count: "exact", head: true })
         .eq("view_once", true)
@@ -260,6 +261,7 @@ Deno.serve(async (req: Request) => {
       remaining: remaining ?? null,
       permanentlyFailed: permanentlyFailed ?? 0,
       excludedViewOnce,
+      includeViewOnce,
       failures,
       note: "Legacy objects are intentionally retained. Delete them only after application reads have been verified.",
     }, 200, origin);

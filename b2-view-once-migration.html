@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Match — View Once B2 migration</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#101114;color:#f5f2ed}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;box-sizing:border-box}
+main{width:min(100%,560px);background:#1b1c20;border:1px solid #34353a;border-radius:18px;padding:24px;box-sizing:border-box}
+h1{font-size:1.35rem;margin:0 0 8px}p{color:#c9c5bd;line-height:1.55}
+button{width:100%;padding:14px 18px;border:0;border-radius:12px;background:#d8b66a;color:#171512;font-weight:700;font-size:1rem}
+button:disabled{opacity:.55}
+#status{white-space:pre-wrap;background:#111216;border-radius:12px;padding:14px;min-height:72px;margin-top:16px;color:#e8e2d7}
+small{display:block;color:#a9a49a;margin-top:14px;line-height:1.5}
+</style>
+</head>
+<body>
+<main>
+<h1>View Once media migration</h1>
+<p>This private admin utility copies the remaining View Once chat attachments to Backblaze B2 in batches of at most two. It keeps the original Supabase files and only changes each database reference after the B2 copy succeeds.</p>
+<button id="start" disabled>Checking admin access…</button>
+<div id="status" role="status">Checking your existing The Match session…</div>
+<small>Requires an active The Match administrator session. This page does not collect or display passwords, service-role keys, or B2 credentials.</small>
+</main>
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+const SUPABASE_URL = "https://rxbdmgzmwhjnkcclyrcq.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_5OirCmy8L5n3isPvi-P0w_Dgeb13U_";
+const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  auth: { storageKey: "sb-rxbdmgzmwhjnkcclyrcq-auth-token", persistSession: true, autoRefreshToken: true }
+});
+const button = document.getElementById("start");
+const status = document.getElementById("status");
+function show(message){ status.textContent = message; }
+async function initialize(){
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if(sessionError || !session){ button.textContent="Sign in to The Match first"; show("No active The Match session was found in this browser. Sign in to The Match, then reopen this page."); return; }
+  const { data: isAdmin, error } = await supabase.rpc("is_match_admin");
+  if(error || isAdmin !== true){ button.textContent="Administrator access required"; show("This account is not authorized to run media migration."); return; }
+  button.disabled=false;
+  button.textContent="Migrate remaining View Once files";
+  show("Administrator session verified. Original Supabase files will be retained.");
+}
+button.addEventListener("click", async ()=>{
+  button.disabled=true;
+  let total=0;
+  const reports=[];
+  try{
+    for(let batch=1;batch<=10;batch++){
+      show("Running View Once batch "+batch+"…\n"+reports.join("\n"));
+      const { data, error } = await supabase.functions.invoke("b2-media-migrate", {
+        body:{category:"chat_media",limit:2,includeViewOnce:true}
+      });
+      if(error){
+        let detail=error.message || "Migration request failed.";
+        if(error.context){ try{ const body=await error.context.json(); detail=body.error || JSON.stringify(body); }catch{} }
+        throw new Error(detail);
+      }
+      if(!data || data.failed>0 || data.success!==true){
+        throw new Error((data?.failures || []).join("\n") || "The worker reported an unsuccessful batch.");
+      }
+      total += Number(data.migrated || 0);
+      reports.push("Batch "+batch+": "+data.migrated+" copied; "+data.remaining+" remaining.");
+      show("Migrated "+total+" View Once file(s).\n"+reports.join("\n"));
+      if(data.remaining===0){ show("Completed successfully. "+total+" View Once file(s) now reference B2. Original Supabase files were retained.\n"+reports.join("\n")); return; }
+      if(data.processed===0 || data.migrated===0){ throw new Error("No progress was made; stopped safely for review."); }
+    }
+    show("Stopped after the safety limit of 10 batches. Migrated "+total+" file(s).\n"+reports.join("\n"));
+  }catch(error){
+    show("Stopped safely. Migrated "+total+" file(s) before the issue.\n"+(error instanceof Error?error.message:"Unknown error")+"\n"+reports.join("\n")+"\nOriginal Supabase files were retained.");
+  }finally{
+    button.disabled=false;
+    button.textContent="Run migration again";
+  }
+});
+initialize();
+</script>
+</body>
+</html>

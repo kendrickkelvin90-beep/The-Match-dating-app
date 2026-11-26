@@ -12617,30 +12617,20 @@ let people = (peopleData || []).filter(person => eligibleIds.has(person.id)).map
     if (viewerPremium && savedPreferences.verifiedOnly) people = people.filter(person => person.is_verified || ["basic","enhanced"].includes(person.verification_level));
     if (viewerPremium && savedPreferences.recentlyActive) people = people.filter(person => isUserOnline(person.id));
 
-    // Keep compatibility signals meaningful while making each refreshed feed feel fresh.
-    // Higher compatibility/lifestyle/interest scores improve a profile's chance
-    // of appearing earlier, but no longer lock members into the same fixed order.
+    // Phase 2 intelligence engine: rank only the already-eligible candidate set.
+    // Eligibility, blocks, dating-lane rules, age/location limits and swipe exclusions
+    // remain owned by the existing secure RPCs and filters above.
+    // Weighted random ordering uses Math.log inside match-intelligence-engine.js.
     const shuffleDiscoverProfiles = profiles => {
-      const lifestyleWeight = savedPreferences.lifestyleDiscovery ? 0.20 : 0;
-      const interestWeight = savedPreferences.prioritiseSharedInterests ? 0.10 : 0;
-      const compatibilityWeight = 0.70;
-      const totalRankWeight = compatibilityWeight + lifestyleWeight + interestWeight;
-      return profiles.map(person => {
-        const compatibility = Math.max(0, Math.min(100, Number(person._compatibilityPercent) || 0));
-        const lifestyle = Math.max(0, Math.min(100, (Number(person._lifestyleMatchCount) || 0) / 11 * 100));
-        const interests = Math.max(0, Math.min(100, Number(person._interestMatchPercent) || 0));
-        const rank = (
-          compatibility * compatibilityWeight +
-          lifestyle * lifestyleWeight +
-          interests * interestWeight
-        ) / totalRankWeight;
-        // Exponential-race ordering gives higher-ranked profiles better odds
-        // without forcing them into an identical order on every refresh.
-        const preferenceWeight = 0.5 + rank / 100;
-        const shuffleKey = -Math.log(Math.max(Math.random(), Number.EPSILON)) / preferenceWeight;
-        return { ...person, _discoverWeightedRank: rank, _discoverShuffleKey: shuffleKey };
-      }).sort((a, b) => a._discoverShuffleKey - b._discoverShuffleKey)
-        .map(({ _discoverShuffleKey, ...person }) => person);
+      const engine = window.MatchIntelligenceEngine;
+      if (engine && typeof engine.rankProfiles === "function") {
+        return engine.rankProfiles(profiles, {
+          prioritiseLifestyle: !!savedPreferences.lifestyleDiscovery,
+          prioritiseSharedInterests: !!savedPreferences.prioritiseSharedInterests
+        });
+      }
+      // Safe fallback if the optional module cannot load.
+      return profiles;
     };
     people = shuffleDiscoverProfiles(people);
 
@@ -25746,6 +25736,8 @@ body:has(#chatPage:not(.hidden)) > main > #chatPage.panel:not(.hidden) {
   top:18%!important; transform:translateY(-50%)!important; z-index:8!important;
 }
 </style>
+<script src="/match-performance-engine.js?v=1"></script>
+<script src="/match-intelligence-engine.js?v=1"></script>
 </body>
 </html>
 

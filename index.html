@@ -10834,13 +10834,13 @@ $("authForm").onsubmit = async e => {
 
 
 $("forgot").onclick = () => {
+  // Open the dedicated password-reset screen without relying on the
+  // removed CAPTCHA renderer, which previously threw a ReferenceError.
   $("resetEmail").value = $("email").value.trim();
-  resetCaptchaToken = "";
   status("resetStatus", "");
   $("resetForm").classList.remove("hidden");
   $("newPasswordForm").classList.add("hidden");
   show("reset");
-  renderResetCaptcha();
 };
 
 $("resetBack").onclick=()=>show("welcome");

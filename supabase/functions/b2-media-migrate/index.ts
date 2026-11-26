@@ -82,7 +82,7 @@ Deno.serve(async (req: Request) => {
     }
     const requestedLimit = Number.isInteger(body?.limit) ? body.limit : 2;
     const limit = Math.max(1, Math.min(2, requestedLimit));
-    const includeViewOnce = category === "chat_media" && body?.includeViewOnce === true;
+    let includeViewOnce = category === "chat_media" && body?.includeViewOnce === true;
     const url = Deno.env.get("SUPABASE_URL")!;
     const anon = Deno.env.get("SUPABASE_ANON_KEY")!;
     const admin = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
@@ -124,6 +124,27 @@ Deno.serve(async (req: Request) => {
       return json({ error: "The automatic scheduler is restricted to Story media." }, 403, origin);
     }
     const config = categories[category];
+    // After every regular chat attachment has moved, the admin batch action may
+    // advance to View Once media. The dedicated atomic View Once reader is deployed.
+    if (category === "chat_media" && !includeViewOnce) {
+      const { count: regularRemaining, error: regularCountError } = await admin
+        .from("chat_media")
+        .select("id", { count: "exact", head: true })
+        .eq("view_once", false)
+        .not("storage_path", "like", "b2://%")
+        .not("storage_path", "is", null);
+      if (regularCountError) throw new Error("Could not verify regular chat media completion.");
+      if ((regularRemaining ?? 0) === 0) {
+        const { count: viewOnceRemaining, error: viewOnceCountError } = await admin
+          .from("chat_media")
+          .select("id", { count: "exact", head: true })
+          .eq("view_once", true)
+          .not("storage_path", "like", "b2://%")
+          .not("storage_path", "is", null);
+        if (viewOnceCountError) throw new Error("Could not inspect remaining View Once media.");
+        if ((viewOnceRemaining ?? 0) > 0) includeViewOnce = true;
+      }
+    }
     const s3 = getStorageClient();
     const bucket = Deno.env.get("B2_BUCKET_NAME")!;
 
@@ -144,8 +165,7 @@ Deno.serve(async (req: Request) => {
       .not(config.pathColumn, "like", "b2://%")
       .not(config.pathColumn, "is", null);
     if (blockedIds.length) rowsQuery = rowsQuery.not(config.idColumn, "in", `(${blockedIds.join(",")})`);
-    // View Once still relies on its existing atomic Supabase access workflow.
-    // Keep those files in the private bucket until that workflow is migrated.
+    // Regular chat media runs first. Once none remains, the worker advances to View Once.
     if (category === "chat_media") rowsQuery = rowsQuery.eq("view_once", includeViewOnce);
     if (category === "stories") rowsQuery = rowsQuery.gt("expires_at", new Date().toISOString());
     const { data: rows, error: listError } = await rowsQuery

@@ -49,7 +49,7 @@ Deno.serve(async (req: Request) => {
 
   try {
     const authorization = req.headers.get("Authorization") || "";
-    const token = authorization.replace(/^Bearer\\s+/i, "");
+    const token = authorization.replace(/^Bearer\s+/i, "");
     if (!token || token === authorization) return json({ error: "Sign in first." }, 401, cors.headers);
 
     const url = Deno.env.get("SUPABASE_URL");

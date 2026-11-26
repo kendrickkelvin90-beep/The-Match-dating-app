@@ -12620,6 +12620,7 @@ let people = (peopleData || []).filter(person => eligibleIds.has(person.id)).map
     // Phase 2 intelligence engine: rank only the already-eligible candidate set.
     // Eligibility, blocks, dating-lane rules, age/location limits and swipe exclusions
     // remain owned by the existing secure RPCs and filters above.
+    // Weighted random ordering uses Math.log inside match-intelligence-engine.js.
     const shuffleDiscoverProfiles = profiles => {
       const engine = window.MatchIntelligenceEngine;
       if (engine && typeof engine.rankProfiles === "function") {

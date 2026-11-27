@@ -43,6 +43,13 @@
           <button class="primary" type="submit">Sign in</button>
           <button class="text-button" type="button" id="forgotPassword">Forgot password?</button>
         </form>
+        <form id="resetPasswordForm" class="auth-form hidden">
+          <p class="muted">Choose a new password for your advertiser account. Use at least 8 characters.</p>
+          <label>New password<div class="password-field"><input id="resetPassword" type="password" autocomplete="new-password" minlength="8" required><button class="password-toggle" type="button" data-password-toggle="resetPassword" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
+          <label>Confirm new password<div class="password-field"><input id="resetConfirmPassword" type="password" autocomplete="new-password" minlength="8" required><button class="password-toggle" type="button" data-password-toggle="resetConfirmPassword" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10 7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
+          <button class="primary" type="submit" id="saveNewPassword">Save new password</button>
+          <button class="text-button" type="button" id="cancelPasswordReset">Back to sign in</button>
+        </form>
         <form id="signupForm" class="auth-form hidden">
           <label>Advertiser type<select id="signupType" required><option value="individual">Individual</option><option value="business">Business / organisation</option></select></label>
           <label id="signupNameLabel">Your name<input id="signupName" required minlength="2" maxlength="140" autocomplete="name"></label>
@@ -54,8 +61,8 @@
           <label class="check"><input id="signupTerms" type="checkbox" required><span>I agree to the advertising terms and understand that campaigns go live only after payment confirmation and advert approval.</span></label>
           <button class="primary" type="submit">Create account</button>
         </form>
-        <button class="google-button" id="googleSignIn" type="button"><span class="google-g">G</span> Google sign-in (linked advertiser accounts)</button>
-        <p class="fineprint">Google sign-in is for Google identities already linked to an advertiser account. Create an advertiser account with email first, then link Google from your workspace. Dating-member accounts cannot be used as advertiser accounts.</p>
+        <button class="google-button" id="googleSignIn" type="button"><span class="google-g">G</span> Google sign-in (only for accounts already linked)</button>
+        <p class="fineprint">Google sign-in only works after that Google identity has been securely linked to this advertiser account. Choosing the same Google email does not automatically link a separate dating-member account. If you have not linked it before, use advertiser email and password recovery instead.</p>
         <p id="authMessage" class="message" aria-live="polite"></p>
       </div>
     </section>

@@ -2,6 +2,20 @@
   const config = window.THE_MATCH_ADVERTISER_CONFIG || {};
   const $ = (id) => document.getElementById(id);
   const state = { client: null, session: null, pendingCampaign: null, pendingBank: null, creativeFile: null, posterFile: null, handlingSession: false, passwordRecovery: false, pendingEnrollmentSession: null, previewObjectUrl: null };
+  // Return to the exact Match page that opened this portal (normally the signed-in Profile).
+  // Do not send members to "/" directly: that can restart the app at its public welcome screen.
+  const returnLink = document.querySelector(".return-to-match");
+  if (returnLink) {
+    returnLink.addEventListener("click", (event) => {
+      const referrer = document.referrer;
+      let sameOriginReferrer = false;
+      try { sameOriginReferrer = !!referrer && new URL(referrer).origin === window.location.origin; } catch {}
+      if (sameOriginReferrer && window.history.length > 1) {
+        event.preventDefault();
+        window.history.back();
+      }
+    });
+  }
   const formatNaira = (amount) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(Number(amount || 0));
   const formatDate = (value) => value ? new Date(value).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" }) + " WAT" : "—";
   const message = (target, text, error = false) => { const el = $(target); if (!el) return; el.textContent = text || ""; el.classList.toggle("error", !!error); };

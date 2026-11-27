@@ -24,6 +24,18 @@ function json(body: unknown, status: number, origin: string) {
   });
 }
 
+function isAdvertiserSession(token: string): boolean {
+  try {
+    const segment = token.split(".")[1];
+    if (!segment) return false;
+    const normalized = segment.replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
+    return payload.role === "anon" && payload.user_role === "advertiser";
+  } catch {
+    return false;
+  }
+}
+
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get("Origin") || "";
   if (origin && !allowedOrigins.has(origin)) return json({ error: "Origin not allowed" }, 403, origin);
@@ -57,6 +69,7 @@ Deno.serve(async (req: Request) => {
     });
     const { data: userData, error: authError } = await caller.auth.getUser(token);
     if (authError || !userData.user) return json({ error: "Invalid session" }, 401, origin);
+    if (isAdvertiserSession(token)) return json({ error: "Advertiser accounts cannot access member media." }, 403, origin);
 
     const body = await req.json().catch(() => null);
     const category = body?.category as keyof typeof media;

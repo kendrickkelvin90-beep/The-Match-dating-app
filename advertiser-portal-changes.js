@@ -23,20 +23,41 @@
 
   async function requestChange(button) {
     const campaignId = button.dataset.campaignChange;
+    const listing = await portal.callApi({action:"list-campaigns"});
+    const campaign = (listing.campaigns || []).find((item) => item.id === campaignId);
+    if (!campaign) return;
     const card = button.closest(".campaign-item");
-    const currentHeadline = card?.querySelector("h3")?.textContent || "";
+    const currentHeadline = campaign.headline || card?.querySelector("h3")?.textContent || "";
     const headline = prompt("New headline (leave unchanged to keep current):", currentHeadline);
     if (headline === null) return;
     const description = prompt("New description (leave blank to keep current):");
     if (description === null) return;
-    const destination = prompt("New HTTPS destination URL (leave blank to keep current):");
+    const destination = prompt("New HTTPS destination URL (leave blank to keep current):",campaign.destination_url || "");
     if (destination === null) return;
+    const cta = prompt("Call to action: learn_more, visit_website, contact_us or whatsapp",campaign.cta || "learn_more");
+    if (cta === null) return;
+    let scheduledStart = "";
+    if (campaign.status === "scheduled" && !campaign.go_live_at) {
+      const localStart = campaign.scheduled_start_at ? new Date(campaign.scheduled_start_at).toISOString().slice(0,16) : "";
+      scheduledStart = prompt("New scheduled start (YYYY-MM-DDTHH:mm local time; leave blank to keep current):",localStart);
+      if (scheduledStart === null) return;
+    }
     const reason = prompt("Why are you requesting these changes?");
     if (!reason || reason.trim().length < 3) return;
     const payload = { action:"request-campaign-change", campaign_id:campaignId, reason:reason.trim() };
     if (headline.trim() && headline.trim() !== currentHeadline) payload.headline = headline.trim();
     if (description.trim()) payload.description = description.trim();
-    if (destination.trim()) payload.destination_url = destination.trim();
+    if (destination.trim() && destination.trim() !== campaign.destination_url) payload.destination_url = destination.trim();
+    if (cta.trim() && cta.trim() !== campaign.cta) payload.cta = cta.trim();
+    if (scheduledStart.trim()) {
+      const parsedStart = new Date(scheduledStart);
+      if (Number.isNaN(parsedStart.getTime()) || parsedStart.getTime() <= Date.now()) {
+        portal.message("globalMessage","Choose a valid future scheduled start time.",true);
+        return;
+      }
+      payload.start_mode = "scheduled";
+      payload.scheduled_start_at = parsedStart.toISOString();
+    }
     button.disabled = true;
     try {
       const result = await portal.callApi(payload);

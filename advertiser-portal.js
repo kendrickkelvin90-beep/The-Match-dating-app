@@ -1,7 +1,7 @@
 (() => {
   const config = window.THE_MATCH_ADVERTISER_CONFIG || {};
   const $ = (id) => document.getElementById(id);
-  const state = { client: null, session: null, pendingCampaign: null, pendingBank: null, creativeFile: null, posterFile: null, handlingSession: false, passwordRecovery: false };
+  const state = { client: null, session: null, pendingCampaign: null, pendingBank: null, creativeFile: null, posterFile: null, handlingSession: false, passwordRecovery: false, pendingEnrollmentSession: null };
   const formatNaira = (amount) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(Number(amount || 0));
   const formatDate = (value) => value ? new Date(value).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" }) + " WAT" : "—";
   const message = (target, text, error = false) => { const el = $(target); if (!el) return; el.textContent = text || ""; el.classList.toggle("error", !!error); };
@@ -16,6 +16,7 @@
     document.querySelectorAll("[data-auth-tab]").forEach((button) => button.classList.toggle("active", button.dataset.authTab === tab));
     $("signinForm").classList.toggle("hidden", tab !== "signin");
     $("signupForm").classList.toggle("hidden", tab !== "signup");
+    $("advertiserEnrollmentForm").classList.add("hidden");
     message("authMessage", "");
   };
   const setBusy = (button, busy, label) => { button.disabled = busy; if (busy) { button.dataset.oldLabel = button.textContent; button.textContent = label || "Please wait…"; } else if (button.dataset.oldLabel) { button.textContent = button.dataset.oldLabel; delete button.dataset.oldLabel; } };
@@ -171,7 +172,7 @@
       if (!segment) return false;
       const normalized = segment.replace(/-/g, "+").replace(/_/g, "/");
       const payload = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
-      return payload.role === "anon" && payload.user_role === "advertiser";
+      return ["anon", "authenticated"].includes(payload.role) && payload.user_role === "advertiser";
     } catch { return false; }
   };
   const enrollAdvertiserSession = async (session) => {

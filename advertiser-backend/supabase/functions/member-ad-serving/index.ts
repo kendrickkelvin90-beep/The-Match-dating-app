@@ -151,7 +151,9 @@ Deno.serve(async (req: Request) => {
       .limit(100);
     if (seenError) return json({ ad: null, reason: "rotation_unavailable" }, 200);
     const seen = new Set((seenRows ?? []).map((row) => row.campaign_id));
-    let eligible = rows.filter((row) => !seen.has(row.id));
+    const excludedIds = Array.isArray(body.exclude_campaign_ids) ? body.exclude_campaign_ids.filter((value) => typeof value === "string").slice(0, 50) : [];
+    const slotIndex = Number.isInteger(body.slot_index) ? Number(body.slot_index) : 0;
+    let eligible = rows.filter((row) => !seen.has(row.id) && !excludedIds.includes(row.id));
     if (!eligible.length) return json({ ad: null, reason: "daily_frequency_limit" }, 200);
 
     const recentCampaignIds = (seenRows ?? []).slice(0, 3).map((row) => row.campaign_id);
@@ -165,7 +167,7 @@ Deno.serve(async (req: Request) => {
 
     const scored = await Promise.all(eligible.map(async (row) => ({
       row,
-      score: await stableScore(viewerKey + ":" + row.id),
+      score: await stableScore(viewerKey + ":" + slotIndex + ":" + row.id),
     })));
     scored.sort((a, b) => a.score.localeCompare(b.score));
     const selected = scored[0].row;

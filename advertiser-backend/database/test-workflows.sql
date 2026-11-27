@@ -199,7 +199,7 @@ select public.admin_review_advertising_refund(
 );
 select public.admin_mark_advertising_refund_paid(
   '10000000-0000-4000-8000-000000000001',
-  (select id from public.advertising_refunds r join public.advertising_payments p on p.id = r.payment_id where p.bank_transfer_reference = 'BANKREF-DUP-CI-0001'),
+  (select r.id from public.advertising_refunds r join public.advertising_payments p on p.id = r.payment_id where p.bank_transfer_reference = 'BANKREF-DUP-CI-0001'),
   'BANKREF-REFUND-CI-0001'
 );
 do $test$
@@ -250,12 +250,12 @@ select public.request_advertising_refund(
 );
 select public.admin_review_advertising_refund(
   '10000000-0000-4000-8000-000000000001',
-  (select id from public.advertising_refunds r join public.advertising_payments p on p.id = r.payment_id where p.bank_transfer_reference = 'BANKREF-CI-0002'),
+  (select r.id from public.advertising_refunds r join public.advertising_payments p on p.id = r.payment_id where p.bank_transfer_reference = 'BANKREF-CI-0002'),
   true,null
 );
 select public.admin_mark_advertising_refund_paid(
   '10000000-0000-4000-8000-000000000001',
-  (select id from public.advertising_refunds r join public.advertising_payments p on p.id = r.payment_id where p.bank_transfer_reference = 'BANKREF-CI-0002'),
+  (select r.id from public.advertising_refunds r join public.advertising_payments p on p.id = r.payment_id where p.bank_transfer_reference = 'BANKREF-CI-0002'),
   'BANKREF-REFUND-CI-0002'
 );
 select * from public.create_advertising_campaign(

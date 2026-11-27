@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "index.html"
+      - "match-performance-engine.js"
       - ".github/workflows/community-onboarding-js.yml"
 
 permissions:
@@ -17,6 +18,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Check Discover performance engine syntax
+        run: node --check match-performance-engine.js
       - name: Parse every inline JavaScript block
         run: |
           python3 - <<'PY'

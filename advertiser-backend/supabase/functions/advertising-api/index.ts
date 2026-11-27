@@ -19,6 +19,7 @@ type Action =
   | "get-payment-details"
   | "request-refund"
   | "create-design-request"
+  | "list-design-requests"
   | "submit-design-payment"
   | "request-design-revision"
   | "get-design-delivery"
@@ -228,6 +229,15 @@ Deno.serve(async (req: Request) => {
     }
 
 
+
+
+    if (action === "list-design-requests") {
+      const { data, error } = await caller.from("advertising_design_requests")
+        .select("id,service_type,fee_ngn,status,agreed_delivery_at,revisions_allowed,revisions_used,created_at,delivered_storage_key,advertising_design_payments(id,status,payment_reference,amount_ngn)")
+        .eq("advertiser_id", user.id).order("created_at", { ascending: false }).limit(100);
+      if (error) return json({ error: "Design requests could not be loaded." }, 500, origin);
+      return json({ requests: data ?? [] }, 200, origin);
+    }
 
     if (action === "create-design-request") {
       const serviceType = cleanText(body.service_type, 16);

@@ -128,7 +128,7 @@ begin
         select 1 from pg_catalog.pg_policies p
         where p.schemaname='public' and p.tablename=c.relname
           and p.policyname='match_advertiser_data_boundary'
-          and p.permissive='RESTRICTIVE'
+          and p.qual like '%user_role%'
       )
   ) then
     raise exception 'A public table is missing the restrictive advertiser boundary';

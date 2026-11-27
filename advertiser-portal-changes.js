@@ -23,9 +23,18 @@
 
   async function requestChange(button) {
     const campaignId = button.dataset.campaignChange;
-    const listing = await portal.callApi({action:"list-campaigns"});
+    let listing;
+    try {
+      listing = await portal.callApi({action:"list-campaigns"});
+    } catch (error) {
+      portal.message("globalMessage",error.message,true);
+      return;
+    }
     const campaign = (listing.campaigns || []).find((item) => item.id === campaignId);
-    if (!campaign) return;
+    if (!campaign) {
+      portal.message("globalMessage","This campaign is no longer available. Refresh your campaign list and try again.",true);
+      return;
+    }
     const card = button.closest(".campaign-item");
     const currentHeadline = campaign.headline || card?.querySelector("h3")?.textContent || "";
     const headline = prompt("New headline (leave unchanged to keep current):", currentHeadline);

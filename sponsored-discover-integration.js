@@ -25,6 +25,7 @@
   let feedGeneration = 0;
   let previousOrganicCount = 0;
   let adRequestQueue = Promise.resolve();
+  const impressionTimers = new WeakMap();
 
   const safeText = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -177,20 +178,19 @@
               video.load();
             }
             if (video) video.play().catch(() => {});
-            if (!target.dataset.impressionTimer && target.dataset.impressionRecorded !== "true") {
-              target.dataset.impressionTimer = "pending";
-              window.setTimeout(() => {
-                delete target.dataset.impressionTimer;
+            if (!impressionTimers.has(target) && target.dataset.impressionRecorded !== "true") {
+              const timer = window.setTimeout(() => {
+                impressionTimers.delete(target);
                 if (!target.isConnected || !target.dataset.campaignId || target.dataset.visibleHalf !== "true") return;
-                const rect = target.getBoundingClientRect();
-                const visible = Math.max(0, Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0));
-                if (visible / Math.max(rect.height, 1) < 0.5) return;
                 target.dataset.impressionRecorded = "true";
                 memberRequest("record-event", { campaign_id: target.dataset.campaignId, event_type: "impression" }).catch(() => {});
               }, 1000);
+              impressionTimers.set(target, timer);
             }
           } else {
             target.dataset.visibleHalf = "false";
+            const timer = impressionTimers.get(target);
+            if (timer) { window.clearTimeout(timer); impressionTimers.delete(target); }
             if (video) video.pause();
           }
         }
@@ -205,8 +205,6 @@
     if (!organic.length && previousOrganicCount > 0) {
       feedGeneration++;
       sequence = 0;
-      processed.clear?.();
-      requested.clear?.();
       cardsByAnchor.clear();
       list.querySelectorAll(".match-sponsored-ad-card").forEach((card) => card.remove());
     }

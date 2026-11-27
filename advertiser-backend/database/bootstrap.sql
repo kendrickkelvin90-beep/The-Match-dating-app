@@ -91,7 +91,7 @@ declare
   v_user_metadata jsonb := coalesce(event->'claims'->'user_metadata','{}'::jsonb);
 begin
   if v_user_id is not null
-     and v_user_metadata->>'account_type' = 'advertiser'
+     and v_user_metadata->>'the_match_advertiser_registration' = 'v1'
      and not exists (select 1 from public.profiles p where p.id=v_user_id) then
     insert into private.advertiser_auth_registry(user_id)
     values (v_user_id) on conflict (user_id) do nothing;

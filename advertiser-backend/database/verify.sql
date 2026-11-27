@@ -56,6 +56,10 @@ begin
     raise exception 'Advertiser-only read RPC/helper grants are incorrect';
   end if;
 
+  if has_schema_privilege('anon','private','usage') then
+    raise exception 'Anonymous advertiser role must not receive private-schema usage';
+  end if;
+
   if has_function_privilege('anon','public.create_advertising_design_request(uuid,text,uuid,text,text)','execute')
      or not has_function_privilege('service_role','public.create_advertising_design_request(uuid,text,uuid,text,text)','execute')
      or has_function_privilege('anon','public.admin_confirm_advertising_design_payment(uuid,uuid,text)','execute')

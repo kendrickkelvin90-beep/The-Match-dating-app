@@ -81,7 +81,7 @@ create table if not exists public.advertising_creatives (
       and byte_size <= 10485760 and duration_seconds is null)
     or
     (creative_type = 'video' and content_type = 'video/mp4'
-      and byte_size <= 20971520 and duration_seconds between 0.1 and 30
+      and byte_size <= 20971520 and duration_seconds is not null and duration_seconds between 0.1 and 30
       and poster_storage_key is not null)
   )
 );
@@ -134,6 +134,24 @@ create table if not exists public.advertising_design_requests (
 
 -- Pseudonymous daily exposure keys only. Raw member UUIDs and sensitive member
 -- profile/orientation data are never stored in advertising analytics.
+create table if not exists public.advertising_design_payments (
+  id uuid primary key default gen_random_uuid(),
+  design_request_id uuid not null references public.advertising_design_requests(id) on delete restrict,
+  advertiser_id uuid not null references public.advertiser_profiles(user_id) on delete restrict,
+  amount_ngn integer not null check (amount_ngn > 0),
+  payment_reference text not null unique,
+  bank_transfer_reference text,
+  status text not null default 'submitted'
+    check (status in ('submitted','confirmed','rejected','duplicate','refunded')),
+  submitted_at timestamptz not null default now(),
+  confirmed_at timestamptz,
+  confirmed_by uuid references public.advertising_admins(user_id),
+  admin_note text
+);
+create unique index if not exists advertising_design_payments_transfer_reference_idx
+  on public.advertising_design_payments(lower(bank_transfer_reference))
+  where bank_transfer_reference is not null and status <> 'duplicate';
+
 create table if not exists public.advertising_impressions (
   id bigint generated always as identity primary key,
   campaign_id uuid not null references public.advertising_campaigns(id) on delete cascade,
@@ -215,7 +233,9 @@ begin
   values (
     new.id,
     case when coalesce(new.raw_user_meta_data ->> 'advertiser_type','') = 'business' then 'business' else 'individual' end,
-    coalesce(nullif(btrim(new.raw_user_meta_data ->> 'display_name'), ''), split_part(coalesce(new.email,''), '@', 1))
+    case when char_length(coalesce(nullif(btrim(new.raw_user_meta_data ->> 'display_name'), ''), split_part(coalesce(new.email,''), '@', 1))) >= 2
+      then coalesce(nullif(btrim(new.raw_user_meta_data ->> 'display_name'), ''), split_part(coalesce(new.email,''), '@', 1))
+      else 'Advertiser' end
   )
   on conflict (user_id) do nothing;
   return new;
@@ -249,6 +269,7 @@ alter table public.advertising_campaigns enable row level security;
 alter table public.advertising_creatives enable row level security;
 alter table public.advertising_payments enable row level security;
 alter table public.advertising_design_requests enable row level security;
+alter table public.advertising_design_payments enable row level security;
 alter table public.advertising_impressions enable row level security;
 alter table public.advertising_clicks enable row level security;
 alter table public.advertising_refunds enable row level security;
@@ -257,18 +278,19 @@ alter table public.advertising_admin_audit enable row level security;
 revoke all on public.advertising_admins, public.advertiser_profiles,
   public.advertising_campaigns, public.advertising_creatives,
   public.advertising_payments, public.advertising_design_requests,
-  public.advertising_impressions, public.advertising_clicks,
+  public.advertising_design_payments, public.advertising_impressions, public.advertising_clicks,
   public.advertising_refunds, public.advertising_admin_audit
 from anon, authenticated;
 
-grant select, update on public.advertiser_profiles to authenticated;
+grant select on public.advertiser_profiles to authenticated;
+grant update (display_name, contact_name, phone) on public.advertiser_profiles to authenticated;
 grant select on public.advertising_campaigns, public.advertising_creatives,
   public.advertising_payments, public.advertising_design_requests,
-  public.advertising_refunds to authenticated;
+  public.advertising_design_payments, public.advertising_refunds to authenticated;
 grant select on public.advertising_admins to service_role;
 grant all on public.advertiser_profiles, public.advertising_campaigns,
   public.advertising_creatives, public.advertising_payments,
-  public.advertising_design_requests, public.advertising_impressions,
+  public.advertising_design_requests, public.advertising_design_payments, public.advertising_impressions,
   public.advertising_clicks, public.advertising_refunds,
   public.advertising_admins, public.advertising_admin_audit to service_role;
 
@@ -288,6 +310,8 @@ create policy advertising_creative_owner_read on public.advertising_creatives
 create policy advertising_payment_owner_read on public.advertising_payments
   for select to authenticated using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
 create policy advertising_design_owner_read on public.advertising_design_requests
+  for select to authenticated using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
+create policy advertising_design_payment_owner_read on public.advertising_design_payments
   for select to authenticated using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
 create policy advertising_refund_owner_read on public.advertising_refunds
   for select to authenticated using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
@@ -348,5 +372,8 @@ end;
 $function$;
 revoke all on function public.get_my_advertising_campaign_metrics(uuid) from public, anon;
 grant execute on function public.get_my_advertising_campaign_metrics(uuid) to authenticated;
+
+-- Identity columns are written only by trusted server functions.
+grant usage, select on all sequences in schema public to service_role;
 
 commit;

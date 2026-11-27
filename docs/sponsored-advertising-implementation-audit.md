@@ -2,46 +2,46 @@
 
 **Working branch:** `work/sponsored-ads-shared-supabase-2026-11-27`  
 **Audit date:** 2026-11-27  
-**Status:** Shared-project adaptation in progress. Production database and Auth settings remain untouched.
+**Status:** Shared-project adaptation in progress. Production database, Auth settings and Edge Functions remain untouched.
 
-## Repository and live-project findings
+## Live-project inspection
 
-- The Match application uses an existing Supabase project with 58 application tables, 161 recorded migrations, private schemas, existing member storage buckets and 14 active Edge Functions at the time of inspection.
-- The project is active and healthy.
-- Existing Match member Auth is coupled to profile creation, onboarding and account lifecycle. A before-user-created Auth hook is already configured for Match signup checks. It must not be modified or replaced.
-- The live database has no trigger on `auth.users` that automatically creates a member profile. The previous advertising bootstrap did contain an Auth trigger that would have created an advertiser profile for every Auth user; that trigger has been removed from the shared-project version.
-- Existing RLS policies allow authenticated members to read certain dating profile/media records. Reusing the ordinary `authenticated` role for advertisers would therefore be unsafe.
-- The existing member project must not be paused, deleted, upgraded or replaced to make room for advertising.
+- The existing Match Supabase project is active and healthy.
+- Read-only inspection found 59 public base tables; all 59 currently have RLS enabled.
+- The project currently has no public views or materialized views in the public schema.
+- The `authenticator` database role currently has no `pgrst.db_pre_request` setting.
+- The existing before-user-created Auth hook is not modified.
+- The live database has no advertiser trigger on `auth.users`; the previous advertising bootstrap trigger that would have created advertiser profiles for every Auth user has been removed.
+- The existing project must not be paused, deleted, upgraded or replaced to make room for advertising.
 
-## Shared-project security design
+## Supabase Auth constraint and revised design
 
-1. **Same Supabase project:** advertising tables and functions live in the existing Match database; no third Supabase project is required.
-2. **Dedicated database role:** advertiser JWTs receive the Postgres role `advertiser`. This role is not a member of `authenticated` or `anon` and receives explicit grants only for advertising tables and the approved advertising helper/metrics functions.
-3. **Custom Access Token Hook:** `public.custom_access_token_hook` assigns `role=advertiser` only when Auth metadata explicitly identifies an advertiser registration and the user has no row in `public.profiles`. Existing dating-member accounts cannot be converted to advertisers. The hook leaves normal member claims unchanged.
-4. **Function ACL isolation:** the shared bootstrap snapshots effective EXECUTE access for current roles, removes implicit PUBLIC function execution, and restores the same effective privileges for existing roles. New function defaults preserve anon/authenticated/service-role access without automatically granting PUBLIC access. This prevents advertisers from inheriting existing Match SECURITY DEFINER functions.
-5. **Auth hook profile check:** Supabase Auth Admin can inspect only `profiles.id`, not profile details, to prevent member accounts being enrolled as advertisers.
-6. **Separate browser session:** advertiser portal uses the `the-match-advertiser-auth` storage key. Advertiser sign-out is local-only so it does not revoke the Match member app's session in another client.
-7. **Advertiser API:** server functions validate the JWT signature with Supabase Auth and require the `advertiser` role. Advertiser profile creation is performed server-side; no Auth trigger is attached to `auth.users`.
-8. **Member ad serving:** the Discover serving function uses the same project but accepts only `authenticated` member tokens, checks the existing Match Plus entitlements and fails closed when entitlement checks are unavailable.
-9. **Google identity:** advertisers first register with email/password, then may link Google from the advertiser workspace. Google sign-in is accepted only for identities already linked to an advertiser account. A normal dating-member account is rejected by the advertiser API.
-10. **B2:** sponsored creatives use a dedicated `advertising/` object prefix and a separate restricted B2 application key. Existing member upload/access functions and member storage categories remain unchanged.
+Supabase's supported Custom Access Token Hook role claim is constrained to `anon` or `authenticated`; an arbitrary Postgres role such as `advertiser` must not be assigned to the JWT `role` claim. The implementation therefore uses the supported `anon` role plus a namespaced custom claim:
 
-## Important global Auth setting
+- New advertiser registrations carry `the_match_advertiser_registration=v1` in user metadata.
+- The Custom Access Token Hook checks that marker and confirms the Auth user has no row in `public.profiles`.
+- Only then does it set `role=anon` and `user_role=advertiser`.
+- Existing Match members retain their ordinary `authenticated` role and claims. Existing member profiles cannot be converted into advertiser accounts.
+- The Auth hook is global but separate from the existing before-user-created hook. It has not been enabled.
 
-The Custom Access Token Hook is global to the existing Match Supabase project. It is an additional hook and must coexist with the existing before-user-created hook. It must be configured only after the database migration is reviewed and all member login/signup/CAPTCHA/Google sign-in flows are tested. If the Auth hook cannot be enabled without altering the existing signup hook or breaking existing claims, stop and reassess rather than weakening the member boundary.
+## Cross-service isolation
 
-The hook has not been enabled. No live Auth configuration has been changed.
+1. **PostgREST pre-request guard:** `public.match_advertiser_api_guard()` rejects advertiser JWTs from every Data API path except `advertising_campaigns`, `advertising_design_requests` and `rpc/get_my_advertising_campaign_metrics`. The bootstrap creates the function but does not register the global `pgrst.db_pre_request` setting. An explicit optional activation script checks for an existing setting before changing it.
+2. **Restrictive public-table RLS:** the bootstrap adds a restrictive policy to every public table except the two read-only advertiser list tables. For any legacy public table without RLS, the migration enables RLS with a permissive non-advertiser policy to preserve its previous access behavior while blocking advertiser claims.
+3. **Storage and Realtime:** restrictive policies block advertiser claims from `storage.objects` and `realtime.messages`. Advertiser creative uploads use the private advertising B2 Edge Function, not the member Storage API.
+4. **Advertiser Data API:** only read-only campaign/design request lists and the advertiser metrics RPC are directly accessible using the advertiser JWT. All other advertiser reads/writes use trusted Edge Functions with server-side ownership/admin checks.
+5. **Member Edge Functions:** ten existing member Edge Function source snapshots include a signed-token claim guard that rejects `user_role=advertiser` after Auth validation: nearby reverse geocoding, B2 media upload, voice calls, B2 media access, admin moderation, view-once chat media, account deletion, B2 media migration, B2 storage cleanup and B2 media operations. Normal member JWTs are unchanged. These guarded versions have not been deployed.
+6. **Advertising Edge Functions:** advertiser API/media/design upload functions require a verified `role=anon`, `user_role=advertiser` token. Member ad serving requires a normal `role=authenticated` member token and checks Match Plus entitlements.
+7. **Separate browser session:** the advertiser portal uses `the-match-advertiser-auth`, so its browser session does not overwrite the Match member app session.
+8. **Admin controls:** advertiser admin access is checked server-side against `advertising_admins`; the admin must use a separate advertiser account/email.
 
-## Database bootstrap safety
+## Database validation performed
 
-The shared `advertiser-backend/database/bootstrap.sql` is now designed for the existing Match database. It must not be applied until:
-- the full SQL passes disposable PostgreSQL integration tests;
-- function ACL preservation is reviewed;
-- the dedicated role and Auth hook behavior are verified;
-- member-table/function isolation assertions pass;
-- Supabase security/performance advisors are checked.
-
-A read-only transaction test against the live project verified that the proposed function ACL snapshot/revoke/restore procedure produced **zero effective privilege mismatches** for existing roles. A second transaction test verified that a temporary advertiser role had zero member-table privileges and zero public/private function execution after the ACL isolation step. Both transactions were rolled back; no live grants, roles or tables were changed.
+- The complete shared-project advertising bootstrap was executed against the live Match database inside a transaction whose final statement was `ROLLBACK`.
+- The transaction completed without SQL errors.
+- A follow-up read-only query confirmed no advertiser role, advertising tables, advertiser Auth registry or Auth Hook functions persisted.
+- No live roles, tables, policies, function grants, Auth settings or project configuration were changed by this test.
+- The previous custom-Postgres-role and global function-ACL rewrite approach has been removed from the branch.
 
 ## Approved product configuration
 
@@ -58,19 +58,18 @@ A read-only transaction test against the live project verified that the proposed
 - Analytics: 50% visibility for one continuous second; clicks, unique clicks and CTR; Africa/Lagos reporting; no guaranteed volume.
 - No targeting by sensitive LGBTQ identity/orientation, profile answers, location history or other sensitive data; no retargeting or sale of member data.
 - Design services and refund rules remain as approved in the product specification.
-- Advertisers may be individuals or businesses/organisations.
 
 ## Remaining setup and release gates
 
-- Review and run CI for the shared-project SQL, tests and Edge Functions.
-- Confirm the exact Supabase Auth Hook configuration and verify coexistence with the existing before-user-created hook.
-- Configure the advertiser admin allowlist, email verification/recovery and Google identity linking.
-- Configure the dedicated B2 advertising key, server secrets, bank transfer details and analytics HMAC secret.
-- Configure the same Match Supabase URL and publishable key in the advertiser portal and Discover config; keep sponsored ads disabled.
-- Deploy advertising Edge Functions to the existing project only after approval.
+- Finish CI on the latest branch head and review all SQL/RLS/Auth tests.
+- Deploy the ten guarded member Edge Function versions before enabling advertiser Auth.
+- Apply the shared-project database migration only after explicit approval.
 - Run `database/verify.sql` and Supabase security/performance/health advisors.
-- Test advertiser registration, email verification, sign-in, Google linking, admin approval, bank confirmation, private media upload/playback, analytics, Match Plus ad-free behavior and rotation.
-- Test Android and iOS browsers and regression-test member login/signup/CAPTCHA/Google sign-in, onboarding, profiles, Discover, Stories, Events, Nearby, chat/calls, Match Plus, Match Coins, admin and bottom navigation.
+- Confirm the `public` schema is exposed to the Data API.
+- Inspect `pg_db_role_setting` again; if no pre-request hook exists, enable `public.match_advertiser_api_guard` using the optional activation script. If another hook exists, compose it rather than overwrite it.
+- Configure the Custom Access Token Hook at `pg-functions://postgres/public/custom_access_token_hook` only after member auth regression tests pass.
+- Deploy advertising Edge Functions and configure the advertiser admin allowlist, email verification/recovery, Google identity linking, B2 advertising key, secrets, bank transfer details and analytics HMAC secret.
+- Test real advertiser/member sessions, all member auth/onboarding/profile/Discover/Stories/Events/Nearby/chat/calls/storage flows, Match Plus ad-free behavior, campaign/payment/admin/media workflows and Android/iOS browsers.
 - Complete Nigerian advertising/privacy/legal review, including applicable ARCON clearance/disclosure requirements.
 
-The feature flag remains disabled. No production advertising migration, Auth hook activation, Edge Function deployment, bank configuration or live campaign launch has been performed. The previously rejected advertiser-screening checklist remains excluded.
+The feature flag remains disabled. No production advertising migration, Data API pre-request setting, Auth hook, Edge Function deployment, bank configuration or live campaign launch has been performed. The previously rejected advertiser-screening checklist remains excluded.

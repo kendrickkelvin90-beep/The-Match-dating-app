@@ -1,4 +1,4 @@
--- Integration smoke tests for the isolated advertiser database.
+-- Integration smoke tests for advertiser-role isolation in the shared-project model.
 -- Run only against the disposable CI PostgreSQL database.
 insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values
 ('10000000-0000-4000-8000-000000000001','one@example.test',now(),'{"account_type":"advertiser","advertiser_type":"individual","display_name":"Advertiser One"}'),

@@ -13,6 +13,7 @@ set local search_path = public;
 revoke all on schema private from public, anon;
 grant usage on schema public, private to supabase_auth_admin;
 grant usage on schema private to authenticated, service_role;
+revoke usage on schema private from public, anon;
 grant usage on schema auth to anon, authenticated, authenticator, service_role;
 grant execute on function auth.uid(), auth.jwt() to anon, authenticated, authenticator, service_role;
 

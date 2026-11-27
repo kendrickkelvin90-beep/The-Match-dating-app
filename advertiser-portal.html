@@ -54,7 +54,7 @@
           <button class="primary" type="submit">Create account</button>
         </form>
         <button class="google-button" id="googleSignIn" type="button"><span class="google-g">G</span> Continue with Google</button>
-        <p class="fineprint">Advertiser accounts are separate from dating-member accounts. Creating an advertiser account does not create a dating profile.</p>
+        <p class="fineprint">Google sign-in is for Google identities already linked to an advertiser account. Create an advertiser account with email first, then link Google from your workspace. Dating-member accounts cannot be used as advertiser accounts.</p>
         <p id="authMessage" class="message" aria-live="polite"></p>
       </div>
     </section>
@@ -62,7 +62,10 @@
     <section id="dashboardView" class="hidden">
       <div class="dashboard-head">
         <div><p class="eyebrow">ADVERTISER WORKSPACE</p><h1>Your campaigns</h1><p class="muted" id="welcomeText">Manage your sponsored advertising.</p></div>
-        <button class="outline" id="signOut">Sign out</button>
+        <div class="dashboard-actions">
+          <button class="outline" id="linkGoogle" type="button">Link Google</button>
+          <button class="outline" id="signOut">Sign out</button>
+        </div>
       </div>
       <div class="dashboard-grid">
         <section class="panel create-panel">

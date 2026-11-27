@@ -179,3 +179,102 @@ begin
 end;
 $test$;
 reset role;
+
+-- Duplicate transfer refund while the original campaign remains active.
+select public.admin_record_duplicate_advertising_payment(
+  '10000000-0000-4000-8000-000000000001',
+  (select id from public.advertising_campaigns where payment_reference = 'TMAD-CI-REFERENCE-001'),
+  '10000000-0000-4000-8000-000000000001',
+  12000,'BANKREF-DUP-CI-0001','Additional transfer confirmed in bank statement'
+);
+select public.request_advertising_refund(
+  '10000000-0000-4000-8000-000000000001',
+  (select id from public.advertising_payments where bank_transfer_reference = 'BANKREF-DUP-CI-0001'),
+  'Duplicate transfer received'
+);
+select public.admin_review_advertising_refund(
+  '10000000-0000-4000-8000-000000000001',
+  (select id from public.advertising_refunds r join public.advertising_payments p on p.id = r.payment_id where p.bank_transfer_reference = 'BANKREF-DUP-CI-0001'),
+  true,null
+);
+select public.admin_mark_advertising_refund_paid(
+  '10000000-0000-4000-8000-000000000001',
+  (select id from public.advertising_refunds r join public.advertising_payments p on p.id = r.payment_id where p.bank_transfer_reference = 'BANKREF-DUP-CI-0001'),
+  'BANKREF-REFUND-CI-0001'
+);
+do $test$
+begin
+  if (select status from public.advertising_payments where bank_transfer_reference = 'BANKREF-DUP-CI-0001') <> 'refunded' then
+    raise exception 'Duplicate transfer refund did not complete';
+  end if;
+  if (select payment_status from public.advertising_campaigns where payment_reference = 'TMAD-CI-REFERENCE-001') <> 'confirmed' then
+    raise exception 'Refunding a duplicate transfer incorrectly refunded the live campaign';
+  end if;
+end;
+$test$;
+
+-- Paid campaign rejection is refundable; the campaign reservation can be cancelled before payment.
+select * from public.create_advertising_campaign(
+  '10000000-0000-4000-8000-000000000001',
+  'Rejected campaign','A campaign used to test rejection refunds.','learn_more','https://example.test/rejected',
+  7,'immediate',null,'TMAD-CI-REFERENCE-002',now() + interval '24 hours'
+);
+select public.replace_advertising_creative(
+  '10000000-0000-4000-8000-000000000001',
+  (select id from public.advertising_campaigns where payment_reference = 'TMAD-CI-REFERENCE-002'),
+  'image',
+  'advertising/10000000-0000-4000-8000-000000000001/' ||
+    (select id::text from public.advertising_campaigns where payment_reference = 'TMAD-CI-REFERENCE-002') ||
+    '/ci-image.jpg',
+  null,'image/jpeg',100,null,null,null
+);
+select public.submit_advertising_payment(
+  '10000000-0000-4000-8000-000000000001',
+  (select id from public.advertising_campaigns where payment_reference = 'TMAD-CI-REFERENCE-002'),
+  12000,'BANKREF-CI-0002',null
+);
+select public.admin_confirm_advertising_payment(
+  '10000000-0000-4000-8000-000000000001',
+  (select id from public.advertising_payments where bank_transfer_reference = 'BANKREF-CI-0002'),
+  'CI bank confirmation'
+);
+select public.admin_review_advertising_campaign(
+  '10000000-0000-4000-8000-000000000001',
+  (select id from public.advertising_campaigns where payment_reference = 'TMAD-CI-REFERENCE-002'),
+  false,'Creative rejected for test'
+);
+select public.request_advertising_refund(
+  '10000000-0000-4000-8000-000000000001',
+  (select id from public.advertising_payments where bank_transfer_reference = 'BANKREF-CI-0002'),
+  'Advert rejected before launch'
+);
+select public.admin_review_advertising_refund(
+  '10000000-0000-4000-8000-000000000001',
+  (select id from public.advertising_refunds r join public.advertising_payments p on p.id = r.payment_id where p.bank_transfer_reference = 'BANKREF-CI-0002'),
+  true,null
+);
+select public.admin_mark_advertising_refund_paid(
+  '10000000-0000-4000-8000-000000000001',
+  (select id from public.advertising_refunds r join public.advertising_payments p on p.id = r.payment_id where p.bank_transfer_reference = 'BANKREF-CI-0002'),
+  'BANKREF-REFUND-CI-0002'
+);
+select * from public.create_advertising_campaign(
+  '10000000-0000-4000-8000-000000000001',
+  'Unpaid cancellation','This campaign should be cancelled without payment.','learn_more','https://example.test/cancel',
+  7,'immediate',null,'TMAD-CI-REFERENCE-003',now() + interval '24 hours'
+);
+select public.cancel_unpaid_advertising_campaign(
+  '10000000-0000-4000-8000-000000000001',
+  (select id from public.advertising_campaigns where payment_reference = 'TMAD-CI-REFERENCE-003')
+);
+do $test$
+begin
+  if (select payment_status from public.advertising_campaigns where payment_reference = 'TMAD-CI-REFERENCE-002') <> 'refunded' then
+    raise exception 'Rejected paid campaign refund did not update payment status';
+  end if;
+  if (select status from public.advertising_campaigns where payment_reference = 'TMAD-CI-REFERENCE-003') <> 'cancelled' then
+    raise exception 'Unpaid reservation was not cancelled';
+  end if;
+end;
+$test$;
+reset role;

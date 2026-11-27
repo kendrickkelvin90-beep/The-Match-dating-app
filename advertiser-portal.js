@@ -26,6 +26,7 @@
     form.append("creative", creative, creative.name);
     if (poster) form.append("poster", poster, poster.name);
     const { data: { session } } = await state.client.auth.getSession();
+    if (!session?.access_token) throw new Error("Your advertiser session has expired. Sign in again before uploading.");
     const response = await fetch(config.supabaseUrl.replace(/\/$/, "") + "/functions/v1/advertising-media-upload", {
       method: "POST",
       headers: { apikey: config.publishableKey, Authorization: "Bearer " + session.access_token },

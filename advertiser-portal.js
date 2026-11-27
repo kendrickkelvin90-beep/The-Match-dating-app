@@ -19,9 +19,10 @@
     message("authMessage", "");
   };
   const setBusy = (button, busy, label) => { button.disabled = busy; if (busy) { button.dataset.oldLabel = button.textContent; button.textContent = label || "Please wait…"; } else if (button.dataset.oldLabel) { button.textContent = button.dataset.oldLabel; delete button.dataset.oldLabel; } };
-  const callMediaUpload = async (campaignId, creative, poster) => {
+  const callMediaUpload = async (campaignId, creative, poster, changeRequestId = null) => {
     const form = new FormData();
     form.append("campaign_id", campaignId);
+    if (changeRequestId) form.append("change_request_id", changeRequestId);
     form.append("creative", creative, creative.name);
     if (poster) form.append("poster", poster, poster.name);
     const { data: { session } } = await state.client.auth.getSession();

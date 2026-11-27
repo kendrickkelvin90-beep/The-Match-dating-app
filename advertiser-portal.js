@@ -65,10 +65,10 @@
         <p>Payment: ${escapeHtml(campaign.payment_status.replaceAll("_"," "))}</p>
         <p>Reference: <strong>${escapeHtml(campaign.payment_reference)}</strong></p>
         <p>Live: ${formatDate(campaign.go_live_at)} · Ends: ${formatDate(campaign.ends_at)}</p>
-        <div class="campaign-actions"><button class="small-outline" data-metrics="${escapeHtml(campaign.id)}">View performance</button></div>
+        <div class="campaign-actions"><button class="small-outline" data-metrics="${escapeHtml(campaign.id)}">View performance</button>${campaign.status === "awaiting_payment" && campaign.payment_status === "awaiting_payment" ? `<button class="small-outline" data-resume-payment="${escapeHtml(campaign.id)}">Resume payment</button>` : ""}</div>
         <div class="fineprint" id="metrics-${escapeHtml(campaign.id)}"></div>
       </article>`).join("") : '<p class="muted">You have no campaigns yet. Create your first sponsored advert to get started.</p>';
-    $("campaignList").querySelectorAll("[data-metrics]").forEach((button) => button.addEventListener("click", async () => {
+    $("campaignList").querySelectorAll("[data-resume-payment]").forEach((button) => button.addEventListener("click", async () => {\n      button.disabled = true;\n      try {\n        const result = await callApi({ action: "get-payment-details", campaign_id: button.dataset.resumePayment });\n        $("bankName").textContent = result.bank_transfer.bank_name;\n        $("bankAccountName").textContent = result.bank_transfer.account_name;\n        $("bankAccountNumber").textContent = result.bank_transfer.account_number;\n        $("bankAmount").textContent = formatNaira(result.campaign.amount_ngn);\n        $("bankReference").textContent = result.campaign.payment_reference;\n        $("bankDeadline").textContent = formatDate(result.payment_deadline_at);\n        $("paymentForm").dataset.campaignId = result.campaign.campaign_id;\n        $("paymentForm").dataset.amount = result.campaign.amount_ngn;\n        $("paymentStep").classList.remove("hidden");\n        $("paymentStep").scrollIntoView({ behavior:"smooth", block:"start" });\n      } catch (error) { message("globalMessage", error.message, true); }\n      finally { button.disabled = false; }\n    }));\n    $("campaignList").querySelectorAll("[data-metrics]").forEach((button) => button.addEventListener("click", async () => {
       button.disabled = true;
       try {
         const result = await callApi({ action: "get-metrics", campaign_id: button.dataset.metrics });
@@ -91,11 +91,11 @@
       ]);
       $("adminCampaigns").innerHTML = (campaignData.campaigns || []).map((c) => `
         <div class="admin-row"><strong>${escapeHtml(c.headline)}</strong><p>${escapeHtml(c.advertiser_profiles?.display_name)} · ${escapeHtml(c.status)} · ${formatNaira(c.package_price_ngn)}</p>
-        <div class="campaign-actions"><button class="small-outline" data-approve="${c.id}">Approve</button><button class="small-outline" data-reject="${c.id}">Reject</button><button class="small-outline" data-pause="${c.id}">${c.status === "paused" ? "Resume" : "Pause"}</button></div></div>`).join("") || '<p class="muted">No campaigns.</p>';
+        <div class="campaign-actions"><button class="small-outline" data-preview="${c.id}">Preview creative</button><button class="small-outline" data-approve="${c.id}">Approve</button><button class="small-outline" data-reject="${c.id}">Reject</button><button class="small-outline" data-pause="${c.id}">${c.status === "paused" ? "Resume" : "Pause"}</button></div></div>`).join("") || '<p class="muted">No campaigns.</p>';
       $("adminPayments").innerHTML = (paymentData.payments || []).map((p) => `
         <div class="admin-row"><strong>${formatNaira(p.amount_ngn)} · ${escapeHtml(p.status)}</strong><p>${escapeHtml(p.advertising_campaigns?.headline)} · ${escapeHtml(p.advertiser_profiles?.display_name)}</p><p>Transfer ref: ${escapeHtml(p.bank_transfer_reference)}</p>
         ${p.status === "submitted" ? `<button class="small-outline" data-confirm-payment="${p.id}">Confirm bank transfer</button>` : ""}</div>`).join("") || '<p class="muted">No submitted transfers.</p>';
-      $("adminCampaigns").querySelectorAll("[data-approve]").forEach((b) => b.addEventListener("click", () => adminReview(b.dataset.approve, true)));
+      $("adminCampaigns").querySelectorAll("[data-preview]").forEach((b) => b.addEventListener("click", async () => {\n        try { const result = await callApi({ action: "admin-preview-creative", campaign_id: b.dataset.preview }); window.open(result.preview_url, "_blank", "noopener"); }\n        catch (error) { message("globalMessage", error.message, true); }\n      }));\n      $("adminCampaigns").querySelectorAll("[data-approve]").forEach((b) => b.addEventListener("click", () => adminReview(b.dataset.approve, true)));
       $("adminCampaigns").querySelectorAll("[data-reject]").forEach((b) => b.addEventListener("click", () => adminReview(b.dataset.reject, false)));
       $("adminCampaigns").querySelectorAll("[data-pause]").forEach((b) => b.addEventListener("click", async () => {
         const action = b.textContent === "Resume" ? "resume" : "pause";
@@ -231,7 +231,7 @@
         bank_transfer_reference: $("transferReference").value.trim(),
       });
       message("globalMessage","Transfer details submitted. Your advert is awaiting manual bank confirmation and campaign approval.");
-      $("paymentStep").classList.add("hidden"); $("campaignForm").reset(); $("creativePreview").textContent = "Your creative preview appears here"; state.creativeFile = null; state.posterFile = null;
+      $("paymentStep").classList.add("hidden"); $("campaignForm").reset(); $("creativePreview").textContent = "Your creative preview appears here"; state.creativeFile = null; state.posterFile = null; state.pendingCampaign = null; state.pendingBank = null;
       await refreshCampaigns();
     } catch (error) { message("globalMessage",error.message,true); }
     finally { setBusy(button,false); }

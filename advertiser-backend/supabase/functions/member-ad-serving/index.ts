@@ -5,6 +5,7 @@ import { getSignedUrl } from "npm:@aws-sdk/s3-request-presigner";
 
 const appOrigin = "https://match.beyondthebinarymedia.online";
 const projectUrl = Deno.env.get("SUPABASE_URL") ?? "";
+const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const advertiserServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
 

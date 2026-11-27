@@ -26446,28 +26446,11 @@ body.light-theme #nearbyPage button.btn.secondary {
   border-color: #B9C9C2 !important;
   color: #254C46 !important;
 }
-body.light-theme #bottomNavigation {
-  background: #FFFFFF !important;
-  border-top: 1px solid #E5DCCB !important;
-  box-shadow: 0 -4px 16px rgba(55,47,31,.06) !important;
-}
-body.light-theme #bottomNavigation button {
-  color: #515B56 !important;
-  background: transparent !important;
-}
-body.light-theme #bottomNavigation button.active {
-  background: #EAF0EC !important;
-  color: #254C46 !important;
-}
-body.light-theme #bottomNavigation .nav-icon {
-  color: inherit !important;
-  filter: none !important;
-}
-body.light-theme #bottomNavigation .nav-badge {
-  background: #C39A52 !important;
-  color: #241B0C !important;
-  border: 1px solid #FFFFFF !important;
-}
+
+
+
+
+
 
 /* Events, verification and forms should use the same readable light palette. */
 body.light-theme #eventsPage,
@@ -26520,53 +26503,11 @@ body.light-theme #verificationPage textarea {
 }
 
 
-/* Light theme readability and mobile navigation fit — visual-only overrides. */
-body.light-theme #bottomNavigation.bottom-nav {
-  display:grid !important;
-  grid-template-columns:repeat(5,minmax(0,1fr)) !important;
-  grid-auto-flow:row !important;
-  align-items:stretch !important;
-  gap:3px !important;
-  min-height:calc(66px + env(safe-area-inset-bottom, 0px)) !important;
-  height:auto !important;
-  padding:6px 5px calc(6px + env(safe-area-inset-bottom, 0px)) !important;
-  box-sizing:border-box !important;
-  background:#FFFFFF !important;
-  border-top:1px solid #E5DCCB !important;
-  box-shadow:0 -4px 16px rgba(55,47,31,.08) !important;
-}
-body.light-theme #bottomNavigation.bottom-nav button {
-  min-width:0 !important;
-  min-height:52px !important;
-  width:100% !important;
-  padding:4px 1px !important;
-  display:flex !important;
-  flex-direction:column !important;
-  align-items:center !important;
-  justify-content:center !important;
-  gap:3px !important;
-  white-space:nowrap !important;
-  font-size:clamp(9px,2.5vw,11px) !important;
-  line-height:1.15 !important;
-  color:#303936 !important;
-  background:transparent !important;
-  border:1px solid transparent !important;
-  border-radius:11px !important;
-}
-body.light-theme #bottomNavigation.bottom-nav button.active {
-  color:#254C46 !important;
-  background:#EAF0EC !important;
-  border-color:#D5E2DA !important;
-}
-body.light-theme #bottomNavigation .nav-icon {
-  color:inherit !important;
-  filter:none !important;
-}
-body.light-theme #bottomNavigation .nav-badge {
-  background:#C39A52 !important;
-  color:#241B0C !important;
-  border:1px solid #FFFFFF !important;
-}
+
+
+
+
+
 
 /* Give every Events section enough scroll room to clear the fixed five-item
    navigation, including Android gesture/navigation safe-area insets. */
@@ -26673,52 +26614,7 @@ body.light-theme #eventsPage .events-featured-preview .events-featured-meta stro
 </style>
 <script src="/match-performance-engine.js?v=3"></script>
 <script src="/match-intelligence-engine.js?v=1"></script>
-</body>
-<style id="profile-bottom-navigation-visibility">
-
-/* Ensure Profile is a first-class fifth destination in the fixed app bar. */
-#bottomNavigation.bottom-nav:not(.hidden) {
-  display:flex !important;
-  flex-wrap:nowrap !important;
-  justify-content:space-between !important;
-  align-items:stretch !important;
-  overflow:visible !important;
-}
-#bottomNavigation.bottom-nav:not(.hidden) > button {
-  display:flex !important;
-  flex:1 1 20% !important;
-  width:20% !important;
-  max-width:20% !important;
-  min-width:0 !important;
-  visibility:visible !important;
-  opacity:1 !important;
-}
-#bottomNavigation.bottom-nav:not(.hidden) > button[data-page="profile"] {
-  display:flex !important;
-  flex:1 1 20% !important;
-  width:20% !important;
-  max-width:20% !important;
-  min-width:0 !important;
-  order:5 !important;
-  visibility:visible !important;
-  opacity:1 !important;
-  position:relative !important;
-}
-#bottomNavigation.bottom-nav:not(.hidden) > button[data-page="profile"] > span {
-  display:block !important;
-  visibility:visible !important;
-  opacity:1 !important;
-}
-@media(max-width:900px) {
-  #bottomNavigation.bottom-nav:not(.hidden) > button {
-    flex:1 1 20% !important;
-    width:20% !important;
-    max-width:20% !important;
-  }
-}
-
-</style>
-</html>
+</body></html>
 
 
 <!-- The Match in-app safety dialog -->

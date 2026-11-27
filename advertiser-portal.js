@@ -240,7 +240,7 @@
       // until the campaign launch flag is enabled.
       message("globalMessage", "You can prepare your advert details here. Campaign submission and payment are not open yet.");
     }
-    const adminRoute = new URLSearchParams(window.location.search).get("admin") === "1";
+    const adminRoute = window.location.pathname.endsWith("/advertiser-admin.html") || new URLSearchParams(window.location.search).get("admin") === "1";
     if (adminRoute) {
       document.querySelector(".dashboard-head")?.classList.add("hidden");
       document.querySelector(".dashboard-grid")?.classList.add("hidden");
@@ -282,6 +282,12 @@
       detectSessionInUrl: true,
       storageKey: "the-match-advertiser-auth",
     },
+  });
+  const backToMatch = $("backToMatch");
+  if (backToMatch) backToMatch.addEventListener("click", () => {
+    const sameSiteReferrer = (() => { try { return document.referrer && new URL(document.referrer).origin === window.location.origin; } catch { return false; } })();
+    if (sameSiteReferrer && window.history.length > 1) window.history.back();
+    else window.location.assign("/");
   });
   document.querySelectorAll("[data-auth-tab]").forEach((button) => button.addEventListener("click", () => showAuthTab(button.dataset.authTab)));
   document.querySelectorAll("[data-workspace-tab]").forEach((button) => button.addEventListener("click", () => {

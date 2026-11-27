@@ -5,19 +5,19 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#101010">
   <title>The Match — Advertiser Portal</title>
-  <link rel="stylesheet" href="advertiser-portal.css?v=20261127-portalsteps1">
+  <link rel="stylesheet" href="advertiser-portal.css?v=20261127-navigation2">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2" onerror="this.onerror=null;this.src='https://unpkg.com/@supabase/supabase-js@2.119.2'"></script>
-  <script src="advertiser-portal-config.js?v=20261127-portalsteps1"></script>
-  <script defer src="advertiser-portal.js?v=20261127-portalsteps1"></script>
-  <script defer src="advertiser-portal-refunds.js?v=20261127-portalsteps1"></script>
-  <script defer src="advertiser-portal-design.js?v=20261127-portalsteps1"></script>
-  <script defer src="advertiser-portal-changes.js?v=20261127-portalsteps1"></script>
+  <script src="advertiser-portal-config.js?v=20261127-navigation2"></script>
+  <script defer src="advertiser-portal.js?v=20261127-navigation2"></script>
+  <script defer src="advertiser-portal-refunds.js?v=20261127-navigation2"></script>
+  <script defer src="advertiser-portal-design.js?v=20261127-navigation2"></script>
+  <script defer src="advertiser-portal-changes.js?v=20261127-navigation2"></script>
 </head>
 <body>
   <main class="shell">
     <header class="topbar">
       <a class="brand" href="/" aria-label="The Match home"><span class="brand-mark">M</span><span>The Match <small>ADVERTISING</small></span></a>
-      <span class="secure-note">Secure advertiser space</span>
+      <div class="topbar-actions"><button type="button" class="return-match-button" id="backToMatch">← Back to The Match</button><span class="secure-note">Secure advertiser space</span></div>
     </header>
 
     <section id="setupNotice" class="notice hidden" role="status"></section>

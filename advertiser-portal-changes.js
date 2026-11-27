@@ -12,6 +12,7 @@
     list.querySelectorAll(".campaign-item[data-campaign-id]").forEach((card) => {
       if (!["active","paused","scheduled"].includes(card.dataset.campaignStatus)) return;
       if (card.querySelector("[data-campaign-change]")) return;
+      if ((card.dataset.hasPendingChange || "") === "true") return;
       const button = document.createElement("button");
       button.type = "button";
       button.className = "small-outline";

@@ -71,10 +71,13 @@
 
  function transformEditorialCard(card){
    if(!card||editorialCards.has(card))return;
-   const photoBox=card.querySelector(':scope > .discover-option3-photo');
-   const overlay=card.querySelector(':scope > .discover-option3-photo > .discover-option3-overlay');
-   if(!photoBox||!overlay)return;
+   // The renderer/card-stack can wrap or move descendants during assembly.
+   // Use resilient descendant selectors and retry on later observer passes.
+   const photoBox=card.querySelector('.discover-option3-photo');
+   const overlay=card.querySelector('.discover-option3-overlay');
+   if(!photoBox||!overlay){card.dataset.matchEditorialStatus='waiting-for-card-parts';return;}
    editorialCards.add(card);
+   card.dataset.matchEditorialStatus='applied';
    card.classList.add('match-discover-editorial-card');
    photoBox.classList.add('match-discover-editorial-media');
    overlay.classList.add('match-discover-editorial-body');

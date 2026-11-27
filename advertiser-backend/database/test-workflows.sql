@@ -194,7 +194,7 @@ select public.request_advertising_refund(
 );
 select public.admin_review_advertising_refund(
   '10000000-0000-4000-8000-000000000001',
-  (select id from public.advertising_refunds r join public.advertising_payments p on p.id = r.payment_id where p.bank_transfer_reference = 'BANKREF-DUP-CI-0001'),
+  (select r.id from public.advertising_refunds r join public.advertising_payments p on p.id = r.payment_id where p.bank_transfer_reference = 'BANKREF-DUP-CI-0001'),
   true,null
 );
 select public.admin_mark_advertising_refund_paid(

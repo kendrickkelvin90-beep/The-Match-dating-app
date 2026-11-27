@@ -37,7 +37,7 @@ function isAdvertiserToken(token: string): boolean {
     if (!segment) return false;
     const normalized = segment.replace(/-/g, "+").replace(/_/g, "/");
     const payload = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
-    return payload.role === "anon" && payload.user_role === "advertiser";
+    return ["anon", "authenticated"].includes(payload.role) && payload.user_role === "advertiser";
   } catch { return false; }
 }
 

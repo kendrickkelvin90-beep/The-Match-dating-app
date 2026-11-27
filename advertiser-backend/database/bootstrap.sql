@@ -1593,7 +1593,7 @@ grant execute on function public.admin_review_advertising_campaign_change(uuid,u
 
 -- Data API pre-request boundary. The Auth hook sets role=anon and
 -- user_role=advertiser for advertiser accounts. Only the two read-only
--- advertiser list endpoints and the advertiser metrics RPC are allowed.
+-- advertiser list endpoints are allowed; metrics use a server-only RPC.
 create or replace function public.match_advertiser_api_guard()
 returns void
 language plpgsql
@@ -1608,7 +1608,7 @@ begin
 
   if v_path in (
     'advertising_campaigns',
-    'advertising_design_requests',
+    'advertising_design_requests'
   ) then
     return;
   end if;

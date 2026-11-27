@@ -12,7 +12,7 @@ This implementation uses the existing `the-match-dating-app` Supabase project. I
 - Advertiser JWTs do not receive the `authenticated` database role. The Data API pre-request guard allows only the two read-only advertiser list endpoints and the advertiser metrics RPC. All other advertiser Data API paths are rejected.
 - A restrictive RLS boundary is added to every existing public table except the two read-only advertiser list tables. Matching boundaries also protect Storage objects and Realtime messages. Normal member JWTs have no `user_role=advertiser` claim, so existing member policies continue to apply.
 - Advertiser direct Data API access is limited to `advertising_campaigns`, `advertising_design_requests` and `get_my_advertising_campaign_metrics`. Other advertiser reads/writes use trusted Edge Functions with ownership/admin checks.
-- Ten existing member Edge Functions now reject the advertiser custom claim before performing member operations. The advertiser API, media upload and design upload functions accept only a verified `role=anon`, `user_role=advertiser` session. Member ad serving accepts only normal `role=authenticated` member sessions.
+- Guarded source snapshots are provided for ten existing member Edge Functions, but the currently deployed live versions were found to differ from those snapshots. Do not deploy those snapshots as-is. Before activation, reconcile each guard against the latest live function body, preserve all current live behavior, and deploy only the reviewed merged versions. The advertiser API, media upload and design upload functions accept only a verified `role=anon`, `user_role=advertiser` session. Member ad serving accepts only normal `role=authenticated` member sessions.
 - Sponsored creatives remain private Backblaze B2 objects under the `advertising/` prefix. Use a separate B2 application key restricted to that prefix where supported.
 - No targeting by sexual orientation, LGBTQ+ identity, profile answers, location history or other sensitive member data.
 - Never expose service-role keys, B2 credentials, bank account configuration or the analytics HMAC secret in browser code.
@@ -70,7 +70,7 @@ Do not set `MATCH_SUPABASE_URL` or `MATCH_SUPABASE_ANON_KEY`; member verificatio
 ## Setup order — not yet performed in production
 
 1. Review the shared-project migration and CI results.
-2. Deploy the trusted advertiser registration Edge Function and the ten guarded member Edge Function versions from `supabase/functions/` before enabling advertiser Auth. Their only behavior change is to reject the advertiser custom claim; ordinary member sessions continue through the existing code.
+2. Deploy the trusted advertiser registration Edge Function. Separately reconcile the ten guarded member-function source snapshots with their current live versions; do not deploy snapshots blindly. Preserve current live logic, add only the reviewed advertiser-session rejection guard, and deploy those reconciled versions before enabling advertiser Auth. Their only behavior change is to reject the advertiser custom claim; ordinary member sessions continue through the existing code.
 3. Apply `database/bootstrap.sql` to the existing Match project only after explicit owner approval. Never run the old separate-project instructions.
 4. Run `database/verify.sql` and Supabase security/performance advisors. Confirm the `public` schema is exposed to the Data API.
 5. Inspect `pg_db_role_setting`; if no pre-request hook exists, run `database/enable-pre-request.sql`. Do not overwrite another pre-request integration.
@@ -79,7 +79,7 @@ Do not set `MATCH_SUPABASE_URL` or `MATCH_SUPABASE_ANON_KEY`; member verificatio
 8. Configure email verification/recovery redirect URLs and the advertiser admin allowlist. Review the global manual identity-linking setting before enabling Google linking.
 9. Configure the private B2 advertising key, bank transfer details and analytics HMAC secret.
 10. Configure the advertiser portal and Discover public URL/key, keeping `enabled: false`.
-11. Test advertiser registration, email verification, sign-in, Google linking, admin approval, bank confirmation, media upload/playback, Match Plus ad-free behavior, frequency limits and all member login/signup/CAPTCHA/profile/Discover/chat/call/storage flows on Android and iOS browsers.
+11. Test advertiser registration, email verification, sign-in, Google linking, admin approval, bank confirmation, media upload/playback, Match Plus ad-free behavior, frequency limits and all member login/signup/CAPTCHA/profile/Discover/chat/storage flows on Android and iOS browsers.
 12. Only after explicit approval should the Discover flag be enabled and the feature launched.
 
 ## CI and launch gates

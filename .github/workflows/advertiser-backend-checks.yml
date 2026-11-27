@@ -10,6 +10,7 @@ on:
       - "advertiser-portal-config.js"
       - "advertiser-portal-refunds.js"
       - "advertiser-portal-design.js"
+      - "advertiser-portal-changes.js"
       - "sponsored-*.js"
       - "match-performance-engine.js"
       - ".github/workflows/advertiser-backend-checks.yml"
@@ -18,6 +19,7 @@ on:
       - "advertiser-backend/**"
       - "advertiser-portal.*"
       - "advertiser-portal-config.js"
+      - "advertiser-portal-changes.js"
       - ".github/workflows/advertiser-backend-checks.yml"
 
 permissions:
@@ -49,7 +51,9 @@ jobs:
         with:
           node-version: "22"
       - name: Check advertiser portal JavaScript syntax
-        run: node --check advertiser-portal.js
+        run: |
+          node --check advertiser-portal.js
+          node --check advertiser-portal-changes.js
       - name: Check Discover integration JavaScript syntax
         run: |
           node --check sponsored-discover-integration.js

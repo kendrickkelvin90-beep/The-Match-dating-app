@@ -68,7 +68,7 @@ Do not set `MATCH_SUPABASE_URL` or `MATCH_SUPABASE_ANON_KEY`; member verificatio
 4. Enable `private.custom_access_token_hook` under Authentication → Hooks → Custom Access Token after migration verification.
 5. Run `database/verify.sql` and Supabase security/performance advisors.
 6. Deploy the four advertising Edge Functions to the existing project and set the server-side secrets.
-7. Configure Google identity linking, email verification/recovery redirect URLs and advertiser admin allowlist.
+7. Configure email verification/recovery redirect URLs and the advertiser admin allowlist. Review the global manual identity-linking setting before enabling Google linking.
 8. Configure the private B2 advertising key, bank transfer details and analytics HMAC secret.
 9. Configure the advertiser portal and Discover public URL/key, keeping `enabled: false`.
 10. Test advertiser registration, email verification, sign-in, Google linking, admin approval, bank confirmation, media upload/playback, Match Plus ad-free behavior, frequency limits and all member login/signup/CAPTCHA/profile/chat flows on Android and iOS browsers.

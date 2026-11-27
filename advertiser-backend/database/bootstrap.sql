@@ -530,8 +530,9 @@ begin
     raise exception 'Advertising admin access denied' using errcode = '42501';
   end if;
   select * into v_campaign from public.advertising_campaigns where id = p_campaign_id for update;
-  if not found or v_campaign.status in ('cancelled','expired_unpaid','completed') then
-    raise exception 'Campaign cannot be reviewed in its current state' using errcode = '22023';
+  if not found or v_campaign.status not in ('awaiting_payment','payment_review','awaiting_approval')
+     or v_campaign.approved_at is not null then
+    raise exception 'Campaign cannot be reviewed again or is not awaiting approval' using errcode = '22023';
   end if;
   if p_approve and not exists (select 1 from public.advertising_creatives c where c.campaign_id = p_campaign_id and c.is_current) then
     raise exception 'Campaign has no current creative' using errcode = '22023';

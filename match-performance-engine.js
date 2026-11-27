@@ -273,7 +273,28 @@
    if(waitingObserver){waitingObserver.disconnect();waitingObserver=null;}
  }
 
+
+ function loadSponsoredDiscoverModule(){
+   if(!document.getElementById('discover')||window.__matchSponsoredLoaderStarted)return;
+   window.__matchSponsoredLoaderStarted=true;
+   const configScript=document.createElement('script');
+   configScript.src='sponsored-advertising-config.js';
+   configScript.async=true;
+   configScript.onload=()=>{
+     const config=window.MATCH_SPONSORED_AD_CONFIG||{};
+     if(config.enabled!==true||!config.advertiserSupabaseUrl||!config.publishableKey)return;
+     if(document.querySelector('script[data-match-sponsored-integration]'))return;
+     const script=document.createElement('script');
+     script.src='sponsored-discover-integration.js';
+     script.async=true;
+     script.dataset.matchSponsoredIntegration='true';
+     document.head.appendChild(script);
+   };
+   document.head.appendChild(configScript);
+ }
+
  function start(){
+   loadSponsoredDiscoverModule();
    attachDiscoverList();
    const syncEditorialCardTheme=(card)=>{
      const panel=card?.querySelector('.match-discover-editorial-body');

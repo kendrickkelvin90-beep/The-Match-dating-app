@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#101010">
+  <title>The Match — Advertiser Portal</title>
+  <link rel="stylesheet" href="advertiser-portal.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2"></script>
+  <script src="advertiser-portal-config.js"></script>
+  <script defer src="advertiser-portal.js"></script>
+  <script defer src="advertiser-portal-refunds.js"></script>
+  <script defer src="advertiser-portal-design.js"></script>
+  <script defer src="advertiser-portal-changes.js"></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="The Match home"><span class="brand-mark">M</span><span>The Match <small>ADVERTISING</small></span></a>
+      <span class="secure-note">Secure advertiser space</span>
+    </header>
+
+    <section id="setupNotice" class="notice hidden" role="status"></section>
+    <section id="authView" class="auth-layout">
+      <div class="intro">
+        <p class="eyebrow">REACH THE RIGHT AUDIENCE</p>
+        <h1>Put your brand<br><em>in the picture.</em></h1>
+        <p class="muted">Run clearly labelled sponsored campaigns on The Match. Manage your creative, payment confirmation and campaign results in one place.</p>
+        <div class="feature-list">
+          <div><span>01</span><p>Portrait image and video adverts</p></div>
+          <div><span>02</span><p>Transparent campaign pricing</p></div>
+          <div><span>03</span><p>Live status and performance reporting</p></div>
+        </div>
+      </div>
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <button class="tab active" data-auth-tab="signin">Sign in</button>
+          <button class="tab" data-auth-tab="signup">Create advertiser account</button>
+        </div>
+        <form id="signinForm" class="auth-form">
+          <label>Email address<input type="email" id="signinEmail" autocomplete="email" required></label>
+          <label>Password<input type="password" id="signinPassword" autocomplete="current-password" required minlength="8"></label>
+          <button class="primary" type="submit">Sign in</button>
+          <button class="text-button" type="button" id="forgotPassword">Forgot password?</button>
+        </form>
+        <form id="signupForm" class="auth-form hidden">
+          <label>Advertiser type<select id="signupType" required><option value="individual">Individual</option><option value="business">Business / organisation</option></select></label>
+          <label id="signupNameLabel">Your name<input id="signupName" required minlength="2" maxlength="140" autocomplete="name"></label>
+          <label>Contact person (if applicable)<input id="signupContact" maxlength="140"></label>
+          <label>Phone / WhatsApp<input id="signupPhone" type="tel" maxlength="32" autocomplete="tel"></label>
+          <label>Email address<input id="signupEmail" type="email" autocomplete="email" required></label>
+          <label>Password<input id="signupPassword" type="password" autocomplete="new-password" required minlength="8"></label>
+          <label class="check"><input id="signupTerms" type="checkbox" required><span>I agree to the advertising terms and understand that campaigns go live only after payment confirmation and advert approval.</span></label>
+          <button class="primary" type="submit">Create account</button>
+        </form>
+        <button class="google-button" id="googleSignIn" type="button"><span class="google-g">G</span> Continue with Google</button>
+        <p class="fineprint">Advertiser accounts are separate from dating-member accounts. Creating an advertiser account does not create a dating profile.</p>
+        <p id="authMessage" class="message" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section id="dashboardView" class="hidden">
+      <div class="dashboard-head">
+        <div><p class="eyebrow">ADVERTISER WORKSPACE</p><h1>Your campaigns</h1><p class="muted" id="welcomeText">Manage your sponsored advertising.</p></div>
+        <button class="outline" id="signOut">Sign out</button>
+      </div>
+      <div class="dashboard-grid">
+        <section class="panel create-panel">
+          <div class="panel-heading"><div><p class="eyebrow">NEW CAMPAIGN</p><h2>Build a sponsored advert</h2></div><span class="step-pill">01 — 03</span></div>
+          <form id="campaignForm">
+            <label>Advert headline<input id="campaignHeadline" maxlength="90" required minlength="3" placeholder="A clear, short headline"></label>
+            <label>Short description<textarea id="campaignDescription" rows="3" maxlength="500" required placeholder="Tell members what you're offering."></textarea></label>
+            <div class="two-col">
+              <label>Call to action<select id="campaignCta"><option value="learn_more">Learn More</option><option value="visit_website">Visit Website</option><option value="contact_us">Contact Us</option><option value="whatsapp">WhatsApp</option></select></label>
+              <label>Destination URL<input id="campaignUrl" type="url" required placeholder="https://..."></label>
+            </div>
+            <div class="two-col">
+              <label>Campaign package<select id="campaignPackage"><option value="7">7 days — ₦12,000</option><option value="14">14 days — ₦22,000</option><option value="30">30 days — ₦40,000</option></select></label>
+              <label>Start time<select id="campaignStartMode"><option value="immediate">As soon as approved and paid</option><option value="scheduled">Schedule for later</option></select></label>
+            </div>
+            <label id="scheduleField" class="hidden">Scheduled start (WAT)<input id="campaignSchedule" type="datetime-local"></label>
+            <div class="creative-upload">
+              <div><strong>Creative artwork</strong><p class="muted small">Image: JPG, PNG or WebP up to 10 MB. Video: MP4, H.264, up to 30 seconds and 20 MB. Portrait 4:5 presentation.</p></div>
+              <label class="file-picker"><input id="campaignCreative" type="file" accept="image/jpeg,image/png,image/webp,video/mp4" required><span>Choose image or video</span></label>
+              <div id="creativePreview" class="creative-preview"><span>Your creative preview appears here</span></div>
+            </div>
+            <div class="price-summary"><span>Campaign total</span><strong id="packagePrice">₦12,000</strong></div>
+            <button class="primary" type="submit" id="createCampaignButton">Continue to payment details</button>
+            <p class="fineprint">Your 24-hour payment window begins when the campaign is created. Campaign duration starts only when the advert goes live.</p>
+          </form>
+          <div id="paymentStep" class="payment-step hidden">
+            <div class="panel-heading"><div><p class="eyebrow">PAYMENT DETAILS</p><h2>Complete your transfer</h2></div><span class="step-pill">02 — 03</span></div>
+            <p class="muted">Transfer the exact amount to the account below. Your campaign will not go live until The Match manually confirms the incoming transfer and approves the advert.</p>
+            <div class="bank-card">
+              <div><span>Bank</span><strong id="bankName">—</strong></div>
+              <div><span>Account name</span><strong id="bankAccountName">—</strong></div>
+              <div><span>Account number</span><strong id="bankAccountNumber">—</strong><button type="button" class="copy" id="copyAccount">Copy</button></div>
+              <div><span>Amount</span><strong id="bankAmount">—</strong></div>
+              <div><span>Unique payment reference</span><strong id="bankReference">—</strong><button type="button" class="copy" id="copyReference">Copy</button></div>
+              <div><span>Payment deadline</span><strong id="bankDeadline">—</strong></div>
+            </div>
+            <form id="paymentForm">
+              <label>Bank transfer reference<input id="transferReference" required maxlength="120" placeholder="Enter the bank's transaction reference"></label>
+              <button class="primary" type="submit">Submit transfer details</button>
+            </form>
+            <p class="fineprint">A receipt is optional and does not count as payment confirmation. Do not transfer to any account other than the business account shown here.</p>
+          </div>
+        </section>
+
+        <section class="panel campaigns-panel">
+          <div class="panel-heading"><div><p class="eyebrow">YOUR ADVERTISING</p><h2>Campaign history</h2></div><button class="small-outline" id="refreshCampaigns">Refresh</button></div>
+          <div id="campaignList" class="campaign-list"><p class="muted">Loading your campaigns…</p></div>
+          <div class="design-services">
+            <p class="eyebrow">OPTIONAL CREATIVE SUPPORT</p><h3>Need help with your artwork?</h3>
+            <div class="service-row"><span>Basic design</span><strong>₦5,000</strong></div>
+            <div class="service-row"><span>Premium design</span><strong>₦10,000</strong></div>
+            <div class="service-row"><span>Redesign / editing</span><strong>₦3,000</strong></div>
+            <p class="fineprint">Design fees are separate from campaign packages. Basic covers one clean static creative using your supplied copy/assets; Premium adds custom visual direction for one primary creative; Redesign updates existing artwork. Work starts after payment confirmation. First design target is 24–48 hours, with the exact delivery date confirmed before acceptance. Basic/Premium include two reasonable consolidated revisions; redesign/editing includes one. Editable source files require a separate agreement, and the exact scope is confirmed before payment.</p>
+            <form id="designRequestForm" class="design-request-form">
+              <label>Design service<select id="designServiceType"><option value="basic">Basic design — ₦5,000</option><option value="premium">Premium design — ₦10,000</option><option value="redesign">Redesign / editing — ₦3,000</option></select></label>
+              <label>Describe the artwork you need<textarea id="designBrief" rows="3" maxlength="3000" minlength="10" required placeholder="Describe the message, brand assets and design direction."></textarea></label>
+              <button class="outline" type="submit" id="designRequestButton">Request design service</button>
+            </form>
+            <div id="designPaymentStep" class="payment-step hidden">
+              <h3>Design service payment</h3>
+              <div class="bank-card">
+                <div><span>Bank</span><strong id="designBankName">—</strong></div>
+                <div><span>Account name</span><strong id="designBankAccountName">—</strong></div>
+                <div><span>Account number</span><strong id="designBankAccountNumber">—</strong></div>
+                <div><span>Fee</span><strong id="designBankAmount">—</strong></div>
+                <div><span>Unique reference</span><strong id="designBankReference">—</strong></div>
+              </div>
+              <form id="designPaymentForm">
+                <label>Bank transfer reference<input id="designTransferReference" required maxlength="120"></label>
+                <button class="primary" type="submit">Submit design payment details</button>
+              </form>
+            </div>
+            <div id="designRequestList" class="campaign-list"></div>
+          </div>
+        </section>
+      </div>
+      <section id="adminPanel" class="panel admin-panel hidden">
+        <div class="panel-heading"><div><p class="eyebrow">INTERNAL CONTROLS</p><h2>Advertising administration</h2></div><span class="step-pill">ADMIN</span></div>
+        <div id="adminOverview" class="admin-stats"></div>
+        <div class="admin-columns"><div><h3>Campaign review queue</h3><div id="adminCampaigns"></div></div><div><h3>Payment confirmation queue</h3><div id="adminPayments"></div></div><div><h3>Refund queue</h3><div id="adminRefunds"></div></div><div><h3>Design service queue</h3><div id="adminDesignRequests"></div></div></div>
+      </section>
+    </section>
+    <footer><span>© The Match</span><span>Sponsored adverts are clearly labelled. No sensitive member-profile targeting.</span></footer>
+    <p id="globalMessage" class="message" aria-live="polite"></p>
+  </main>
+</body>
+</html>

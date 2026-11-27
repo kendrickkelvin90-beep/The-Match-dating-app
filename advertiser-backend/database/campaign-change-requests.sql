@@ -32,7 +32,7 @@ create policy match_advertiser_data_boundary on public.advertising_campaign_chan
 drop policy if exists advertising_change_requests_select_own on public.advertising_campaign_change_requests;
 create policy advertising_change_requests_select_own on public.advertising_campaign_change_requests
   for select to anon using (
-    advertiser_id = (select auth.uid()) or public.is_advertising_admin()
+    advertiser_id = (select auth.uid())
   );
 revoke all on public.advertising_campaign_change_requests from anon, authenticated;
 

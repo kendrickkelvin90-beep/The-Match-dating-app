@@ -69,6 +69,8 @@ jobs:
         run: |
           psql -h localhost -U postgres -d advertising_test -v ON_ERROR_STOP=1 -f advertiser-backend/database/test-bootstrap.sql
           psql -h localhost -U postgres -d advertising_test -v ON_ERROR_STOP=1 -f advertiser-backend/database/bootstrap.sql
+          psql -h localhost -U postgres -d advertising_test -v ON_ERROR_STOP=1 -f advertiser-backend/database/campaign-change-requests.sql
+          psql -h localhost -U postgres -d advertising_test -v ON_ERROR_STOP=1 -f advertiser-backend/database/campaign-change-requests.sql
           psql -h localhost -U postgres -d advertising_test -v ON_ERROR_STOP=1 -f advertiser-backend/database/verify.sql
           psql -h localhost -U postgres -d advertising_test -v ON_ERROR_STOP=1 -f advertiser-backend/database/test-workflows.sql
       - name: Check public config contains no server secrets

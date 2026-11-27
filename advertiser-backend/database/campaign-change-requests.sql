@@ -27,8 +27,8 @@ alter table public.advertising_campaign_change_requests enable row level securit
 drop policy if exists match_advertiser_data_boundary on public.advertising_campaign_change_requests;
 create policy match_advertiser_data_boundary on public.advertising_campaign_change_requests
   as restrictive for all to public
-  using ((current_user = 'supabase_auth_admin') or (auth.jwt()->>'user_role' is distinct from 'advertiser'))
-  with check ((current_user = 'supabase_auth_admin') or (auth.jwt()->>'user_role' is distinct from 'advertiser'));
+  using ((current_user = 'supabase_auth_admin') or ((select auth.jwt()->>'user_role') is distinct from 'advertiser'))
+  with check ((current_user = 'supabase_auth_admin') or ((select auth.jwt()->>'user_role') is distinct from 'advertiser'));
 drop policy if exists advertising_change_requests_select_own on public.advertising_campaign_change_requests;
 create policy advertising_change_requests_select_own on public.advertising_campaign_change_requests
   for select to anon using (

@@ -11,6 +11,7 @@ begin
     'advertising_creatives',
     'advertising_payments',
     'advertising_design_requests',
+    'advertising_design_payments',
     'advertising_impressions',
     'advertising_clicks',
     'advertising_refunds',
@@ -40,8 +41,7 @@ begin
   end if;
 
   if not has_function_privilege('authenticated','public.get_my_advertising_campaign_metrics(uuid)','execute')
-     or has_function_privilege('anon','public.get_my_advertising_campaign_metrics(uuid)','execute')
-     or has_function_privilege('public','public.get_my_advertising_campaign_metrics(uuid)','execute') then
+     or has_function_privilege('anon','public.get_my_advertising_campaign_metrics(uuid)','execute') then
     raise exception 'Campaign metrics RPC execute grants are incorrect';
   end if;
 

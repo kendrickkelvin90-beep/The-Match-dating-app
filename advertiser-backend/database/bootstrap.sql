@@ -14,7 +14,13 @@ revoke all on schema private from public, anon;
 grant usage on schema public, private to supabase_auth_admin;
 -- The Auth token hook evaluates the profile RLS policy, which calls this
 -- narrowly scoped SECURITY DEFINER helper. Keep its execution grant in sync.
-grant execute on function private.is_dual_member_advertiser() to supabase_auth_admin;
+do $grant$
+begin
+  if to_regprocedure('private.is_dual_member_advertiser()') is not null then
+    grant execute on function private.is_dual_member_advertiser() to supabase_auth_admin;
+  end if;
+end;
+$grant$;
 grant usage on schema private to authenticated, service_role;
 revoke usage on schema private from public, anon;
 grant usage on schema auth to anon, authenticated, authenticator, service_role;

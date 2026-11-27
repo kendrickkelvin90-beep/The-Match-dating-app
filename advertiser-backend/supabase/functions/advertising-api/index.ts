@@ -527,7 +527,7 @@ Deno.serve(async (req: Request) => {
 
     if (action === "admin-list-campaigns") {
       const { data, error } = await admin.from("advertising_campaigns")
-        .select("*,advertiser_profiles(display_name,advertiser_type,phone),advertising_creatives(creative_type,storage_key,poster_storage_key,content_type,byte_size,duration_seconds)")
+        .select("*,advertiser_profiles(display_name,advertiser_type,phone),advertising_creatives(id,creative_type,storage_key,poster_storage_key,content_type,byte_size,duration_seconds,is_current)")
         .order("created_at", { ascending: false }).limit(250);
       if (error) return json({ error: "Campaign queue could not be loaded." }, 500, origin);
       return json({ campaigns: data ?? [] }, 200, origin);

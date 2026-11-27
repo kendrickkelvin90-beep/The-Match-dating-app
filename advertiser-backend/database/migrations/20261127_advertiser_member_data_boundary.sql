@@ -89,4 +89,74 @@ begin
 end;
 $service_boundaries$;
 
+
+-- Existing Match administrators are the only initial advertising administrators.
+-- Their member JWT remains a normal member JWT; the advertising API checks this
+-- allowlist server-side for admin-only actions.
+insert into public.advertising_admins(user_id)
+select user_id from public.app_admins
+on conflict (user_id) do nothing;
+
+-- Analytics aggregation runs only in the trusted Edge Function with service
+-- role. Do not expose a SECURITY DEFINER analytics RPC to anon advertisers.
+create or replace function public.get_advertising_campaign_metrics(
+  p_campaign_id uuid,
+  p_advertiser_id uuid
+)
+returns table (
+  campaign_id uuid,
+  status text,
+  payment_status text,
+  package_days integer,
+  go_live_at timestamptz,
+  ends_at timestamptz,
+  impressions bigint,
+  clicks bigint,
+  unique_clicks bigint,
+  ctr numeric
+)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $function$
+declare
+  v_owner uuid;
+  v_impressions bigint;
+  v_clicks bigint;
+  v_unique_clicks bigint;
+begin
+  perform private.require_advertising_service_role();
+  select c.advertiser_id into v_owner
+  from public.advertising_campaigns c
+  where c.id = p_campaign_id;
+
+  if v_owner is null or (
+    v_owner <> p_advertiser_id
+    and not exists (select 1 from public.advertising_admins a where a.user_id=p_advertiser_id)
+  ) then
+    raise exception 'Campaign not found or access denied' using errcode = '42501';
+  end if;
+
+  select count(*) into v_impressions from public.advertising_impressions i where i.campaign_id=p_campaign_id;
+  select count(*) into v_clicks from public.advertising_clicks k where k.campaign_id=p_campaign_id;
+  select count(*) into v_unique_clicks from public.advertising_unique_clicks k where k.campaign_id=p_campaign_id;
+
+  return query
+  select c.id,c.status,c.payment_status,c.package_days,c.go_live_at,c.ends_at,
+    v_impressions,v_clicks,v_unique_clicks,
+    case when v_impressions=0 then 0::numeric
+      else round((v_unique_clicks::numeric/v_impressions::numeric)*100,2) end
+  from public.advertising_campaigns c where c.id=p_campaign_id;
+end;
+$function$;
+revoke all on function public.get_advertising_campaign_metrics(uuid,uuid)
+  from public, anon, authenticated;
+grant execute on function public.get_advertising_campaign_metrics(uuid,uuid)
+  to service_role;
+
+-- The earlier public RPC is no longer used and must not be callable by anon.
+revoke all on function public.get_my_advertising_campaign_metrics(uuid)
+  from public, anon, authenticated, service_role;
+
 commit;

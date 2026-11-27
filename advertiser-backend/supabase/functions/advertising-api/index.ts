@@ -86,7 +86,7 @@ function isAdvertiserToken(token: string): boolean {
     if (!segment) return false;
     const normalized = segment.replace(/-/g, "+").replace(/_/g, "/");
     const payload = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
-    return payload.role === "anon" && payload.user_role === "advertiser";
+    return ["anon", "authenticated"].includes(payload.role) && payload.user_role === "advertiser";
   } catch {
     return false;
   }
@@ -160,10 +160,6 @@ Deno.serve(async (req: Request) => {
     if (action === "complete-profile") {
       const memberProfile = await admin.from("profiles").select("id").eq("id", user.id).maybeSingle();
       if (memberProfile.error) return json({ error: "Account type could not be verified. Please try again." }, 503, origin);
-      if (memberProfile.data) {
-        return json({ error: "This email is already connected to a Match dating-member account. Please use a different email for advertising." }, 403, origin);
-      }
-
       const metadata = user.user_metadata ?? {};
       const advertiserType = cleanText(body.advertiser_type ?? metadata.advertiser_type, 16);
       const displayName = cleanText(body.display_name ?? metadata.display_name, 140) ||
@@ -177,9 +173,15 @@ Deno.serve(async (req: Request) => {
       const existing = await admin.from("advertiser_profiles")
         .select("user_id").eq("user_id", user.id).maybeSingle();
       if (existing.error) return json({ error: "Advertiser profile could not be checked." }, 500, origin);
+      if (existing.data && !advertiserType && !body.display_name && !body.advertiser_type) {
+        return json({ success: true }, 200, origin);
+      }
       if (existing.data) {
+        const update: Record<string, unknown> = { contact_name: contactName, phone };
+        if (advertiserType) update.advertiser_type = advertiserType;
+        if (displayName) update.display_name = displayName;
         const { error } = await admin.from("advertiser_profiles")
-          .update({ contact_name: contactName, phone }).eq("user_id", user.id);
+          .update(update).eq("user_id", user.id);
         if (error) return json({ error: "Advertiser profile could not be updated." }, 500, origin);
       } else {
         const { error } = await admin.from("advertiser_profiles").insert({

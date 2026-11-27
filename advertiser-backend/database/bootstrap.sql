@@ -322,6 +322,327 @@ revoke all on public.advertising_impressions, public.advertising_clicks,
   public.advertising_admin_audit, public.advertising_admins
 from anon, authenticated;
 
+
+-- Privileged workflow functions are callable only by server-side service-role
+-- clients. The Edge Function must authenticate the user and verify ownership
+-- or advertising-admin membership before invoking these RPCs.
+create or replace function private.require_advertising_service_role()
+returns void
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $function$
+begin
+  if coalesce((select auth.jwt() ->> 'role'), '') <> 'service_role' then
+    raise exception 'Advertising service role required' using errcode = '42501';
+  end if;
+end;
+$function$;
+revoke all on function private.require_advertising_service_role() from public, anon, authenticated;
+grant execute on function private.require_advertising_service_role() to service_role;
+
+create or replace function public.create_advertising_campaign(
+  p_advertiser_id uuid,
+  p_headline text,
+  p_description text,
+  p_cta text,
+  p_destination_url text,
+  p_package_days integer,
+  p_start_mode text,
+  p_scheduled_start_at timestamptz,
+  p_payment_reference text,
+  p_payment_deadline_at timestamptz
+)
+returns table (campaign_id uuid, payment_reference text, payment_deadline_at timestamptz, amount_ngn integer)
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_amount integer;
+  v_campaign_id uuid;
+begin
+  perform private.require_advertising_service_role();
+  if p_advertiser_id is null or not exists (
+    select 1 from public.advertiser_profiles a where a.user_id = p_advertiser_id
+  ) then
+    raise exception 'Advertiser profile not found' using errcode = '23503';
+  end if;
+  if char_length(btrim(coalesce(p_headline,''))) not between 3 and 90
+     or char_length(btrim(coalesce(p_description,''))) not between 1 and 500
+     or p_cta not in ('learn_more','visit_website','contact_us','whatsapp')
+     or p_package_days not in (7,14,30)
+     or p_start_mode not in ('immediate','scheduled')
+     or p_payment_reference is null or char_length(p_payment_reference) not between 12 and 80
+     or p_payment_deadline_at <= now()
+     or p_payment_deadline_at > now() + interval '25 hours'
+     or (p_start_mode = 'immediate' and p_scheduled_start_at is not null)
+     or (p_start_mode = 'scheduled' and (p_scheduled_start_at is null or p_scheduled_start_at <= now())) then
+    raise exception 'Invalid campaign details' using errcode = '22023';
+  end if;
+  v_amount := case p_package_days when 7 then 12000 when 14 then 22000 when 30 then 40000 end;
+  insert into public.advertising_campaigns(
+    advertiser_id, headline, description, cta, destination_url,
+    package_days, package_price_ngn, start_mode, scheduled_start_at,
+    payment_reference, payment_deadline_at, payment_status, status
+  ) values (
+    p_advertiser_id, btrim(p_headline), btrim(p_description), p_cta, p_destination_url,
+    p_package_days, v_amount, p_start_mode, p_scheduled_start_at,
+    p_payment_reference, p_payment_deadline_at, 'awaiting_payment', 'awaiting_payment'
+  ) returning id into v_campaign_id;
+  return query select v_campaign_id, p_payment_reference, p_payment_deadline_at, v_amount;
+end;
+$function$;
+revoke all on function public.create_advertising_campaign(uuid,text,text,text,text,integer,text,timestamptz,text,timestamptz) from public, anon, authenticated;
+grant execute on function public.create_advertising_campaign(uuid,text,text,text,text,integer,text,timestamptz,text,timestamptz) to service_role;
+
+create or replace function public.submit_advertising_payment(
+  p_advertiser_id uuid,
+  p_campaign_id uuid,
+  p_amount_ngn integer,
+  p_bank_transfer_reference text,
+  p_receipt_storage_key text default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_campaign public.advertising_campaigns%rowtype;
+  v_payment_id uuid;
+begin
+  perform private.require_advertising_service_role();
+  select * into v_campaign
+  from public.advertising_campaigns
+  where id = p_campaign_id and advertiser_id = p_advertiser_id
+  for update;
+  if not found then raise exception 'Campaign not found' using errcode = '42501'; end if;
+  if v_campaign.payment_deadline_at <= now()
+     or v_campaign.status not in ('awaiting_payment','payment_review')
+     or v_campaign.payment_status not in ('awaiting_payment','rejected')
+     or p_amount_ngn <> v_campaign.package_price_ngn
+     or char_length(btrim(coalesce(p_bank_transfer_reference,''))) < 4
+     or char_length(p_bank_transfer_reference) > 120 then
+    raise exception 'Payment submission is not valid for this campaign' using errcode = '22023';
+  end if;
+  if p_receipt_storage_key is not null and (
+    p_receipt_storage_key not like 'advertisers/' || p_advertiser_id::text || '/receipts/%'
+    or position('..' in p_receipt_storage_key) > 0
+  ) then
+    raise exception 'Invalid receipt reference' using errcode = '22023';
+  end if;
+  insert into public.advertising_payments(
+    campaign_id, advertiser_id, amount_ngn, bank_transfer_reference,
+    receipt_storage_key, status
+  ) values (
+    p_campaign_id, p_advertiser_id, p_amount_ngn,
+    btrim(p_bank_transfer_reference), p_receipt_storage_key, 'submitted'
+  ) returning id into v_payment_id;
+  update public.advertising_campaigns
+  set payment_status = 'submitted', status = 'payment_review'
+  where id = p_campaign_id;
+  return v_payment_id;
+end;
+$function$;
+revoke all on function public.submit_advertising_payment(uuid,uuid,integer,text,text) from public, anon, authenticated;
+grant execute on function public.submit_advertising_payment(uuid,uuid,integer,text,text) to service_role;
+
+create or replace function public.admin_confirm_advertising_payment(
+  p_admin_id uuid,
+  p_payment_id uuid,
+  p_admin_note text default null
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_payment public.advertising_payments%rowtype;
+  v_campaign public.advertising_campaigns%rowtype;
+  v_now timestamptz := now();
+begin
+  perform private.require_advertising_service_role();
+  if not exists (select 1 from public.advertising_admins a where a.user_id = p_admin_id) then
+    raise exception 'Advertising admin access denied' using errcode = '42501';
+  end if;
+  select * into v_payment from public.advertising_payments where id = p_payment_id for update;
+  if not found or v_payment.status <> 'submitted' then
+    raise exception 'Payment is not awaiting confirmation' using errcode = '22023';
+  end if;
+  select * into v_campaign from public.advertising_campaigns where id = v_payment.campaign_id for update;
+  if not found or v_payment.amount_ngn <> v_campaign.package_price_ngn then
+    raise exception 'Payment amount does not match the campaign package' using errcode = '22023';
+  end if;
+  update public.advertising_payments
+  set status = 'confirmed', confirmed_at = v_now, confirmed_by = p_admin_id,
+      admin_note = left(coalesce(p_admin_note,''),500)
+  where id = p_payment_id;
+  update public.advertising_campaigns
+  set payment_status = 'confirmed',
+      status = case
+        when approved_at is null then 'awaiting_approval'
+        when start_mode = 'scheduled' and scheduled_start_at > v_now then 'scheduled'
+        else 'active'
+      end,
+      go_live_at = case
+        when approved_at is not null and (start_mode = 'immediate' or scheduled_start_at <= v_now) then v_now
+        else go_live_at
+      end,
+      ends_at = case
+        when approved_at is not null and (start_mode = 'immediate' or scheduled_start_at <= v_now)
+          then v_now + make_interval(days => package_days)
+        else ends_at
+      end
+  where id = v_campaign.id;
+  insert into public.advertising_admin_audit(actor_id,action,entity_type,entity_id,details)
+  values (p_admin_id,'confirm_payment','payment',p_payment_id::text,
+    jsonb_build_object('campaign_id',v_campaign.id,'amount_ngn',v_payment.amount_ngn));
+  return true;
+end;
+$function$;
+revoke all on function public.admin_confirm_advertising_payment(uuid,uuid,text) from public, anon, authenticated;
+grant execute on function public.admin_confirm_advertising_payment(uuid,uuid,text) to service_role;
+
+create or replace function public.admin_review_advertising_campaign(
+  p_admin_id uuid,
+  p_campaign_id uuid,
+  p_approve boolean,
+  p_reason text default null
+)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_campaign public.advertising_campaigns%rowtype;
+  v_status text;
+  v_now timestamptz := now();
+begin
+  perform private.require_advertising_service_role();
+  if not exists (select 1 from public.advertising_admins a where a.user_id = p_admin_id) then
+    raise exception 'Advertising admin access denied' using errcode = '42501';
+  end if;
+  select * into v_campaign from public.advertising_campaigns where id = p_campaign_id for update;
+  if not found or v_campaign.status in ('cancelled','expired_unpaid','completed') then
+    raise exception 'Campaign cannot be reviewed in its current state' using errcode = '22023';
+  end if;
+  if p_approve then
+    v_status := case
+      when v_campaign.payment_status <> 'confirmed' then 'awaiting_payment'
+      when v_campaign.start_mode = 'scheduled' and v_campaign.scheduled_start_at > v_now then 'scheduled'
+      else 'active'
+    end;
+    update public.advertising_campaigns
+    set approved_at = v_now, approved_by = p_admin_id, rejected_at = null,
+        rejection_reason = null, status = v_status,
+        go_live_at = case when v_status = 'active' then v_now else null end,
+        ends_at = case when v_status = 'active' then v_now + make_interval(days => package_days) else null end
+    where id = p_campaign_id;
+  else
+    if char_length(btrim(coalesce(p_reason,''))) < 3 then
+      raise exception 'A rejection reason is required' using errcode = '22023';
+    end if;
+    v_status := 'rejected';
+    update public.advertising_campaigns
+    set status = v_status, rejected_at = v_now, rejection_reason = left(btrim(p_reason),500)
+    where id = p_campaign_id;
+  end if;
+  insert into public.advertising_admin_audit(actor_id,action,entity_type,entity_id,details)
+  values (p_admin_id,case when p_approve then 'approve_campaign' else 'reject_campaign' end,
+    'campaign',p_campaign_id::text,jsonb_build_object('reason',left(coalesce(p_reason,''),500)));
+  return v_status;
+end;
+$function$;
+revoke all on function public.admin_review_advertising_campaign(uuid,uuid,boolean,text) from public, anon, authenticated;
+grant execute on function public.admin_review_advertising_campaign(uuid,uuid,boolean,text) to service_role;
+
+create or replace function public.admin_set_advertising_campaign_state(
+  p_admin_id uuid,
+  p_campaign_id uuid,
+  p_action text
+)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_campaign public.advertising_campaigns%rowtype;
+  v_status text;
+begin
+  perform private.require_advertising_service_role();
+  if not exists (select 1 from public.advertising_admins a where a.user_id = p_admin_id) then
+    raise exception 'Advertising admin access denied' using errcode = '42501';
+  end if;
+  select * into v_campaign from public.advertising_campaigns where id = p_campaign_id for update;
+  if not found then raise exception 'Campaign not found' using errcode = 'P0002'; end if;
+  if p_action = 'pause' and v_campaign.status = 'active' then
+    v_status := 'paused';
+    update public.advertising_campaigns set status = v_status, paused_at = now() where id = p_campaign_id;
+  elsif p_action = 'resume' and v_campaign.status = 'paused'
+    and v_campaign.payment_status = 'confirmed' and v_campaign.approved_at is not null
+    and v_campaign.ends_at > now() then
+    v_status := 'active';
+    update public.advertising_campaigns set status = v_status, paused_at = null where id = p_campaign_id;
+  else
+    raise exception 'Campaign cannot be changed to the requested state' using errcode = '22023';
+  end if;
+  insert into public.advertising_admin_audit(actor_id,action,entity_type,entity_id)
+  values (p_admin_id,'campaign_' || p_action,'campaign',p_campaign_id::text);
+  return v_status;
+end;
+$function$;
+revoke all on function public.admin_set_advertising_campaign_state(uuid,uuid,text) from public, anon, authenticated;
+grant execute on function public.admin_set_advertising_campaign_state(uuid,uuid,text) to service_role;
+
+create or replace function public.record_advertising_event(
+  p_campaign_id uuid,
+  p_viewer_day_key text,
+  p_event_type text
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_inserted integer;
+  v_today date := (now() at time zone 'Africa/Lagos')::date;
+begin
+  perform private.require_advertising_service_role();
+  if p_event_type not in ('impression','click')
+     or p_viewer_day_key is null or char_length(p_viewer_day_key) not between 32 and 128 then
+    raise exception 'Invalid advertising event' using errcode = '22023';
+  end if;
+  if not exists (
+    select 1 from public.advertising_campaigns c
+    where c.id = p_campaign_id and c.status = 'active'
+      and c.payment_status = 'confirmed' and c.approved_at is not null
+      and c.go_live_at <= now() and c.ends_at > now()
+  ) then
+    return false;
+  end if;
+  if p_event_type = 'impression' then
+    insert into public.advertising_impressions(campaign_id,viewer_day_key,event_day)
+    values (p_campaign_id,p_viewer_day_key,v_today)
+    on conflict do nothing;
+    get diagnostics v_inserted = row_count;
+  else
+    insert into public.advertising_clicks(campaign_id,viewer_day_key,event_day)
+    values (p_campaign_id,p_viewer_day_key,v_today)
+    on conflict do nothing;
+    get diagnostics v_inserted = row_count;
+  end if;
+  return v_inserted = 1;
+end;
+$function$;
+revoke all on function public.record_advertising_event(uuid,text,text) from public, anon, authenticated;
+grant execute on function public.record_advertising_event(uuid,text,text) to service_role;
+
 create or replace function public.get_my_advertising_campaign_metrics(p_campaign_id uuid)
 returns table (
   campaign_id uuid,

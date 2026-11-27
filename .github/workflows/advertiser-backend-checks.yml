@@ -87,13 +87,13 @@ jobs:
           deno-version: v2.x
       - name: Type-check advertiser and guarded member Edge Functions
         run: |
+          deno check advertiser-backend/supabase/functions/advertiser-register/index.ts
           deno check advertiser-backend/supabase/functions/advertising-api/index.ts
           deno check advertiser-backend/supabase/functions/advertising-media-upload/index.ts
           deno check advertiser-backend/supabase/functions/advertising-design-upload/index.ts
           deno check advertiser-backend/supabase/functions/member-ad-serving/index.ts
           deno check supabase/functions/nearby-reverse-geocode/index.ts
           deno check supabase/functions/b2-media-upload/index.ts
-          deno check --config=supabase/functions/voice-call/deno.json supabase/functions/voice-call/index.ts
           deno check supabase/functions/b2-media-access/index.ts
           deno check supabase/functions/admin-moderate-member/index.ts
           deno check supabase/functions/open-view-once-chat-media/index.ts

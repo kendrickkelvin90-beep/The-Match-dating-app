@@ -25,7 +25,7 @@ create table if not exists private.advertiser_auth_registry (
 );
 alter table private.advertiser_auth_registry enable row level security;
 revoke all on private.advertiser_auth_registry from public, anon, authenticated, service_role;
-grant select, insert on private.advertiser_auth_registry to supabase_auth_admin;
+grant select on private.advertiser_auth_registry to supabase_auth_admin;
 drop policy if exists advertiser_auth_hook_registry_access on private.advertiser_auth_registry;
 create policy advertiser_auth_hook_registry_access on private.advertiser_auth_registry
   for all to supabase_auth_admin using (true) with check (true);
@@ -38,6 +38,42 @@ drop policy if exists advertiser_auth_hook_member_profile_guard on public.profil
 create policy advertiser_auth_hook_member_profile_guard on public.profiles
   for select to supabase_auth_admin using (true);
 
+-- Trusted enrollment entrypoint. Only the server-side advertiser-register
+-- Edge Function may call this function with its service-role client.
+create or replace function public.register_advertiser_account(p_user_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $register$
+declare
+  v_email_confirmed_at timestamptz;
+begin
+  select u.email_confirmed_at into v_email_confirmed_at
+  from auth.users u
+  where u.id = p_user_id
+  for update;
+
+  if not found or v_email_confirmed_at is null then
+    raise exception 'A verified Auth account is required';
+  end if;
+
+  if exists (select 1 from public.profiles p where p.id = p_user_id) then
+    raise exception 'A Match member account cannot be enrolled as an advertiser';
+  end if;
+
+  insert into private.advertiser_auth_registry(user_id)
+  values (p_user_id)
+  on conflict (user_id) do nothing;
+
+  return true;
+end;
+$register$;
+
+revoke all on function public.register_advertiser_account(uuid)
+  from public, anon, authenticated;
+grant execute on function public.register_advertiser_account(uuid) to service_role;
+
 create or replace function private.custom_access_token_hook(event jsonb)
 returns jsonb
 language plpgsql
@@ -46,17 +82,14 @@ as $hook$
 declare
   v_user_id uuid := nullif(event->>'user_id','')::uuid;
   v_claims jsonb := coalesce(event->'claims','{}'::jsonb);
-  v_user_metadata jsonb := coalesce(event->'claims'->'user_metadata','{}'::jsonb);
 begin
-  if v_user_id is not null
-     and v_user_metadata->>'the_match_advertiser_registration' = 'v1'
-     and not exists (select 1 from public.profiles p where p.id=v_user_id) then
-    insert into private.advertiser_auth_registry(user_id)
-    values (v_user_id) on conflict (user_id) do nothing;
-  end if;
-
+  -- Never grant advertiser privileges from user-editable user_metadata.
+  -- A trusted server-side enrollment endpoint inserts the user into this
+  -- protected registry only after verifying the session, email and member profile.
   if v_user_id is not null and exists (
     select 1 from private.advertiser_auth_registry r where r.user_id=v_user_id
+  ) and not exists (
+    select 1 from public.profiles p where p.id=v_user_id
   ) then
     v_claims := jsonb_set(v_claims,'{user_role}',to_jsonb('advertiser'::text),true);
     v_claims := jsonb_set(v_claims,'{role}',to_jsonb('anon'::text),true);

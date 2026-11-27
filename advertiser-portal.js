@@ -1,7 +1,7 @@
 (() => {
   const config = window.THE_MATCH_ADVERTISER_CONFIG || {};
   const $ = (id) => document.getElementById(id);
-  const state = { client: null, session: null, pendingCampaign: null, pendingBank: null, creativeFile: null, posterFile: null };
+  const state = { client: null, session: null, pendingCampaign: null, pendingBank: null, creativeFile: null, posterFile: null, handlingSession: false };
   const formatNaira = (amount) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(Number(amount || 0));
   const formatDate = (value) => value ? new Date(value).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" }) + " WAT" : "—";
   const message = (target, text, error = false) => { const el = $(target); if (!el) return; el.textContent = text || ""; el.classList.toggle("error", !!error); };
@@ -174,12 +174,40 @@
       return payload.role === "anon" && payload.user_role === "advertiser";
     } catch { return false; }
   };
-  const ensureAdvertiserProfile = async (session) => {
-    if (!isAdvertiserSession(session?.access_token)) {
-      await state.client.auth.signOut({ scope: "local" });
-      throw new Error("This is not an advertiser account. Create an advertiser account with a separate email, or use the Google identity linked to an existing advertiser account.");
+  const enrollAdvertiserSession = async (session) => {
+    if (!session?.user?.email_confirmed_at) {
+      throw new Error("Please verify your email first. Then return here and sign in to finish advertiser registration.");
     }
-    const metadata = session.user?.user_metadata || {};
+    const baseUrl = config.supabaseUrl.endsWith("/") ? config.supabaseUrl.slice(0, -1) : config.supabaseUrl;
+    const response = await fetch(baseUrl + "/functions/v1/advertiser-register", {
+      method: "POST",
+      headers: {
+        apikey: config.publishableKey,
+        Authorization: "Bearer " + session.access_token,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.success) throw new Error(result.error || "Advertiser registration could not be completed.");
+    const { data, error } = await state.client.auth.refreshSession();
+    if (error || !data.session) throw new Error("Registration is saved. Please sign in again to finish activating your advertiser session.");
+    return data.session;
+  };
+  const ensureAdvertiserProfile = async (session) => {
+    let activeSession = session;
+    if (!isAdvertiserSession(activeSession?.access_token)) {
+      const metadata = activeSession?.user?.user_metadata || {};
+      if (metadata.the_match_advertiser_registration !== "v1") {
+        await state.client.auth.signOut({ scope: "local" });
+        throw new Error("This is not an advertiser account. Create an advertiser account with a separate email, or use the Google identity linked to an existing advertiser account.");
+      }
+      activeSession = await enrollAdvertiserSession(activeSession);
+      if (!isAdvertiserSession(activeSession?.access_token)) {
+        throw new Error("Your advertiser account is registered, but secure advertiser access is not active yet. Please try again after setup is completed.");
+      }
+    }
+    const metadata = activeSession.user?.user_metadata || {};
     await callApi({
       action: "complete-profile",
       advertiser_type: metadata.advertiser_type,
@@ -187,16 +215,21 @@
       contact_name: metadata.contact_name,
       phone: metadata.phone,
     });
+    return activeSession;
   };
   const showDashboard = async (session) => {
+    if (state.handlingSession) return;
+    state.handlingSession = true;
     try {
-      await ensureAdvertiserProfile(session);
+      session = await ensureAdvertiserProfile(session);
     } catch (error) {
       $("dashboardView").classList.add("hidden");
       $("authView").classList.remove("hidden");
       message("authMessage", error.message, true);
+      state.handlingSession = false;
       return;
     }
+    state.handlingSession = false;
     state.session = session;
     $("authView").classList.add("hidden"); $("dashboardView").classList.remove("hidden");
     $("welcomeText").textContent = session.user?.email ? "Signed in as " + session.user.email : "Manage your sponsored advertising.";

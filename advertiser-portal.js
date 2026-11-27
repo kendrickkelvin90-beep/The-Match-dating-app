@@ -233,6 +233,13 @@
     state.session = session;
     $("authView").classList.add("hidden"); $("dashboardView").classList.remove("hidden");
     $("welcomeText").textContent = session.user?.email ? "Signed in as " + session.user.email : "Manage your sponsored advertising.";
+    if (config.campaignsEnabled !== true) {
+      ["campaignForm", "paymentForm", "designRequestForm", "designPaymentForm"].forEach((id) => {
+        const form = $(id);
+        if (form) form.querySelectorAll("input,select,textarea,button").forEach((control) => { control.disabled = true; });
+      });
+      message("globalMessage", "Advertiser accounts are open. Campaign submissions and advertising payments are not open yet.");
+    }
     try { await refreshCampaigns(); await loadAdminPanel(); }
     catch (error) { message("globalMessage", error.message, true); }
   };

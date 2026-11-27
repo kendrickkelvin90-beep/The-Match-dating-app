@@ -91,7 +91,7 @@
    discoverList=list;
    tuneDiscover();
    listObserver=new MutationObserver(()=>tuneDiscover());
-   listObserver.observe(discoverList,{childList:true,subtree:true});
+   listObserver.observe(discoverList,{childList:true,subtree:true,attributes:true,attributeFilter:['src','srcset']});
    if(waitingObserver){waitingObserver.disconnect();waitingObserver=null;}
  }
 

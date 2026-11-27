@@ -751,6 +751,39 @@ $function$;
 revoke all on function public.record_advertising_event(uuid,text,text) from public, anon, authenticated;
 grant execute on function public.record_advertising_event(uuid,text,text) to service_role;
 
+
+create or replace function public.get_advertising_admin_overview(p_admin_id uuid)
+returns table (
+  campaigns_total bigint,
+  active_campaigns bigint,
+  pending_campaigns bigint,
+  confirmed_payments bigint,
+  confirmed_revenue_ngn bigint
+)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $function$
+begin
+  perform private.require_advertising_service_role();
+  if not exists (select 1 from public.advertising_admins a where a.user_id = p_admin_id) then
+    raise exception 'Advertising admin access denied' using errcode = '42501';
+  end if;
+  return query
+  select
+    count(distinct c.id),
+    count(distinct c.id) filter (where c.status = 'active'),
+    count(distinct c.id) filter (where c.status in ('awaiting_payment','payment_review','awaiting_approval','scheduled')),
+    count(distinct p.id) filter (where p.status = 'confirmed'),
+    coalesce(sum(p.amount_ngn) filter (where p.status = 'confirmed'),0)::bigint
+  from public.advertising_campaigns c
+  full join public.advertising_payments p on p.campaign_id = c.id;
+end;
+$function$;
+revoke all on function public.get_advertising_admin_overview(uuid) from public, anon, authenticated;
+grant execute on function public.get_advertising_admin_overview(uuid) to service_role;
+
 create or replace function public.get_my_advertising_campaign_metrics(p_campaign_id uuid)
 returns table (
   campaign_id uuid,

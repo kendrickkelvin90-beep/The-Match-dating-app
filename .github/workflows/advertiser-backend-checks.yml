@@ -20,6 +20,8 @@ on:
   pull_request:
     paths:
       - "advertiser-backend/**"
+      - "supabase/functions/**"
+      - "docs/sponsored-advertising-*.md"
       - "advertiser-portal.*"
       - "advertiser-portal-config.js"
       - "advertiser-portal-changes.js"
@@ -56,7 +58,6 @@ jobs:
       - name: Check advertiser portal JavaScript syntax
         run: |
           node --check advertiser-portal.js
-          node --check advertiser-portal-changes.js
           node --check advertiser-portal-changes.js
       - name: Check Discover integration JavaScript syntax
         run: |

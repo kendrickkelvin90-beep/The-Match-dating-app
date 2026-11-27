@@ -85,6 +85,9 @@ begin
   if (select count(*) from public.profiles) <> 0 then
     raise exception 'Advertiser session could read Match member profiles';
   end if;
+  if (select count(*) from public.legacy_open_table) <> 0 then
+    raise exception 'Advertiser session could read a legacy public table without prior RLS';
+  end if;
   perform set_config('request.path','profiles',false);
   begin
     perform public.match_advertiser_api_guard();
@@ -103,8 +106,9 @@ select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000003'
 select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000003","role":"authenticated"}',false);
 do $test$
 begin
-  if (select count(*) from public.profiles) <> 1 then
-    raise exception 'Normal Match member lost existing profile read access';
+  if (select count(*) from public.profiles) <> 1
+     or (select count(*) from public.legacy_open_table) <> 1 then
+    raise exception 'Normal Match member lost existing access to a public table';
   end if;
 end;
 $test$;

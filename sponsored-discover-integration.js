@@ -24,6 +24,7 @@
   let sequence = 0;
   let feedGeneration = 0;
   let previousOrganicCount = 0;
+  let adRequestQueue = Promise.resolve();
 
   const safeText = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -145,14 +146,22 @@
   async function loadAd(anchor, slotIndex) {
     if (requested.has(anchor)) return;
     requested.add(anchor);
-    const response = await memberRequest("get-ad", { slot_index: slotIndex });
-    const ad = response?.ad;
-    if (!ad || !ad.campaign_id || !ad.creative_url) return;
-    const card = createCard(ad);
-    card.dataset.anchorId = anchor.dataset.matchSponsoredAnchorId;
-    cardsByAnchor.set(anchor, card);
-    anchor.insertAdjacentElement("afterend", card);
-    observeCard(card);
+    const request = async () => {
+      const excluded = Array.from(cardsByAnchor.values()).map((card) => card.dataset.campaignId).filter(Boolean);
+      const response = await memberRequest("get-ad", {
+        slot_index: slotIndex,
+        exclude_campaign_ids: excluded
+      });
+      const ad = response?.ad;
+      if (!ad || !ad.campaign_id || !ad.creative_url) return;
+      const card = createCard(ad);
+      card.dataset.anchorId = anchor.dataset.matchSponsoredAnchorId;
+      cardsByAnchor.set(anchor, card);
+      anchor.insertAdjacentElement("afterend", card);
+      observeCard(card);
+    };
+    adRequestQueue = adRequestQueue.then(request).catch(() => {});
+    return adRequestQueue;
   }
 
   function observeCard(card) {
@@ -162,6 +171,7 @@
           const target = entry.target;
           const video = target.querySelector("video");
           if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+            target.dataset.visibleHalf = "true";
             if (video && !video.src && video.dataset.src) {
               video.src = video.dataset.src;
               video.load();
@@ -171,7 +181,7 @@
               target.dataset.impressionTimer = "pending";
               window.setTimeout(() => {
                 delete target.dataset.impressionTimer;
-                if (!target.isConnected || !target.dataset.campaignId) return;
+                if (!target.isConnected || !target.dataset.campaignId || target.dataset.visibleHalf !== "true") return;
                 const rect = target.getBoundingClientRect();
                 const visible = Math.max(0, Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0));
                 if (visible / Math.max(rect.height, 1) < 0.5) return;
@@ -179,8 +189,9 @@
                 memberRequest("record-event", { campaign_id: target.dataset.campaignId, event_type: "impression" }).catch(() => {});
               }, 1000);
             }
-          } else if (video) {
-            video.pause();
+          } else {
+            target.dataset.visibleHalf = "false";
+            if (video) video.pause();
           }
         }
       }, { threshold: [0, 0.5, 1] });

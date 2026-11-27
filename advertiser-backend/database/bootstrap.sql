@@ -1327,6 +1327,7 @@ create policy advertising_change_requests_select_own on public.advertising_campa
   );
 revoke all on public.advertising_campaign_change_requests from anon, authenticated;
 grant select on public.advertising_campaign_change_requests to authenticated;
+grant select, insert, update, delete on public.advertising_campaign_change_requests to service_role;
 
 create or replace function public.request_advertising_campaign_change(
   p_advertiser_id uuid, p_campaign_id uuid, p_headline text default null,

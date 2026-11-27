@@ -26674,6 +26674,50 @@ body.light-theme #eventsPage .events-featured-preview .events-featured-meta stro
 <script src="/match-performance-engine.js?v=3"></script>
 <script src="/match-intelligence-engine.js?v=1"></script>
 </body>
+<style id="profile-bottom-navigation-visibility">
+
+/* Ensure Profile is a first-class fifth destination in the fixed app bar. */
+#bottomNavigation.bottom-nav:not(.hidden) {
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  justify-content:space-between !important;
+  align-items:stretch !important;
+  overflow:visible !important;
+}
+#bottomNavigation.bottom-nav:not(.hidden) > button {
+  display:flex !important;
+  flex:1 1 20% !important;
+  width:20% !important;
+  max-width:20% !important;
+  min-width:0 !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
+#bottomNavigation.bottom-nav:not(.hidden) > button[data-page="profile"] {
+  display:flex !important;
+  flex:1 1 20% !important;
+  width:20% !important;
+  max-width:20% !important;
+  min-width:0 !important;
+  order:5 !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  position:relative !important;
+}
+#bottomNavigation.bottom-nav:not(.hidden) > button[data-page="profile"] > span {
+  display:block !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
+@media(max-width:900px) {
+  #bottomNavigation.bottom-nav:not(.hidden) > button {
+    flex:1 1 20% !important;
+    width:20% !important;
+    max-width:20% !important;
+  }
+}
+
+</style>
 </html>
 
 

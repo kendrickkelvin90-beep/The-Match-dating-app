@@ -38,12 +38,14 @@ async function verifyMember(req: Request) {
   });
   const { data, error } = await client.auth.getUser(token);
   if (error || !data.user) return null;
-  return data.user;
+  return { user: data.user, caller: client };
 }
 
 async function dailyViewerKey(userId: string) {
   if (!hmacSecret) throw new Error("Analytics signing is not configured");
-  const day = new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Lagos" });
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+  const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
+  const day = part("year") + "-" + part("month") + "-" + part("day");
   const key = await crypto.subtle.importKey(
     "raw", new TextEncoder().encode(hmacSecret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
   );
@@ -88,8 +90,9 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
-    const user = await verifyMember(req);
-    if (!user) return json({ error: "A valid Match member session is required." }, 401);
+    const memberAuth = await verifyMember(req);
+    if (!memberAuth) return json({ error: "A valid Match member session is required." }, 401);
+    const { user, caller } = memberAuth;
     if (!advertiserUrl || !advertiserServiceKey) return json({ error: "Advertising service is not configured." }, 503);
     const body = await req.json().catch(() => null) as Record<string, unknown> | null;
     if (!body) return json({ error: "Invalid request." }, 400);
@@ -115,6 +118,14 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action !== "get-ad") return json({ error: "Unsupported action." }, 400);
+
+    // Match Plus is explicitly ad-free. Check the authoritative membership row
+    // with the member JWT; fail closed if the entitlement cannot be verified.
+    const membershipCheck = await caller.from("premium_memberships")
+      .select("premium_until").eq("user_id", user.id).gt("premium_until", new Date().toISOString()).maybeSingle();
+    if (membershipCheck.error) return json({ ad: null, reason: "membership_check_unavailable" }, 200);
+    if (membershipCheck.data) return json({ ad: null, reason: "ad_free_membership" }, 200);
+
     if (!bucket || !endpoint || !keyId || !appKey) return json({ ad: null, reason: "media_unavailable" }, 200);
 
     const now = new Date().toISOString();

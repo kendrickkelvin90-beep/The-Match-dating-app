@@ -95,8 +95,8 @@ create table if not exists public.advertising_payments (
   amount_ngn integer not null check (amount_ngn > 0),
   bank_transfer_reference text,
   receipt_storage_key text,
-  status text not null default 'submitted'
-    check (status in ('submitted','confirmed','rejected','duplicate','refunded')),
+  status text not null default 'awaiting_payment'
+    check (status in ('awaiting_payment','submitted','confirmed','rejected','duplicate','refunded')),
   submitted_at timestamptz not null default now(),
   confirmed_at timestamptz,
   confirmed_by uuid references public.advertising_admins(user_id),
@@ -122,6 +122,9 @@ create table if not exists public.advertising_design_requests (
   status text not null default 'awaiting_payment'
     check (status in ('awaiting_payment','paid','in_progress','first_draft_sent','revision','completed','cancelled','refunded')),
   agreed_delivery_at timestamptz,
+  accepted_at timestamptz,
+  delivered_storage_key text,
+  admin_note text,
   revisions_allowed integer not null check (
     (service_type in ('basic','premium') and revisions_allowed = 2) or
     (service_type = 'redesign' and revisions_allowed = 1)
@@ -769,6 +772,217 @@ revoke all on function public.record_advertising_event(uuid,text,text) from publ
 grant execute on function public.record_advertising_event(uuid,text,text) to service_role;
 
 
+
+
+create or replace function public.create_advertising_design_request(
+  p_advertiser_id uuid,
+  p_service_type text,
+  p_campaign_id uuid,
+  p_brief text,
+  p_payment_reference text
+)
+returns table (request_id uuid, payment_id uuid, fee_ngn integer, payment_reference text)
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_fee integer;
+  v_revisions integer;
+  v_request uuid;
+  v_payment uuid;
+begin
+  perform private.require_advertising_service_role();
+  if not exists (select 1 from public.advertiser_profiles a where a.user_id = p_advertiser_id) then
+    raise exception 'Advertiser profile not found' using errcode = '23503';
+  end if;
+  if p_service_type not in ('basic','premium','redesign')
+     or char_length(btrim(coalesce(p_brief,''))) < 10
+     or char_length(btrim(p_brief)) > 3000
+     or char_length(coalesce(p_payment_reference,'')) not between 12 and 80 then
+    raise exception 'Invalid design request details' using errcode = '22023';
+  end if;
+  if p_campaign_id is not null and not exists (
+    select 1 from public.advertising_campaigns c
+    where c.id = p_campaign_id and c.advertiser_id = p_advertiser_id
+  ) then
+    raise exception 'Campaign does not belong to this advertiser' using errcode = '42501';
+  end if;
+  v_fee := case p_service_type when 'basic' then 5000 when 'premium' then 10000 else 3000 end;
+  v_revisions := case when p_service_type = 'redesign' then 1 else 2 end;
+  insert into public.advertising_design_requests(
+    advertiser_id,campaign_id,service_type,fee_ngn,status,
+    revisions_allowed,revisions_used,brief
+  ) values (
+    p_advertiser_id,p_campaign_id,p_service_type,v_fee,'awaiting_payment',
+    v_revisions,0,btrim(p_brief)
+  ) returning id into v_request;
+  insert into public.advertising_design_payments(
+    design_request_id,advertiser_id,amount_ngn,payment_reference,status
+  ) values (
+    v_request,p_advertiser_id,v_fee,p_payment_reference,'awaiting_payment'
+  ) returning id into v_payment;
+  return query select v_request,v_payment,v_fee,p_payment_reference;
+end;
+$function$;
+revoke all on function public.create_advertising_design_request(uuid,text,uuid,text,text) from public, anon, authenticated;
+grant execute on function public.create_advertising_design_request(uuid,text,uuid,text,text) to service_role;
+
+create or replace function public.submit_advertising_design_payment(
+  p_advertiser_id uuid,
+  p_payment_id uuid,
+  p_bank_transfer_reference text
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_payment public.advertising_design_payments%rowtype;
+begin
+  perform private.require_advertising_service_role();
+  select * into v_payment from public.advertising_design_payments
+  where id = p_payment_id and advertiser_id = p_advertiser_id for update;
+  if not found or v_payment.status <> 'awaiting_payment'
+     or char_length(btrim(coalesce(p_bank_transfer_reference,''))) < 4
+     or char_length(p_bank_transfer_reference) > 120 then
+    raise exception 'Design payment cannot be submitted' using errcode = '22023';
+  end if;
+  update public.advertising_design_payments
+  set status = 'submitted', bank_transfer_reference = btrim(p_bank_transfer_reference),
+      submitted_at = now()
+  where id = p_payment_id;
+  return true;
+end;
+$function$;
+revoke all on function public.submit_advertising_design_payment(uuid,uuid,text) from public, anon, authenticated;
+grant execute on function public.submit_advertising_design_payment(uuid,uuid,text) to service_role;
+
+create or replace function public.admin_confirm_advertising_design_payment(
+  p_admin_id uuid,
+  p_payment_id uuid,
+  p_admin_note text default null
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_payment public.advertising_design_payments%rowtype;
+begin
+  perform private.require_advertising_service_role();
+  if not exists (select 1 from public.advertising_admins a where a.user_id = p_admin_id) then
+    raise exception 'Advertising admin access denied' using errcode = '42501';
+  end if;
+  select * into v_payment from public.advertising_design_payments where id = p_payment_id for update;
+  if not found or v_payment.status <> 'submitted' then
+    raise exception 'Design payment is not awaiting confirmation' using errcode = '22023';
+  end if;
+  update public.advertising_design_payments
+  set status = 'confirmed', confirmed_at = now(), confirmed_by = p_admin_id,
+      admin_note = left(coalesce(p_admin_note,''),500)
+  where id = p_payment_id;
+  update public.advertising_design_requests set status = 'paid'
+  where id = v_payment.design_request_id and status = 'awaiting_payment';
+  insert into public.advertising_admin_audit(actor_id,action,entity_type,entity_id,details)
+  values (p_admin_id,'confirm_design_payment','design_payment',p_payment_id::text,
+    jsonb_build_object('design_request_id',v_payment.design_request_id,'amount_ngn',v_payment.amount_ngn));
+  return true;
+end;
+$function$;
+revoke all on function public.admin_confirm_advertising_design_payment(uuid,uuid,text) from public, anon, authenticated;
+grant execute on function public.admin_confirm_advertising_design_payment(uuid,uuid,text) to service_role;
+
+create or replace function public.advertiser_request_design_revision(
+  p_advertiser_id uuid,
+  p_request_id uuid
+)
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_request public.advertising_design_requests%rowtype;
+begin
+  perform private.require_advertising_service_role();
+  select * into v_request from public.advertising_design_requests
+  where id = p_request_id and advertiser_id = p_advertiser_id for update;
+  if not found or v_request.status <> 'first_draft_sent'
+     or v_request.revisions_used >= v_request.revisions_allowed then
+    raise exception 'No revision is currently available' using errcode = '22023';
+  end if;
+  update public.advertising_design_requests
+  set status = 'revision', revisions_used = revisions_used + 1
+  where id = p_request_id;
+  return v_request.revisions_used + 1;
+end;
+$function$;
+revoke all on function public.advertiser_request_design_revision(uuid,uuid) from public, anon, authenticated;
+grant execute on function public.advertiser_request_design_revision(uuid,uuid) to service_role;
+
+create or replace function public.admin_update_advertising_design_request(
+  p_admin_id uuid,
+  p_request_id uuid,
+  p_status text,
+  p_delivery_at timestamptz default null,
+  p_delivered_storage_key text default null,
+  p_admin_note text default null
+)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_request public.advertising_design_requests%rowtype;
+begin
+  perform private.require_advertising_service_role();
+  if not exists (select 1 from public.advertising_admins a where a.user_id = p_admin_id) then
+    raise exception 'Advertising admin access denied' using errcode = '42501';
+  end if;
+  select * into v_request from public.advertising_design_requests where id = p_request_id for update;
+  if not found then raise exception 'Design request not found' using errcode = 'P0002'; end if;
+
+  if p_status = 'in_progress' then
+    if v_request.status <> 'paid' or p_delivery_at is null or p_delivery_at <= now() then
+      raise exception 'Confirm payment and agree a future delivery deadline before starting work' using errcode = '22023';
+    end if;
+    update public.advertising_design_requests
+    set status = 'in_progress', accepted_at = now(), agreed_delivery_at = p_delivery_at,
+        admin_note = left(coalesce(p_admin_note,''),1000)
+    where id = p_request_id;
+  elsif p_status = 'first_draft_sent' then
+    if v_request.status <> 'in_progress' then raise exception 'Design is not in progress' using errcode = '22023'; end if;
+    update public.advertising_design_requests set status = 'first_draft_sent',
+      admin_note = left(coalesce(p_admin_note,''),1000) where id = p_request_id;
+  elsif p_status = 'completed' then
+    if v_request.status not in ('in_progress','first_draft_sent','revision')
+       or p_delivered_storage_key is null
+       or p_delivered_storage_key not like 'advertising-designs/' || v_request.advertiser_id::text || '/' || p_request_id::text || '/%'
+       or position('..' in p_delivered_storage_key) > 0 then
+      raise exception 'A valid private delivery asset is required before completion' using errcode = '22023';
+    end if;
+    update public.advertising_design_requests set status = 'completed',
+      delivered_storage_key = p_delivered_storage_key,
+      admin_note = left(coalesce(p_admin_note,''),1000) where id = p_request_id;
+  elsif p_status = 'cancelled' then
+    if v_request.status not in ('awaiting_payment','paid') then raise exception 'Request cannot be cancelled at this stage' using errcode = '22023'; end if;
+    update public.advertising_design_requests set status = 'cancelled',
+      admin_note = left(coalesce(p_admin_note,''),1000) where id = p_request_id;
+  else
+    raise exception 'Unsupported design request status' using errcode = '22023';
+  end if;
+  insert into public.advertising_admin_audit(actor_id,action,entity_type,entity_id,details)
+  values (p_admin_id,'design_request_' || p_status,'design_request',p_request_id::text,
+    jsonb_build_object('delivery_at',p_delivery_at,'delivered_storage_key',p_delivered_storage_key));
+  return p_status;
+end;
+$function$;
+revoke all on function public.admin_update_advertising_design_request(uuid,uuid,text,timestamptz,text,text) from public, anon, authenticated;
+grant execute on function public.admin_update_advertising_design_request(uuid,uuid,text,timestamptz,text,text) to service_role;
 
 create or replace function public.admin_record_duplicate_advertising_payment(
   p_admin_id uuid,

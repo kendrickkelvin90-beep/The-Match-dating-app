@@ -365,7 +365,7 @@
   });
   $("forgotPassword").addEventListener("click", async () => {
     const email = $("signinEmail").value.trim();
-    if (!email) return message("authMessage", "Enter the exact email address used when you created your Individual advertiser account.");
+    if (!email) return message("authMessage", "Enter the email address you use to sign in to The Match.");
     const button = $("forgotPassword");
     setBusy(button, true, "Sending recovery email…");
     try {

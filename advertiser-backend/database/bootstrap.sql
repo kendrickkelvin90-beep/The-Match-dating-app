@@ -366,25 +366,33 @@ grant all on public.advertiser_profiles, public.advertising_campaigns,
   public.advertising_clicks, public.advertising_unique_clicks, public.advertising_refunds,
   public.advertising_admins, public.advertising_admin_audit to service_role;
 
+drop policy if exists advertiser_profile_owner_read on public.advertiser_profiles;
 create policy advertiser_profile_owner_read on public.advertiser_profiles
   for select to anon using (user_id = (select auth.uid()) or (select private.is_advertising_admin()));
+drop policy if exists advertiser_profile_owner_update on public.advertiser_profiles;
 create policy advertiser_profile_owner_update on public.advertiser_profiles
   for update to anon using (user_id = (select auth.uid()))
   with check (user_id = (select auth.uid()));
 
+drop policy if exists advertising_campaign_owner_read on public.advertising_campaigns;
 create policy advertising_campaign_owner_read on public.advertising_campaigns
   for select to anon using (coalesce((select auth.jwt()->>'user_role'),'') = 'advertiser' and (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin())));
+drop policy if exists advertising_creative_owner_read on public.advertising_creatives;
 create policy advertising_creative_owner_read on public.advertising_creatives
   for select to anon using (
     exists (select 1 from public.advertising_campaigns c
       where c.id = campaign_id and (c.advertiser_id = (select auth.uid()) or (select private.is_advertising_admin())))
   );
+drop policy if exists advertising_payment_owner_read on public.advertising_payments;
 create policy advertising_payment_owner_read on public.advertising_payments
   for select to anon using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
+drop policy if exists advertising_design_owner_read on public.advertising_design_requests;
 create policy advertising_design_owner_read on public.advertising_design_requests
   for select to anon using (coalesce((select auth.jwt()->>'user_role'),'') = 'advertiser' and (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin())));
+drop policy if exists advertising_design_payment_owner_read on public.advertising_design_payments;
 create policy advertising_design_payment_owner_read on public.advertising_design_payments
   for select to anon using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
+drop policy if exists advertising_refund_owner_read on public.advertising_refunds;
 create policy advertising_refund_owner_read on public.advertising_refunds
   for select to anon using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
 

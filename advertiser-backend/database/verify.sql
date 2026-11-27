@@ -78,6 +78,19 @@ begin
     raise exception 'Private admin helper grants are incorrect';
   end if;
 
+
+  if has_function_privilege('anon','public.create_advertising_design_request(uuid,text,uuid,text,text)','execute')
+     or has_function_privilege('authenticated','public.create_advertising_design_request(uuid,text,uuid,text,text)','execute')
+     or not has_function_privilege('service_role','public.create_advertising_design_request(uuid,text,uuid,text,text)','execute') then
+    raise exception 'Design request RPC must be service-role only';
+  end if;
+
+  if has_function_privilege('anon','public.admin_confirm_advertising_design_payment(uuid,uuid,text)','execute')
+     or has_function_privilege('authenticated','public.admin_confirm_advertising_design_payment(uuid,uuid,text)','execute')
+     or not has_function_privilege('service_role','public.admin_confirm_advertising_design_payment(uuid,uuid,text)','execute') then
+    raise exception 'Design payment confirmation RPC must be service-role only';
+  end if;
+
   if not has_schema_privilege('authenticated','private','usage') then
     raise exception 'Authenticated role cannot execute the private admin helper used by RLS';
   end if;

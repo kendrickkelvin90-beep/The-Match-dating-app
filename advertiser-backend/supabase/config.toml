@@ -9,3 +9,6 @@ verify_jwt = false
 
 [functions.advertising-media-upload]
 verify_jwt = true
+
+[functions.advertising-design-upload]
+verify_jwt = true

@@ -73,10 +73,14 @@
   let sessionChecked = false;
   async function currentUserKey() {
     if (sessionChecked) return sessionUserId;
-    sessionChecked = true;
+    // The app's Supabase client may initialize after this script on slower devices.
+    // Do not cache an empty result until the auth client is actually available.
+    const auth = window.db?.auth;
+    if (typeof auth?.getSession !== "function") return "";
     try {
-      const { data } = await window.db?.auth?.getSession?.();
+      const { data } = await auth.getSession();
       sessionUserId = data?.session?.user?.id || "";
+      sessionChecked = true;
     } catch (_) {}
     return sessionUserId;
   }

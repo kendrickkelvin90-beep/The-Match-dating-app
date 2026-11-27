@@ -19,7 +19,7 @@ This implementation uses the existing `the-match-dating-app` Supabase project. I
 
 ## Important Auth behavior
 
-1. The Auth hook is global to the Match Supabase project. It must be enabled in **Authentication → Hooks → Custom Access Token** and point to `private.custom_access_token_hook`.
+1. The Auth hook is global to the Match Supabase project. It must be enabled in **Authentication → Hooks → Custom Access Token** and point to `public.custom_access_token_hook`.
 2. The hook leaves ordinary member tokens unchanged. Only new advertiser registrations receive the `advertiser` role.
 3. A member account with an existing `public.profiles` row cannot be enrolled as an advertiser. Use a different email for advertiser registration.
 4. Create advertiser accounts with email/password first. A Google identity can be linked from the advertiser workspace; Google sign-in is accepted only when the identity is already linked to an advertiser account.
@@ -65,7 +65,7 @@ Do not set `MATCH_SUPABASE_URL` or `MATCH_SUPABASE_ANON_KEY`; member verificatio
 1. Review the shared-project migration and CI results.
 2. Confirm the Auth Custom Access Token Hook setting and exact dashboard procedure.
 3. Apply `database/bootstrap.sql` to the existing Match project only after explicit owner approval. Never run the old separate-project instructions.
-4. Enable `private.custom_access_token_hook` under Authentication → Hooks → Custom Access Token after migration verification.
+4. Enable `public.custom_access_token_hook` under Authentication → Hooks → Custom Access Token after migration verification.
 5. Run `database/verify.sql` and Supabase security/performance advisors.
 6. Deploy the four advertising Edge Functions to the existing project and set the server-side secrets.
 7. Configure email verification/recovery redirect URLs and the advertiser admin allowlist. Review the global manual identity-linking setting before enabling Google linking.

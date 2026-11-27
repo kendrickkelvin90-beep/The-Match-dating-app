@@ -2,7 +2,10 @@
 -- Run only against the disposable CI PostgreSQL database.
 insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values
 ('10000000-0000-4000-8000-000000000001','one@example.test',now(),'{"account_type":"advertiser","advertiser_type":"individual","display_name":"Advertiser One"}'),
-('10000000-0000-4000-8000-000000000002','two@example.test',now(),'{"account_type":"advertiser","advertiser_type":"business","display_name":"Advertiser Two"}');
+('10000000-0000-4000-8000-000000000002','two@example.test',now(),'{"account_type":"advertiser","advertiser_type":"business","display_name":"Advertiser Two"}'),
+('10000000-0000-4000-8000-000000000003','member@example.test',now(),'{"account_type":"advertiser","advertiser_type":"individual","display_name":"Should Not Convert"}');
+
+insert into public.profiles(id) values ('10000000-0000-4000-8000-000000000003');
 
 set role supabase_auth_admin;
 select private.custom_access_token_hook(jsonb_build_object(
@@ -13,8 +16,25 @@ select private.custom_access_token_hook(jsonb_build_object(
   'user_id','10000000-0000-4000-8000-000000000002',
   'claims',jsonb_build_object('role','authenticated','user_metadata','{"account_type":"advertiser","advertiser_type":"business","display_name":"Advertiser Two"}'::jsonb)
 ));
+select private.custom_access_token_hook(jsonb_build_object(
+  'user_id','10000000-0000-4000-8000-000000000003',
+  'claims',jsonb_build_object('role','authenticated','user_metadata','{"account_type":"advertiser","advertiser_type":"individual","display_name":"Should Not Convert"}'::jsonb)
+));
 reset role;
 
+do $test$
+begin
+  if exists (select 1 from private.advertiser_auth_registry where user_id='10000000-0000-4000-8000-000000000003') then
+    raise exception 'An existing dating-member profile was converted into an advertiser account';
+  end if;
+  if (select private.custom_access_token_hook(jsonb_build_object(
+      'user_id','10000000-0000-4000-8000-000000000003',
+      'claims',jsonb_build_object('role','authenticated','user_metadata','{"account_type":"advertiser"}'::jsonb)
+    ))->'claims'->>'role') <> 'authenticated' then
+    raise exception 'Existing dating-member account did not retain the normal member role';
+  end if;
+end;
+$test$;
 
 insert into public.advertiser_profiles(user_id,advertiser_type,display_name) values
 ('10000000-0000-4000-8000-000000000001','individual','Advertiser One'),

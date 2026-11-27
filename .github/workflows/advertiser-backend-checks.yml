@@ -1,0 +1,42 @@
+name: Advertiser backend checks
+
+on:
+  push:
+    branches:
+      - planning/sponsored-advertising-2026-11-27
+    paths:
+      - "advertiser-backend/**"
+      - "advertiser-portal.*"
+      - "advertiser-portal-config.js"
+      - ".github/workflows/advertiser-backend-checks.yml"
+  pull_request:
+    paths:
+      - "advertiser-backend/**"
+      - "advertiser-portal.*"
+      - "advertiser-portal-config.js"
+      - ".github/workflows/advertiser-backend-checks.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check advertiser portal JavaScript syntax
+        run: node --check advertiser-portal.js
+      - name: Check public config contains no server secrets
+        run: |
+          ! grep -Eiq 'service_role|secret_key|B2_APPLICATION_KEY|ADVERTISING_ACCOUNT_NUMBER' advertiser-portal-config.js
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check advertiser Edge Functions
+        run: |
+          deno check advertiser-backend/supabase/functions/advertising-api/index.ts
+          deno check advertiser-backend/supabase/functions/advertising-media-upload/index.ts
+          deno check advertiser-backend/supabase/functions/member-ad-serving/index.ts

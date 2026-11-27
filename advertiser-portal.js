@@ -165,7 +165,38 @@
     try { await callApi({ action: "admin-review-campaign", campaign_id: campaignId, approve, reason }); await loadAdminPanel(); await refreshCampaigns(); }
     catch (error) { message("globalMessage", error.message, true); }
   };
+  const tokenRole = (token) => {
+    try {
+      const segment = token?.split(".")[1];
+      if (!segment) return "";
+      const normalized = segment.replace(/-/g, "+").replace(/_/g, "/");
+      const payload = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
+      return typeof payload.role === "string" ? payload.role : "";
+    } catch { return ""; }
+  };
+  const ensureAdvertiserProfile = async (session) => {
+    if (tokenRole(session?.access_token) !== "advertiser") {
+      await state.client.auth.signOut({ scope: "local" });
+      throw new Error("This is not an advertiser account. Create an advertiser account with a separate email, or use the Google identity linked to an existing advertiser account.");
+    }
+    const metadata = session.user?.user_metadata || {};
+    await callApi({
+      action: "complete-profile",
+      advertiser_type: metadata.advertiser_type,
+      display_name: metadata.display_name,
+      contact_name: metadata.contact_name,
+      phone: metadata.phone,
+    });
+  };
   const showDashboard = async (session) => {
+    try {
+      await ensureAdvertiserProfile(session);
+    } catch (error) {
+      $("dashboardView").classList.add("hidden");
+      $("authView").classList.remove("hidden");
+      message("authMessage", error.message, true);
+      return;
+    }
     state.session = session;
     $("authView").classList.add("hidden"); $("dashboardView").classList.remove("hidden");
     $("welcomeText").textContent = session.user?.email ? "Signed in as " + session.user.email : "Manage your sponsored advertising.";
@@ -175,13 +206,18 @@
 
   if (!config.supabaseUrl || !config.publishableKey || !window.supabase?.createClient) {
     $("setupNotice").classList.remove("hidden");
-    $("setupNotice").textContent = "Advertiser portal setup is pending: the separate advertiser Supabase project has not been connected yet. This portal is intentionally not connected to Match member login.";
+    $("setupNotice").textContent = "Advertiser portal setup is pending: the shared Match Supabase project has not been connected yet. Advertiser sessions use a separate browser storage key and a dedicated database role.";
     $("authView").querySelectorAll("button,input,select").forEach((el) => el.disabled = true);
     return;
   }
 
   state.client = window.supabase.createClient(config.supabaseUrl, config.publishableKey, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storageKey: "the-match-advertiser-auth",
+    },
   });
   document.querySelectorAll("[data-auth-tab]").forEach((button) => button.addEventListener("click", () => showAuthTab(button.dataset.authTab)));
   $("signupType").addEventListener("change", () => { $("signupNameLabel").firstChild.textContent = $("signupType").value === "business" ? "Business / organisation name" : "Your name"; });
@@ -197,7 +233,13 @@
     const type = $("signupType").value, displayName = $("signupName").value.trim();
     const { data, error } = await state.client.auth.signUp({
       email: $("signupEmail").value.trim(), password: $("signupPassword").value,
-      options: { data: { advertiser_type: type, display_name: displayName }, emailRedirectTo: window.location.href.split("#")[0] },
+      options: { data: {
+        account_type: "advertiser",
+        advertiser_type: type,
+        display_name: displayName,
+        contact_name: $("signupContact").value.trim(),
+        phone: $("signupPhone").value.trim(),
+      }, emailRedirectTo: window.location.href.split("#")[0] },
     });
     setBusy(button,false);
     if (error) return message("authMessage", error.message, true);
@@ -207,8 +249,26 @@
     } else message("authMessage", "Account created. Check your email to verify your advertiser account, then sign in.");
   });
   $("googleSignIn").addEventListener("click", async () => {
-    const { error } = await state.client.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.href.split("#")[0] } });
+    const { error } = await state.client.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.href.split("#")[0] },
+    });
     if (error) message("authMessage", error.message, true);
+  });
+  $("linkGoogle").addEventListener("click", async () => {
+    try {
+      const { data: { session } } = await state.client.auth.getSession();
+      if (tokenRole(session?.access_token) !== "advertiser") {
+        throw new Error("Sign in to your advertiser account before linking Google.");
+      }
+      const { error } = await state.client.auth.linkIdentity({
+        provider: "google",
+        options: { redirectTo: window.location.href.split("#")[0] },
+      });
+      if (error) throw error;
+    } catch (error) {
+      message("globalMessage", error.message || "Google linking is unavailable right now.", true);
+    }
   });
   $("forgotPassword").addEventListener("click", async () => {
     const email = $("signinEmail").value.trim();

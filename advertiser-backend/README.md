@@ -62,6 +62,13 @@ The GitHub Actions workflow runs:
 
 These tests do not connect to or mutate either live Supabase project. Passing CI does not replace a final device/browser regression test on The Match.
 
+## Remaining launch gates
+
+- Campaign change requests after approval/live (pause, propose new details/creative, re-review, then resume) are not implemented yet. Current creative replacement is blocked after approval; do not enable advertiser campaign editing until this workflow exists.
+- The separate advertiser Supabase project, Google OAuth provider, email templates/redirects, admin allowlist, server secrets, private B2 key and business bank details still need owner-controlled setup.
+- Legal/privacy and Nigerian advertising requirements, including any ARCON clearance or disclosure obligations, still need qualified local review before public launch. The previously rejected advertiser-screening checklist has not been added.
+- Platform-interruption extensions are a manual policy decision; there is no automatic lost-time calculation yet.
+
 ## Not activated
 
 The current branch is a work branch only. The advertiser Supabase project has not yet been provisioned or configured, no production database has been migrated, bank details and B2 credentials have not been supplied to the backend, and the Discover feature flag remains off. Do not enable the integration until those prerequisites and live-device regression checks are completed.

@@ -110,10 +110,23 @@
         '<button class="small-outline" data-reject-change="' + item.id + '">Reject</button></article>'
       ).join("") || '<p class="muted">No pending campaign changes.</p>';
       target.querySelectorAll("[data-preview-change]").forEach((b) => b.addEventListener("click", async () => {
+        b.disabled = true;
         try {
           const result = await portal.callApi({action:"admin-preview-change-creative",change_request_id:b.dataset.previewChange});
-          window.open(result.preview_url,"_blank","noopener,noreferrer");
+          const dialog = document.createElement("dialog");
+          dialog.className = "advertising-creative-preview";
+          dialog.style.cssText = "max-width:min(92vw,760px);max-height:90vh;border:0;border-radius:16px;padding:16px;background:#171717;color:#fff";
+          const media = result.creative_type === "video"
+            ? '<video controls playsinline preload="metadata" src="' + escape(result.preview_url) + '" poster="' + escape(result.poster_url || "") + '" style="display:block;max-width:100%;max-height:72vh;margin:auto"></video>'
+            : '<img src="' + escape(result.preview_url) + '" alt="Proposed replacement creative" style="display:block;max-width:100%;max-height:72vh;object-fit:contain;margin:auto">';
+          dialog.innerHTML = media + '<div style="display:flex;justify-content:flex-end;margin-top:12px"><button type="button" class="small-outline" data-close-preview>Close preview</button></div>';
+          dialog.querySelector("[data-close-preview]").addEventListener("click", () => dialog.close());
+          dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
+          dialog.addEventListener("close", () => dialog.remove(), {once:true});
+          document.body.append(dialog);
+          dialog.showModal();
         } catch(error) { portal.message("globalMessage",error.message,true); }
+        finally { b.disabled = false; }
       }));
       target.querySelectorAll("[data-approve-change]").forEach((b) => b.addEventListener("click", () => reviewChange(b.dataset.approveChange,true)));
       target.querySelectorAll("[data-reject-change]").forEach((b) => b.addEventListener("click", () => reviewChange(b.dataset.rejectChange,false)));

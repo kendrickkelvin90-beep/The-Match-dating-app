@@ -13,8 +13,8 @@ set local search_path = public;
 revoke all on schema private from public, anon;
 grant usage on schema public, private to supabase_auth_admin;
 grant usage on schema private to authenticated, anon, service_role;
-grant usage on schema auth to anon;
-grant execute on function auth.uid(), auth.jwt() to anon;
+grant usage on schema auth to anon, authenticated, authenticator, service_role;
+grant execute on function auth.uid(), auth.jwt() to anon, authenticated, authenticator, service_role;
 
 -- A signed-in advertiser receives the dedicated Postgres role only after Auth
 -- confirms the account was created for advertising and it has no dating profile.
@@ -1555,7 +1555,6 @@ grant execute on function public.admin_review_advertising_campaign_change(uuid,u
 create or replace function public.match_advertiser_api_guard()
 returns void
 language plpgsql
-security definer
 set search_path = ''
 as $guard$
 declare

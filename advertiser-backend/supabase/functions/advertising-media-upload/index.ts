@@ -31,14 +31,14 @@ function json(body: unknown, status: number, origin: string) {
   });
 }
 
-function jwtRole(token: string): string {
+function isAdvertiserToken(token: string): boolean {
   try {
     const segment = token.split(".")[1];
-    if (!segment) return "";
+    if (!segment) return false;
     const normalized = segment.replace(/-/g, "+").replace(/_/g, "/");
     const payload = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
-    return typeof payload.role === "string" ? payload.role : "";
-  } catch { return ""; }
+    return payload.role === "anon" && payload.user_role === "advertiser";
+  } catch { return false; }
 }
 
 function bytesStartWith(bytes: Uint8Array, expected: number[]) {
@@ -121,7 +121,7 @@ Deno.serve(async (req: Request) => {
     });
     const { data: authData, error: authError } = await caller.auth.getUser(token);
     const user = authData.user;
-    if (authError || !user?.email_confirmed_at || jwtRole(token) !== "advertiser") return json({ error: "A verified advertiser session is required before uploading." }, 401, origin);
+    if (authError || !user?.email_confirmed_at || !isAdvertiserToken(token)) return json({ error: "A verified advertiser session is required before uploading." }, 401, origin);
 
     const form = await req.formData();
     const campaignId = String(form.get("campaign_id") ?? "");

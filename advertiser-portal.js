@@ -65,9 +65,15 @@
         <p>Payment: ${escapeHtml(campaign.payment_status.replaceAll("_"," "))}</p>
         <p>Reference: <strong>${escapeHtml(campaign.payment_reference)}</strong></p>
         <p>Live: ${formatDate(campaign.go_live_at)} · Ends: ${formatDate(campaign.ends_at)}</p>
-        <div class="campaign-actions"><button class="small-outline" data-metrics="${escapeHtml(campaign.id)}">View performance</button>${campaign.status === "awaiting_payment" && campaign.payment_status === "awaiting_payment" ? `<button class="small-outline" data-resume-payment="${escapeHtml(campaign.id)}">Resume payment</button>` : ""}</div>
+        <div class="campaign-actions"><button class="small-outline" data-metrics="${escapeHtml(campaign.id)}">View performance</button>${campaign.status === "awaiting_payment" && campaign.payment_status === "awaiting_payment" ? `<button class="small-outline" data-resume-payment="${escapeHtml(campaign.id)}">Resume payment</button><button class="small-outline" data-cancel-campaign="${escapeHtml(campaign.id)}">Cancel reservation</button>` : ""}</div>
         <div class="fineprint" id="metrics-${escapeHtml(campaign.id)}"></div>
       </article>`).join("") : '<p class="muted">You have no campaigns yet. Create your first sponsored advert to get started.</p>';
+    $("campaignList").querySelectorAll("[data-cancel-campaign]").forEach((button) => button.addEventListener("click", async () => {
+      if (!confirm("Cancel this unpaid campaign reservation?")) return;
+      button.disabled = true;
+      try { await callApi({ action: "cancel-campaign", campaign_id: button.dataset.cancelCampaign }); message("globalMessage", "Unpaid campaign reservation cancelled."); await refreshCampaigns(); }
+      catch (error) { message("globalMessage", error.message, true); button.disabled = false; }
+    }));
     $("campaignList").querySelectorAll("[data-resume-payment]").forEach((button) => button.addEventListener("click", async () => {
       button.disabled = true;
       try {

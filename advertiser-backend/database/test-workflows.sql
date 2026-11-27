@@ -278,3 +278,5 @@ begin
 end;
 $test$;
 reset role;
+
+select private.process_advertising_campaign_clock_cron();

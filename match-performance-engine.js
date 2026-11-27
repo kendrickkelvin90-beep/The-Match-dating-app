@@ -275,18 +275,37 @@
 
  function start(){
    attachDiscoverList();
-   const themeObserver=new MutationObserver(()=>{
-     discoverList?.querySelectorAll('.match-discover-editorial-card').forEach(card=>{
-       const panel=card.querySelector('.match-discover-editorial-body');
-       if(!panel)return;
-       const dark=!document.body.classList.contains('light-theme');
-       panel.style.setProperty('background',dark?'linear-gradient(155deg,#1c1a15,#11100d)':'#fffdf8','important');
-       panel.style.setProperty('color',dark?'#f5f0e6':'#211f1b','important');
-       const h=panel.querySelector('h2');if(h)h.style.setProperty('color',dark?'#f8f3e8':'#211f1b','important');
-       const d=panel.querySelector('.distance');if(d)d.style.setProperty('color',dark?'#d8c39a':'#75684f','important');
-     });
-   });
+   const syncEditorialCardTheme=(card)=>{
+     const panel=card?.querySelector('.match-discover-editorial-body');
+     if(!panel)return;
+     const light=document.body.classList.contains('light-theme');
+     const setTheme=(el,property,value)=>el?.style.setProperty(property,value,'important');
+     const surface=light?'#fffdf8':'#15130f';
+     const inset=light?'#f7f3eb':'#211e18';
+     setTheme(card,'background',surface);
+     setTheme(panel,'background',light?'#fffdf8':'linear-gradient(155deg,#1b1915,#100f0d)');
+     setTheme(panel,'color',light?'#211f1b':'#f5f0e6');
+     const heading=panel.querySelector('h2');
+     setTheme(heading,'color',light?'#211f1b':'#f8f3e8');
+     const distance=panel.querySelector('.distance');
+     setTheme(distance,'color',light?'#75684f':'#d8c39a');
+     const toggle=panel.querySelector('button[aria-expanded]');
+     setTheme(toggle,'background',inset);
+     setTheme(toggle,'color',light?'#6e501d':'#e7cc91');
+     const details=toggle?.nextElementSibling;
+     setTheme(details,'background',inset);
+     setTheme(details,'color',light?'#302b22':'#f1e8d7');
+     const explain=panel.querySelector('.discover-compatibility-explain');
+     setTheme(explain,'background',inset);
+     setTheme(explain,'color',light?'#76571f':'#e5d3ae');
+     const actions=panel.querySelector('.discover-floating-actions');
+     setTheme(actions,'background','transparent');
+     setTheme(actions,'color',light?'#211f1b':'#f5f0e6');
+   };
+   const syncAllEditorialCardThemes=()=>discoverList?.querySelectorAll('.match-discover-editorial-card').forEach(syncEditorialCardTheme);
+   const themeObserver=new MutationObserver(syncAllEditorialCardThemes);
    themeObserver.observe(document.body,{attributes:true,attributeFilter:['class']});
+   syncAllEditorialCardThemes();
    if(!discoverList){
      waitingObserver=new MutationObserver(()=>attachDiscoverList());
      waitingObserver.observe(document.documentElement,{childList:true,subtree:true});

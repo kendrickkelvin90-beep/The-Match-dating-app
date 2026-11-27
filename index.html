@@ -26197,6 +26197,328 @@ body.light-theme #notificationBadge {
   border-color: #FFFFFF !important;
 }
 
+
+
+/* Light theme follow-up: correct header notification placement and finish
+   the remaining dark surfaces. These rules intentionally do not affect dark mode. */
+
+/* Header: stable centered brand with the notification control anchored to the right. */
+body.light-theme header {
+  position: relative !important;
+  min-height: 64px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding-left: 58px !important;
+  padding-right: 58px !important;
+  background: #F8F4EA !important;
+  color: #303936 !important;
+  border-bottom: 1px solid #E5DCCB !important;
+}
+body.light-theme #openNotifications {
+  position: absolute !important;
+  top: 50% !important;
+  right: 14px !important;
+  left: auto !important;
+  transform: translateY(-50%) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 1px solid #D8D0C2 !important;
+  border-radius: 50% !important;
+  background: #FFFFFF !important;
+  color: #254C46 !important;
+  font-size: 25px !important;
+  line-height: 1 !important;
+  text-align: center !important;
+  box-shadow: 0 2px 9px rgba(48,57,54,.08) !important;
+  overflow: visible !important;
+  z-index: 1002 !important;
+}
+body.light-theme #openNotifications:active {
+  background: #E9DFC9 !important;
+  color: #1D403B !important;
+}
+body.light-theme #openNotifications #notificationBadge {
+  position: absolute !important;
+  top: -3px !important;
+  right: -4px !important;
+  left: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  display: none;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 20px !important;
+  width: auto !important;
+  height: 20px !important;
+  padding: 0 5px !important;
+  margin: 0 !important;
+  border: 2px solid #FFFFFF !important;
+  border-radius: 999px !important;
+  background: #C39A52 !important;
+  color: #241B0C !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  box-shadow: 0 1px 5px rgba(48,57,54,.18) !important;
+  z-index: 5 !important;
+}
+
+/* Notifications centre: replace the legacy dark hero, filters, toolbar and cards. */
+body.light-theme #notificationsPage {
+  background: #F8F4EA !important;
+  color: #303936 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+body.light-theme #notificationsPage .notifications-hero {
+  background: linear-gradient(120deg, #FFFFFF, #F1EBDD) !important;
+  border: 1px solid #E5DCCB !important;
+  box-shadow: 0 5px 18px rgba(55,47,31,.055) !important;
+}
+body.light-theme #notificationsPage .notifications-hero-icon {
+  background: #254C46 !important;
+  border: 1px solid #254C46 !important;
+  color: #FFFFFF !important;
+  box-shadow: none !important;
+}
+body.light-theme #notificationsPage .notifications-hero h2 {
+  color: #303936 !important;
+}
+body.light-theme #notificationsPage .notifications-hero p {
+  color: #515B56 !important;
+}
+body.light-theme #notificationsPage .notification-filter {
+  background: #FFFFFF !important;
+  border: 1px solid #D8D0C2 !important;
+  color: #254C46 !important;
+  box-shadow: none !important;
+}
+body.light-theme #notificationsPage .notification-filter span {
+  color: #303936 !important;
+}
+body.light-theme #notificationsPage .notification-filter.active {
+  background: #254C46 !important;
+  border-color: #254C46 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 12px rgba(37,76,70,.16) !important;
+}
+body.light-theme #notificationsPage .notification-filter.active span {
+  color: #FFFFFF !important;
+}
+body.light-theme #notificationsPage .notifications-toolbar {
+  background: #FFFFFF !important;
+  border: 1px solid #E5DCCB !important;
+  box-shadow: none !important;
+}
+body.light-theme #notificationsPage .notifications-toolbar button {
+  color: #254C46 !important;
+}
+body.light-theme #notificationsPage .notifications-toolbar-divider {
+  background: #D8D0C2 !important;
+}
+body.light-theme #notificationsPage .notifications-refresh {
+  background: #254C46 !important;
+  border: 1px solid #254C46 !important;
+  color: #FFFFFF !important;
+}
+body.light-theme #notificationsPage .notification-card {
+  background: #FFFFFF !important;
+  border: 1px solid #E5DCCB !important;
+  color: #303936 !important;
+  box-shadow: 0 4px 14px rgba(55,47,31,.055) !important;
+}
+body.light-theme #notificationsPage .notification-card.unread {
+  background: #F1EBDD !important;
+  border-color: #C39A52 !important;
+  box-shadow: inset 3px 0 0 #254C46 !important;
+}
+body.light-theme #notificationsPage .notification-icon {
+  background: #F1EBDD !important;
+  border: 1px solid #D9C69D !important;
+  color: #254C46 !important;
+  box-shadow: none !important;
+}
+body.light-theme #notificationsPage .notification-copy strong {
+  color: #303936 !important;
+}
+body.light-theme #notificationsPage .notification-copy p {
+  color: #475650 !important;
+}
+body.light-theme #notificationsPage .notification-copy time {
+  color: #58635D !important;
+}
+body.light-theme #notificationsPage .notification-unread-dot {
+  background: #254C46 !important;
+  box-shadow: none !important;
+}
+body.light-theme #notificationsPage .notification-chevron {
+  color: #254C46 !important;
+}
+body.light-theme #notificationsPage .notifications-empty {
+  background: #FFFFFF !important;
+  border: 1px dashed #C9B98F !important;
+  color: #475650 !important;
+}
+body.light-theme #notificationsPage #notificationsStatus {
+  color: #254C46 !important;
+}
+body.light-theme #notificationsPage #backFromNotifications {
+  background: #254C46 !important;
+  border-color: #254C46 !important;
+  color: #FFFFFF !important;
+}
+
+/* Shared member cards and settings rows, including the actual settings markup. */
+body.light-theme .member-card,
+body.light-theme #settings .member-card,
+body.light-theme #profile .member-card,
+body.light-theme #nearbyPage .member-card,
+body.light-theme #premium .member-card,
+body.light-theme #premiumPage .member-card,
+body.light-theme #walletPage .member-card,
+body.light-theme #matchCoinsPage .member-card,
+body.light-theme #matches .member-card,
+body.light-theme #likes .member-card {
+  background: #FFFFFF !important;
+  color: #303936 !important;
+  border: 1px solid #E5DCCB !important;
+  box-shadow: 0 4px 16px rgba(55,47,31,.045) !important;
+}
+body.light-theme .member-card h1,
+body.light-theme .member-card h2,
+body.light-theme .member-card h3,
+body.light-theme .member-card h4,
+body.light-theme .member-card p,
+body.light-theme .member-card label,
+body.light-theme .member-card strong,
+body.light-theme #settings .member-card * {
+  color: #303936 !important;
+  opacity: 1 !important;
+}
+body.light-theme .member-card .small,
+body.light-theme .member-card small {
+  color: #515B56 !important;
+}
+body.light-theme #settings,
+body.light-theme #profile,
+body.light-theme #nearbyPage,
+body.light-theme #matches,
+body.light-theme #likes,
+body.light-theme #premium,
+body.light-theme #messages,
+body.light-theme #discoveryPreferencesPage,
+body.light-theme #callHistoryPage,
+body.light-theme #voiceCallHistory {
+  background: #F8F4EA !important;
+  color: #303936 !important;
+}
+body.light-theme #settings a,
+body.light-theme #profile a,
+body.light-theme #nearbyPage a,
+body.light-theme #matches a,
+body.light-theme #likes a {
+  color: #254C46 !important;
+}
+body.light-theme #settings button.btn.primary,
+body.light-theme #settings button.primary,
+body.light-theme #settings #enablePushNotifications,
+body.light-theme #settings #openReferrals,
+body.light-theme #settings #saveSettings {
+  background: #254C46 !important;
+  border-color: #254C46 !important;
+  color: #FFFFFF !important;
+}
+body.light-theme #settings button.btn.secondary,
+body.light-theme #profile button.btn.secondary,
+body.light-theme #nearbyPage button.btn.secondary {
+  background: #FFFFFF !important;
+  border-color: #B9C9C2 !important;
+  color: #254C46 !important;
+}
+body.light-theme #bottomNavigation {
+  background: #FFFFFF !important;
+  border-top: 1px solid #E5DCCB !important;
+  box-shadow: 0 -4px 16px rgba(55,47,31,.06) !important;
+}
+body.light-theme #bottomNavigation button {
+  color: #515B56 !important;
+  background: transparent !important;
+}
+body.light-theme #bottomNavigation button.active {
+  background: #EAF0EC !important;
+  color: #254C46 !important;
+}
+body.light-theme #bottomNavigation .nav-icon {
+  color: inherit !important;
+  filter: none !important;
+}
+body.light-theme #bottomNavigation .nav-badge {
+  background: #C39A52 !important;
+  color: #241B0C !important;
+  border: 1px solid #FFFFFF !important;
+}
+
+/* Events, verification and forms should use the same readable light palette. */
+body.light-theme #eventsPage,
+body.light-theme #verificationPage,
+body.light-theme #adminPanel {
+  background: #F8F4EA !important;
+  color: #303936 !important;
+}
+body.light-theme #eventsPage .events-heading,
+body.light-theme #eventsPage .events-host-intro,
+body.light-theme #eventsPage .events-info-card,
+body.light-theme #eventsPage .events-fee-card,
+body.light-theme #eventsPage .event-card,
+body.light-theme #eventsPage .event-demo-card,
+body.light-theme #eventsPage .events-toolbar,
+body.light-theme #verificationPage .member-card {
+  background: #FFFFFF !important;
+  border-color: #E5DCCB !important;
+  color: #303936 !important;
+}
+body.light-theme #eventsPage h1,
+body.light-theme #eventsPage h2,
+body.light-theme #eventsPage h3,
+body.light-theme #eventsPage p,
+body.light-theme #eventsPage label,
+body.light-theme #verificationPage h1,
+body.light-theme #verificationPage h2,
+body.light-theme #verificationPage h3,
+body.light-theme #verificationPage p,
+body.light-theme #verificationPage label {
+  color: #303936 !important;
+}
+body.light-theme #eventsPage button.primary,
+body.light-theme #eventsPage .btn.primary,
+body.light-theme #verificationPage button.primary,
+body.light-theme #verificationPage .btn.primary {
+  background: #254C46 !important;
+  border-color: #254C46 !important;
+  color: #FFFFFF !important;
+}
+body.light-theme #eventsPage input,
+body.light-theme #eventsPage select,
+body.light-theme #eventsPage textarea,
+body.light-theme #verificationPage input,
+body.light-theme #verificationPage select,
+body.light-theme #verificationPage textarea {
+  background: #FFFFFF !important;
+  color: #303936 !important;
+  border-color: #D8D0C2 !important;
+}
+
 </style>
 <script src="/match-performance-engine.js?v=3"></script>
 <script src="/match-intelligence-engine.js?v=1"></script>

@@ -12467,9 +12467,21 @@ async function loadNearby(){
   }
 
   try{
-    const viewerPremium = await matchHasAdvancedFilters();
-    const canRewind = await matchCanRewind();
-    const canBoost = await matchCanBoost();
+    const entitlementStartedAt = performance.now();
+    const [
+      viewerPremium,
+      canRewind,
+      canBoost,
+      ,
+      allSavedPreferences
+    ] = await Promise.all([
+      matchHasAdvancedFilters(),
+      matchCanRewind(),
+      matchCanBoost(),
+      refreshDailyLikeCounter(),
+      getCurrentAccountDiscoveryPreferences()
+    ]);
+    console.debug("[The Match][Discover] entitlement/preferences ready", Math.round(performance.now() - entitlementStartedAt), "ms");
     $("rewindSwipeBtn").textContent = canRewind ? "↶ Rewind" : "↶ Rewind 🔒";
     $("profileBoostBtn").textContent = canBoost ? "✦ Boost my profile" : "✦ Boost my profile 🔒";
     const greeting = $("greeting");
@@ -12483,8 +12495,6 @@ async function loadNearby(){
       ownBadge.style.cssText = "display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;margin-left:7px;border-radius:50%;background:linear-gradient(135deg,#f6dfaa,#bd8b39);color:#241a08;font-size:17px;font-weight:900;box-shadow:0 2px 10px rgba(226,193,125,.35);";
       greeting.appendChild(ownBadge);
     }
-    await refreshDailyLikeCounter();
-    const allSavedPreferences = await getCurrentAccountDiscoveryPreferences();
     // City/area discovery is available to every member. Other advanced filters
     // remain Premium-only.
     const straightMode = currentMemberCommunity === "straight";
@@ -12524,9 +12534,12 @@ async function loadNearby(){
     // Refresh the shared device location before querying Discover. If permission is
 // unavailable, the secure RPC may still use the last fresh saved location.
 await refreshNearbyCurrentLocation();
-const { data: eligibleRows, error: eligibilityError } = await db.rpc(
-  "matchmaking_eligible_candidate_ids",
-  {
+const candidateFetchStartedAt = performance.now();
+const [
+  { data: eligibleRows, error: eligibilityError },
+  { data: peopleData, error }
+] = await Promise.all([
+  db.rpc("matchmaking_eligible_candidate_ids", {
     p_max_distance_km: maxDistance,
     p_min_age: minAge,
     p_max_age: maxAge,
@@ -12536,22 +12549,18 @@ const { data: eligibleRows, error: eligibilityError } = await db.rpc(
     p_verified_only: viewerPremium && !!savedPreferences.verifiedOnly,
     p_connection_goal: lookingFor || null,
     p_max_results: 100
-  }
-);
-if (eligibilityError) throw eligibilityError;
-const eligibleIds = new Set((eligibleRows || []).map(row => row.user_id));
-
-const { data: peopleData, error } = await db.rpc(
-  "discover_profiles_secure",
-  {
+  }),
+  db.rpc("discover_profiles_secure", {
     p_max_distance_km: maxDistance,
     p_min_age: minAge,
     p_max_age: maxAge,
     p_city: preferredLocation || null
-  }
-);
-
+  })
+]);
+if (eligibilityError) throw eligibilityError;
 if (error) throw error;
+console.debug("[The Match][Discover] secure candidate RPCs ready", Math.round(performance.now() - candidateFetchStartedAt), "ms");
+const eligibleIds = new Set((eligibleRows || []).map(row => row.user_id));
 
 const viewerCityForDistance = ($("city")?.value || "").trim();
 let people = (peopleData || []).filter(person => eligibleIds.has(person.id)).map(p => {
@@ -12566,25 +12575,31 @@ let people = (peopleData || []).filter(person => eligibleIds.has(person.id)).map
   };
 });
     
-    people = await attachSharedDatingDetails(people);
-     const { data: ownLifestyleDetails, error: ownLifestyleError } = await db
-       .from("member_dating_details")
-       .select("interests,smoking,drinking,activity_level,pets,children,favorite_music,favorite_movies,favorite_food,education_level,occupation")
-       .eq("user_id", currentUser.id)
-       .maybeSingle();
-     if (ownLifestyleError) throw ownLifestyleError;
-     const viewerLifestyleDetails = ownLifestyleDetails || {};
-     people = applyLifestyleDiscoveryScores(people, viewerLifestyleDetails);
+    const enrichmentStartedAt = performance.now();
     const discoverIds = people.map(p => p.id);
+    const [
+      enrichedPeople,
+      { data: ownLifestyleDetails, error: ownLifestyleError },
+      { data: verificationProfiles, error: verificationError }
+    ] = await Promise.all([
+      attachSharedDatingDetails(people),
+      db.from("member_dating_details")
+        .select("interests,smoking,drinking,activity_level,pets,children,favorite_music,favorite_movies,favorite_food,education_level,occupation")
+        .eq("user_id", currentUser.id)
+        .maybeSingle(),
+      discoverIds.length
+        ? db.from("profiles")
+            .select("id,is_verified,verification_level,gender_presentation,city,created_at,pronouns")
+            .in("id", discoverIds)
+        : Promise.resolve({ data: [], error: null })
+    ]);
+    if (ownLifestyleError) throw ownLifestyleError;
+    if (verificationError) throw verificationError;
+    let viewerLifestyleDetails = ownLifestyleDetails || {};
+    people = applyLifestyleDiscoveryScores(enrichedPeople, viewerLifestyleDetails);
+    console.debug("[The Match][Discover] profile enrichment ready", Math.round(performance.now() - enrichmentStartedAt), "ms");
 
     if (discoverIds.length) {
-      const { data: verificationProfiles, error: verificationError } =
-        await db
-          .from("profiles")
-          .select("id,is_verified,verification_level,gender_presentation,city,created_at,pronouns")
-          .in("id", discoverIds);
-
-      if (verificationError) throw verificationError;
 
       const verificationById = new Map(
         (verificationProfiles || []).map(profile => [
@@ -12635,20 +12650,22 @@ let people = (peopleData || []).filter(person => eligibleIds.has(person.id)).map
     people = shuffleDiscoverProfiles(people);
 
     
-    const { data: myLikes, error: myLikesError } = await db
-  .from("likes")
-  .select("liked_id")
-  .eq("liker_id", currentUser.id);
-
-if (myLikesError) throw myLikesError;
-
-const { data: myPasses, error: myPassesError } = await db
-  .from("profile_passes")
-  .select("passed_id,created_at")
-  .eq("passer_id", currentUser.id)
-  .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
-
-if (myPassesError) throw myPassesError;
+    const swipeHistoryStartedAt = performance.now();
+    const [
+      { data: myLikes, error: myLikesError },
+      { data: myPasses, error: myPassesError }
+    ] = await Promise.all([
+      db.from("likes")
+        .select("liked_id")
+        .eq("liker_id", currentUser.id),
+      db.from("profile_passes")
+        .select("passed_id,created_at")
+        .eq("passer_id", currentUser.id)
+        .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+    ]);
+    if (myLikesError) throw myLikesError;
+    if (myPassesError) throw myPassesError;
+    console.debug("[The Match][Discover] swipe history ready", Math.round(performance.now() - swipeHistoryStartedAt), "ms");
 
 const alreadyLiked = new Set((myLikes || []).map(x => x.liked_id));
 const recentlyPassed = new Set((myPasses || []).map(x => x.passed_id));
@@ -12800,17 +12817,25 @@ if (!people.length && viewerPremium && savedPreferences.expandRange && (preferre
 
     const discoverMemberIds = people.map(person => person.id);
 if (discoverMemberIds.length) {
-  const { data: premiumRows, error: premiumRowsError } = await db.rpc("get_active_premium_member_ids", { p_user_ids: discoverMemberIds });
+  const badgeAndBoostStartedAt = performance.now();
+  const [
+    { data: premiumRows, error: premiumRowsError },
+    { data: activeBadgeRows, error: activeBadgeError },
+    { data: boostedRows, error: boostedError }
+  ] = await Promise.all([
+    db.rpc("get_active_premium_member_ids", { p_user_ids: discoverMemberIds }),
+    db.rpc("get_active_profile_badge_ids", { p_user_ids: discoverMemberIds }),
+    db.rpc("get_active_discover_boost_ids", { p_user_ids: discoverMemberIds })
+  ]);
   if (premiumRowsError) throw premiumRowsError;
+  if (activeBadgeError) throw activeBadgeError;
+  if (boostedError) throw boostedError;
   const premiumSet = new Set((premiumRows || []).map(row => row.user_id));
   people = people.map(person => ({ ...person, is_premium: premiumSet.has(person.id) }));
-  const { data: activeBadgeRows, error: activeBadgeError } = await db.rpc("get_active_profile_badge_ids", { p_user_ids: discoverMemberIds });
-  if (activeBadgeError) throw activeBadgeError;
   const activeBadgeSet = new Set((activeBadgeRows || []).map(row => row.user_id));
   people = people.map(person => ({ ...person, has_special_badge: activeBadgeSet.has(person.id) }));
-  const { data: boostedRows, error: boostedError } = await db.rpc("get_active_discover_boost_ids", { p_user_ids: discoverMemberIds });
-  if (boostedError) throw boostedError;
   const boostedSet = new Set(boostedRows || []);
+  console.debug("[The Match][Discover] premium/badge/boost metadata ready", Math.round(performance.now() - badgeAndBoostStartedAt), "ms");
   people.sort((a,b) => Number(boostedSet.has(b.id)) - Number(boostedSet.has(a.id)));
 }
 

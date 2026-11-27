@@ -1047,6 +1047,34 @@ $function$;
 revoke all on function public.admin_record_duplicate_advertising_payment(uuid,uuid,uuid,integer,text,text) from public, anon, authenticated;
 grant execute on function public.admin_record_duplicate_advertising_payment(uuid,uuid,uuid,integer,text,text) to service_role;
 
+
+create or replace function public.cancel_unpaid_advertising_campaign(
+  p_advertiser_id uuid,
+  p_campaign_id uuid
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_campaign public.advertising_campaigns%rowtype;
+begin
+  perform private.require_advertising_service_role();
+  select * into v_campaign from public.advertising_campaigns
+  where id = p_campaign_id and advertiser_id = p_advertiser_id for update;
+  if not found or v_campaign.status <> 'awaiting_payment'
+     or v_campaign.payment_status <> 'awaiting_payment'
+     or exists (select 1 from public.advertising_payments p where p.campaign_id = p_campaign_id) then
+    raise exception 'Only unpaid campaign reservations can be cancelled for free' using errcode = '22023';
+  end if;
+  update public.advertising_campaigns set status = 'cancelled' where id = p_campaign_id;
+  return true;
+end;
+$function$;
+revoke all on function public.cancel_unpaid_advertising_campaign(uuid,uuid) from public, anon, authenticated;
+grant execute on function public.cancel_unpaid_advertising_campaign(uuid,uuid) to service_role;
+
 create or replace function public.request_advertising_refund(
   p_advertiser_id uuid,
   p_payment_id uuid,

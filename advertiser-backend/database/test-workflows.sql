@@ -32,7 +32,10 @@ $test$;
 do $grant$
 begin
   if to_regprocedure('private.is_dual_member_advertiser()') is not null then
-    grant execute on function private.is_dual_member_advertiser() to supabase_auth_admin;
+    execute 'grant execute on function private.is_dual_member_advertiser() to supabase_auth_admin';
+  end if;
+  if to_regprocedure('public.is_dual_member_advertiser()') is not null then
+    execute 'grant execute on function public.is_dual_member_advertiser() to supabase_auth_admin';
   end if;
 end;
 $grant$;

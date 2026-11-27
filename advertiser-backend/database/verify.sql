@@ -15,6 +15,7 @@ begin
     'advertising_impressions',
     'advertising_clicks',
     'advertising_unique_clicks',
+    'advertising_unique_clicks',
     'advertising_refunds',
     'advertising_admin_audit'
   ] loop

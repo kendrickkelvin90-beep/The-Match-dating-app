@@ -1,11 +1,115 @@
--- The Match Advertiser Project — isolated database bootstrap
--- Run ONLY in the separate advertiser Supabase project.
--- Never run this in the production Match member project.
+-- The Match sponsored advertising bootstrap for the EXISTING Match Supabase project.
+-- Apply only after the shared-project security review and regression tests pass.
+-- This script preserves current anon/authenticated function access while isolating
+-- advertiser sessions behind a dedicated Postgres role. Do not run before approval.
 begin;
 
 create schema if not exists private;
+
+-- Preserve the effective EXECUTE permissions of every existing public/private
+-- function for all current roles, while removing implicit PUBLIC execution.
+-- This prevents the new advertiser database role from inheriting access to
+-- member SECURITY DEFINER functions. The transaction makes this all-or-nothing.
+set local search_path = public;
+create temporary table _advertising_function_acl_before on commit drop as
+select p.oid as function_oid, r.rolname
+from pg_catalog.pg_proc p
+join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+cross join pg_catalog.pg_roles r
+where n.nspname in ('public','private')
+  and r.rolname not in ('public','advertiser')
+  and has_function_privilege(r.oid,p.oid,'EXECUTE');
+
+revoke execute on all functions in schema public, private from public;
+do $acl_restore$
+declare rec record;
+begin
+  for rec in
+    select b.function_oid,b.rolname,p.oid::regprocedure as signature
+    from _advertising_function_acl_before b
+    join pg_catalog.pg_proc p on p.oid=b.function_oid
+  loop
+    execute format('grant execute on function %s to %I',rec.signature,rec.rolname);
+  end loop;
+end;
+$acl_restore$;
+
+-- Preserve the existing default behavior for Match roles on future functions,
+-- but do not grant future functions to PUBLIC (and therefore advertisers).
+alter default privileges for role postgres in schema public
+  revoke execute on functions from public;
+alter default privileges for role postgres in schema public
+  grant execute on functions to anon, authenticated, service_role;
+alter default privileges for role postgres in schema private
+  revoke execute on functions from public;
+alter default privileges for role postgres in schema private
+  grant execute on functions to anon, authenticated, service_role;
+
+do $role$
+begin
+  if not exists (select 1 from pg_catalog.pg_roles where rolname='advertiser') then
+    create role advertiser nologin noinherit nobypassrls;
+  end if;
+end;
+$role$;
+grant advertiser to authenticator;
+grant usage on schema public to advertiser;
 revoke all on schema private from public, anon;
-grant usage on schema private to authenticated, service_role;
+grant usage on schema private to authenticated, advertiser, service_role, supabase_auth_admin;
+
+-- A signed-in advertiser receives the dedicated Postgres role only after Auth
+-- confirms the account was created for advertising and it has no dating profile.
+create table if not exists private.advertiser_auth_registry (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+alter table private.advertiser_auth_registry enable row level security;
+revoke all on private.advertiser_auth_registry from public, anon, authenticated, advertiser, service_role;
+grant select, insert on private.advertiser_auth_registry to supabase_auth_admin;
+drop policy if exists advertiser_auth_hook_registry_access on private.advertiser_auth_registry;
+create policy advertiser_auth_hook_registry_access on private.advertiser_auth_registry
+  for all to supabase_auth_admin using (true) with check (true);
+
+-- Auth hook may inspect only profile IDs to prevent a dating-member account
+-- from being silently converted into an advertiser account.
+grant usage on schema public to supabase_auth_admin;
+grant select (id) on public.profiles to supabase_auth_admin;
+drop policy if exists advertiser_auth_hook_member_profile_guard on public.profiles;
+create policy advertiser_auth_hook_member_profile_guard on public.profiles
+  for select to supabase_auth_admin using (true);
+
+create or replace function private.custom_access_token_hook(event jsonb)
+returns jsonb
+language plpgsql
+set search_path = ''
+as $hook$
+declare
+  v_user_id uuid := nullif(event->>'user_id','')::uuid;
+  v_claims jsonb := coalesce(event->'claims','{}'::jsonb);
+  v_user_metadata jsonb := coalesce(event->'claims'->'user_metadata','{}'::jsonb);
+begin
+  if v_user_id is not null
+     and v_user_metadata->>'account_type' = 'advertiser'
+     and not exists (select 1 from public.profiles p where p.id=v_user_id) then
+    insert into private.advertiser_auth_registry(user_id)
+    values (v_user_id) on conflict (user_id) do nothing;
+  end if;
+
+  if v_user_id is not null and exists (
+    select 1 from private.advertiser_auth_registry r where r.user_id=v_user_id
+  ) then
+    v_claims := jsonb_set(v_claims,'{role}',to_jsonb('advertiser'::text),true);
+  end if;
+
+  return jsonb_build_object('claims',v_claims);
+end;
+$hook$;
+revoke all on function private.custom_access_token_hook(jsonb)
+  from public, anon, authenticated, advertiser, service_role;
+grant execute on function private.custom_access_token_hook(jsonb) to supabase_auth_admin;
+
+revoke all on schema private from public, anon;
+grant usage on schema private to authenticated, advertiser, service_role, supabase_auth_admin;
 
 create table if not exists public.advertising_admins (
   user_id uuid primary key references auth.users(id) on delete cascade,
@@ -226,7 +330,7 @@ begin
   return new;
 end;
 $function$;
-revoke all on function private.touch_advertising_updated_at() from public, anon, authenticated;
+revoke all on function private.touch_advertising_updated_at() from public, anon, authenticated, advertiser;
 
 drop trigger if exists advertiser_profiles_touch_updated_at on public.advertiser_profiles;
 create trigger advertiser_profiles_touch_updated_at before update on public.advertiser_profiles
@@ -238,31 +342,9 @@ drop trigger if exists advertising_design_requests_touch_updated_at on public.ad
 create trigger advertising_design_requests_touch_updated_at before update on public.advertising_design_requests
 for each row execute function private.touch_advertising_updated_at();
 
-create or replace function private.create_advertiser_profile()
-returns trigger
-language plpgsql
-security definer
-set search_path = ''
-as $function$
-begin
-  insert into public.advertiser_profiles(user_id, advertiser_type, display_name)
-  values (
-    new.id,
-    case when coalesce(new.raw_user_meta_data ->> 'advertiser_type','') = 'business' then 'business' else 'individual' end,
-    case when char_length(coalesce(nullif(btrim(new.raw_user_meta_data ->> 'display_name'), ''), split_part(coalesce(new.email,''), '@', 1))) >= 2
-      then coalesce(nullif(btrim(new.raw_user_meta_data ->> 'display_name'), ''), split_part(coalesce(new.email,''), '@', 1))
-      else 'Advertiser' end
-  )
-  on conflict (user_id) do nothing;
-  return new;
-end;
-$function$;
-revoke all on function private.create_advertiser_profile() from public, anon, authenticated;
-
-drop trigger if exists on_advertiser_auth_user_created on auth.users;
-create trigger on_advertiser_auth_user_created
-  after insert on auth.users
-  for each row execute function private.create_advertiser_profile();
+-- Advertiser profiles are created by the authenticated advertising API.
+-- Never attach a trigger to auth.users: normal Match member signups must not
+-- create advertiser records.
 
 create or replace function private.is_advertising_admin()
 returns boolean
@@ -276,8 +358,8 @@ as $function$
     where a.user_id = (select auth.uid())
   );
 $function$;
-revoke all on function private.is_advertising_admin() from public, anon;
-grant execute on function private.is_advertising_admin() to authenticated;
+revoke all on function private.is_advertising_admin() from public, anon, authenticated, service_role, advertiser;
+grant execute on function private.is_advertising_admin() to advertiser;
 
 alter table public.advertising_admins enable row level security;
 alter table public.advertiser_profiles enable row level security;
@@ -297,13 +379,13 @@ revoke all on public.advertising_admins, public.advertiser_profiles,
   public.advertising_payments, public.advertising_design_requests,
   public.advertising_design_payments, public.advertising_impressions, public.advertising_clicks,
   public.advertising_refunds, public.advertising_admin_audit
-from anon, authenticated;
+from anon, authenticated, advertiser;
 
-grant select on public.advertiser_profiles to authenticated;
-grant update (display_name, contact_name, phone) on public.advertiser_profiles to authenticated;
+grant select on public.advertiser_profiles to advertiser;
+grant update (display_name, contact_name, phone) on public.advertiser_profiles to advertiser;
 grant select on public.advertising_campaigns, public.advertising_creatives,
   public.advertising_payments, public.advertising_design_requests,
-  public.advertising_design_payments, public.advertising_refunds to authenticated;
+  public.advertising_design_payments, public.advertising_refunds to advertiser;
 grant select on public.advertising_admins to service_role;
 grant all on public.advertiser_profiles, public.advertising_campaigns,
   public.advertising_creatives, public.advertising_payments,
@@ -312,26 +394,26 @@ grant all on public.advertiser_profiles, public.advertising_campaigns,
   public.advertising_admins, public.advertising_admin_audit to service_role;
 
 create policy advertiser_profile_owner_read on public.advertiser_profiles
-  for select to authenticated using (user_id = (select auth.uid()) or (select private.is_advertising_admin()));
+  for select to advertiser using (user_id = (select auth.uid()) or (select private.is_advertising_admin()));
 create policy advertiser_profile_owner_update on public.advertiser_profiles
-  for update to authenticated using (user_id = (select auth.uid()))
+  for update to advertiser using (user_id = (select auth.uid()))
   with check (user_id = (select auth.uid()));
 
 create policy advertising_campaign_owner_read on public.advertising_campaigns
-  for select to authenticated using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
+  for select to advertiser using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
 create policy advertising_creative_owner_read on public.advertising_creatives
-  for select to authenticated using (
+  for select to advertiser using (
     exists (select 1 from public.advertising_campaigns c
       where c.id = campaign_id and (c.advertiser_id = (select auth.uid()) or (select private.is_advertising_admin())))
   );
 create policy advertising_payment_owner_read on public.advertising_payments
-  for select to authenticated using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
+  for select to advertiser using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
 create policy advertising_design_owner_read on public.advertising_design_requests
-  for select to authenticated using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
+  for select to advertiser using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
 create policy advertising_design_payment_owner_read on public.advertising_design_payments
-  for select to authenticated using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
+  for select to advertiser using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
 create policy advertising_refund_owner_read on public.advertising_refunds
-  for select to authenticated using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
+  for select to advertiser using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
 
 -- Analytics event rows, admin audit and the admin allowlist are never exposed
 -- to normal advertiser clients. Service-role server functions own all writes.
@@ -356,7 +438,7 @@ begin
   end if;
 end;
 $function$;
-revoke all on function private.require_advertising_service_role() from public, anon, authenticated;
+revoke all on function private.require_advertising_service_role() from public, anon, authenticated, advertiser;
 grant execute on function private.require_advertising_service_role() to service_role;
 
 create or replace function public.create_advertising_campaign(
@@ -411,7 +493,7 @@ begin
   return query select v_campaign_id, p_payment_reference, p_payment_deadline_at, v_amount;
 end;
 $function$;
-revoke all on function public.create_advertising_campaign(uuid,text,text,text,text,integer,text,timestamptz,text,timestamptz) from public, anon, authenticated;
+revoke all on function public.create_advertising_campaign(uuid,text,text,text,text,integer,text,timestamptz,text,timestamptz) from public, anon, authenticated, advertiser;
 grant execute on function public.create_advertising_campaign(uuid,text,text,text,text,integer,text,timestamptz,text,timestamptz) to service_role;
 
 create or replace function public.submit_advertising_payment(
@@ -466,7 +548,7 @@ begin
   return v_payment_id;
 end;
 $function$;
-revoke all on function public.submit_advertising_payment(uuid,uuid,integer,text,text) from public, anon, authenticated;
+revoke all on function public.submit_advertising_payment(uuid,uuid,integer,text,text) from public, anon, authenticated, advertiser;
 grant execute on function public.submit_advertising_payment(uuid,uuid,integer,text,text) to service_role;
 
 create or replace function public.admin_confirm_advertising_payment(
@@ -523,7 +605,7 @@ begin
   return true;
 end;
 $function$;
-revoke all on function public.admin_confirm_advertising_payment(uuid,uuid,text) from public, anon, authenticated;
+revoke all on function public.admin_confirm_advertising_payment(uuid,uuid,text) from public, anon, authenticated, advertiser;
 grant execute on function public.admin_confirm_advertising_payment(uuid,uuid,text) to service_role;
 
 create or replace function public.admin_review_advertising_campaign(
@@ -581,7 +663,7 @@ begin
   return v_status;
 end;
 $function$;
-revoke all on function public.admin_review_advertising_campaign(uuid,uuid,boolean,text) from public, anon, authenticated;
+revoke all on function public.admin_review_advertising_campaign(uuid,uuid,boolean,text) from public, anon, authenticated, advertiser;
 grant execute on function public.admin_review_advertising_campaign(uuid,uuid,boolean,text) to service_role;
 
 create or replace function public.admin_set_advertising_campaign_state(
@@ -620,7 +702,7 @@ begin
   return v_status;
 end;
 $function$;
-revoke all on function public.admin_set_advertising_campaign_state(uuid,uuid,text) from public, anon, authenticated;
+revoke all on function public.admin_set_advertising_campaign_state(uuid,uuid,text) from public, anon, authenticated, advertiser;
 grant execute on function public.admin_set_advertising_campaign_state(uuid,uuid,text) to service_role;
 
 
@@ -675,7 +757,7 @@ begin
   return v_id;
 end;
 $function$;
-revoke all on function public.replace_advertising_creative(uuid,uuid,text,text,text,text,bigint,numeric,integer,integer) from public, anon, authenticated;
+revoke all on function public.replace_advertising_creative(uuid,uuid,text,text,text,text,bigint,numeric,integer,integer) from public, anon, authenticated, advertiser;
 grant execute on function public.replace_advertising_creative(uuid,uuid,text,text,text,text,bigint,numeric,integer,integer) to service_role;
 
 create or replace function public.process_advertising_campaign_clock()
@@ -722,7 +804,7 @@ begin
   );
 end;
 $function$;
-revoke all on function public.process_advertising_campaign_clock() from public, anon, authenticated;
+revoke all on function public.process_advertising_campaign_clock() from public, anon, authenticated, advertiser;
 grant execute on function public.process_advertising_campaign_clock() to service_role;
 
 
@@ -806,7 +888,7 @@ begin
   return v_inserted = 1;
 end;
 $function$;
-revoke all on function public.record_advertising_event(uuid,text,text) from public, anon, authenticated;
+revoke all on function public.record_advertising_event(uuid,text,text) from public, anon, authenticated, advertiser;
 grant execute on function public.record_advertising_event(uuid,text,text) to service_role;
 
 
@@ -863,7 +945,7 @@ begin
   return query select v_request,v_payment,v_fee,p_payment_reference;
 end;
 $function$;
-revoke all on function public.create_advertising_design_request(uuid,text,uuid,text,text) from public, anon, authenticated;
+revoke all on function public.create_advertising_design_request(uuid,text,uuid,text,text) from public, anon, authenticated, advertiser;
 grant execute on function public.create_advertising_design_request(uuid,text,uuid,text,text) to service_role;
 
 create or replace function public.submit_advertising_design_payment(
@@ -894,7 +976,7 @@ begin
   return true;
 end;
 $function$;
-revoke all on function public.submit_advertising_design_payment(uuid,uuid,text) from public, anon, authenticated;
+revoke all on function public.submit_advertising_design_payment(uuid,uuid,text) from public, anon, authenticated, advertiser;
 grant execute on function public.submit_advertising_design_payment(uuid,uuid,text) to service_role;
 
 create or replace function public.admin_confirm_advertising_design_payment(
@@ -930,7 +1012,7 @@ begin
   return true;
 end;
 $function$;
-revoke all on function public.admin_confirm_advertising_design_payment(uuid,uuid,text) from public, anon, authenticated;
+revoke all on function public.admin_confirm_advertising_design_payment(uuid,uuid,text) from public, anon, authenticated, advertiser;
 grant execute on function public.admin_confirm_advertising_design_payment(uuid,uuid,text) to service_role;
 
 create or replace function public.advertiser_request_design_revision(
@@ -958,7 +1040,7 @@ begin
   return v_request.revisions_used + 1;
 end;
 $function$;
-revoke all on function public.advertiser_request_design_revision(uuid,uuid) from public, anon, authenticated;
+revoke all on function public.advertiser_request_design_revision(uuid,uuid) from public, anon, authenticated, advertiser;
 grant execute on function public.advertiser_request_design_revision(uuid,uuid) to service_role;
 
 create or replace function public.admin_update_advertising_design_request(
@@ -1019,7 +1101,7 @@ begin
   return p_status;
 end;
 $function$;
-revoke all on function public.admin_update_advertising_design_request(uuid,uuid,text,timestamptz,text,text) from public, anon, authenticated;
+revoke all on function public.admin_update_advertising_design_request(uuid,uuid,text,timestamptz,text,text) from public, anon, authenticated, advertiser;
 grant execute on function public.admin_update_advertising_design_request(uuid,uuid,text,timestamptz,text,text) to service_role;
 
 create or replace function public.admin_record_duplicate_advertising_payment(
@@ -1064,7 +1146,7 @@ begin
   return v_payment_id;
 end;
 $function$;
-revoke all on function public.admin_record_duplicate_advertising_payment(uuid,uuid,uuid,integer,text,text) from public, anon, authenticated;
+revoke all on function public.admin_record_duplicate_advertising_payment(uuid,uuid,uuid,integer,text,text) from public, anon, authenticated, advertiser;
 grant execute on function public.admin_record_duplicate_advertising_payment(uuid,uuid,uuid,integer,text,text) to service_role;
 
 
@@ -1092,7 +1174,7 @@ begin
   return true;
 end;
 $function$;
-revoke all on function public.cancel_unpaid_advertising_campaign(uuid,uuid) from public, anon, authenticated;
+revoke all on function public.cancel_unpaid_advertising_campaign(uuid,uuid) from public, anon, authenticated, advertiser;
 grant execute on function public.cancel_unpaid_advertising_campaign(uuid,uuid) to service_role;
 
 create or replace function public.request_advertising_refund(
@@ -1133,7 +1215,7 @@ begin
   return v_refund_id;
 end;
 $function$;
-revoke all on function public.request_advertising_refund(uuid,uuid,text) from public, anon, authenticated;
+revoke all on function public.request_advertising_refund(uuid,uuid,text) from public, anon, authenticated, advertiser;
 grant execute on function public.request_advertising_refund(uuid,uuid,text) to service_role;
 
 create or replace function public.admin_review_advertising_refund(
@@ -1172,7 +1254,7 @@ begin
   return v_status;
 end;
 $function$;
-revoke all on function public.admin_review_advertising_refund(uuid,uuid,boolean,text) from public, anon, authenticated;
+revoke all on function public.admin_review_advertising_refund(uuid,uuid,boolean,text) from public, anon, authenticated, advertiser;
 grant execute on function public.admin_review_advertising_refund(uuid,uuid,boolean,text) to service_role;
 
 create or replace function public.admin_mark_advertising_refund_paid(
@@ -1218,7 +1300,7 @@ begin
   return true;
 end;
 $function$;
-revoke all on function public.admin_mark_advertising_refund_paid(uuid,uuid,text) from public, anon, authenticated;
+revoke all on function public.admin_mark_advertising_refund_paid(uuid,uuid,text) from public, anon, authenticated, advertiser;
 grant execute on function public.admin_mark_advertising_refund_paid(uuid,uuid,text) to service_role;
 
 create or replace function public.get_advertising_admin_overview(p_admin_id uuid)
@@ -1255,7 +1337,7 @@ begin
     )::bigint;
 end;
 $function$;
-revoke all on function public.get_advertising_admin_overview(uuid) from public, anon, authenticated;
+revoke all on function public.get_advertising_admin_overview(uuid) from public, anon, authenticated, advertiser;
 grant execute on function public.get_advertising_admin_overview(uuid) to service_role;
 
 create or replace function public.get_my_advertising_campaign_metrics(p_campaign_id uuid)
@@ -1310,7 +1392,7 @@ begin
 end;
 $function$;
 revoke all on function public.get_my_advertising_campaign_metrics(uuid) from public, anon;
-grant execute on function public.get_my_advertising_campaign_metrics(uuid) to authenticated;
+grant execute on function public.get_my_advertising_campaign_metrics(uuid) to advertiser;
 
 -- Identity columns are written only by trusted server functions.
 grant usage, select on all sequences in schema public to service_role;
@@ -1342,11 +1424,11 @@ create index if not exists advertising_change_requests_admin_queue_idx
 alter table public.advertising_campaign_change_requests enable row level security;
 drop policy if exists advertising_change_requests_select_own on public.advertising_campaign_change_requests;
 create policy advertising_change_requests_select_own on public.advertising_campaign_change_requests
-  for select to authenticated using (
+  for select to advertiser using (
     advertiser_id = (select auth.uid()) or private.is_advertising_admin()
   );
 revoke all on public.advertising_campaign_change_requests from anon, authenticated;
-grant select on public.advertising_campaign_change_requests to authenticated;
+grant select on public.advertising_campaign_change_requests to advertiser;
 grant select, insert, update, delete on public.advertising_campaign_change_requests to service_role;
 
 create or replace function public.request_advertising_campaign_change(
@@ -1391,7 +1473,7 @@ begin
   return v_id;
 end;
 $function$;
-revoke all on function public.request_advertising_campaign_change(uuid,uuid,text,text,text,text,text,timestamptz,text) from public,anon,authenticated;
+revoke all on function public.request_advertising_campaign_change(uuid,uuid,text,text,text,text,text,timestamptz,text) from public,anon,authenticated,advertiser;
 grant execute on function public.request_advertising_campaign_change(uuid,uuid,text,text,text,text,text,timestamptz,text) to service_role;
 
 create or replace function public.attach_advertising_change_creative(
@@ -1422,7 +1504,7 @@ begin
   return v_id;
 end;
 $function$;
-revoke all on function public.attach_advertising_change_creative(uuid,uuid,text,text,text,text,bigint,numeric,integer,integer) from public,anon,authenticated;
+revoke all on function public.attach_advertising_change_creative(uuid,uuid,text,text,text,text,bigint,numeric,integer,integer) from public,anon,authenticated,advertiser;
 grant execute on function public.attach_advertising_change_creative(uuid,uuid,text,text,text,text,bigint,numeric,integer,integer) to service_role;
 
 create or replace function public.admin_review_advertising_campaign_change(
@@ -1480,7 +1562,7 @@ begin
   return v_status;
 end;
 $function$;
-revoke all on function public.admin_review_advertising_campaign_change(uuid,uuid,boolean,text) from public,anon,authenticated;
+revoke all on function public.admin_review_advertising_campaign_change(uuid,uuid,boolean,text) from public,anon,authenticated,advertiser;
 grant execute on function public.admin_review_advertising_campaign_change(uuid,uuid,boolean,text) to service_role;
 
 

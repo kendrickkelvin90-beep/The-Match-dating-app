@@ -53,6 +53,8 @@ begin
 end;
 $role$;
 grant advertiser to authenticator;
+grant usage on schema auth to advertiser;
+grant execute on function auth.uid(), auth.jwt() to advertiser;
 grant usage on schema public to advertiser;
 revoke all on schema private from public, anon;
 grant usage on schema private to authenticated, advertiser, service_role, supabase_auth_admin;

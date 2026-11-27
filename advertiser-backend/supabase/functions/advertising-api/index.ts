@@ -94,7 +94,7 @@ function isAdvertiserToken(token: string): boolean {
 
 async function authenticate(req: Request): Promise<{ user: User; caller: any; admin: any; isAdvertiser: boolean; isMatchAdmin: boolean } | null> {
   const header = req.headers.get("Authorization") ?? "";
-  const token = header.replace(/^Bearer\\s+/i, "");
+  const token = header.replace(/^Bearer\s+/i, "");
   if (!token || token === header || !supabaseUrl || !anonKey || !serviceKey) return null;
 
   const caller: any = createClient(supabaseUrl, anonKey, {

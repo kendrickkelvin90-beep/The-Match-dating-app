@@ -2,7 +2,7 @@
 -- Advertiser-only identities remain isolated; dual-role members retain authenticated access.
 begin;
 
-create or replace function public.is_dual_member_advertiser()
+create or replace function private.is_dual_member_advertiser()
 returns boolean
 language sql
 stable
@@ -11,8 +11,9 @@ set search_path = ''
 as $function$
   select exists (select 1 from public.profiles p where p.id = (select auth.uid()));
 $function$;
-revoke all on function public.is_dual_member_advertiser() from public;
-grant execute on function public.is_dual_member_advertiser() to anon, authenticated, authenticator, service_role;
+revoke all on function private.is_dual_member_advertiser() from public;
+grant usage on schema private to anon, authenticated, authenticator, service_role;
+grant execute on function private.is_dual_member_advertiser() to anon, authenticated, authenticator, service_role;
 
 create or replace function public.register_advertiser_account(p_user_id uuid)
 returns boolean
@@ -94,7 +95,7 @@ begin
   loop
     execute format('drop policy match_advertiser_data_boundary on %I.%I', rec.schemaname, rec.tablename);
     execute format(
-      'create policy match_advertiser_data_boundary on %I.%I as restrictive for all to public using ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'' or public.is_dual_member_advertiser()) with check ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'' or public.is_dual_member_advertiser())',
+      'create policy match_advertiser_data_boundary on %I.%I as restrictive for all to public using ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'' or private.is_dual_member_advertiser()) with check ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'' or private.is_dual_member_advertiser())',
       rec.schemaname, rec.tablename
     );
   end loop;
@@ -107,14 +108,14 @@ begin
   if to_regclass('storage.objects') is not null then
     drop policy if exists match_advertiser_data_boundary on storage.objects;
     create policy match_advertiser_data_boundary on storage.objects as restrictive for all to public
-      using ((current_user = 'supabase_auth_admin') or ((select auth.jwt()->>'user_role')) is distinct from 'advertiser' or public.is_dual_member_advertiser())
-      with check ((current_user = 'supabase_auth_admin') or ((select auth.jwt()->>'user_role')) is distinct from 'advertiser' or public.is_dual_member_advertiser());
+      using ((current_user = 'supabase_auth_admin') or ((select auth.jwt()->>'user_role')) is distinct from 'advertiser' or private.is_dual_member_advertiser())
+      with check ((current_user = 'supabase_auth_admin') or ((select auth.jwt()->>'user_role')) is distinct from 'advertiser' or private.is_dual_member_advertiser());
   end if;
   if to_regclass('realtime.messages') is not null then
     drop policy if exists match_advertiser_data_boundary on realtime.messages;
     create policy match_advertiser_data_boundary on realtime.messages as restrictive for all to public
-      using ((current_user = 'supabase_auth_admin') or ((select auth.jwt()->>'user_role')) is distinct from 'advertiser' or public.is_dual_member_advertiser())
-      with check ((current_user = 'supabase_auth_admin') or ((select auth.jwt()->>'user_role')) is distinct from 'advertiser' or public.is_dual_member_advertiser());
+      using ((current_user = 'supabase_auth_admin') or ((select auth.jwt()->>'user_role')) is distinct from 'advertiser' or private.is_dual_member_advertiser())
+      with check ((current_user = 'supabase_auth_admin') or ((select auth.jwt()->>'user_role')) is distinct from 'advertiser' or private.is_dual_member_advertiser());
   end if;
 end;
 $service_boundaries$;
@@ -132,7 +133,7 @@ begin
   end if;
 
   if coalesce((select auth.jwt()->>'role'), '') = 'authenticated'
-     and public.is_dual_member_advertiser() then
+     and private.is_dual_member_advertiser() then
     return;
   end if;
 

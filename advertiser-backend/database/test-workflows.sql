@@ -27,6 +27,16 @@ begin
   end if;
 end;
 $test$;
+-- Ensure the Auth hook can evaluate the profile RLS helper in the
+-- disposable integration database after its baseline schema is installed.
+do $grant$
+begin
+  if to_regprocedure('private.is_dual_member_advertiser()') is not null then
+    grant execute on function private.is_dual_member_advertiser() to supabase_auth_admin;
+  end if;
+end;
+$grant$;
+
 -- Existing Match members are explicitly allowed to add advertiser access
 -- to the same Auth identity; their dating profile remains intact.
 select public.register_advertiser_account('10000000-0000-4000-8000-000000000003');

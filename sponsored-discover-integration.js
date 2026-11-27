@@ -19,9 +19,10 @@
     if (!list || !discover || !db?.auth) return false;
     window.__matchSponsoredDiscoverLoaded = true;
     booted = true;
-  const organicSelector = ".discover-profile-card-stack,.member-card,.discover-option3-card";
-  const processed = new WeakSet();
-  const requested = new WeakSet();
+  // Count actual rendered profile cards, including nested and reused card elements.
+  const organicSelector = ".member-card,.discover-option3-card";
+  const lastFingerprint = new WeakMap();
+  const seenProfileKeys = new Set();
   const cardsByAnchor = new Map();
   let observer = null;
   let sequence = 0;
@@ -130,7 +131,7 @@
     const style = document.createElement("style");
     style.id = "match-sponsored-ad-styles";
     style.textContent = [
-      "#discover #profileList>.match-sponsored-ad-card{display:block;width:100%;max-width:100%;margin:18px 0 22px;overflow:hidden;border:1px solid rgba(214,180,110,.38);border-radius:22px;background:#15130f;color:#f6f0e5;box-sizing:border-box;}",
+      "#discover #profileList .match-sponsored-ad-card{display:block;width:100%;max-width:100%;margin:18px 0 22px;overflow:hidden;border:1px solid rgba(214,180,110,.38);border-radius:22px;background:#15130f;color:#f6f0e5;box-sizing:border-box;}",
       "#discover .match-sponsored-ad-media{position:relative;width:100%;aspect-ratio:4/5;max-height:720px;overflow:hidden;background:#0d0d0d;}",
       "#discover .match-sponsored-ad-image,#discover .match-sponsored-ad-video{display:block;width:100%;height:100%;object-fit:cover;object-position:center center;}",
       "#discover .match-sponsored-ad-body{display:flex;flex-direction:column;gap:8px;padding:16px;background:linear-gradient(155deg,#1b1915,#100f0d);}",
@@ -139,18 +140,20 @@
       "#discover .match-sponsored-ad-body p{margin:0;color:#d3cbbb;font-size:14px;line-height:1.45;}",
       "#discover .match-sponsored-ad-cta{align-self:stretch;min-height:48px;margin-top:4px;border:1px solid #d2aa62;border-radius:13px;background:linear-gradient(135deg,#f4dfad,#c99b4b);color:#33230b;font-size:14px;font-weight:800;}",
       "#discover .match-sponsored-ad-sound{position:absolute;right:12px;bottom:12px;border:1px solid #ffffff55;border-radius:999px;padding:8px 12px;background:#0009;color:#fff;font-size:11px;}",
-      "body.light-theme #discover #profileList>.match-sponsored-ad-card{background:#fffdf8;color:#211f1b;border-color:rgba(177,137,62,.32);}",
+      "body.light-theme #discover #profileList .match-sponsored-ad-card{background:#fffdf8;color:#211f1b;border-color:rgba(177,137,62,.32);}",
       "body.light-theme #discover .match-sponsored-ad-body{background:#fffdf8;}",
       "body.light-theme #discover .match-sponsored-ad-body h3{color:#211f1b;}",
       "body.light-theme #discover .match-sponsored-ad-body p{color:#625a4c;}",
-      "@media(min-width:900px){#discover #profileList>.match-sponsored-ad-card{max-width:620px;margin-left:auto;margin-right:auto;}}"
+      "@media(min-width:900px){#discover #profileList .match-sponsored-ad-card{max-width:620px;margin-left:auto;margin-right:auto;}}"
     ].join("");
     document.head.appendChild(style);
   }
 
   async function loadAd(anchor, slotIndex) {
-    if (requested.has(anchor)) return;
-    requested.add(anchor);
+    if (anchor.dataset.matchSponsoredLastSlot === String(slotIndex)) return;
+    anchor.dataset.matchSponsoredLastSlot = String(slotIndex);
+    const previousCard = cardsByAnchor.get(anchor);
+    if (previousCard) previousCard.remove();
     const request = async () => {
       const excluded = Array.from(cardsByAnchor.values()).filter((card) => card.isConnected).map((card) => card.dataset.campaignId).filter(Boolean);
       const response = await memberRequest("get-ad", {
@@ -203,24 +206,52 @@
     observer.observe(card);
   }
 
+  function profileFingerprint(card) {
+    const profileId = card.dataset.profileId || card.dataset.userId ||
+      card.dataset.memberId || card.getAttribute("data-profile-id") ||
+      card.getAttribute("data-user-id") || "";
+    const image = card.querySelector("img");
+    const imageUrl = image?.currentSrc || image?.src || image?.getAttribute("data-src") || "";
+    const heading = card.querySelector("h1,h2,h3,[class*='name']");
+    const name = (heading?.textContent || "").replace(/\s+/g, " ").trim();
+    if (!profileId && (!imageUrl || !name)) return "";
+    return profileId + "|" + imageUrl + "|" + name;
+  }
+
   function scan() {
     if (!list.isConnected || !discover.isConnected) return;
-    const organic = Array.from(list.children).filter((node) => node.matches?.(organicSelector));
+    const candidates = Array.from(list.querySelectorAll(organicSelector));
+    // Count an outer card once when it contains nested matching card markup.
+    const organic = candidates.filter((node) => {
+      let parent = node.parentElement;
+      while (parent && parent !== list) {
+        if (parent.matches?.(organicSelector)) return false;
+        parent = parent.parentElement;
+      }
+      return !node.closest(".match-sponsored-ad-card");
+    });
+
     if (!organic.length && previousOrganicCount > 0) {
       feedGeneration++;
       sequence = 0;
       organicCounter = 0;
+      seenProfileKeys.clear();
+      cardsByAnchor.forEach((card) => card.remove());
       cardsByAnchor.clear();
       list.querySelectorAll(".match-sponsored-ad-card").forEach((card) => card.remove());
     }
     previousOrganicCount = organic.length;
-    for (const [anchor, card] of cardsByAnchor) {
-      if (!anchor.isConnected) { card.remove(); cardsByAnchor.delete(anchor); }
-    }
+
     organic.forEach((anchor) => {
-      if (!anchor.dataset.matchSponsoredAnchorId) anchor.dataset.matchSponsoredAnchorId = "sponsored-anchor-" + (++sequence);
-      if (processed.has(anchor)) return;
-      processed.add(anchor);
+      const fingerprint = profileFingerprint(anchor);
+      if (!fingerprint || lastFingerprint.get(anchor) === fingerprint) return;
+      lastFingerprint.set(anchor, fingerprint);
+      if (seenProfileKeys.has(fingerprint)) return;
+      seenProfileKeys.add(fingerprint);
+
+      if (!anchor.dataset.matchSponsoredAnchorId) {
+        anchor.dataset.matchSponsoredAnchorId = "sponsored-anchor-" + (++sequence);
+      }
       organicCounter += 1;
       const ordinal = organicCounter;
       if (ordinal % 6 === 0) {
@@ -232,8 +263,13 @@
 
   installStyles();
   scan();
-  const listObserver = new MutationObserver(() => scan());
-  listObserver.observe(list, { childList: true });
+  let scanScheduled = false;
+  const listObserver = new MutationObserver(() => {
+    if (scanScheduled) return;
+    scanScheduled = true;
+    requestAnimationFrame(() => { scanScheduled = false; scan(); });
+  });
+  listObserver.observe(list, { childList: true, subtree: true, attributes: true, characterData: true });
   const pageObserver = new MutationObserver(() => {
     if (!discover.isConnected) {
       listObserver.disconnect();

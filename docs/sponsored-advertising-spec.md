@@ -222,7 +222,7 @@ The product decisions above are settled. The following owner-controlled setup, l
 
 ## 12. Implementation and release status
 
-The read-only architecture audit is complete. The isolated implementation is underway on `planning/sponsored-advertising-2026-11-27` and is tracked in draft PR #338. Automated PostgreSQL/RLS, portal syntax, Edge Function type and member regression checks are being run on the branch. The feature flag remains disabled. The separate advertiser Supabase project, secrets, bank details, legal review and live-device testing remain launch gates. Do not merge to `main`, deploy, apply production migrations or enable the feature until Kelvin separately approves after inspection.
+The shared-project architecture adaptation is underway on `work/sponsored-ads-shared-supabase-2026-11-27` and tracked in draft PR #339. Automated PostgreSQL/RLS, portal syntax, Edge Function type and member regression checks are being run on the branch. The feature flag remains disabled. The Auth Custom Access Token Hook, Edge Function secrets, B2 advertising key, bank details, legal review and live-device testing remain launch gates. Do not merge to `main`, deploy, apply production migrations or enable the feature until Kelvin separately approves after inspection.
 
 ## 13. Explicit production protections
 

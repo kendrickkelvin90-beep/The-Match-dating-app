@@ -113,14 +113,34 @@
             <div class="service-row"><span>Basic design</span><strong>₦5,000</strong></div>
             <div class="service-row"><span>Premium design</span><strong>₦10,000</strong></div>
             <div class="service-row"><span>Redesign / editing</span><strong>₦3,000</strong></div>
-            <p class="fineprint">Design fees are separate from campaign packages. Work starts after payment confirmation. First design target is 24–48 hours, with the exact delivery date confirmed before acceptance.</p>
+            <p class="fineprint">Design fees are separate from campaign packages. Work starts after payment confirmation. First design target is 24–48 hours, with the exact delivery date confirmed before acceptance. Basic/Premium include two reasonable consolidated revisions; redesign/editing includes one.</p>
+            <form id="designRequestForm" class="design-request-form">
+              <label>Design service<select id="designServiceType"><option value="basic">Basic design — ₦5,000</option><option value="premium">Premium design — ₦10,000</option><option value="redesign">Redesign / editing — ₦3,000</option></select></label>
+              <label>Describe the artwork you need<textarea id="designBrief" rows="3" maxlength="3000" minlength="10" required placeholder="Describe the message, brand assets and design direction."></textarea></label>
+              <button class="outline" type="submit" id="designRequestButton">Request design service</button>
+            </form>
+            <div id="designPaymentStep" class="payment-step hidden">
+              <h3>Design service payment</h3>
+              <div class="bank-card">
+                <div><span>Bank</span><strong id="designBankName">—</strong></div>
+                <div><span>Account name</span><strong id="designBankAccountName">—</strong></div>
+                <div><span>Account number</span><strong id="designBankAccountNumber">—</strong></div>
+                <div><span>Fee</span><strong id="designBankAmount">—</strong></div>
+                <div><span>Unique reference</span><strong id="designBankReference">—</strong></div>
+              </div>
+              <form id="designPaymentForm">
+                <label>Bank transfer reference<input id="designTransferReference" required maxlength="120"></label>
+                <button class="primary" type="submit">Submit design payment details</button>
+              </form>
+            </div>
+            <div id="designRequestList" class="campaign-list"></div>
           </div>
         </section>
       </div>
       <section id="adminPanel" class="panel admin-panel hidden">
         <div class="panel-heading"><div><p class="eyebrow">INTERNAL CONTROLS</p><h2>Advertising administration</h2></div><span class="step-pill">ADMIN</span></div>
         <div id="adminOverview" class="admin-stats"></div>
-        <div class="admin-columns"><div><h3>Campaign review queue</h3><div id="adminCampaigns"></div></div><div><h3>Payment confirmation queue</h3><div id="adminPayments"></div></div><div><h3>Refund queue</h3><div id="adminRefunds"></div></div></div>
+        <div class="admin-columns"><div><h3>Campaign review queue</h3><div id="adminCampaigns"></div></div><div><h3>Payment confirmation queue</h3><div id="adminPayments"></div></div><div><h3>Refund queue</h3><div id="adminRefunds"></div></div><div><h3>Design service queue</h3><div id="adminDesignRequests"></div></div></div>
       </section>
     </section>
     <footer><span>© The Match</span><span>Sponsored adverts are clearly labelled. No sensitive member-profile targeting.</span></footer>

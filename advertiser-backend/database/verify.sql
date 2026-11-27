@@ -103,6 +103,12 @@ begin
     raise exception 'Advertiser role has access to Match member data';
   end if;
 
+  if not has_schema_privilege('advertiser','auth','usage')
+     or not has_function_privilege('advertiser','auth.uid()','execute')
+     or not has_function_privilege('advertiser','auth.jwt()','execute') then
+    raise exception 'Advertiser role is missing the minimum Supabase Auth helper access';
+  end if;
+
   if pg_has_role('advertiser','authenticated','member')
      or pg_has_role('advertiser','anon','member')
      or not pg_has_role('authenticator','advertiser','member') then

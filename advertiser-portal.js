@@ -254,7 +254,7 @@
 
   if (!config.supabaseUrl || !config.publishableKey || !window.supabase?.createClient) {
     $("setupNotice").classList.remove("hidden");
-    $("setupNotice").textContent = "Advertiser portal setup is pending: the shared Match Supabase project has not been connected yet. Advertiser sessions use a separate browser storage key and a dedicated database role.";
+    $("setupNotice").textContent = "Advertiser portal setup is pending: the shared Match Supabase project has not been connected yet. The portal keeps its browser session separate while preserving the same verified Match identity.";
     $("authView").querySelectorAll("button,input,select").forEach((el) => el.disabled = true);
     return;
   }

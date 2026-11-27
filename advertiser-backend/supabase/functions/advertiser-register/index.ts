@@ -77,6 +77,18 @@ Deno.serve(async (req: Request) => {
     return response({ error: "Advertiser registration could not be completed. Please try again." }, 400, origin);
   }
 
+  const { error: profileError } = await admin.from("advertiser_profiles").upsert({
+    user_id: user.id,
+    advertiser_type: advertiserType,
+    display_name: displayName,
+    contact_name: contactName || null,
+    phone: phone || null,
+  }, { onConflict: "user_id", ignoreDuplicates: true });
+  if (profileError) {
+    console.error("Advertiser profile creation failed:", profileError.message);
+    return response({ error: "Your advertiser access was enrolled, but the advertiser profile could not be saved. Please retry." }, 500, origin);
+  }
+
   return response({
     success: true,
     advertiser_type: advertiserType,

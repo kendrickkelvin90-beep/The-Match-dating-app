@@ -92,9 +92,9 @@ function isAdvertiserToken(token: string): boolean {
   }
 }
 
-async function authenticate(req: Request): Promise<{ user: User; caller: any; admin: any } | null> {
+async function authenticate(req: Request): Promise<{ user: User; caller: any; admin: any; isAdvertiser: boolean; isMatchAdmin: boolean } | null> {
   const header = req.headers.get("Authorization") ?? "";
-  const token = header.replace(/^Bearer\s+/i, "");
+  const token = header.replace(/^Bearer\\s+/i, "");
   if (!token || token === header || !supabaseUrl || !anonKey || !serviceKey) return null;
 
   const caller: any = createClient(supabaseUrl, anonKey, {
@@ -102,12 +102,20 @@ async function authenticate(req: Request): Promise<{ user: User; caller: any; ad
     global: { headers: { Authorization: `Bearer ${token}` } },
   });
   const { data, error } = await caller.auth.getUser(token);
-  if (error || !data.user || !data.user.email_confirmed_at || !isAdvertiserToken(token)) return null;
+  if (error || !data.user || !data.user.email_confirmed_at) return null;
 
   const admin: any = createClient(supabaseUrl, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  return { user: data.user, caller, admin };
+  const isAdvertiser = isAdvertiserToken(token);
+  let isMatchAdmin = false;
+  if (!isAdvertiser) {
+    const { data: adminRow, error: adminError } = await admin.from("app_admins")
+      .select("user_id").eq("user_id", data.user.id).maybeSingle();
+    isMatchAdmin = !adminError && !!adminRow;
+  }
+  if (!isAdvertiser && !isMatchAdmin) return null;
+  return { user: data.user, caller, admin, isAdvertiser, isMatchAdmin };
 }
 
 async function requireAdmin(admin: any, userId: string) {
@@ -135,7 +143,11 @@ Deno.serve(async (req: Request) => {
     const body = await req.json().catch(() => null) as Record<string, unknown> | null;
     if (!body) return json({ error: "Invalid request body." }, 400, origin);
     const action = cleanText(body.action, 48) as Action;
-    const { user, caller, admin } = auth;
+    const { user, caller, admin, isAdvertiser, isMatchAdmin } = auth;
+    const adminAction = action.startsWith("admin-");
+    if (!isAdvertiser && !(isMatchAdmin && adminAction)) {
+      return json({ error: "A verified advertiser session is required for this action." }, 403, origin);
+    }
 
     if (action === "complete-profile") {
       const memberProfile = await admin.from("profiles").select("id").eq("id", user.id).maybeSingle();
@@ -415,7 +427,10 @@ Deno.serve(async (req: Request) => {
     if (action === "get-metrics") {
       const campaignId = cleanText(body.campaign_id, 64);
       if (!campaignId) return json({ error: "Campaign ID is required." }, 400, origin);
-      const { data, error } = await caller.rpc("get_my_advertising_campaign_metrics", { p_campaign_id: campaignId });
+      const { data, error } = await admin.rpc("get_advertising_campaign_metrics", {
+        p_campaign_id: campaignId,
+        p_advertiser_id: user.id,
+      });
       if (error) return json({ error: "Campaign metrics are unavailable." }, 403, origin);
       return json({ metrics: data?.[0] ?? null }, 200, origin);
     }

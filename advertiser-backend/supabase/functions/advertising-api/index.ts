@@ -408,7 +408,7 @@ Deno.serve(async (req: Request) => {
       if (error || !request || request.status !== "completed" || !request.delivered_storage_key) {
         return json({ error: "The finished artwork is not available yet." }, 404, origin);
       }
-      const bucket = Deno.env.get("B2_BUCKET_NAME") ?? "";
+      const bucket = Deno.env.get("B2_ADVERTISING_BUCKET_NAME") ?? "";
       const endpoint = Deno.env.get("B2_S3_ENDPOINT") ?? "";
       const keyId = Deno.env.get("B2_ADVERTISING_KEY_ID") ?? "";
       const appKey = Deno.env.get("B2_ADVERTISING_APPLICATION_KEY") ?? "";
@@ -458,7 +458,7 @@ Deno.serve(async (req: Request) => {
         ? campaign.advertising_creatives.find((item: { is_current: boolean }) => item.is_current) ?? campaign.advertising_creatives[0]
         : campaign.advertising_creatives;
       if (!creative?.storage_key) return json({ error: "No creative is attached to this campaign." }, 404, origin);
-      const bucket = Deno.env.get("B2_BUCKET_NAME") ?? "";
+      const bucket = Deno.env.get("B2_ADVERTISING_BUCKET_NAME") ?? "";
       const endpoint = Deno.env.get("B2_S3_ENDPOINT") ?? "";
       const keyId = Deno.env.get("B2_ADVERTISING_KEY_ID") ?? "";
       const appKey = Deno.env.get("B2_ADVERTISING_APPLICATION_KEY") ?? "";
@@ -486,7 +486,7 @@ Deno.serve(async (req: Request) => {
         .select("creative_type,storage_key,poster_storage_key").eq("id", request.proposed_creative_id)
         .eq("campaign_id", request.campaign_id).maybeSingle();
       if (creativeError || !creative) return json({ error: "Replacement creative not found." }, 404, origin);
-      const bucket = Deno.env.get("B2_BUCKET_NAME") ?? "";
+      const bucket = Deno.env.get("B2_ADVERTISING_BUCKET_NAME") ?? "";
       const endpoint = Deno.env.get("B2_S3_ENDPOINT") ?? "";
       const keyId = Deno.env.get("B2_ADVERTISING_KEY_ID") ?? "";
       const appKey = Deno.env.get("B2_ADVERTISING_APPLICATION_KEY") ?? "";

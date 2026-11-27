@@ -1538,4 +1538,77 @@ revoke all on function public.admin_review_advertising_campaign_change(uuid,uuid
 grant execute on function public.admin_review_advertising_campaign_change(uuid,uuid,boolean,text) to service_role;
 
 
+
+-- Data API pre-request boundary. The Auth hook sets role=anon and
+-- user_role=advertiser for advertiser accounts. Only the two read-only
+-- advertiser list endpoints and the advertiser metrics RPC are allowed.
+create or replace function public.match_advertiser_api_guard()
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $guard$
+declare
+  v_path text := trim(both '/' from coalesce(current_setting('request.path', true), ''));
+begin
+  if coalesce((select auth.jwt()->>'user_role'), '') <> 'advertiser' then
+    return;
+  end if;
+
+  if v_path in (
+    'advertising_campaigns',
+    'advertising_design_requests',
+    'rpc/get_my_advertising_campaign_metrics'
+  ) then
+    return;
+  end if;
+
+  raise sqlstate 'PGRST'
+    using message = '{"code":"ADVERTISER_ACCESS_RESTRICTED","message":"Advertiser accounts can access advertising data only.","details":null,"hint":null}',
+          detail = '{"status":403}';
+end;
+$guard$;
+revoke all on function public.match_advertiser_api_guard() from public;
+grant execute on function public.match_advertiser_api_guard() to anon, authenticated, service_role, authenticator;
+
+-- Restrictive RLS boundary for every public table except the two read-only
+-- advertiser list tables. This also protects GraphQL and Realtime paths that
+-- do not execute the PostgREST pre-request hook.
+do $boundary$
+declare
+  rec record;
+begin
+  for rec in
+    select n.nspname, c.relname
+    from pg_catalog.pg_class c
+    join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public'
+      and c.relkind in ('r','p')
+      and c.relrowsecurity
+      and c.relname not in ('advertising_campaigns','advertising_design_requests')
+  loop
+    execute format('drop policy if exists match_advertiser_data_boundary on %I.%I', rec.nspname, rec.relname);
+    execute format(
+      'create policy match_advertiser_data_boundary on %I.%I as restrictive for all to public using ((auth.jwt()->>''user_role'') is distinct from ''advertiser'') with check ((auth.jwt()->>''user_role'') is distinct from ''advertiser'')',
+      rec.nspname, rec.relname
+    );
+  end loop;
+end;
+$boundary$;
+
+-- Direct Storage and Realtime access is not part of the advertiser portal.
+-- The portal uses the private advertising B2 upload Edge Function instead.
+do $service_boundaries$
+begin
+  if to_regclass('storage.objects') is not null then
+    execute 'drop policy if exists match_advertiser_data_boundary on storage.objects';
+    execute 'create policy match_advertiser_data_boundary on storage.objects as restrictive for all to public using ((auth.jwt()->>''user_role'') is distinct from ''advertiser'') with check ((auth.jwt()->>''user_role'') is distinct from ''advertiser'')';
+  end if;
+  if to_regclass('realtime.messages') is not null then
+    execute 'drop policy if exists match_advertiser_data_boundary on realtime.messages';
+    execute 'create policy match_advertiser_data_boundary on realtime.messages as restrictive for all to public using ((auth.jwt()->>''user_role'') is distinct from ''advertiser'') with check ((auth.jwt()->>''user_role'') is distinct from ''advertiser'')';
+  end if;
+end;
+$service_boundaries$;
+
 commit;

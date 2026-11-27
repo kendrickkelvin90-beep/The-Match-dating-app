@@ -333,7 +333,13 @@
     if (error) return message("authMessage", error.message, true);
     if (data.session) {
       await showDashboard(data.session);
-    } else message("authMessage", "Account created. Check your email to verify your advertiser account, then sign in.");
+    } else if (data.user?.identities?.length === 0) {
+      showAuthTab("signin");
+      $("signinEmail").value = $("signupEmail").value.trim();
+      message("authMessage", "This email already has a Match account. Sign in with the same email and password you use for The Match, then complete advertiser setup.");
+    } else {
+      message("authMessage", "Account created. Check your email to verify your account, then sign in.");
+    }
   });
   $("googleSignIn").addEventListener("click", async () => {
     const { error } = await state.client.auth.signInWithOAuth({

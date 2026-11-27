@@ -17,8 +17,13 @@ type Action =
   | "list-campaigns"
   | "get-metrics"
   | "get-payment-details"
+  | "request-refund"
   | "admin-list-campaigns"
   | "admin-list-payments"
+  | "admin-list-refunds"
+  | "admin-record-duplicate-payment"
+  | "admin-review-refund"
+  | "admin-mark-refund-paid"
   | "admin-confirm-payment"
   | "admin-review-campaign"
   | "admin-set-campaign-state"
@@ -183,7 +188,7 @@ Deno.serve(async (req: Request) => {
 
     if (action === "list-campaigns") {
       const { data, error } = await caller.from("advertising_campaigns")
-        .select("id,headline,description,package_days,package_price_ngn,start_mode,scheduled_start_at,payment_reference,payment_deadline_at,payment_status,status,go_live_at,ends_at,created_at")
+        .select("id,headline,description,package_days,package_price_ngn,start_mode,scheduled_start_at,payment_reference,payment_deadline_at,payment_status,status,go_live_at,ends_at,created_at,advertising_payments(id,status,amount_ngn)")
         .eq("advertiser_id", user.id).order("created_at", { ascending: false }).limit(100);
       if (error) return json({ error: "Campaigns could not be loaded." }, 500, origin);
       return json({ campaigns: data ?? [] }, 200, origin);
@@ -212,6 +217,18 @@ Deno.serve(async (req: Request) => {
         bank_transfer: { bank_name: bankName, account_name: accountName, account_number: accountNumber },
         payment_deadline_at: campaign.payment_deadline_at,
       }, 200, origin);
+    }
+
+
+    if (action === "request-refund") {
+      const paymentId = cleanText(body.payment_id, 64);
+      const reason = cleanText(body.reason, 500);
+      if (!paymentId || reason.length < 3) return json({ error: "Select a payment and enter a refund reason." }, 400, origin);
+      const { data, error } = await admin.rpc("request_advertising_refund", {
+        p_advertiser_id: user.id, p_payment_id: paymentId, p_reason: reason,
+      });
+      if (error) return json({ error: "This payment is not currently eligible for a refund request." }, 400, origin);
+      return json({ success: true, refund_id: data, status: "requested" }, 201, origin);
     }
 
     if (action === "get-metrics") {
@@ -267,6 +284,55 @@ Deno.serve(async (req: Request) => {
         .order("submitted_at", { ascending: false }).limit(250);
       if (error) return json({ error: "Payment queue could not be loaded." }, 500, origin);
       return json({ payments: data ?? [] }, 200, origin);
+    }
+
+
+    if (action === "admin-list-refunds") {
+      const { data, error } = await admin.from("advertising_refunds")
+        .select("*,advertising_campaigns(headline),advertising_profiles:advertiser_profiles(display_name,phone)")
+        .order("requested_at", { ascending: false }).limit(250);
+      if (error) return json({ error: "Refund queue could not be loaded." }, 500, origin);
+      return json({ refunds: data ?? [] }, 200, origin);
+    }
+
+    if (action === "admin-record-duplicate-payment") {
+      const campaignId = cleanText(body.campaign_id, 64);
+      const advertiserId = cleanText(body.advertiser_id, 64);
+      const amount = Number(body.amount_ngn);
+      const transferReference = cleanText(body.bank_transfer_reference, 120);
+      const note = cleanText(body.admin_note, 500);
+      if (!campaignId || !advertiserId || !Number.isInteger(amount) || amount <= 0 || transferReference.length < 4) {
+        return json({ error: "Campaign, advertiser, amount and verified transfer reference are required." }, 400, origin);
+      }
+      const { data, error } = await admin.rpc("admin_record_duplicate_advertising_payment", {
+        p_admin_id: user.id, p_campaign_id: campaignId, p_advertiser_id: advertiserId,
+        p_amount_ngn: amount, p_bank_transfer_reference: transferReference, p_admin_note: note,
+      });
+      if (error) return json({ error: "The duplicate transfer could not be recorded." }, 400, origin);
+      return json({ success: true, payment_id: data, status: "duplicate" }, 201, origin);
+    }
+
+    if (action === "admin-review-refund") {
+      const refundId = cleanText(body.refund_id, 64);
+      const approve = body.approve === true;
+      const reason = cleanText(body.reason, 500);
+      if (!refundId || (!approve && reason.length < 3)) return json({ error: "Refund and rejection reason are required." }, 400, origin);
+      const { data, error } = await admin.rpc("admin_review_advertising_refund", {
+        p_admin_id: user.id, p_refund_id: refundId, p_approve: approve, p_reason: reason,
+      });
+      if (error) return json({ error: "Refund review could not be saved." }, 400, origin);
+      return json({ success: true, status: data }, 200, origin);
+    }
+
+    if (action === "admin-mark-refund-paid") {
+      const refundId = cleanText(body.refund_id, 64);
+      const transferReference = cleanText(body.bank_transfer_reference, 120);
+      if (!refundId || transferReference.length < 4) return json({ error: "Refund ID and outgoing bank transfer reference are required." }, 400, origin);
+      const { data, error } = await admin.rpc("admin_mark_advertising_refund_paid", {
+        p_admin_id: user.id, p_refund_id: refundId, p_bank_transfer_reference: transferReference,
+      });
+      if (error) return json({ error: "Refund payout could not be recorded." }, 400, origin);
+      return json({ success: data === true }, 200, origin);
     }
 
     if (action === "admin-confirm-payment") {

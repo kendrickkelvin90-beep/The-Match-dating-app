@@ -31,9 +31,9 @@ Supabase's supported Custom Access Token Hook role claim is constrained to `anon
 3. **Storage and Realtime:** restrictive policies block advertiser claims from `storage.objects` and `realtime.messages`. Advertiser creative uploads use the private advertising B2 Edge Function, not the member Storage API.
 4. **Advertiser Data API:** only read-only campaign/design request lists and the advertiser metrics RPC are directly accessible using the advertiser JWT. All other advertiser reads/writes use trusted Edge Functions with server-side ownership/admin checks.
 5. **Member Edge Functions:** ten existing member Edge Function source snapshots include a signed-token claim guard that rejects `user_role=advertiser` after Auth validation: nearby reverse geocoding, B2 media upload, voice calls, B2 media access, admin moderation, view-once chat media, account deletion, B2 media migration, B2 storage cleanup and B2 media operations. Normal member JWTs are unchanged. These guarded versions have not been deployed.
-6. **Advertising Edge Functions:** advertiser API/media/design upload functions require a verified `role=anon`, `user_role=advertiser` token. Member ad serving requires a normal `role=authenticated` member token and checks Match Plus entitlements.
-7. **Separate browser session:** the advertiser portal uses `the-match-advertiser-auth`, so its browser session does not overwrite the Match member app session.
-8. **Admin controls:** advertiser admin access is checked server-side against `advertising_admins`; the admin must use a separate advertiser account/email.
+7. **Advertising Edge Functions:** advertiser API/media/design upload functions require a verified `role=anon`, `user_role=advertiser` token. Member ad serving requires a normal `role=authenticated` member token and checks Match Plus entitlements.
+8. **Separate browser session:** the advertiser portal uses `the-match-advertiser-auth`, so its browser session does not overwrite the Match member app session.
+9. **Admin controls:** advertiser admin access is checked server-side against `advertising_admins`; the admin must use a separate advertiser account/email.
 
 ## Existing Supabase advisor baseline (read-only)
 

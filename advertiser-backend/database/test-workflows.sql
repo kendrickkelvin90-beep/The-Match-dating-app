@@ -1,19 +1,40 @@
 -- Integration smoke tests for the isolated advertiser database.
 -- Run only against the disposable CI PostgreSQL database.
 insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values
-('10000000-0000-4000-8000-000000000001','one@example.test',now(),'{"advertiser_type":"individual","display_name":"Advertiser One"}'),
-('10000000-0000-4000-8000-000000000002','two@example.test',now(),'{"advertiser_type":"business","display_name":"Advertiser Two"}');
+('10000000-0000-4000-8000-000000000001','one@example.test',now(),'{"account_type":"advertiser","advertiser_type":"individual","display_name":"Advertiser One"}'),
+('10000000-0000-4000-8000-000000000002','two@example.test',now(),'{"account_type":"advertiser","advertiser_type":"business","display_name":"Advertiser Two"}');
+
+select private.custom_access_token_hook(jsonb_build_object(
+  'user_id','10000000-0000-4000-8000-000000000001',
+  'claims',jsonb_build_object('role','authenticated','user_metadata',(select raw_user_meta_data from auth.users where id='10000000-0000-4000-8000-000000000001'))
+));
+select private.custom_access_token_hook(jsonb_build_object(
+  'user_id','10000000-0000-4000-8000-000000000002',
+  'claims',jsonb_build_object('role','authenticated','user_metadata',(select raw_user_meta_data from auth.users where id='10000000-0000-4000-8000-000000000002'))
+));
+
+insert into public.advertiser_profiles(user_id,advertiser_type,display_name) values
+('10000000-0000-4000-8000-000000000001','individual','Advertiser One'),
+('10000000-0000-4000-8000-000000000002','business','Advertiser Two');
 
 do $test$
 begin
-  if (select count(*) from public.advertiser_profiles) <> 2 then
-    raise exception 'Advertiser Auth trigger did not create exactly two isolated profiles';
+  if (select count(*) from private.advertiser_auth_registry) <> 2
+     or (select count(*) from public.advertiser_profiles) <> 2 then
+    raise exception 'Advertiser token hook did not isolate the two advertiser accounts';
+  end if;
+  if (select private.custom_access_token_hook(jsonb_build_object(
+      'user_id','10000000-0000-4000-8000-000000000001',
+      'claims',jsonb_build_object('role','authenticated')
+    ))->'claims'->>'role') <> 'advertiser' then
+    raise exception 'Advertiser JWT role was not assigned by the Auth hook';
   end if;
 end;
 $test$;
 
-set role authenticated;
+set role advertiser;
 select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',false);
+select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"advertiser"}',false);
 do $test$
 begin
   if (select count(*) from public.advertiser_profiles) <> 1 then
@@ -29,8 +50,9 @@ reset role;
 insert into public.advertising_admins(user_id)
 values ('10000000-0000-4000-8000-000000000001');
 
-set role authenticated;
+set role advertiser;
 select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',false);
+select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"advertiser"}',false);
 do $test$
 begin
   if not private.is_advertising_admin() then
@@ -102,8 +124,9 @@ end;
 $test$;
 reset role;
 
-set role authenticated;
+set role advertiser;
 select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',false);
+select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"advertiser"}',false);
 do $test$
 begin
   if (select count(*) from public.get_my_advertising_campaign_metrics(

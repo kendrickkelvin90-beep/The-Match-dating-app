@@ -419,6 +419,9 @@ begin
   where id = p_campaign_id and advertiser_id = p_advertiser_id
   for update;
   if not found then raise exception 'Campaign not found' using errcode = '42501'; end if;
+  if not exists (select 1 from public.advertising_creatives c where c.campaign_id = p_campaign_id and c.is_current) then
+    raise exception 'Upload an approved creative before submitting payment' using errcode = '22023';
+  end if;
   if v_campaign.payment_deadline_at <= now()
      or v_campaign.status not in ('awaiting_payment','payment_review')
      or v_campaign.payment_status not in ('awaiting_payment','rejected')
@@ -530,6 +533,9 @@ begin
   if not found or v_campaign.status in ('cancelled','expired_unpaid','completed') then
     raise exception 'Campaign cannot be reviewed in its current state' using errcode = '22023';
   end if;
+  if p_approve and not exists (select 1 from public.advertising_creatives c where c.campaign_id = p_campaign_id and c.is_current) then
+    raise exception 'Campaign has no current creative' using errcode = '22023';
+  end if;
   if p_approve then
     v_status := case
       when v_campaign.payment_status <> 'confirmed' then 'awaiting_payment'
@@ -599,6 +605,60 @@ $function$;
 revoke all on function public.admin_set_advertising_campaign_state(uuid,uuid,text) from public, anon, authenticated;
 grant execute on function public.admin_set_advertising_campaign_state(uuid,uuid,text) to service_role;
 
+
+
+create or replace function public.replace_advertising_creative(
+  p_advertiser_id uuid,
+  p_campaign_id uuid,
+  p_creative_type text,
+  p_storage_key text,
+  p_poster_storage_key text,
+  p_content_type text,
+  p_byte_size bigint,
+  p_duration_seconds numeric,
+  p_width integer default null,
+  p_height integer default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_campaign public.advertising_campaigns%rowtype;
+  v_id uuid;
+begin
+  perform private.require_advertising_service_role();
+  select * into v_campaign from public.advertising_campaigns
+  where id = p_campaign_id and advertiser_id = p_advertiser_id
+  for update;
+  if not found then raise exception 'Campaign not found' using errcode = '42501'; end if;
+  if v_campaign.go_live_at is not null or v_campaign.approved_at is not null
+     or v_campaign.status not in ('awaiting_payment','payment_review','awaiting_approval') then
+    raise exception 'Creative changes after approval or launch require an admin-reviewed change request' using errcode = '22023';
+  end if;
+  if p_storage_key not like 'advertising/' || p_advertiser_id::text || '/' || p_campaign_id::text || '/%'
+     or position('..' in p_storage_key) > 0
+     or (p_poster_storage_key is not null and (
+       p_poster_storage_key not like 'advertising/' || p_advertiser_id::text || '/' || p_campaign_id::text || '/%'
+       or position('..' in p_poster_storage_key) > 0
+     )) then
+    raise exception 'Invalid creative object key' using errcode = '22023';
+  end if;
+  update public.advertising_creatives set is_current = false
+  where campaign_id = p_campaign_id and is_current;
+  insert into public.advertising_creatives(
+    campaign_id,creative_type,storage_key,poster_storage_key,content_type,
+    byte_size,duration_seconds,width,height,is_current
+  ) values (
+    p_campaign_id,p_creative_type,p_storage_key,p_poster_storage_key,p_content_type,
+    p_byte_size,p_duration_seconds,p_width,p_height,true
+  ) returning id into v_id;
+  return v_id;
+end;
+$function$;
+revoke all on function public.replace_advertising_creative(uuid,uuid,text,text,text,text,bigint,numeric,integer,integer) from public, anon, authenticated;
+grant execute on function public.replace_advertising_creative(uuid,uuid,text,text,text,text,bigint,numeric,integer,integer) to service_role;
 
 create or replace function public.process_advertising_campaign_clock()
 returns jsonb

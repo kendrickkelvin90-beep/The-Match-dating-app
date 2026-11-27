@@ -23,6 +23,10 @@ begin
   if not has_table_privilege('anon','public.advertising_campaigns','select')
      or not has_table_privilege('anon','public.advertising_design_requests','select')
      or has_table_privilege('anon','public.advertiser_profiles','select')
+     or has_table_privilege('anon','public.advertising_creatives','select')
+     or has_table_privilege('anon','public.advertising_payments','select')
+     or has_table_privilege('anon','public.advertising_design_payments','select')
+     or has_table_privilege('anon','public.advertising_refunds','select')
      or has_table_privilege('anon','public.advertising_campaign_change_requests','select')
      or has_table_privilege('anon','public.advertising_admins','select')
      or has_table_privilege('anon','public.advertising_impressions','select')
@@ -34,7 +38,9 @@ begin
   if has_table_privilege('authenticated','public.advertising_campaigns','select')
      or has_table_privilege('authenticated','public.advertising_design_requests','select')
      or has_table_privilege('authenticated','public.advertiser_profiles','select')
-     or has_function_privilege('authenticated','public.get_my_advertising_campaign_metrics(uuid)','execute') then
+     or has_function_privilege('anon','public.get_advertising_campaign_metrics(uuid,uuid)','execute')
+     or has_function_privilege('authenticated','public.get_advertising_campaign_metrics(uuid,uuid)','execute')
+     or to_regprocedure('public.get_my_advertising_campaign_metrics(uuid)') is not null then
     raise exception 'Normal member role has direct access to advertiser-only records';
   end if;
 
@@ -49,11 +55,12 @@ begin
     raise exception 'Campaign/payment/event writer RPCs must remain service-role only';
   end if;
 
-  if not has_function_privilege('anon','public.get_my_advertising_campaign_metrics(uuid)','execute')
-     or has_function_privilege('authenticated','public.get_my_advertising_campaign_metrics(uuid)','execute')
-     or not has_function_privilege('anon','public.is_advertising_admin()','execute')
-     or has_function_privilege('authenticated','public.is_advertising_admin()','execute') then
-    raise exception 'Advertiser-only read RPC/helper grants are incorrect';
+  if to_regprocedure('public.get_my_advertising_campaign_metrics(uuid)') is not null
+     or has_function_privilege('anon','public.get_advertising_campaign_metrics(uuid,uuid)','execute')
+     or has_function_privilege('authenticated','public.get_advertising_campaign_metrics(uuid,uuid)','execute')
+     or not has_function_privilege('service_role','public.get_advertising_campaign_metrics(uuid,uuid)','execute')
+     or to_regprocedure('public.is_advertising_admin()') is not null then
+    raise exception 'Campaign metrics must be server-only and no public admin helper may exist';
   end if;
 
   if has_schema_privilege('anon','private','usage') then

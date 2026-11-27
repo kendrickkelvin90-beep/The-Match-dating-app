@@ -237,6 +237,13 @@
     catch (error) { message("globalMessage", error.message, true); }
   };
 
+  if (config.enabled !== true) {
+    $("setupNotice").classList.remove("hidden");
+    $("setupNotice").textContent = "The Match advertising portal is not open yet. Account registration and campaign submissions will be enabled after the security and launch checks are complete.";
+    $("authView").querySelectorAll("button,input,select").forEach((el) => el.disabled = true);
+    return;
+  }
+
   if (!config.supabaseUrl || !config.publishableKey || !window.supabase?.createClient) {
     $("setupNotice").classList.remove("hidden");
     $("setupNotice").textContent = "Advertiser portal setup is pending: the shared Match Supabase project has not been connected yet. Advertiser sessions use a separate browser storage key and a dedicated database role.";

@@ -73,6 +73,31 @@ $register$;
 revoke all on function public.register_advertiser_account(uuid)
   from public, anon, authenticated;
 grant execute on function public.register_advertiser_account(uuid) to service_role;
+-- Serialize member profile creation against advertiser enrollment. Both paths
+-- lock the same Auth user row, preventing a race that could convert account type.
+create or replace function private.prevent_advertiser_member_profile()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+begin
+  perform 1 from auth.users u where u.id = new.id for update;
+  if exists (select 1 from private.advertiser_auth_registry r where r.user_id = new.id) then
+    raise exception 'Advertiser accounts cannot create Match member profiles'
+      using errcode = '23514';
+  end if;
+  return new;
+end;
+$function$;
+revoke all on function private.prevent_advertiser_member_profile()
+  from public, anon, authenticated, service_role;
+drop trigger if exists prevent_advertiser_member_profile on public.profiles;
+create trigger prevent_advertiser_member_profile
+before insert on public.profiles
+for each row execute function private.prevent_advertiser_member_profile();
+
+
 
 create or replace function private.custom_access_token_hook(event jsonb)
 returns jsonb
@@ -123,6 +148,16 @@ create table if not exists public.advertising_admins (
   user_id uuid primary key references auth.users(id) on delete cascade,
   created_at timestamptz not null default now()
 );
+
+-- Existing Match administrators retain their normal member account/session.
+-- The advertising Edge Function checks this separate allowlist for admin-only actions.
+do $seed_advertising_admins$
+begin
+  if to_regclass('public.app_admins') is not null then
+    execute 'insert into public.advertising_admins(user_id) select user_id from public.app_admins on conflict (user_id) do nothing';
+  end if;
+end;
+$seed_advertising_admins$;
 
 create table if not exists public.advertiser_profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
@@ -354,22 +389,7 @@ for each row execute function private.touch_advertising_updated_at();
 -- Never attach a trigger to auth.users: normal Match member signups must not
 -- create advertiser records.
 
-create or replace function public.is_advertising_admin()
-returns boolean
-language sql
-stable
-security definer
-set search_path = ''
-as $function$
-  select coalesce((select auth.jwt()->>'user_role'),'') = 'advertiser'
-    and exists (
-      select 1 from public.advertising_admins a
-      where a.user_id = (select auth.uid())
-    );
-$function$;
-revoke all on function public.is_advertising_admin() from public, anon, authenticated, service_role;
-grant execute on function public.is_advertising_admin() to anon;
-
+-- Admin reads and mutations are served through the trusted advertising Edge Function.
 alter table public.advertising_admins enable row level security;
 alter table public.advertiser_profiles enable row level security;
 alter table public.advertising_campaigns enable row level security;
@@ -402,7 +422,7 @@ grant all on public.advertiser_profiles, public.advertising_campaigns,
 
 drop policy if exists advertiser_profile_owner_read on public.advertiser_profiles;
 create policy advertiser_profile_owner_read on public.advertiser_profiles
-  for select to anon using (user_id = (select auth.uid()) or (select public.is_advertising_admin()));
+  for select to anon using (user_id = (select auth.uid()));
 drop policy if exists advertiser_profile_owner_update on public.advertiser_profiles;
 create policy advertiser_profile_owner_update on public.advertiser_profiles
   for update to anon using (user_id = (select auth.uid()))
@@ -410,25 +430,31 @@ create policy advertiser_profile_owner_update on public.advertiser_profiles
 
 drop policy if exists advertising_campaign_owner_read on public.advertising_campaigns;
 create policy advertising_campaign_owner_read on public.advertising_campaigns
-  for select to anon using (coalesce((select auth.jwt()->>'user_role'),'') = 'advertiser' and (advertiser_id = (select auth.uid()) or (select public.is_advertising_admin())));
+  for select to anon using (
+    coalesce((select auth.jwt()->>'user_role'),'') = 'advertiser'
+    and advertiser_id = (select auth.uid())
+  );
 drop policy if exists advertising_creative_owner_read on public.advertising_creatives;
 create policy advertising_creative_owner_read on public.advertising_creatives
   for select to anon using (
     exists (select 1 from public.advertising_campaigns c
-      where c.id = campaign_id and (c.advertiser_id = (select auth.uid()) or (select public.is_advertising_admin())))
+      where c.id = campaign_id and c.advertiser_id = (select auth.uid()))
   );
 drop policy if exists advertising_payment_owner_read on public.advertising_payments;
 create policy advertising_payment_owner_read on public.advertising_payments
-  for select to anon using (advertiser_id = (select auth.uid()) or (select public.is_advertising_admin()));
+  for select to anon using (advertiser_id = (select auth.uid()));
 drop policy if exists advertising_design_owner_read on public.advertising_design_requests;
 create policy advertising_design_owner_read on public.advertising_design_requests
-  for select to anon using (coalesce((select auth.jwt()->>'user_role'),'') = 'advertiser' and (advertiser_id = (select auth.uid()) or (select public.is_advertising_admin())));
+  for select to anon using (
+    coalesce((select auth.jwt()->>'user_role'),'') = 'advertiser'
+    and advertiser_id = (select auth.uid())
+  );
 drop policy if exists advertising_design_payment_owner_read on public.advertising_design_payments;
 create policy advertising_design_payment_owner_read on public.advertising_design_payments
-  for select to anon using (advertiser_id = (select auth.uid()) or (select public.is_advertising_admin()));
+  for select to anon using (advertiser_id = (select auth.uid()));
 drop policy if exists advertising_refund_owner_read on public.advertising_refunds;
 create policy advertising_refund_owner_read on public.advertising_refunds
-  for select to anon using (advertiser_id = (select auth.uid()) or (select public.is_advertising_admin()));
+  for select to anon using (advertiser_id = (select auth.uid()));
 
 -- Analytics event rows, admin audit and the admin allowlist are never exposed
 -- to normal advertiser clients. Service-role server functions own all writes.
@@ -1355,23 +1381,16 @@ $function$;
 revoke all on function public.get_advertising_admin_overview(uuid) from public, anon, authenticated;
 grant execute on function public.get_advertising_admin_overview(uuid) to service_role;
 
-create or replace function public.get_my_advertising_campaign_metrics(p_campaign_id uuid)
-returns table (
-  campaign_id uuid,
-  status text,
-  payment_status text,
-  package_days integer,
-  go_live_at timestamptz,
-  ends_at timestamptz,
-  impressions bigint,
-  clicks bigint,
-  unique_clicks bigint,
-  ctr numeric
+create or replace function public.get_advertising_campaign_metrics(
+  p_campaign_id uuid,
+  p_advertiser_id uuid
 )
-language plpgsql
-stable
-security definer
-set search_path = ''
+returns table (
+  campaign_id uuid, status text, payment_status text, package_days integer,
+  go_live_at timestamptz, ends_at timestamptz, impressions bigint,
+  clicks bigint, unique_clicks bigint, ctr numeric
+)
+language plpgsql stable security definer set search_path = ''
 as $function$
 declare
   v_owner uuid;
@@ -1379,36 +1398,27 @@ declare
   v_clicks bigint;
   v_unique_clicks bigint;
 begin
-  if (select auth.uid()) is null
-     or coalesce((select auth.jwt()->>'user_role'),'') <> 'advertiser' then
-    raise exception 'Advertiser authentication required' using errcode = '28000';
+  perform private.require_advertising_service_role();
+  select c.advertiser_id into v_owner from public.advertising_campaigns c where c.id=p_campaign_id;
+  if v_owner is null or (
+    v_owner <> p_advertiser_id
+    and not exists(select 1 from public.advertising_admins a where a.user_id=p_advertiser_id)
+  ) then
+    raise exception 'Campaign not found or access denied' using errcode='42501';
   end if;
-
-  select c.advertiser_id into v_owner
-  from public.advertising_campaigns c
-  where c.id = p_campaign_id;
-
-  if v_owner is null or (v_owner <> (select auth.uid()) and not public.is_advertising_admin()) then
-    raise exception 'Campaign not found or access denied' using errcode = '42501';
-  end if;
-
-  select count(*) into v_impressions
-  from public.advertising_impressions i where i.campaign_id = p_campaign_id;
-  select count(*) into v_clicks
-  from public.advertising_clicks k where k.campaign_id = p_campaign_id;
-  select count(*) into v_unique_clicks
-  from public.advertising_unique_clicks k where k.campaign_id = p_campaign_id;
-
-  return query
-  select c.id, c.status, c.payment_status, c.package_days, c.go_live_at, c.ends_at,
-    v_impressions, v_clicks, v_unique_clicks,
-    case when v_impressions = 0 then 0::numeric
-      else round((v_unique_clicks::numeric / v_impressions::numeric) * 100, 2) end
-  from public.advertising_campaigns c where c.id = p_campaign_id;
+  select count(*) into v_impressions from public.advertising_impressions i where i.campaign_id=p_campaign_id;
+  select count(*) into v_clicks from public.advertising_clicks k where k.campaign_id=p_campaign_id;
+  select count(*) into v_unique_clicks from public.advertising_unique_clicks k where k.campaign_id=p_campaign_id;
+  return query select c.id,c.status,c.payment_status,c.package_days,c.go_live_at,c.ends_at,
+    v_impressions,v_clicks,v_unique_clicks,
+    case when v_impressions=0 then 0::numeric
+      else round((v_unique_clicks::numeric/v_impressions::numeric)*100,2) end
+  from public.advertising_campaigns c where c.id=p_campaign_id;
 end;
 $function$;
-revoke all on function public.get_my_advertising_campaign_metrics(uuid) from public, anon, authenticated, service_role;
-grant execute on function public.get_my_advertising_campaign_metrics(uuid) to anon;
+revoke all on function public.get_advertising_campaign_metrics(uuid,uuid) from public, anon, authenticated;
+grant execute on function public.get_advertising_campaign_metrics(uuid,uuid) to service_role;
+drop function if exists public.get_my_advertising_campaign_metrics(uuid);
 
 -- Identity columns are written only by trusted server functions.
 grant usage, select on all sequences in schema public to service_role;
@@ -1440,9 +1450,7 @@ create index if not exists advertising_change_requests_admin_queue_idx
 alter table public.advertising_campaign_change_requests enable row level security;
 drop policy if exists advertising_change_requests_select_own on public.advertising_campaign_change_requests;
 create policy advertising_change_requests_select_own on public.advertising_campaign_change_requests
-  for select to anon using (
-    advertiser_id = (select auth.uid()) or public.is_advertising_admin()
-  );
+  for select to anon using (advertiser_id = (select auth.uid()));
 revoke all on public.advertising_campaign_change_requests from anon, authenticated;
 
 grant select, insert, update, delete on public.advertising_campaign_change_requests to service_role;
@@ -1585,7 +1593,7 @@ grant execute on function public.admin_review_advertising_campaign_change(uuid,u
 
 -- Data API pre-request boundary. The Auth hook sets role=anon and
 -- user_role=advertiser for advertiser accounts. Only the two read-only
--- advertiser list endpoints and the advertiser metrics RPC are allowed.
+-- advertiser list endpoints are allowed; metrics use a server-only RPC.
 create or replace function public.match_advertiser_api_guard()
 returns void
 language plpgsql
@@ -1600,8 +1608,7 @@ begin
 
   if v_path in (
     'advertising_campaigns',
-    'advertising_design_requests',
-    'rpc/get_my_advertising_campaign_metrics'
+    'advertising_design_requests'
   ) then
     return;
   end if;

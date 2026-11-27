@@ -252,7 +252,7 @@ Deno.serve(async (req: Request) => {
         .eq("id", campaignId).maybeSingle();
       if (error || !campaign) return json({ error: "Campaign creative not found." }, 404, origin);
       const creative = Array.isArray(campaign.advertising_creatives)
-        ? campaign.advertising_creatives.find((item) => item.is_current) ?? campaign.advertising_creatives[0]
+        ? campaign.advertising_creatives.find((item: { is_current: boolean }) => item.is_current) ?? campaign.advertising_creatives[0]
         : campaign.advertising_creatives;
       if (!creative?.storage_key) return json({ error: "No creative is attached to this campaign." }, 404, origin);
       const bucket = Deno.env.get("B2_BUCKET_NAME") ?? "";
@@ -370,16 +370,14 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "admin-overview") {
-      const [campaigns, payments] = await Promise.all([
-        admin.from("advertising_campaigns").select("id,status", { count: "exact" }),
-        admin.from("advertising_payments").select("amount_ngn,status", { count: "exact" }).eq("status", "confirmed"),
-      ]);
-      if (campaigns.error || payments.error) return json({ error: "Advertising overview could not be loaded." }, 500, origin);
-      const revenue = (payments.data ?? []).reduce((sum, item) => sum + Number(item.amount_ngn || 0), 0);
-      return json({
-        campaigns_total: campaigns.count ?? 0,
-        confirmed_payments: payments.count ?? 0,
-        confirmed_revenue_ngn: revenue,
+      const { data, error } = await admin.rpc("get_advertising_admin_overview", { p_admin_id: user.id });
+      if (error) return json({ error: "Advertising overview could not be loaded." }, 500, origin);
+      return json(data?.[0] ?? {
+        campaigns_total: 0,
+        active_campaigns: 0,
+        pending_campaigns: 0,
+        confirmed_payments: 0,
+        confirmed_revenue_ngn: 0,
       }, 200, origin);
     }
 

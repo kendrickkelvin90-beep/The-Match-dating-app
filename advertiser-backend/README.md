@@ -7,7 +7,7 @@ This implementation uses the existing `the-match-dating-app` Supabase project. I
 - Advertisers use a separate portal, advertiser profile tables, API actions and admin permissions.
 - The portal uses a dedicated browser auth storage key (`the-match-advertiser-auth`), so its local session does not overwrite the Match member app's browser session.
 - Supabase Auth remains the underlying identity provider, but advertiser accounts receive a dedicated Postgres JWT role: `advertiser`.
-- The Auth Custom Access Token Hook assigns that role only when the account was explicitly registered with `account_type=advertiser` and has no row in `public.profiles`.
+- The Auth Custom Access Token Hook assigns that role only when the account was explicitly registered with `the_match_advertiser_registration=v1` and has no row in `public.profiles`.
 - Existing dating-member accounts are not converted into advertiser accounts. Advertisers must use a separate email address. A member JWT remains `authenticated`; an advertiser JWT is `advertiser`.
 - The `advertiser` database role is not a member of `authenticated` or `anon`. It receives grants only for advertising tables and the two advertising helper/metrics functions.
 - The bootstrap preserves the effective function-execution permissions of existing Match roles while removing implicit `PUBLIC` function execution. This prevents the new advertiser role from inheriting access to existing member SECURITY DEFINER functions. It also updates default function privileges so future functions are not automatically executable by PUBLIC; existing Match roles retain their previous default access.

@@ -106,7 +106,7 @@ begin
   return v_id;
 end;
 $function$;
-revoke all on function public.attach_advertising_change_creative(uuid,uuid,text,text,text,text,bigint,numeric,integer,integer) from public,anon,authenticated;
+revoke all on function public.attach_advertising_change_creative(uuid,uuid,text,text,text,text,bigint,numeric,integer,integer) from public,anon,authenticated,advertiser;
 grant execute on function public.attach_advertising_change_creative(uuid,uuid,text,text,text,text,bigint,numeric,integer,integer) to service_role;
 
 create or replace function public.admin_review_advertising_campaign_change(
@@ -164,7 +164,7 @@ begin
   return v_status;
 end;
 $function$;
-revoke all on function public.admin_review_advertising_campaign_change(uuid,uuid,boolean,text) from public,anon,authenticated;
+revoke all on function public.admin_review_advertising_campaign_change(uuid,uuid,boolean,text) from public,anon,authenticated,advertiser;
 grant execute on function public.admin_review_advertising_campaign_change(uuid,uuid,boolean,text) to service_role;
 
 commit;

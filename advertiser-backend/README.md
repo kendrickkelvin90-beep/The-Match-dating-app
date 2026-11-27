@@ -59,7 +59,7 @@ The browser-only `advertiser-portal-config.js` and `sponsored-advertising-config
 The GitHub Actions workflow runs:
 - Node syntax checks for the advertiser portal and Discover integration.
 - Deno type checks for all advertiser Edge Functions.
-- A disposable PostgreSQL 16 test database with RLS, campaign lifecycle, payment approval, click/impression deduplication, refund and design-service smoke tests.
+- A disposable PostgreSQL 16 test database with RLS, campaign lifecycle, payment approval, rolling 24-hour impression and unique-click caps, campaign-change approval, refund and design-service smoke tests.
 
 These tests do not connect to or mutate either live Supabase project. Passing CI does not replace a final device/browser regression test on The Match.
 

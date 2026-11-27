@@ -161,38 +161,38 @@ Deno.serve(async (req: Request) => {
       const memberProfile = await admin.from("profiles").select("id").eq("id", user.id).maybeSingle();
       if (memberProfile.error) return json({ error: "Account type could not be verified. Please try again." }, 503, origin);
       const metadata = user.user_metadata ?? {};
-      const advertiserType = cleanText(body.advertiser_type ?? metadata.advertiser_type, 16);
-      const displayName = cleanText(body.display_name ?? metadata.display_name, 140) ||
-        cleanText(user.email?.split("@")[0], 140);
+      const existing = await admin.from("advertiser_profiles").select("user_id").eq("user_id", user.id).maybeSingle();
+      if (existing.error) return json({ error: "Advertiser profile could not be checked." }, 500, origin);
+      const suppliedType = cleanText(body.advertiser_type ?? metadata.advertiser_type, 16);
+      const suppliedName = cleanText(body.display_name ?? metadata.display_name, 140);
+      if (existing.data && !suppliedType && !suppliedName && body.contact_name === undefined && body.phone === undefined) {
+        return json({ success: true }, 200, origin);
+      }
+      const advertiserType = suppliedType;
+      const displayName = suppliedName || cleanText(user.email?.split("@")[0], 140);
       const contactName = cleanText(body.contact_name ?? metadata.contact_name, 140) || null;
       const phone = cleanText(body.phone ?? metadata.phone, 32) || null;
       if (!["individual", "business"].includes(advertiserType) || displayName.length < 2) {
         return json({ error: "Please complete your advertiser name and account type." }, 400, origin);
       }
-
-      const existing = await admin.from("advertiser_profiles")
-        .select("user_id").eq("user_id", user.id).maybeSingle();
-      if (existing.error) return json({ error: "Advertiser profile could not be checked." }, 500, origin);
-      if (existing.data && !advertiserType && !body.display_name && !body.advertiser_type) {
-        return json({ success: true }, 200, origin);
-      }
       if (existing.data) {
-        const update: Record<string, unknown> = { contact_name: contactName, phone };
-        if (advertiserType) update.advertiser_type = advertiserType;
-        if (displayName) update.display_name = displayName;
-        const { error } = await admin.from("advertiser_profiles")
-          .update(update).eq("user_id", user.id);
-        if (error) return json({ error: "Advertiser profile could not be updated." }, 500, origin);
+        const update: Record<string, unknown> = {};
+        if (suppliedType) update.advertiser_type = advertiserType;
+        if (suppliedName) update.display_name = displayName;
+        if (body.contact_name !== undefined || metadata.contact_name !== undefined) update.contact_name = contactName;
+        if (body.phone !== undefined || metadata.phone !== undefined) update.phone = phone;
+        if (Object.keys(update).length) {
+          const { error } = await admin.from("advertiser_profiles").update(update).eq("user_id", user.id);
+          if (error) return json({ error: "Advertiser profile could not be updated." }, 500, origin);
+        }
       } else {
         const { error } = await admin.from("advertiser_profiles").insert({
-          user_id: user.id, advertiser_type: advertiserType, display_name: displayName,
-          contact_name: contactName, phone,
+          user_id: user.id, advertiser_type: advertiserType, display_name: displayName, contact_name: contactName, phone,
         });
         if (error) return json({ error: "Advertiser profile could not be created." }, 500, origin);
       }
       return json({ success: true }, 200, origin);
     }
-
     if (action === "create-campaign") {
       const profile = await admin.from("advertiser_profiles")
         .select("user_id").eq("user_id", user.id).maybeSingle();

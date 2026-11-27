@@ -115,6 +115,7 @@ Deno.serve(async (req: Request) => {
 
     const form = await req.formData();
     const campaignId = String(form.get("campaign_id") ?? "");
+    const changeRequestId = String(form.get("change_request_id") ?? "");
     const creative = form.get("creative");
     const poster = form.get("poster");
     if (!campaignId || !(creative instanceof File)) return json({ error: "Campaign and creative file are required." }, 400, origin);
@@ -126,7 +127,14 @@ Deno.serve(async (req: Request) => {
       .select("id,advertiser_id,status,approved_at,go_live_at")
       .eq("id", campaignId).eq("advertiser_id", user.id).maybeSingle();
     if (campaignError || !campaign) return json({ error: "Campaign not found." }, 404, origin);
-    if (campaign.approved_at || campaign.go_live_at ||
+    if (changeRequestId) {
+      const { data: request, error: requestError } = await admin.from("advertising_campaign_change_requests")
+        .select("id,status,proposed_creative_id").eq("id", changeRequestId)
+        .eq("campaign_id", campaignId).eq("advertiser_id", user.id).maybeSingle();
+      if (requestError || !request || request.status !== "pending" || request.proposed_creative_id) {
+        return json({ error: "The campaign change request is unavailable for a creative upload." }, 409, origin);
+      }
+    } else if (campaign.approved_at || campaign.go_live_at ||
         !["awaiting_payment","payment_review","awaiting_approval"].includes(campaign.status)) {
       return json({ error: "Creative changes after approval or launch require an admin-reviewed change request." }, 409, origin);
     }
@@ -197,18 +205,19 @@ Deno.serve(async (req: Request) => {
       uploadedKeys.push(posterKey);
     }
 
-    const { data: creativeId, error: saveError } = await admin.rpc("replace_advertising_creative", {
-      p_advertiser_id: user.id,
-      p_campaign_id: campaignId,
-      p_creative_type: kind,
-      p_storage_key: storageKey,
-      p_poster_storage_key: posterKey,
-      p_content_type: creativeType,
-      p_byte_size: creativeBytes.byteLength,
-      p_duration_seconds: duration,
-      p_width: null,
-      p_height: null,
-    });
+    const { data: creativeId, error: saveError } = changeRequestId
+      ? await admin.rpc("attach_advertising_change_creative", {
+          p_advertiser_id: user.id, p_change_request_id: changeRequestId,
+          p_creative_type: kind, p_storage_key: storageKey, p_poster_storage_key: posterKey,
+          p_content_type: creativeType, p_byte_size: creativeBytes.byteLength,
+          p_duration_seconds: duration, p_width: null, p_height: null,
+        })
+      : await admin.rpc("replace_advertising_creative", {
+          p_advertiser_id: user.id, p_campaign_id: campaignId,
+          p_creative_type: kind, p_storage_key: storageKey, p_poster_storage_key: posterKey,
+          p_content_type: creativeType, p_byte_size: creativeBytes.byteLength,
+          p_duration_seconds: duration, p_width: null, p_height: null,
+        });
     if (saveError || !creativeId) {
       console.error("Creative metadata write failed:", saveError?.message ?? "No creative id returned");
       for (const key of uploadedKeys) await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key })).catch(() => undefined);

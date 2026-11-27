@@ -6,7 +6,7 @@ import { getSignedUrl } from "npm:@aws-sdk/s3-request-presigner";
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const bucket = Deno.env.get("B2_BUCKET_NAME") ?? "";
+const bucket = Deno.env.get("B2_ADVERTISING_BUCKET_NAME") ?? "";
 const endpoint = Deno.env.get("B2_S3_ENDPOINT") ?? "";
 const keyId = Deno.env.get("B2_ADVERTISING_KEY_ID") ?? "";
 const appKey = Deno.env.get("B2_ADVERTISING_APPLICATION_KEY") ?? "";

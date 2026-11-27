@@ -98,7 +98,7 @@ Advertisers may register and sign in using:
 - Email and password, including password recovery.
 - Google sign-in.
 
-Advertiser accounts must remain a separate account type with their own advertiser profile, portal, permissions and data. To avoid a third Supabase project, the implementation will use the existing Match Supabase Auth service with a dedicated `advertiser` Postgres JWT role and a separate browser storage key. Existing dating-member accounts cannot be converted into advertiser accounts; advertisers must use a different email. The member login/signup screens, CAPTCHA, member profile creation and member session storage must remain unchanged. A Custom Access Token Hook is a global Auth setting, so it must be reviewed, tested against the existing before-user-created hook, and enabled only after member auth regression tests pass.
+Advertiser accounts must remain a separate account type with their own advertiser profile, portal, permissions and data. To avoid a third Supabase project, the implementation uses the existing Match Auth service with a separate browser storage key. Advertiser JWTs use the supported `anon` database role plus a custom `user_role=advertiser` claim; a Data API pre-request guard, restrictive RLS boundaries, Storage/Realtime policies and member Edge Function guards prevent access to member data. Existing dating-member accounts cannot be converted into advertiser accounts; advertisers must use a different email. The member login/signup screens, CAPTCHA, member profile creation and member session storage remain unchanged. The global Custom Access Token Hook must coexist with the existing before-user-created hook and pass member auth regression tests before activation.
 
 Both individuals and businesses/organisations are accepted. Proposed application fields:
 - Advertiser type (individual or business/organisation).
@@ -201,7 +201,7 @@ Add a distinct advertising area to the existing admin dashboard. Planned control
 - View individual advertiser records.
 - View confirmed advertising revenue and payment history.
 
-The advertising tables must use a dedicated `advertiser` database role and a server-side `advertising_admins` allowlist. The Auth hook assigns the role only to explicitly registered advertiser users who do not have a dating-member profile. Do not trust a client-side admin flag or user-editable metadata for privileges. Keep advertising revenue and records separate from Match Plus, Match Lite and Match Coins accounting.
+The advertising tables must use a server-side `advertising_admins` allowlist. The Auth hook adds `user_role=advertiser` only for the explicit advertiser-registration marker and only when no dating-member profile exists; it keeps the supported JWT role at `anon`. The Data API guard permits only two read-only advertiser list endpoints and the advertiser metrics RPC. All other advertising reads/writes remain server-side. Do not trust a client-side admin flag or user-editable metadata for privileges. Keep advertising revenue and records separate from Match Plus, Match Lite and Match Coins accounting.
 
 ## 10. Delivery and regulatory considerations
 
@@ -214,7 +214,7 @@ The advertising tables must use a dedicated `advertiser` database role and a ser
 ## 11. Remaining launch gates
 
 The product decisions above are settled. The following owner-controlled setup, legal review and live validation remain:
-1. Adapt and verify the advertiser schema in the existing Match Supabase project; configure the Custom Access Token Hook, Google identity linking, email verification/recovery and redirect URLs only after regression tests pass.
+1. Adapt and verify the advertiser schema, custom-claim Auth hook, Data API pre-request guard and restrictive member-data RLS boundaries in the existing Match Supabase project; deploy member Edge Function guards before enabling advertiser Auth.
 2. Configure protected server-side secrets, the dedicated private B2 advertising key, the business bank details and the advertising admin allowlist.
 3. Confirm applicable Nigerian advertising, consumer-protection and privacy obligations, including any ARCON clearance or disclosure requirements, with qualified local review before publication.
 4. Complete real Android and iOS browser testing, including image/video playback, crop, upload, payment/admin workflows and Discover performance.
@@ -222,7 +222,7 @@ The product decisions above are settled. The following owner-controlled setup, l
 
 ## 12. Implementation and release status
 
-The shared-project architecture adaptation is underway on `work/sponsored-ads-shared-supabase-2026-11-27` and tracked in draft PR #339. Automated PostgreSQL/RLS, portal syntax, Edge Function type and member regression checks are being run on the branch. The feature flag remains disabled. The Auth Custom Access Token Hook, Edge Function secrets, B2 advertising key, bank details, legal review and live-device testing remain launch gates. Do not merge to `main`, deploy, apply production migrations or enable the feature until Kelvin separately approves after inspection.
+The shared-project architecture adaptation is underway on `work/sponsored-ads-shared-supabase-2026-11-27` and tracked in draft PR #339. Automated PostgreSQL/RLS, portal syntax, Edge Function type and member regression checks are being run on the branch. The feature flag remains disabled. The member Edge Function guard deployment, database migration, Data API pre-request setting, Auth hook, advertising secrets, B2 key, bank details, legal review and live-device testing remain launch gates. Do not merge to `main`, deploy, apply production migrations or enable the feature until Kelvin separately approves after inspection.
 
 ## 13. Explicit production protections
 

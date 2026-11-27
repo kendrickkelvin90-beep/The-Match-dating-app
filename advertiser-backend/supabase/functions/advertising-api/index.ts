@@ -198,7 +198,7 @@ Deno.serve(async (req: Request) => {
 
     if (action === "list-campaigns") {
       const { data, error } = await caller.from("advertising_campaigns")
-        .select("id,headline,description,package_days,package_price_ngn,start_mode,scheduled_start_at,payment_reference,payment_deadline_at,payment_status,status,go_live_at,ends_at,created_at,advertising_payments(id,status,amount_ngn)")
+        .select("id,headline,description,cta,destination_url,package_days,package_price_ngn,start_mode,scheduled_start_at,payment_reference,payment_deadline_at,payment_status,status,go_live_at,ends_at,created_at,advertising_payments(id,status,amount_ngn),advertising_creatives(id,is_current,creative_type)")
         .eq("advertiser_id", user.id).order("created_at", { ascending: false }).limit(100);
       if (error) return json({ error: "Campaigns could not be loaded." }, 500, origin);
       return json({ campaigns: data ?? [] }, 200, origin);

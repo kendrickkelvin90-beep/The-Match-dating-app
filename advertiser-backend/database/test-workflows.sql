@@ -1,24 +1,24 @@
 -- Integration smoke tests for advertiser-role isolation in the shared-project model.
 -- Run only against the disposable CI PostgreSQL database.
 insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values
-('10000000-0000-4000-8000-000000000001','one@example.test',now(),'{"account_type":"advertiser","advertiser_type":"individual","display_name":"Advertiser One"}'),
-('10000000-0000-4000-8000-000000000002','two@example.test',now(),'{"account_type":"advertiser","advertiser_type":"business","display_name":"Advertiser Two"}'),
-('10000000-0000-4000-8000-000000000003','member@example.test',now(),'{"account_type":"advertiser","advertiser_type":"individual","display_name":"Should Not Convert"}');
+('10000000-0000-4000-8000-000000000001','one@example.test',now(),'{"the_match_advertiser_registration":"v1","advertiser_type":"individual","display_name":"Advertiser One"}'),
+('10000000-0000-4000-8000-000000000002','two@example.test',now(),'{"the_match_advertiser_registration":"v1","advertiser_type":"business","display_name":"Advertiser Two"}'),
+('10000000-0000-4000-8000-000000000003','member@example.test',now(),'{"the_match_advertiser_registration":"v1","advertiser_type":"individual","display_name":"Should Not Convert"}');
 
 insert into public.profiles(id) values ('10000000-0000-4000-8000-000000000003');
 
 set role supabase_auth_admin;
 select public.custom_access_token_hook(jsonb_build_object(
   'user_id','10000000-0000-4000-8000-000000000001',
-  'claims',jsonb_build_object('role','authenticated','user_metadata','{"account_type":"advertiser","advertiser_type":"individual","display_name":"Advertiser One"}'::jsonb)
+  'claims',jsonb_build_object('role','authenticated','user_metadata','{"the_match_advertiser_registration":"v1","advertiser_type":"individual","display_name":"Advertiser One"}'::jsonb)
 ));
 select public.custom_access_token_hook(jsonb_build_object(
   'user_id','10000000-0000-4000-8000-000000000002',
-  'claims',jsonb_build_object('role','authenticated','user_metadata','{"account_type":"advertiser","advertiser_type":"business","display_name":"Advertiser Two"}'::jsonb)
+  'claims',jsonb_build_object('role','authenticated','user_metadata','{"the_match_advertiser_registration":"v1","advertiser_type":"business","display_name":"Advertiser Two"}'::jsonb)
 ));
 select public.custom_access_token_hook(jsonb_build_object(
   'user_id','10000000-0000-4000-8000-000000000003',
-  'claims',jsonb_build_object('role','authenticated','user_metadata','{"account_type":"advertiser","advertiser_type":"individual","display_name":"Should Not Convert"}'::jsonb)
+  'claims',jsonb_build_object('role','authenticated','user_metadata','{"the_match_advertiser_registration":"v1","advertiser_type":"individual","display_name":"Should Not Convert"}'::jsonb)
 ));
 reset role;
 
@@ -29,7 +29,7 @@ begin
   end if;
   if (select public.custom_access_token_hook(jsonb_build_object(
       'user_id','10000000-0000-4000-8000-000000000003',
-      'claims',jsonb_build_object('role','authenticated','user_metadata','{"account_type":"advertiser"}'::jsonb)
+      'claims',jsonb_build_object('role','authenticated','user_metadata','{"the_match_advertiser_registration":"v1"}'::jsonb)
     ))->'claims'->>'role') <> 'authenticated' then
     raise exception 'Existing dating-member account did not retain the normal member role';
   end if;

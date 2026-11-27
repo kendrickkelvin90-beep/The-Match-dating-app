@@ -1,4 +1,4 @@
--- Run in the isolated advertiser Supabase project after bootstrap.sql.
+-- Run in the existing Match Supabase project only after explicit approval and after bootstrap.sql.
 -- Supabase Cron (pg_cron) invokes a database-owned function every minute.
 create extension if not exists pg_cron;
 

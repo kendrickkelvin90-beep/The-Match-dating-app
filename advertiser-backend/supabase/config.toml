@@ -1,3 +1,8 @@
 # This is the isolated advertiser Supabase project, not the Match member project.
 [functions.advertising-api]
 verify_jwt = true
+
+[functions.member-ad-serving]
+# This endpoint accepts Match-member JWTs from the separate Match project.
+# The handler verifies each JWT against that project's Auth API before serving or recording anything.
+verify_jwt = false

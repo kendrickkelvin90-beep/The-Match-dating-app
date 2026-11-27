@@ -59,15 +59,33 @@
     const result = await callApi({ action: "list-campaigns" });
     const campaigns = result.campaigns || [];
     $("campaignList").innerHTML = campaigns.length ? campaigns.map((campaign) => `
-      <article class="campaign-item" data-campaign-id="${escapeHtml(campaign.id)}" data-campaign-status="${escapeHtml(campaign.status)}" data-payment-ids="${escapeHtml((campaign.advertising_payments || []).filter((p) => p.status === "duplicate" || (campaign.status === "rejected" && p.status === "confirmed")).map((p) => p.id).join(","))}">
+      <article class="campaign-item" data-campaign-id="${escapeHtml(campaign.id)}" data-campaign-status="${escapeHtml(campaign.status)}" data-has-creative="${(campaign.advertising_creatives || []).some((creative) => creative.is_current) ? "true" : "false"}" data-payment-ids="${escapeHtml((campaign.advertising_payments || []).filter((p) => p.status === "duplicate" || (campaign.status === "rejected" && p.status === "confirmed")).map((p) => p.id).join(","))}">
         <h3>${escapeHtml(campaign.headline)}</h3>
         <div class="campaign-meta"><span class="status ${campaign.status === "active" ? "active" : ""}">${escapeHtml(campaign.status.replaceAll("_"," "))}</span><span class="status">${campaign.package_days} days</span><span class="status">${formatNaira(campaign.package_price_ngn)}</span></div>
         <p>Payment: ${escapeHtml(campaign.payment_status.replaceAll("_"," "))}</p>
         <p>Reference: <strong>${escapeHtml(campaign.payment_reference)}</strong></p>
         <p>Live: ${formatDate(campaign.go_live_at)} · Ends: ${formatDate(campaign.ends_at)}</p>
-        <div class="campaign-actions"><button class="small-outline" data-metrics="${escapeHtml(campaign.id)}">View performance</button>${campaign.status === "awaiting_payment" && campaign.payment_status === "awaiting_payment" ? `<button class="small-outline" data-resume-payment="${escapeHtml(campaign.id)}">Resume payment</button><button class="small-outline" data-cancel-campaign="${escapeHtml(campaign.id)}">Cancel reservation</button>` : ""}</div>
+        <div class="campaign-actions"><button class="small-outline" data-metrics="${escapeHtml(campaign.id)}">View performance</button>${campaign.status === "awaiting_payment" && campaign.payment_status === "awaiting_payment" ? `${(campaign.advertising_creatives || []).some((creative) => creative.is_current) ? `<button class="small-outline" data-resume-payment="${escapeHtml(campaign.id)}">Resume payment</button>` : `<button class="small-outline" data-finish-creative="${escapeHtml(campaign.id)}">Finish creative</button>`}<button class="small-outline" data-cancel-campaign="${escapeHtml(campaign.id)}">Cancel reservation</button>` : ""}</div>
         <div class="fineprint" id="metrics-${escapeHtml(campaign.id)}"></div>
       </article>`).join("") : '<p class="muted">You have no campaigns yet. Create your first sponsored advert to get started.</p>';
+    $("campaignList").querySelectorAll("[data-finish-creative]").forEach((button) => button.addEventListener("click", () => {
+      const campaign = campaigns.find((item) => item.id === button.dataset.finishCreative);
+      if (!campaign) return;
+      state.pendingCampaign = {
+        campaign_id: campaign.id,
+        amount_ngn: campaign.package_price_ngn,
+        payment_reference: campaign.payment_reference,
+      };
+      $("campaignHeadline").value = campaign.headline || "";
+      $("campaignDescription").value = campaign.description || "";
+      $("campaignCta").value = campaign.cta || "learn_more";
+      $("campaignUrl").value = campaign.destination_url || "";
+      $("campaignPackage").value = String(campaign.package_days || 7);
+      $("packagePrice").textContent = formatNaira(campaign.package_price_ngn);
+      $("campaignCreative").click();
+      $("campaignForm").scrollIntoView({ behavior: "smooth", block: "start" });
+      message("globalMessage", "Choose the creative for this existing unpaid campaign. It will not create a second reservation.");
+    }));
     $("campaignList").querySelectorAll("[data-cancel-campaign]").forEach((button) => button.addEventListener("click", async () => {
       if (!confirm("Cancel this unpaid campaign reservation?")) return;
       button.disabled = true;

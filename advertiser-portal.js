@@ -287,7 +287,11 @@
     await showDashboard(data.session);
   });
   $("signupForm").addEventListener("submit", async (event) => {
-    event.preventDefault(); const button = event.submitter; setBusy(button,true);
+    event.preventDefault();
+    const button = event.submitter;
+    if ($("signupPassword").value.length < 8) return message("authMessage", "Password must be at least 8 characters.", true);
+    if ($("signupPassword").value !== $("signupConfirmPassword").value) return message("authMessage", "The passwords do not match. Please check and try again.", true);
+    setBusy(button,true);
     const type = $("signupType").value, displayName = $("signupName").value.trim();
     const { data, error } = await state.client.auth.signUp({
       email: $("signupEmail").value.trim(), password: $("signupPassword").value,

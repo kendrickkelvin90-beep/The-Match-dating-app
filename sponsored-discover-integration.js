@@ -22,6 +22,7 @@
   const cardsByAnchor = new Map();
   let observer = null;
   let sequence = 0;
+  let organicCounter = 0;
   let feedGeneration = 0;
   let previousOrganicCount = 0;
   let adRequestQueue = Promise.resolve();
@@ -148,7 +149,7 @@
     if (requested.has(anchor)) return;
     requested.add(anchor);
     const request = async () => {
-      const excluded = Array.from(cardsByAnchor.values()).map((card) => card.dataset.campaignId).filter(Boolean);
+      const excluded = Array.from(cardsByAnchor.values()).filter((card) => card.isConnected).map((card) => card.dataset.campaignId).filter(Boolean);
       const response = await memberRequest("get-ad", {
         slot_index: slotIndex,
         exclude_campaign_ids: excluded
@@ -205,15 +206,17 @@
     if (!organic.length && previousOrganicCount > 0) {
       feedGeneration++;
       sequence = 0;
+      organicCounter = 0;
       cardsByAnchor.clear();
       list.querySelectorAll(".match-sponsored-ad-card").forEach((card) => card.remove());
     }
     previousOrganicCount = organic.length;
-    organic.forEach((anchor, index) => {
+    for (const [anchor, card] of cardsByAnchor) {\n      if (!anchor.isConnected) { card.remove(); cardsByAnchor.delete(anchor); }\n    }\n    organic.forEach((anchor) => {
       if (!anchor.dataset.matchSponsoredAnchorId) anchor.dataset.matchSponsoredAnchorId = "sponsored-anchor-" + (++sequence);
       if (processed.has(anchor)) return;
       processed.add(anchor);
-      const ordinal = index + 1;
+      organicCounter += 1;
+      const ordinal = organicCounter;
       if (ordinal % 12 === 0) {
         const slotIndex = Math.floor(ordinal / 12);
         loadAd(anchor, slotIndex + feedGeneration * 1000).catch(() => {});

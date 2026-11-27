@@ -88,10 +88,50 @@
     });
   }
 
+
+  function addDuplicatePaymentButtons() {
+    const payments = document.getElementById("adminPayments");
+    if (!payments || adminPanel.classList.contains("hidden")) return;
+    payments.querySelectorAll('.admin-row[data-payment-status="confirmed"]').forEach((row) => {
+      if (row.querySelector("[data-record-duplicate]")) return;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "small-outline";
+      button.dataset.recordDuplicate = "true";
+      button.textContent = "Log additional transfer";
+      button.addEventListener("click", async () => {
+        const reference = prompt("Enter the bank reference for the additional transfer after verifying it in the business bank account:");
+        if (!reference || reference.trim().length < 4) return;
+        const amount = Number(prompt("Enter the exact additional amount received (NGN):", row.dataset.paymentAmount));
+        if (!Number.isInteger(amount) || amount <= 0) return;
+        button.disabled = true;
+        try {
+          await api.callApi({
+            action: "admin-record-duplicate-payment",
+            campaign_id: row.dataset.paymentCampaign,
+            advertiser_id: row.dataset.paymentAdvertiser,
+            amount_ngn: amount,
+            bank_transfer_reference: reference,
+            admin_note: "Additional transfer manually verified by admin."
+          });
+          button.textContent = "Additional transfer recorded";
+          api.message("globalMessage", "Additional transfer recorded. It can now enter the refund workflow.");
+        } catch (error) {
+          api.message("globalMessage", error.message, true);
+          button.disabled = false;
+        }
+      });
+      row.appendChild(button);
+    });
+  }
+
   const listObserver = new MutationObserver(addAdvertiserRefundButtons);
   listObserver.observe(list, { childList: true, subtree: true });
   const adminObserver = new MutationObserver(loadRefundQueue);
   adminObserver.observe(adminPanel, { attributes: true, attributeFilter: ["class"] });
+  const paymentsList = document.getElementById("adminPayments");
+  if (paymentsList) new MutationObserver(addDuplicatePaymentButtons).observe(paymentsList, { childList: true, subtree: true });
   addAdvertiserRefundButtons();
   loadRefundQueue();
+  addDuplicatePaymentButtons();
 })();

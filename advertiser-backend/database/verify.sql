@@ -153,8 +153,18 @@ begin
     raise exception 'Advertiser database role membership is not isolated correctly';
   end if;
 
-  if not has_function_privilege('supabase_auth_admin','private.custom_access_token_hook(jsonb)','execute') then
-    raise exception 'Supabase Auth cannot execute the advertiser access-token hook';
+  if not has_function_privilege('supabase_auth_admin','public.custom_access_token_hook(jsonb)','execute')
+     or not has_function_privilege('supabase_auth_admin','private.custom_access_token_hook(jsonb)','execute')
+     or has_function_privilege('anon','public.custom_access_token_hook(jsonb)','execute')
+     or has_function_privilege('authenticated','public.custom_access_token_hook(jsonb)','execute')
+     or has_function_privilege('advertiser','public.custom_access_token_hook(jsonb)','execute') then
+    raise exception 'Supabase Auth hook entrypoint grants are incorrect';
+  end if;
+  if (select p.prosecdef from pg_catalog.pg_proc p
+      where p.oid='public.custom_access_token_hook(jsonb)'::regprocedure)
+     or (select p.prosecdef from pg_catalog.pg_proc p
+      where p.oid='private.custom_access_token_hook(jsonb)'::regprocedure) then
+    raise exception 'Auth hook entrypoints must not use SECURITY DEFINER';
   end if;
 
   if exists (

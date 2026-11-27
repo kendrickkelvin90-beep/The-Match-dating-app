@@ -280,6 +280,31 @@
       : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
   }));
   $("signupType").addEventListener("change", () => { $("signupNameLabel").firstChild.textContent = $("signupType").value === "business" ? "Business / organisation name" : "Your name"; });
+  $("enrollType").addEventListener("change", () => { $("enrollNameLabel").firstChild.textContent = $("enrollType").value === "business" ? "Business / organisation name" : "Your name"; });
+  $("advertiserEnrollmentForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = event.submitter;
+    const session = state.pendingEnrollmentSession;
+    if (!session) return message("authMessage", "Please sign in to your Match account again.", true);
+    const details = { advertiser_type: $("enrollType").value, display_name: $("enrollName").value.trim(), contact_name: $("enrollContact").value.trim(), phone: $("enrollPhone").value.trim() };
+    if (details.display_name.length < 2) return message("authMessage", "Enter a name with at least two characters.", true);
+    setBusy(button, true, "Activating advertiser access…");
+    try {
+      const activeSession = await enrollAdvertiserSession(session, details);
+      if (!isAdvertiserSession(activeSession?.access_token)) throw new Error("Advertiser access could not be activated. Please sign in again.");
+      await completeAdvertiserProfile(activeSession, details);
+      state.pendingEnrollmentSession = null;
+      await showDashboard(activeSession);
+    } catch (error) { message("authMessage", error.message || "Advertiser enrolment could not be completed.", true); }
+    finally { setBusy(button, false); }
+  });
+  $("cancelEnrollment").addEventListener("click", async () => {
+    state.pendingEnrollmentSession = null;
+    await state.client.auth.signOut({ scope: "local" });
+    $("advertiserEnrollmentForm").classList.add("hidden");
+    $("signinForm").classList.remove("hidden");
+    message("authMessage", "You can sign in again whenever you are ready.");
+  });
   $("signinForm").addEventListener("submit", async (event) => {
     event.preventDefault(); const button = event.submitter; setBusy(button,true);
     const { data, error } = await state.client.auth.signInWithPassword({ email: $("signinEmail").value.trim(), password: $("signinPassword").value });

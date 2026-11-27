@@ -12,7 +12,7 @@ create schema if not exists private;
 set local search_path = public;
 revoke all on schema private from public, anon;
 grant usage on schema public, private to supabase_auth_admin;
-grant usage on schema private to authenticated, anon, service_role;
+grant usage on schema private to authenticated, service_role;
 grant usage on schema auth to anon, authenticated, authenticator, service_role;
 grant execute on function auth.uid(), auth.jwt() to anon, authenticated, authenticator, service_role;
 
@@ -320,7 +320,7 @@ for each row execute function private.touch_advertising_updated_at();
 -- Never attach a trigger to auth.users: normal Match member signups must not
 -- create advertiser records.
 
-create or replace function private.is_advertising_admin()
+create or replace function public.is_advertising_admin()
 returns boolean
 language sql
 stable
@@ -333,8 +333,8 @@ as $function$
       where a.user_id = (select auth.uid())
     );
 $function$;
-revoke all on function private.is_advertising_admin() from public, anon, authenticated, service_role;
-grant execute on function private.is_advertising_admin() to anon;
+revoke all on function public.is_advertising_admin() from public, anon, authenticated, service_role;
+grant execute on function public.is_advertising_admin() to anon;
 
 alter table public.advertising_admins enable row level security;
 alter table public.advertiser_profiles enable row level security;
@@ -368,7 +368,7 @@ grant all on public.advertiser_profiles, public.advertising_campaigns,
 
 drop policy if exists advertiser_profile_owner_read on public.advertiser_profiles;
 create policy advertiser_profile_owner_read on public.advertiser_profiles
-  for select to anon using (user_id = (select auth.uid()) or (select private.is_advertising_admin()));
+  for select to anon using (user_id = (select auth.uid()) or (select public.is_advertising_admin()));
 drop policy if exists advertiser_profile_owner_update on public.advertiser_profiles;
 create policy advertiser_profile_owner_update on public.advertiser_profiles
   for update to anon using (user_id = (select auth.uid()))
@@ -376,25 +376,25 @@ create policy advertiser_profile_owner_update on public.advertiser_profiles
 
 drop policy if exists advertising_campaign_owner_read on public.advertising_campaigns;
 create policy advertising_campaign_owner_read on public.advertising_campaigns
-  for select to anon using (coalesce((select auth.jwt()->>'user_role'),'') = 'advertiser' and (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin())));
+  for select to anon using (coalesce((select auth.jwt()->>'user_role'),'') = 'advertiser' and (advertiser_id = (select auth.uid()) or (select public.is_advertising_admin())));
 drop policy if exists advertising_creative_owner_read on public.advertising_creatives;
 create policy advertising_creative_owner_read on public.advertising_creatives
   for select to anon using (
     exists (select 1 from public.advertising_campaigns c
-      where c.id = campaign_id and (c.advertiser_id = (select auth.uid()) or (select private.is_advertising_admin())))
+      where c.id = campaign_id and (c.advertiser_id = (select auth.uid()) or (select public.is_advertising_admin())))
   );
 drop policy if exists advertising_payment_owner_read on public.advertising_payments;
 create policy advertising_payment_owner_read on public.advertising_payments
-  for select to anon using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
+  for select to anon using (advertiser_id = (select auth.uid()) or (select public.is_advertising_admin()));
 drop policy if exists advertising_design_owner_read on public.advertising_design_requests;
 create policy advertising_design_owner_read on public.advertising_design_requests
-  for select to anon using (coalesce((select auth.jwt()->>'user_role'),'') = 'advertiser' and (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin())));
+  for select to anon using (coalesce((select auth.jwt()->>'user_role'),'') = 'advertiser' and (advertiser_id = (select auth.uid()) or (select public.is_advertising_admin())));
 drop policy if exists advertising_design_payment_owner_read on public.advertising_design_payments;
 create policy advertising_design_payment_owner_read on public.advertising_design_payments
-  for select to anon using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
+  for select to anon using (advertiser_id = (select auth.uid()) or (select public.is_advertising_admin()));
 drop policy if exists advertising_refund_owner_read on public.advertising_refunds;
 create policy advertising_refund_owner_read on public.advertising_refunds
-  for select to anon using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
+  for select to anon using (advertiser_id = (select auth.uid()) or (select public.is_advertising_admin()));
 
 -- Analytics event rows, admin audit and the admin allowlist are never exposed
 -- to normal advertiser clients. Service-role server functions own all writes.
@@ -1354,7 +1354,7 @@ begin
   from public.advertising_campaigns c
   where c.id = p_campaign_id;
 
-  if v_owner is null or (v_owner <> (select auth.uid()) and not private.is_advertising_admin()) then
+  if v_owner is null or (v_owner <> (select auth.uid()) and not public.is_advertising_admin()) then
     raise exception 'Campaign not found or access denied' using errcode = '42501';
   end if;
 
@@ -1407,7 +1407,7 @@ alter table public.advertising_campaign_change_requests enable row level securit
 drop policy if exists advertising_change_requests_select_own on public.advertising_campaign_change_requests;
 create policy advertising_change_requests_select_own on public.advertising_campaign_change_requests
   for select to anon using (
-    advertiser_id = (select auth.uid()) or private.is_advertising_admin()
+    advertiser_id = (select auth.uid()) or public.is_advertising_admin()
   );
 revoke all on public.advertising_campaign_change_requests from anon, authenticated;
 

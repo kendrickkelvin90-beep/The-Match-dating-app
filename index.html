@@ -13565,7 +13565,7 @@ like.onclick=async()=>{
     const [{error:likeError}, {data:reverseLike,error:matchError}] =
       await Promise.all([
         likePromise,
-        matchPromise.catch(error => ({data:false,error})),
+        Promise.resolve(matchPromise).catch(error => ({data:false,error})),
         exitAnimation
       ]).then(results => [results[0], results[1]]);
 

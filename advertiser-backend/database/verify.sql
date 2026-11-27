@@ -43,6 +43,27 @@ begin
     raise exception 'Private analytics/admin tables are exposed to advertiser clients';
   end if;
 
+  if has_table_privilege('authenticated','public.advertiser_profiles','select')
+     or has_table_privilege('authenticated','public.advertising_campaigns','select')
+     or has_function_privilege('authenticated','public.get_my_advertising_campaign_metrics(uuid)','execute') then
+    raise exception 'Ordinary member role has access to advertiser-only records or metrics';
+  end if;
+
+  if exists (
+    select 1 from pg_catalog.pg_trigger t
+    join pg_catalog.pg_class c on c.oid=t.tgrelid
+    join pg_catalog.pg_namespace n on n.oid=c.relnamespace
+    where n.nspname='auth' and c.relname='users'
+      and t.tgname='on_advertiser_auth_user_created' and not t.tgisinternal
+  ) then
+    raise exception 'Advertiser profile creation trigger must not be attached to auth.users';
+  end if;
+
+  if (select p.prosecdef from pg_catalog.pg_proc p
+      where p.oid='private.custom_access_token_hook(jsonb)'::regprocedure) then
+    raise exception 'Advertiser Auth hook must run with explicit supabase_auth_admin grants, not SECURITY DEFINER';
+  end if;
+
   if not has_function_privilege('advertiser','public.get_my_advertising_campaign_metrics(uuid)','execute')
      or has_function_privilege('anon','public.get_my_advertising_campaign_metrics(uuid)','execute') then
     raise exception 'Campaign metrics RPC execute grants are incorrect';

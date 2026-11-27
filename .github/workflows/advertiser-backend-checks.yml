@@ -9,6 +9,7 @@ on:
       - "advertiser-portal.*"
       - "advertiser-portal-config.js"
       - "advertiser-portal-refunds.js"
+      - "advertiser-portal-design.js"
       - "sponsored-*.js"
       - "match-performance-engine.js"
       - ".github/workflows/advertiser-backend-checks.yml"
@@ -76,4 +77,5 @@ jobs:
         run: |
           deno check advertiser-backend/supabase/functions/advertising-api/index.ts
           deno check advertiser-backend/supabase/functions/advertising-media-upload/index.ts
+          deno check advertiser-backend/supabase/functions/advertising-design-upload/index.ts
           deno check advertiser-backend/supabase/functions/member-ad-serving/index.ts

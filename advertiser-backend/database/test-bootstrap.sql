@@ -54,3 +54,10 @@ grant usage on schema realtime to anon, authenticated, service_role;
 grant select on realtime.messages to anon, authenticated;
 create policy realtime_test_read on realtime.messages
   for select to public using (true);
+
+-- Represents a legacy public table that had grants but no RLS before this
+-- advertiser migration. The migration must preserve member access while
+-- excluding advertiser custom-claim sessions.
+create table public.legacy_open_table (id uuid primary key);
+grant select on public.legacy_open_table to anon, authenticated;
+insert into public.legacy_open_table(id) values ('30000000-0000-4000-8000-000000000001');

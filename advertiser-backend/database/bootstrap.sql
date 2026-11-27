@@ -146,7 +146,7 @@ create table if not exists public.advertising_design_payments (
   bank_transfer_reference text,
   status text not null default 'awaiting_payment'
     check (status in ('awaiting_payment','submitted','confirmed','rejected','duplicate','refunded')),
-  submitted_at timestamptz not null default now(),
+  submitted_at timestamptz,
   confirmed_at timestamptz,
   confirmed_by uuid references public.advertising_admins(user_id),
   admin_note text

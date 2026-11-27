@@ -124,6 +124,12 @@ create table if not exists public.advertising_admins (
   created_at timestamptz not null default now()
 );
 
+-- Existing Match administrators retain their normal member account/session.
+-- The advertising Edge Function checks this separate allowlist for admin-only actions.
+insert into public.advertising_admins(user_id)
+select user_id from public.app_admins
+on conflict (user_id) do nothing;
+
 create table if not exists public.advertiser_profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
   advertiser_type text not null check (advertiser_type in ('individual','business')),

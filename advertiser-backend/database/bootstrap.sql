@@ -30,8 +30,8 @@ drop policy if exists advertiser_auth_hook_registry_access on private.advertiser
 create policy advertiser_auth_hook_registry_access on private.advertiser_auth_registry
   for all to supabase_auth_admin using (true) with check (true);
 
--- Auth hook may inspect only profile IDs to prevent a dating-member account
--- from being silently converted into an advertiser account.
+-- Auth hook may inspect only profile IDs to decide whether an advertiser
+-- identity should retain the normal Match member database role.
 grant usage on schema public to supabase_auth_admin;
 grant select (id) on public.profiles to supabase_auth_admin;
 drop policy if exists advertiser_auth_hook_member_profile_guard on public.profiles;
@@ -86,7 +86,7 @@ declare
 begin
   -- Never grant advertiser privileges from user-editable user_metadata.
   -- A trusted server-side enrollment endpoint inserts the user into this
-  -- protected registry only after verifying the session, email and member profile.
+  -- protected registry only after the Edge Function verifies the session and email.
   if v_user_id is not null and exists (
     select 1 from private.advertiser_auth_registry r where r.user_id=v_user_id
   ) then

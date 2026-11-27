@@ -301,7 +301,7 @@ select public.attach_advertising_change_creative(
 );
 do $test$
 begin
-  if (select headline from public.advertising_campaigns where payment_reference='TMAD-CI-REFERENCE-001') <> 'Approved campaign' then
+  if (select headline from public.advertising_campaigns where payment_reference='TMAD-CI-REFERENCE-001') <> 'Test campaign' then
     raise exception 'Pending campaign change altered the live campaign before review';
   end if;
   if (select count(*) from public.advertising_creatives where campaign_id =

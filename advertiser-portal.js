@@ -267,6 +267,17 @@
     },
   });
   document.querySelectorAll("[data-auth-tab]").forEach((button) => button.addEventListener("click", () => showAuthTab(button.dataset.authTab)));
+  document.querySelectorAll("[data-password-toggle]").forEach((button) => button.addEventListener("click", () => {
+    const input = $(button.dataset.passwordToggle);
+    if (!input) return;
+    const show = input.type === "password";
+    input.type = show ? "text" : "password";
+    button.setAttribute("aria-pressed", String(show));
+    button.setAttribute("aria-label", show ? "Hide password" : "Show password");
+    button.innerHTML = show
+      ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.9 5.2A10.8 10.8 0 0112 5c6.4 0 10 7 10 7a17 17 0 01-3.1 3.8M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7c1.3 0 2.5-.3 3.6-.8"/></svg>'
+      : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
+  }));
   $("signupType").addEventListener("change", () => { $("signupNameLabel").firstChild.textContent = $("signupType").value === "business" ? "Business / organisation name" : "Your name"; });
   $("signinForm").addEventListener("submit", async (event) => {
     event.preventDefault(); const button = event.submitter; setBusy(button,true);

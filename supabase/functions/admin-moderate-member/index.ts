@@ -69,6 +69,18 @@ function previousBanDuration(previous: { status?: string; expires_at?: string | 
   return "0s";
 }
 
+function isAdvertiserSession(token: string): boolean {
+  try {
+    const segment = token.split(".")[1];
+    if (!segment) return false;
+    const normalized = segment.replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
+    return payload.role === "anon" && payload.user_role === "advertiser";
+  } catch {
+    return false;
+  }
+}
+
 Deno.serve(async (req: Request) => {
   const cors = corsFor(req);
   const origin = req.headers.get("Origin");
@@ -94,6 +106,7 @@ Deno.serve(async (req: Request) => {
     });
     const { data: userData, error: userError } = await caller.auth.getUser(token);
     if (userError || !userData.user) return json({ error: "Your session is invalid. Please sign in again." }, 401, cors);
+    if (isAdvertiserSession(token)) return json({ error: "Advertiser accounts cannot use Match member administration." }, 403, cors);
 
     const { data: isAdmin, error: adminCheckError } = await caller.rpc("is_match_admin");
     if (adminCheckError || isAdmin !== true) return json({ error: "Admin access denied." }, 403, cors);
@@ -165,6 +178,30 @@ Deno.serve(async (req: Request) => {
       return json({ error: recordError?.message || "The moderation record could not be saved. The previous account restriction was restored." }, 400, cors);
     }
 
+    let notificationDelivery: { sent: boolean; reason?: string } = { sent: false, reason: "not_applicable" };
+    if (action === "suspended" || action === "banned") {
+      const temporary = action === "suspended";
+      const expiryText = expiresAt
+        ? new Date(expiresAt).toLocaleString("en-NG", { dateStyle: "long", timeStyle: "short", timeZone: "Africa/Lagos" })
+        : "";
+      const title = temporary ? "Your account has been suspended" : "Your account has been permanently banned";
+      const bodyText = temporary
+        ? `Your The Match account has been temporarily suspended. Reason: ${reason}. Access is scheduled to be restored on ${expiryText} WAT.`
+        : `Your The Match account has been permanently banned. Reason: ${reason}. If you believe this decision was made in error, please contact The Match support team.`;
+      const { error: notificationError } = await admin.from("notifications").insert({
+        user_id: targetId,
+        type: temporary ? "account_suspended" : "account_banned",
+        title,
+        body: bodyText,
+      });
+      if (notificationError) {
+        console.error("Moderation in-app notification could not be saved:", notificationError.message);
+        notificationDelivery = { sent: false, reason: "database_insert_failed" };
+      } else {
+        notificationDelivery = { sent: true };
+      }
+    }
+
     let emailDelivery: { sent: boolean; reason?: string; id?: string | null } = { sent: false, reason: "not_applicable" };
     if (action === "suspended" || action === "banned") {
       const recipientEmail = targetUser.user.email;
@@ -180,7 +217,7 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    return json({ success: true, user_id: targetId, action, expires_at: expiresAt, email_delivery: emailDelivery });
+    return json({ success: true, user_id: targetId, action, expires_at: expiresAt, notification_delivery: notificationDelivery, email_delivery: emailDelivery });
   } catch (error) {
     console.error("Member moderation failed:", error instanceof Error ? error.message : "Unknown error");
     return json({ error: "Member moderation could not be completed. Please try again." }, 500, cors);

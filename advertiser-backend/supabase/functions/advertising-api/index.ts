@@ -499,7 +499,9 @@ Deno.serve(async (req: Request) => {
         campaigns_total: 0,
         active_campaigns: 0,
         pending_campaigns: 0,
-        confirmed_payments: 0,
+        confirmed_campaign_payments: 0,
+        confirmed_design_payments: 0,
+        design_service_revenue_ngn: 0,
         confirmed_revenue_ngn: 0,
       }, 200, origin);
     }

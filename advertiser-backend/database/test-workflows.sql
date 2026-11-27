@@ -30,7 +30,11 @@ begin
   if (select public.custom_access_token_hook(jsonb_build_object(
       'user_id','10000000-0000-4000-8000-000000000003',
       'claims',jsonb_build_object('role','authenticated','user_metadata','{"the_match_advertiser_registration":"v1"}'::jsonb)
-    ))->'claims'->>'role') <> 'authenticated' then
+    ))->'claims'->>'role') <> 'authenticated'
+    or (select public.custom_access_token_hook(jsonb_build_object(
+      'user_id','10000000-0000-4000-8000-000000000003',
+      'claims',jsonb_build_object('role','authenticated','user_metadata','{"the_match_advertiser_registration":"v1"}'::jsonb)
+    ))->'claims'->>'user_role') = 'advertiser' then
     raise exception 'Existing dating-member account did not retain the normal member role';
   end if;
 end;
@@ -49,22 +53,58 @@ begin
   if (select public.custom_access_token_hook(jsonb_build_object(
       'user_id','10000000-0000-4000-8000-000000000001',
       'claims',jsonb_build_object('role','authenticated')
-    ))->'claims'->>'role') <> 'advertiser' then
-    raise exception 'Advertiser JWT role was not assigned by the Auth hook';
+    ))->'claims'->>'role') <> 'anon'
+    or (select public.custom_access_token_hook(jsonb_build_object(
+      'user_id','10000000-0000-4000-8000-000000000001',
+      'claims',jsonb_build_object('role','authenticated')
+    ))->'claims'->>'user_role') <> 'advertiser' then
+    raise exception 'Advertiser JWT did not receive the supported anon role and advertiser custom claim';
   end if;
 end;
 $test$;
 
-set role advertiser;
+set role anon;
 select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',false);
-select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"advertiser"}',false);
+select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"anon","user_role":"advertiser"}',false);
 do $test$
 begin
-  if (select count(*) from public.advertiser_profiles) <> 1 then
-    raise exception 'Advertiser profile RLS did not isolate the current account';
+  if has_table_privilege('anon','public.advertiser_profiles','select') then
+    raise exception 'Advertiser browser must not directly read advertiser_profiles';
   end if;
-  if (select count(*) from public.advertiser_profiles where user_id = '10000000-0000-4000-8000-000000000002') <> 0 then
-    raise exception 'Advertiser can read another advertiser profile';
+end;
+$test$;
+reset role;
+
+-- The Auth hook custom claim blocks member table reads even when a table's
+-- ordinary permissive policy would otherwise allow an authenticated user.
+set role anon;
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',false);
+select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"anon","user_role":"advertiser"}',false);
+do $test$
+begin
+  if (select count(*) from public.profiles) <> 0 then
+    raise exception 'Advertiser session could read Match member profiles';
+  end if;
+  perform set_config('request.path','profiles',false);
+  begin
+    perform public.match_advertiser_api_guard();
+    raise exception 'Advertiser Data API guard did not reject a member table path';
+  exception when sqlstate 'PGRST' then
+    null;
+  end;
+  perform set_config('request.path','advertising_campaigns',false);
+  perform public.match_advertiser_api_guard();
+end;
+$test$;
+reset role;
+
+set role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000003',false);
+select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000003","role":"authenticated"}',false);
+do $test$
+begin
+  if (select count(*) from public.profiles) <> 1 then
+    raise exception 'Normal Match member lost existing profile read access';
   end if;
 end;
 $test$;
@@ -73,9 +113,9 @@ reset role;
 insert into public.advertising_admins(user_id)
 values ('10000000-0000-4000-8000-000000000001');
 
-set role advertiser;
+set role anon;
 select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',false);
-select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"advertiser"}',false);
+select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"anon","user_role":"advertiser"}',false);
 do $test$
 begin
   if not private.is_advertising_admin() then
@@ -147,9 +187,9 @@ end;
 $test$;
 reset role;
 
-set role advertiser;
+set role anon;
 select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',false);
-select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"advertiser"}',false);
+select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"anon","user_role":"advertiser"}',false);
 do $test$
 begin
   if (select count(*) from public.get_my_advertising_campaign_metrics(

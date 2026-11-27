@@ -69,10 +69,10 @@ Do not set `MATCH_SUPABASE_URL` or `MATCH_SUPABASE_ANON_KEY`; member verificatio
 
 ## Setup order — not yet performed in production
 
-1. Review the shared-project migration and CI results.
-2. Deploy the trusted advertiser registration Edge Function. Separately reconcile the ten guarded member-function source snapshots with their current live versions; do not deploy snapshots blindly. Preserve current live logic, add only the reviewed advertiser-session rejection guard, and deploy those reconciled versions before enabling advertiser Auth. Their only behavior change is to reject the advertiser custom claim; ordinary member sessions continue through the existing code.
-3. Apply `database/bootstrap.sql` to the existing Match project only after explicit owner approval. Never run the old separate-project instructions.
-4. Run `database/verify.sql` and Supabase security/performance advisors. Confirm the `public` schema is exposed to the Data API.
+1. Review the shared-project migration and CI results against the live Match project.
+2. Reconcile the ten guarded member-function source snapshots with their current live versions; do not deploy snapshots blindly. Preserve current live logic, add only the reviewed advertiser-session rejection guard, and deploy those reconciled versions before enabling advertiser Auth. Their only behavior change is to reject the advertiser custom claim; ordinary member sessions continue through the existing code.
+3. The live project already contains a reduced 13-table advertising foundation with RLS enabled and app-client table access revoked. The full `database/bootstrap.sql` has not been applied. Review its broad member-table, Storage and Realtime RLS changes and rehearse them against the current live schema before any application.
+4. Run `database/verify.sql` only after the full bootstrap has been safely applied, then run Supabase security/performance advisors. Explicitly verify Data API schema exposure and table grants; new public tables are not automatically exposed by default on current Supabase projects.
 5. Inspect `pg_db_role_setting`; if no pre-request hook exists, run `database/enable-pre-request.sql`. Do not overwrite another pre-request integration.
 6. Configure the Custom Access Token Hook at `pg-functions://postgres/public/custom_access_token_hook`. Test that normal member claims remain unchanged.
 7. Deploy the four advertising Edge Functions to the existing project and set the server-side secrets.
@@ -87,13 +87,13 @@ Do not set `MATCH_SUPABASE_URL` or `MATCH_SUPABASE_ANON_KEY`; member verificatio
 The GitHub Actions workflow runs JavaScript syntax checks, Deno type checks and disposable PostgreSQL integration tests. These tests do not connect to or mutate the live Match database. They do not replace real-device integration tests or a live advertiser/member session test.
 
 Not yet configured or activated:
-- No production advertising migration has been applied.
+- A reduced 13-table advertising foundation migration has been applied to the live project. All 13 tables have RLS enabled; `anon` and `authenticated` have no direct table access, and `service_role` retains server-side access. The full bootstrap, Auth hook, Data API guard and broad member-data boundaries have not been applied.
 - No Data API pre-request setting has been enabled.
 - No Auth hook has been enabled.
-- No advertising or guarded member Edge Functions have been deployed.
+- No advertising Edge Functions or reconciled guarded member Edge Functions have been deployed.
 - No B2 advertising key or HMAC secret has been configured.
 - No bank details or admin allowlist have been configured.
-- No live advertiser/member sessions or Android/iOS device QA have been completed.
+- No live advertiser/member sessions or Android/iOS device QA have been completed. The live project currently has no custom advertiser Auth hook, no Data API pre-request guard and no deployed advertising Edge Functions.
 - The sponsored advertising feature flag remains disabled.
 - Nigerian advertising/privacy/legal review, including any ARCON clearance or disclosure obligations, remains a launch gate.
 

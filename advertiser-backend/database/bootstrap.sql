@@ -17,7 +17,10 @@ grant usage on schema public, private to supabase_auth_admin;
 do $grant$
 begin
   if to_regprocedure('private.is_dual_member_advertiser()') is not null then
-    grant execute on function private.is_dual_member_advertiser() to supabase_auth_admin;
+    execute 'grant execute on function private.is_dual_member_advertiser() to supabase_auth_admin';
+  end if;
+  if to_regprocedure('public.is_dual_member_advertiser()') is not null then
+    execute 'grant execute on function public.is_dual_member_advertiser() to supabase_auth_admin';
   end if;
 end;
 $grant$;
@@ -1620,6 +1623,7 @@ as $function$
 $function$;
 revoke all on function public.is_dual_member_advertiser() from public;
 grant execute on function public.is_dual_member_advertiser() to anon, authenticated, authenticator, service_role;
+grant execute on function public.is_dual_member_advertiser() to supabase_auth_admin;
 
 -- Data API boundary. Advertiser-only identities remain isolated. A verified
 -- identity that also has a Match member profile keeps normal member API access.

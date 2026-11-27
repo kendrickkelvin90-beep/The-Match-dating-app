@@ -99,6 +99,29 @@ begin
   if not has_schema_privilege('authenticated','private','usage') then
     raise exception 'Authenticated role cannot execute the private admin helper used by RLS';
   end if;
+
+  if not (select relrowsecurity from pg_catalog.pg_class
+          where oid='public.advertising_campaign_change_requests'::regclass)
+     or not has_table_privilege('authenticated','public.advertising_campaign_change_requests','select')
+     or has_table_privilege('authenticated','public.advertising_campaign_change_requests','insert')
+     or has_table_privilege('authenticated','public.advertising_campaign_change_requests','update')
+     or has_table_privilege('authenticated','public.advertising_campaign_change_requests','delete')
+     or has_table_privilege('anon','public.advertising_campaign_change_requests','select')
+     or not has_table_privilege('service_role','public.advertising_campaign_change_requests','select,insert,update,delete') then
+    raise exception 'Campaign change requests must be owner-readable and service-role writable under RLS';
+  end if;
+
+  if has_function_privilege('anon','public.request_advertising_campaign_change(uuid,uuid,text,text,text,text,text,timestamptz,text)','execute')
+     or has_function_privilege('authenticated','public.request_advertising_campaign_change(uuid,uuid,text,text,text,text,text,timestamptz,text)','execute')
+     or not has_function_privilege('service_role','public.request_advertising_campaign_change(uuid,uuid,text,text,text,text,text,timestamptz,text)','execute')
+     or has_function_privilege('anon','public.attach_advertising_change_creative(uuid,uuid,text,text,text,text,bigint,numeric,integer,integer)','execute')
+     or has_function_privilege('authenticated','public.attach_advertising_change_creative(uuid,uuid,text,text,text,text,bigint,numeric,integer,integer)','execute')
+     or not has_function_privilege('service_role','public.attach_advertising_change_creative(uuid,uuid,text,text,text,text,bigint,numeric,integer,integer)','execute')
+     or has_function_privilege('anon','public.admin_review_advertising_campaign_change(uuid,uuid,boolean,text)','execute')
+     or has_function_privilege('authenticated','public.admin_review_advertising_campaign_change(uuid,uuid,boolean,text)','execute')
+     or not has_function_privilege('service_role','public.admin_review_advertising_campaign_change(uuid,uuid,boolean,text)','execute') then
+    raise exception 'Campaign change lifecycle RPCs must be service-role only';
+  end if;
 end;
 $verify$;
 

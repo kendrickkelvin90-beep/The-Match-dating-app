@@ -26,11 +26,11 @@ create index if not exists advertising_change_requests_admin_queue_idx
 alter table public.advertising_campaign_change_requests enable row level security;
 drop policy if exists advertising_change_requests_select_own on public.advertising_campaign_change_requests;
 create policy advertising_change_requests_select_own on public.advertising_campaign_change_requests
-  for select to authenticated using (
+  for select to advertiser using (
     advertiser_id = (select auth.uid()) or private.is_advertising_admin()
   );
-revoke all on public.advertising_campaign_change_requests from anon, authenticated;
-grant select on public.advertising_campaign_change_requests to authenticated;
+revoke all on public.advertising_campaign_change_requests from anon, authenticated, advertiser;
+grant select on public.advertising_campaign_change_requests to advertiser;
 grant select, insert, update, delete on public.advertising_campaign_change_requests to service_role;
 
 create or replace function public.request_advertising_campaign_change(
@@ -75,7 +75,7 @@ begin
   return v_id;
 end;
 $function$;
-revoke all on function public.request_advertising_campaign_change(uuid,uuid,text,text,text,text,text,timestamptz,text) from public,anon,authenticated;
+revoke all on function public.request_advertising_campaign_change(uuid,uuid,text,text,text,text,text,timestamptz,text) from public,anon,authenticated,advertiser;
 grant execute on function public.request_advertising_campaign_change(uuid,uuid,text,text,text,text,text,timestamptz,text) to service_role;
 
 create or replace function public.attach_advertising_change_creative(

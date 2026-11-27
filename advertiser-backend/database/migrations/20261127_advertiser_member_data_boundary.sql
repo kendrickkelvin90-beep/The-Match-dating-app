@@ -90,6 +90,53 @@ end;
 $service_boundaries$;
 
 
+
+-- Admin operations are served only by the trusted Edge Function. Advertisers
+-- can directly read only their own campaign/design list rows.
+drop policy if exists advertiser_profile_owner_read on public.advertiser_profiles;
+create policy advertiser_profile_owner_read on public.advertiser_profiles
+for select to anon using (user_id=(select auth.uid()));
+drop policy if exists advertising_campaign_owner_read on public.advertising_campaigns;
+create policy advertising_campaign_owner_read on public.advertising_campaigns
+for select to anon using (
+ coalesce((select auth.jwt()->>'user_role'),'')='advertiser'
+ and advertiser_id=(select auth.uid())
+);
+drop policy if exists advertising_creative_owner_read on public.advertising_creatives;
+create policy advertising_creative_owner_read on public.advertising_creatives
+for select to anon using (
+ exists(select 1 from public.advertising_campaigns c
+ where c.id=campaign_id and c.advertiser_id=(select auth.uid()))
+);
+drop policy if exists advertising_payment_owner_read on public.advertising_payments;
+create policy advertising_payment_owner_read on public.advertising_payments
+for select to anon using (advertiser_id=(select auth.uid()));
+drop policy if exists advertising_design_owner_read on public.advertising_design_requests;
+create policy advertising_design_owner_read on public.advertising_design_requests
+for select to anon using (
+ coalesce((select auth.jwt()->>'user_role'),'')='advertiser'
+ and advertiser_id=(select auth.uid())
+);
+drop policy if exists advertising_design_payment_owner_read on public.advertising_design_payments;
+create policy advertising_design_payment_owner_read on public.advertising_design_payments
+for select to anon using (advertiser_id=(select auth.uid()));
+drop policy if exists advertising_refund_owner_read on public.advertising_refunds;
+create policy advertising_refund_owner_read on public.advertising_refunds
+for select to anon using (advertiser_id=(select auth.uid()));
+drop policy if exists advertising_change_requests_select_own on public.advertising_campaign_change_requests;
+create policy advertising_change_requests_select_own on public.advertising_campaign_change_requests
+for select to anon using (advertiser_id=(select auth.uid()));
+
+revoke all on public.advertising_creatives,public.advertising_payments,
+ public.advertising_design_payments,public.advertising_refunds,
+ public.advertising_campaign_change_requests
+from anon,authenticated;
+grant select on public.advertising_campaigns,public.advertising_design_requests to anon;
+
+drop function if exists public.is_advertising_admin();
+drop function if exists private.is_advertising_admin();
+revoke usage on schema private from anon;
+
 -- Existing Match administrators are the only initial advertising administrators.
 -- Their member JWT remains a normal member JWT; the advertising API checks this
 -- allowlist server-side for admin-only actions.

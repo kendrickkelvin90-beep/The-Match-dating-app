@@ -110,6 +110,19 @@ revoke all on function private.custom_access_token_hook(jsonb)
   from public, anon, authenticated, advertiser, service_role;
 grant execute on function private.custom_access_token_hook(jsonb) to supabase_auth_admin;
 
+-- Public-schema wrapper is the Supabase Dashboard Auth Hook entrypoint.
+-- The implementation remains private and executable only by supabase_auth_admin.
+create or replace function public.custom_access_token_hook(event jsonb)
+returns jsonb
+language sql
+set search_path = ''
+as $wrapper$
+  select private.custom_access_token_hook(event);
+$wrapper$;
+revoke all on function public.custom_access_token_hook(jsonb)
+  from public, anon, authenticated, advertiser, service_role;
+grant execute on function public.custom_access_token_hook(jsonb) to supabase_auth_admin;
+
 revoke all on schema private from public, anon;
 grant usage on schema private to authenticated, advertiser, service_role, supabase_auth_admin;
 

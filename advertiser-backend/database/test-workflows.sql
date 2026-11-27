@@ -7,11 +7,11 @@ insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values
 set role supabase_auth_admin;
 select private.custom_access_token_hook(jsonb_build_object(
   'user_id','10000000-0000-4000-8000-000000000001',
-  'claims',jsonb_build_object('role','authenticated','user_metadata',(select raw_user_meta_data from auth.users where id='10000000-0000-4000-8000-000000000001'))
+  'claims',jsonb_build_object('role','authenticated','user_metadata','{"account_type":"advertiser","advertiser_type":"individual","display_name":"Advertiser One"}'::jsonb)
 ));
 select private.custom_access_token_hook(jsonb_build_object(
   'user_id','10000000-0000-4000-8000-000000000002',
-  'claims',jsonb_build_object('role','authenticated','user_metadata',(select raw_user_meta_data from auth.users where id='10000000-0000-4000-8000-000000000002'))
+  'claims',jsonb_build_object('role','authenticated','user_metadata','{"account_type":"advertiser","advertiser_type":"business","display_name":"Advertiser Two"}'::jsonb)
 ));
 reset role;
 

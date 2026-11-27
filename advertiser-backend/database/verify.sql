@@ -37,6 +37,7 @@ begin
 
   if has_table_privilege('authenticated','public.advertising_impressions','select')
      or has_table_privilege('authenticated','public.advertising_clicks','select')
+     or has_table_privilege('authenticated','public.advertising_unique_clicks','select')
      or has_table_privilege('authenticated','public.advertising_admins','select')
      or has_table_privilege('authenticated','public.advertising_admin_audit','select') then
     raise exception 'Private analytics/admin tables are exposed to advertiser clients';

@@ -18,6 +18,7 @@ type Action =
   | "get-metrics"
   | "get-payment-details"
   | "request-refund"
+  | "admin-preview-creative"
   | "admin-list-campaigns"
   | "admin-list-payments"
   | "admin-list-refunds"
@@ -65,25 +66,25 @@ function paymentReference() {
   return "TMAD-" + token;
 }
 
-async function authenticate(req: Request): Promise<{ user: User; caller: ReturnType<typeof createClient>; admin: ReturnType<typeof createClient> } | null> {
+async function authenticate(req: Request): Promise<{ user: User; caller: any; admin: any } | null> {
   const header = req.headers.get("Authorization") ?? "";
   const token = header.replace(/^Bearer\s+/i, "");
   if (!token || token === header || !supabaseUrl || !anonKey || !serviceKey) return null;
 
-  const caller = createClient(supabaseUrl, anonKey, {
+  const caller: any = createClient(supabaseUrl, anonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
     global: { headers: { Authorization: `Bearer ${token}` } },
   });
   const { data, error } = await caller.auth.getUser(token);
   if (error || !data.user || !data.user.email_confirmed_at) return null;
 
-  const admin = createClient(supabaseUrl, serviceKey, {
+  const admin: any = createClient(supabaseUrl, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
   return { user: data.user, caller, admin };
 }
 
-async function requireAdmin(admin: ReturnType<typeof createClient>, userId: string) {
+async function requireAdmin(admin: any, userId: string) {
   const { data, error } = await admin.from("advertising_admins")
     .select("user_id").eq("user_id", userId).maybeSingle();
   return !error && !!data;

@@ -45,6 +45,36 @@ begin
     raise exception 'Campaign metrics RPC execute grants are incorrect';
   end if;
 
+
+  if has_function_privilege('anon','public.create_advertising_campaign(uuid,text,text,text,text,integer,text,timestamptz,text,timestamptz)','execute')
+     or has_function_privilege('authenticated','public.create_advertising_campaign(uuid,text,text,text,text,integer,text,timestamptz,text,timestamptz)','execute')
+     or not has_function_privilege('service_role','public.create_advertising_campaign(uuid,text,text,text,text,integer,text,timestamptz,text,timestamptz)','execute') then
+    raise exception 'Campaign creation RPC must be service-role only';
+  end if;
+
+  if has_function_privilege('anon','public.submit_advertising_payment(uuid,uuid,integer,text,text)','execute')
+     or has_function_privilege('authenticated','public.submit_advertising_payment(uuid,uuid,integer,text,text)','execute')
+     or not has_function_privilege('service_role','public.submit_advertising_payment(uuid,uuid,integer,text,text)','execute') then
+    raise exception 'Payment submission RPC must be service-role only';
+  end if;
+
+  if has_function_privilege('anon','public.admin_confirm_advertising_payment(uuid,uuid,text)','execute')
+     or has_function_privilege('authenticated','public.admin_confirm_advertising_payment(uuid,uuid,text)','execute')
+     or not has_function_privilege('service_role','public.admin_confirm_advertising_payment(uuid,uuid,text)','execute') then
+    raise exception 'Payment confirmation RPC must be service-role only';
+  end if;
+
+  if has_function_privilege('anon','public.record_advertising_event(uuid,text,text)','execute')
+     or has_function_privilege('authenticated','public.record_advertising_event(uuid,text,text)','execute')
+     or not has_function_privilege('service_role','public.record_advertising_event(uuid,text,text)','execute') then
+    raise exception 'Advertising event writer must be service-role only';
+  end if;
+
+  if not has_function_privilege('authenticated','private.is_advertising_admin()','execute')
+     or has_function_privilege('anon','private.is_advertising_admin()','execute') then
+    raise exception 'Private admin helper grants are incorrect';
+  end if;
+
   if not has_schema_privilege('authenticated','private','usage') then
     raise exception 'Authenticated role cannot execute the private admin helper used by RLS';
   end if;

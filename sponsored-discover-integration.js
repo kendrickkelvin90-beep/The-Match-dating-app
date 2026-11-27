@@ -10,12 +10,16 @@
   const config = window.MATCH_SPONSORED_AD_CONFIG || {};
   if (config.enabled !== true || !config.advertiserSupabaseUrl || !config.publishableKey) return;
 
-  const list = document.getElementById("profileList");
-  const discover = document.getElementById("discover");
-  const db = window.db;
-  if (!list || !discover || !db?.auth) return;
-
   const endpoint = config.advertiserSupabaseUrl.replace(/\/$/, "") + "/functions/v1/member-ad-serving";
+  let booted = false;
+
+  function boot() {
+    if (booted) return true;
+    const list = document.getElementById("profileList");
+    const discover = document.getElementById("discover");
+    const db = window.db;
+    if (!list || !discover || !db?.auth) return false;
+    booted = true;
   const organicSelector = ".discover-profile-card-stack,.member-card,.discover-option3-card";
   const processed = new WeakSet();
   const requested = new WeakSet();
@@ -246,4 +250,20 @@
       observer?.disconnect();
     }
   });
+    return true;
+  }
+
+  // Discover and the shared Supabase client may be created after this script.
+  // Keep watching until both exist, then install the feed observer exactly once.
+  const startupObserver = new MutationObserver(() => {
+    if (boot()) startupObserver.disconnect();
+  });
+  startupObserver.observe(document.documentElement, { childList: true, subtree: true });
+  const startupTimer = window.setInterval(() => {
+    if (boot()) {
+      window.clearInterval(startupTimer);
+      startupObserver.disconnect();
+    }
+  }, 250);
+  boot();
 })();

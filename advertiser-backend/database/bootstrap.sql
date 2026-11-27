@@ -181,6 +181,7 @@ create table if not exists public.advertising_refunds (
   advertiser_id uuid not null references public.advertiser_profiles(user_id) on delete restrict,
   amount_ngn integer not null check (amount_ngn > 0),
   reason text not null check (char_length(btrim(reason)) between 3 and 500),
+  admin_note text,
   status text not null default 'requested'
     check (status in ('requested','approved','paid','rejected')),
   requested_at timestamptz not null default now(),
@@ -871,7 +872,7 @@ begin
   v_status := case when p_approve then 'approved' else 'rejected' end;
   update public.advertising_refunds
   set status = v_status, approved_at = case when p_approve then now() else null end,
-      approved_by = p_admin_id, reason = case when p_approve then reason else left(btrim(p_reason),500) end
+      approved_by = p_admin_id, admin_note = case when p_approve then null else left(btrim(p_reason),500) end
   where id = p_refund_id;
   insert into public.advertising_admin_audit(actor_id,action,entity_type,entity_id,details)
   values (p_admin_id,'refund_' || v_status,'refund',p_refund_id::text,jsonb_build_object('amount_ngn',v_refund.amount_ngn));

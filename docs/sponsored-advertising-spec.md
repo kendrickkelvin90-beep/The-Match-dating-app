@@ -98,7 +98,7 @@ Advertisers may register and sign in using:
 - Email and password, including password recovery.
 - Google sign-in.
 
-Advertiser accounts must be separate from dating-member accounts. The implementation must not modify or reuse member login/signup flows in a way that risks breaking them.
+Advertiser accounts must remain a separate account type with their own advertiser profile, portal, permissions and data. To avoid a third Supabase project, the implementation will use the existing Match Supabase Auth service with a dedicated `advertiser` Postgres JWT role and a separate browser storage key. Existing dating-member accounts cannot be converted into advertiser accounts; advertisers must use a different email. The member login/signup screens, CAPTCHA, member profile creation and member session storage must remain unchanged. A Custom Access Token Hook is a global Auth setting, so it must be reviewed, tested against the existing before-user-created hook, and enabled only after member auth regression tests pass.
 
 Both individuals and businesses/organisations are accepted. Proposed application fields:
 - Advertiser type (individual or business/organisation).
@@ -201,7 +201,7 @@ Add a distinct advertising area to the existing admin dashboard. Planned control
 - View individual advertiser records.
 - View confirmed advertising revenue and payment history.
 
-The separate advertiser project must use its own server-side `advertising_admins` allowlist and verified Auth session. Do not trust a client-side admin flag or user-editable Auth metadata. Keep advertising revenue and records separate from Match Plus, Match Lite and Match Coins accounting.
+The advertising tables must use a dedicated `advertiser` database role and a server-side `advertising_admins` allowlist. The Auth hook assigns the role only to explicitly registered advertiser users who do not have a dating-member profile. Do not trust a client-side admin flag or user-editable metadata for privileges. Keep advertising revenue and records separate from Match Plus, Match Lite and Match Coins accounting.
 
 ## 10. Delivery and regulatory considerations
 
@@ -214,7 +214,7 @@ The separate advertiser project must use its own server-side `advertising_admins
 ## 11. Remaining launch gates
 
 The product decisions above are settled. The following owner-controlled setup, legal review and live validation remain:
-1. Create and configure the separate advertiser Supabase project, Google OAuth, email verification/recovery and redirect URLs.
+1. Adapt and verify the advertiser schema in the existing Match Supabase project; configure the Custom Access Token Hook, Google identity linking, email verification/recovery and redirect URLs only after regression tests pass.
 2. Configure protected server-side secrets, the dedicated private B2 advertising key, the business bank details and the advertising admin allowlist.
 3. Confirm applicable Nigerian advertising, consumer-protection and privacy obligations, including any ARCON clearance or disclosure requirements, with qualified local review before publication.
 4. Complete real Android and iOS browser testing, including image/video playback, crop, upload, payment/admin workflows and Discover performance.
@@ -227,7 +227,7 @@ The read-only architecture audit is complete. The isolated implementation is und
 ## 13. Explicit production protections
 
 - No changes to production Supabase schema or data during planning.
-- No changes to member login/signup/Google sign-in/CAPTCHA.
+- No changes to member login/signup UI, CAPTCHA, member profile creation or member browser session key. The additional global Auth token hook must leave ordinary member claims unchanged and pass regression tests before activation.
 - No changes to Match Plus, Match Lite, Match Coins or membership payment flows.
 - No changes to Discover organic card layout/actions, Stories, Events, Nearby, chat, calls, verification or bottom navigation.
 - No advertising implementation, merge or deployment until the complete specification is approved.

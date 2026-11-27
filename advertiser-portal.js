@@ -138,6 +138,61 @@
       finally { button.disabled = false; }
     }));
   };
+
+  const ensureAdminPreviewDialog = () => {
+    let dialog = $("adminCreativePreview");
+    if (dialog) return dialog;
+    dialog = document.createElement("dialog");
+    dialog.id = "adminCreativePreview";
+    dialog.className = "admin-preview-dialog";
+    dialog.innerHTML = '<div class="admin-preview-head"><div><p class="eyebrow">PRIVATE CREATIVE REVIEW</p><h3 id="adminPreviewTitle">Advert creative</h3></div><button type="button" class="small-outline" id="closeAdminPreview" aria-label="Close preview">Close</button></div><div id="adminPreviewMedia" class="admin-preview-media"></div><div id="adminPreviewMeta" class="admin-preview-meta"></div>';
+    document.body.append(dialog);
+    $("closeAdminPreview").addEventListener("click", () => dialog.close());
+    dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
+    return dialog;
+  };
+  const showAdminCreativePreview = async (action, id, title, meta = {}) => {
+    const dialog = ensureAdminPreviewDialog();
+    const media = $("adminPreviewMedia");
+    const details = $("adminPreviewMeta");
+    $("adminPreviewTitle").textContent = title || "Advert creative";
+    media.textContent = "Loading secure preview…";
+    details.replaceChildren();
+    dialog.showModal();
+    try {
+      const payload = action === "admin-preview-change-creative" ? { action, change_request_id: id } : { action, campaign_id: id };
+      const result = await callApi(payload);
+      media.replaceChildren();
+      if (result.creative_type === "video") {
+        const video = document.createElement("video");
+        video.controls = true; video.playsInline = true; video.preload = "metadata";
+        if (result.poster_url) video.poster = result.poster_url;
+        video.src = result.preview_url;
+        media.append(video);
+      } else {
+        const image = document.createElement("img");
+        image.src = result.preview_url; image.alt = "Private advert creative preview"; image.loading = "eager";
+        media.append(image);
+      }
+      const rows = [
+        ["Creative type", result.creative_type || "—"], ["Advertiser", meta.advertiser || "—"],
+        ["Campaign", meta.headline || title || "—"], ["Campaign status", meta.status || "—"],
+        ["Payment", meta.payment || "—"], ["Package", meta.package || "—"], ["CTA", meta.cta || "—"],
+      ];
+      details.innerHTML = rows.map(([label,value]) => '<div><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + '</strong></div>').join("");
+      if (meta.destination) {
+        const link = document.createElement("a");
+        link.href = meta.destination; link.target = "_blank"; link.rel = "noopener noreferrer";
+        link.textContent = "Open full destination link: " + meta.destination; link.className = "admin-destination-link";
+        details.append(link);
+      }
+      const note = document.createElement("p");
+      note.className = "fineprint";
+      note.textContent = "This private preview link expires in about " + (result.expires_in || 120) + " seconds. Reopen Preview to refresh it.";
+      details.append(note);
+    } catch (error) { media.textContent = error.message || "The private creative preview could not be loaded."; }
+  };
+
   const loadAdminPanel = async () => {
     try {
       const overview = await callApi({ action: "admin-overview" });
@@ -148,17 +203,80 @@
         <div class="admin-stat"><strong>${overview.confirmed_design_payments}</strong><span>Design transfers</span></div>
         <div class="admin-stat"><strong>${formatNaira(overview.design_service_revenue_ngn)}</strong><span>Design service revenue</span></div>
         <div class="admin-stat"><strong>${formatNaira(overview.confirmed_revenue_ngn)}</strong><span>Total confirmed revenue</span></div>`;
-      const [campaignData, paymentData] = await Promise.all([
-        callApi({ action: "admin-list-campaigns" }), callApi({ action: "admin-list-payments" }),
+      const [campaignData, paymentData, changeData] = await Promise.all([
+        callApi({ action: "admin-list-campaigns" }),
+        callApi({ action: "admin-list-payments" }),
+        callApi({ action: "admin-list-campaign-changes" }),
       ]);
-      $("adminCampaigns").innerHTML = (campaignData.campaigns || []).map((c) => `
-        <div class="admin-row"><strong>${escapeHtml(c.headline)}</strong><p>${escapeHtml(c.advertiser_profiles?.display_name)} · ${escapeHtml(c.status)} · ${formatNaira(c.package_price_ngn)}</p>
-        <div class="campaign-actions"><button class="small-outline" data-preview="${c.id}">Preview creative</button><button class="small-outline" data-approve="${c.id}">Approve</button><button class="small-outline" data-reject="${c.id}">Reject</button><button class="small-outline" data-pause="${c.id}">${c.status === "paused" ? "Resume" : "Pause"}</button></div></div>`).join("") || '<p class="muted">No campaigns.</p>';
+      $("adminCampaigns").innerHTML = (campaignData.campaigns || []).map((c) => {
+        const creative = (c.advertising_creatives || []).find((item) => item.is_current === true);
+        const paid = c.payment_status === "confirmed";
+        const ready = !!creative && paid && ["awaiting_approval","scheduled","active","paused"].includes(c.status);
+        const destination = /^https:\/\//i.test(c.destination_url || "") ? c.destination_url : "";
+        return `
+        <article class="admin-row admin-campaign-card">
+          <div class="admin-campaign-title"><strong>${escapeHtml(c.headline)}</strong><span class="status">${escapeHtml(String(c.status || "unknown").replaceAll("_"," "))}</span></div>
+          <p><strong>Advertiser:</strong> ${escapeHtml(c.advertiser_profiles?.display_name || "—")} · ${escapeHtml(c.advertiser_profiles?.advertiser_type || "—")} · ${escapeHtml(c.advertiser_profiles?.phone || "No phone supplied")}</p>
+          <p><strong>Campaign ID:</strong> <code>${escapeHtml(c.id)}</code></p>
+          <p><strong>Description:</strong> ${escapeHtml(c.description || "—")}</p>
+          <p><strong>Package:</strong> ${escapeHtml(c.package_days)} days · ${formatNaira(c.package_price_ngn)} · <strong>Payment:</strong> ${escapeHtml(String(c.payment_status || "unknown").replaceAll("_"," "))}</p>
+          <p><strong>Payment reference:</strong> ${escapeHtml(c.payment_reference || "—")} · <strong>Start:</strong> ${escapeHtml(c.start_mode || "—")} ${c.scheduled_start_at ? "· " + formatDate(c.scheduled_start_at) : ""}</p>
+          <p><strong>CTA:</strong> ${escapeHtml(c.cta || "—")} · <strong>Creative:</strong> ${creative ? escapeHtml(creative.creative_type) : "Missing current creative"}</p>
+          <p><strong>Destination:</strong> ${destination ? `<a href="${escapeHtml(destination)}" target="_blank" rel="noopener noreferrer">${escapeHtml(destination)}</a>` : "No valid HTTPS destination"}</p>
+          <p><strong>Created:</strong> ${formatDate(c.created_at)} · <strong>Scheduled:</strong> ${formatDate(c.scheduled_start_at)} · <strong>Ends:</strong> ${formatDate(c.ends_at)}</p>
+          <div class="campaign-actions">
+            <button class="small-outline" data-preview="${escapeHtml(c.id)}" ${creative ? "" : "disabled"}>Preview image / video</button>
+            <button class="small-outline" data-approve="${escapeHtml(c.id)}" ${ready ? "" : "disabled"} title="${ready ? "Approve campaign" : "Approval requires confirmed payment and a current creative"}>Approve</button>
+            <button class="small-outline" data-reject="${escapeHtml(c.id)}">Reject</button>
+            <button class="small-outline" data-pause="${escapeHtml(c.id)}">${c.status === "paused" ? "Resume" : "Pause"}</button>
+          </div>
+        </article>`;
+      }).join("") || '<p class="muted">No campaigns.</p>';
+      $("adminCampaignChanges").innerHTML = (changeData.requests || []).filter((r) => r.status === "pending").map((r) => {
+        const destination = /^https:\/\//i.test(r.proposed_destination_url || "") ? r.proposed_destination_url : "";
+        return `
+          <article class="admin-row">
+            <div class="admin-campaign-title"><strong>Replacement / campaign change</strong><span class="status">Pending review</span></div>
+            <p><strong>Campaign:</strong> ${escapeHtml(r.advertising_campaigns?.headline || r.campaign_id)} · <strong>Advertiser:</strong> ${escapeHtml(r.advertiser_profiles?.display_name || "—")}</p>
+            <p><strong>Requested headline:</strong> ${escapeHtml(r.proposed_headline || "No change")} · <strong>Reason:</strong> ${escapeHtml(r.advertiser_reason || "—")}</p>
+            <p><strong>Description:</strong> ${escapeHtml(r.proposed_description || "No change")}</p>
+            <p><strong>Destination:</strong> ${destination ? `<a href="${escapeHtml(destination)}" target="_blank" rel="noopener noreferrer">${escapeHtml(destination)}</a>` : "No destination change"}</p>
+            <p><strong>Replacement creative:</strong> ${r.proposed_creative_id ? "Attached" : "Not attached"}</p>
+            <div class="campaign-actions">
+              <button class="small-outline" data-preview-change="${escapeHtml(r.id)}" ${r.proposed_creative_id ? "" : "disabled"}>Preview replacement</button>
+              <button class="small-outline" data-approve-change="${escapeHtml(r.id)}">Approve change</button>
+              <button class="small-outline" data-reject-change="${escapeHtml(r.id)}">Reject change</button>
+            </div>
+          </article>`;
+      }).join("") || '<p class="muted">No pending campaign changes.</p>';
       $("adminPayments").innerHTML = (paymentData.payments || []).map((p) => `
         <div class="admin-row" data-payment-status="${escapeHtml(p.status)}" data-payment-campaign="${escapeHtml(p.campaign_id)}" data-payment-advertiser="${escapeHtml(p.advertiser_id)}" data-payment-amount="${escapeHtml(p.amount_ngn)}"><strong>${formatNaira(p.amount_ngn)} · ${escapeHtml(p.status)}</strong><p>${escapeHtml(p.advertising_campaigns?.headline)} · ${escapeHtml(p.advertiser_profiles?.display_name)}</p><p>Transfer ref: ${escapeHtml(p.bank_transfer_reference)}</p>
         ${p.status === "submitted" ? `<button class="small-outline" data-confirm-payment="${p.id}">Confirm bank transfer</button>` : ""}</div>`).join("") || '<p class="muted">No submitted transfers.</p>';
       $("adminCampaigns").querySelectorAll("[data-preview]").forEach((b) => b.addEventListener("click", async () => {
-        try { const result = await callApi({ action: "admin-preview-creative", campaign_id: b.dataset.preview }); window.open(result.preview_url, "_blank", "noopener"); }
+        const campaign = (campaignData.campaigns || []).find((item) => item.id === b.dataset.preview);
+        if (!campaign) return;
+        await showAdminCreativePreview("admin-preview-creative", campaign.id, campaign.headline, {
+          advertiser: campaign.advertiser_profiles?.display_name, headline: campaign.headline, status: campaign.status,
+          payment: campaign.payment_status, package: campaign.package_days + " days · " + formatNaira(campaign.package_price_ngn),
+          cta: campaign.cta, destination: campaign.destination_url,
+        });
+      }));
+      $("adminCampaignChanges").querySelectorAll("[data-preview-change]").forEach((b) => b.addEventListener("click", async () => {
+        const request = (changeData.requests || []).find((item) => item.id === b.dataset.previewChange);
+        await showAdminCreativePreview("admin-preview-change-creative", b.dataset.previewChange, request?.proposed_headline || request?.advertising_campaigns?.headline || "Replacement creative", {
+          advertiser: request?.advertiser_profiles?.display_name, headline: request?.proposed_headline || request?.advertising_campaigns?.headline,
+          status: request?.advertising_campaigns?.status, destination: request?.proposed_destination_url,
+        });
+      }));
+      $("adminCampaignChanges").querySelectorAll("[data-approve-change]").forEach((b) => b.addEventListener("click", async () => {
+        if (!confirm("Approve this campaign change and activate its proposed creative/details?")) return;
+        try { await callApi({ action: "admin-review-campaign-change", change_request_id: b.dataset.approveChange, approve: true }); await loadAdminPanel(); }
+        catch (error) { message("globalMessage", error.message, true); }
+      }));
+      $("adminCampaignChanges").querySelectorAll("[data-reject-change]").forEach((b) => b.addEventListener("click", async () => {
+        const reason = prompt("Enter the reason for rejecting this campaign change:");
+        if (!reason || reason.trim().length < 3) return;
+        try { await callApi({ action: "admin-review-campaign-change", change_request_id: b.dataset.rejectChange, approve: false, reason }); await loadAdminPanel(); }
         catch (error) { message("globalMessage", error.message, true); }
       }));
       $("adminCampaigns").querySelectorAll("[data-approve]").forEach((b) => b.addEventListener("click", () => adminReview(b.dataset.approve, true)));

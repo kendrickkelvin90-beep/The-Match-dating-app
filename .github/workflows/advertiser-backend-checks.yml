@@ -5,6 +5,7 @@ on:
     branches:
       - planning/sponsored-advertising-2026-11-27
       - work/sponsored-ads-shared-supabase-2026-11-27
+      - work/advertising-security-boundary-2026-11-27
     paths:
       - "advertiser-backend/**"
       - "supabase/functions/**"

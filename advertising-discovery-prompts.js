@@ -69,14 +69,20 @@
     document.head.appendChild(style);
   }
 
-  function currentUserKey() {
-    const user = window.db?.auth?.getUser;
-    return window.__MATCH_CURRENT_USER_ID || window.currentUser?.id ||
-      window.matchCurrentUser?.id || "";
+  let sessionUserId = "";
+  let sessionChecked = false;
+  async function currentUserKey() {
+    if (sessionChecked) return sessionUserId;
+    sessionChecked = true;
+    try {
+      const { data } = await window.db?.auth?.getSession?.();
+      sessionUserId = data?.session?.user?.id || "";
+    } catch (_) {}
+    return sessionUserId;
   }
 
-  function shouldShow() {
-    const userId = currentUserKey();
+  async function shouldShow() {
+    const userId = await currentUserKey();
     if (!userId) return false;
     try {
       const lastDismissed = Number(localStorage.getItem(STORAGE_PREFIX + userId) || 0);
@@ -84,10 +90,10 @@
     } catch (_) { return true; }
   }
 
-  function mountEventsPrompt() {
+  async function mountEventsPrompt() {
     const page = $("#eventsPage");
     const heading = $("#eventsPage .events-heading");
-    if (!page || !heading || $(".match-advertising-prompt", page) || !shouldShow()) return;
+    if (!page || !heading || $(".match-advertising-prompt", page) || !(await shouldShow())) return;
     const card = document.createElement("aside");
     card.className = "match-advertising-prompt";
     card.setAttribute("aria-label", "Advertising opportunities");
@@ -102,7 +108,7 @@
         <button class="match-advertising-prompt-dismiss" type="button" aria-label="Dismiss advertising invitation">×</button>
       </div>`;
     $(".match-advertising-prompt-dismiss", card).addEventListener("click", () => {
-      const userId = currentUserKey();
+      const userId = sessionUserId;
       if (userId) {
         try { localStorage.setItem(STORAGE_PREFIX + userId, String(Date.now())); } catch (_) {}
       }
@@ -111,9 +117,9 @@
     heading.insertAdjacentElement("afterend", card);
   }
 
-  function refresh() {
+  async function refresh() {
     addStyles();
-    mountEventsPrompt();
+    await mountEventsPrompt();
   }
 
   if (document.readyState === "loading") {

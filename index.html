@@ -13513,19 +13513,7 @@ pass.onclick = async () => {
       );
 
     const [{ error }] = await Promise.all([savePromise, exitAnimation]);
-    if (error) {
-      if (/DAILY_SWIPE_LIMIT/i.test(error.message)) {
-        status("discoverStatus","You have used your 20 free swipes for today. Go Premium for unlimited swipes.",true);
-        void refreshDailyLikeCounter();
-        pass.disabled = true;
-        like.disabled = true;
-        card.style.transition = "none";
-        card.style.transform = "translate3d(0,0,0)";
-        card.style.opacity = "1";
-        return;
-      }
-      throw error;
-    }
+    if (error) throw error;
 
     // The counter is secondary UI; don't make the next profile wait for it.
     void refreshDailyLikeCounter();
@@ -13563,16 +13551,9 @@ superLike.disabled = !hasSuperLikeAccess;
 superLike.style.cssText="flex:0 0 clamp(78px,25vw,100px);width:clamp(78px,25vw,100px);height:clamp(78px,25vw,100px);min-height:clamp(78px,25vw,100px);max-width:clamp(78px,25vw,100px);padding:0;border-radius:50%;border:1px solid rgba(255,232,175,.95);background:radial-gradient(circle at 35% 20%,#fff6d5 0%,#e6c27a 48%,#b98a3f 100%);color:#241707;font-size:43px;font-weight:900;line-height:1;box-shadow:0 6px 22px rgba(230,183,77,.32),inset 0 1px 0 rgba(255,255,255,.65);text-shadow:0 1px 1px rgba(255,255,255,.45);";
 if (!hasSuperLikeAccess) superLike.style.cssText += "opacity:.32;filter:grayscale(.75);box-shadow:none;cursor:not-allowed;";
 
-if (!currentDiscoverIsPremium && currentDailySwipesUsed >= 20) {
-  like.disabled = true;
-  pass.disabled = true;
-  like.textContent = "🔒";
-  pass.textContent = "🔒";
-  like.title = "You've used your 20 free swipes for today. Premium includes unlimited swipes.";
-  pass.title = like.title;
-  like.setAttribute("aria-label", like.title);
-  pass.setAttribute("aria-label", pass.title);
-}
+// Purchased extra swipe credits are redeemed by the database swipe trigger.
+// Never lock Like or Pass based on the cached daily counter; allow the action
+// to reach the server so it can consume a purchased credit atomically.
 
       
 like.onclick=async()=>{
@@ -13598,22 +13579,7 @@ like.onclick=async()=>{
         exitAnimation
       ]).then(results => [results[0], results[1]]);
 
-    if(likeError){
-      if (/DAILY_SWIPE_LIMIT/i.test(likeError.message)) {
-        status("discoverStatus","You've used your 20 free swipes for today. Go Premium for unlimited swipes.",true);
-        void refreshDailyLikeCounter();
-        like.disabled = true;
-        pass.disabled = true;
-        like.textContent = "🔒";
-        pass.textContent = "🔒";
-      } else {
-        throw likeError;
-      }
-      card.style.transition = "none";
-      card.style.transform = "translate3d(0,0,0)";
-      card.style.opacity = "1";
-      return;
-    }
+    if(likeError) throw likeError;
     if(matchError) console.warn('Like was saved, but mutual-like status could not be checked.', matchError);
 
     // Update the swipe counter without delaying the next card.

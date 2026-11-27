@@ -80,15 +80,15 @@ function paymentReference() {
   return "TMAD-" + token;
 }
 
-function jwtRole(token: string): string {
+function isAdvertiserToken(token: string): boolean {
   try {
     const segment = token.split(".")[1];
-    if (!segment) return "";
+    if (!segment) return false;
     const normalized = segment.replace(/-/g, "+").replace(/_/g, "/");
     const payload = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
-    return typeof payload.role === "string" ? payload.role : "";
+    return payload.role === "anon" && payload.user_role === "advertiser";
   } catch {
-    return "";
+    return false;
   }
 }
 
@@ -102,7 +102,7 @@ async function authenticate(req: Request): Promise<{ user: User; caller: any; ad
     global: { headers: { Authorization: `Bearer ${token}` } },
   });
   const { data, error } = await caller.auth.getUser(token);
-  if (error || !data.user || !data.user.email_confirmed_at || jwtRole(token) !== "advertiser") return null;
+  if (error || !data.user || !data.user.email_confirmed_at || !isAdvertiserToken(token)) return null;
 
   const admin: any = createClient(supabaseUrl, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false },

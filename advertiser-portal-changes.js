@@ -84,9 +84,16 @@
         '<p>Description: ' + escape(item.proposed_description || "No change") + '</p>' +
         '<p>Destination: ' + escape(item.proposed_destination_url || "No change") + '</p>' +
         '<p>Reason: ' + escape(item.advertiser_reason) + '</p>' +
+        (item.proposed_creative_id ? '<button class="small-outline" data-preview-change="' + item.id + '">Preview creative</button> ' : '') +
         '<button class="small-outline" data-approve-change="' + item.id + '">Approve</button> ' +
         '<button class="small-outline" data-reject-change="' + item.id + '">Reject</button></article>'
       ).join("") || '<p class="muted">No pending campaign changes.</p>';
+      target.querySelectorAll("[data-preview-change]").forEach((b) => b.addEventListener("click", async () => {
+        try {
+          const result = await portal.callApi({action:"admin-preview-change-creative",change_request_id:b.dataset.previewChange});
+          window.open(result.preview_url,"_blank","noopener,noreferrer");
+        } catch(error) { portal.message("globalMessage",error.message,true); }
+      }));
       target.querySelectorAll("[data-approve-change]").forEach((b) => b.addEventListener("click", () => reviewChange(b.dataset.approveChange,true)));
       target.querySelectorAll("[data-reject-change]").forEach((b) => b.addEventListener("click", () => reviewChange(b.dataset.rejectChange,false)));
     } catch (error) {

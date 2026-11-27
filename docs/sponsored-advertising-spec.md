@@ -25,7 +25,8 @@ Advertiser identity and data must be separate from dating-member accounts and pr
 
 ## 2. Agreed advertising product
 
-- **Format:** Native-style sponsored cards, always clearly labelled **Sponsored**.
+- **Format:** Native-style sponsored cards, always clearly labelled **Sponsored**. Both image and video adverts launch from day one.
+- **Display shape:** Image and video use the same portrait-style sponsored-card dimensions as the existing Discover profile-card media area. Sponsored cards must fit the existing Discover experience without resizing or redesigning organic member cards. Exact pixel/export dimensions remain to be technically specified against the current responsive card container.
 - **Placement:** Discover only.
 - **Frequency target:** Approximately one sponsored card after every 10–15 organic member profiles.
 - **Member experience:** No top banners, intrusive pop-ups, chat ads or interruption of an active conversation.
@@ -135,6 +136,18 @@ Design charges are separate from advertising package prices and are optional.
 
 Exact design deliverables, file dimensions, formats, source-file inclusion and the definition of a revision round remain to be specified.
 
+### Approved image and video creative rules
+
+- Image and video creatives are both supported at launch.
+- Both use the same portrait-style sponsored-card presentation.
+- Video maximum duration: 30 seconds.
+- Video maximum file size: 20 MB.
+- Video format: MP4.
+- Video playback: muted autoplay only while the advert is visible; sound is enabled only after the member taps.
+- Video assets must be lazy-loaded near visibility so they do not delay organic Discover profile loading.
+- Image/video campaigns use the same approved package prices and fair campaign rotation.
+- Exact image/video pixel dimensions, codec/profile compatibility, thumbnail/poster handling, CTA types and upload validation remain technical design items.
+
 ## 7. Cancellation and refund policy
 
 Approved policy:
@@ -188,7 +201,7 @@ The new admin controls must use the existing server-side admin authorization pat
 The following items still need explicit decisions or technical verification:
 1. **Campaign capacity:** Should there be a maximum number of active campaigns, or should the system accept all approved campaigns and rotate them fairly?
 2. **Advert categories and content rules:** Agree the permitted/prohibited categories and any legal disclosures required for the actual ad formats.
-3. **Creative specifications:** Image/video support, aspect ratios, file size/type limits, crop behavior, CTA options and whether video is in scope.
+3. **Creative specifications:** Exact responsive pixel/export dimensions, image file types and size limit, video codec compatibility, crop behavior, poster/thumbnail handling, CTA options and upload validation. Image+video launch, shared portrait card presentation, MP4, 30-second and 20-MB video limits, muted visible-only autoplay and lazy loading are approved.
 4. **Advert design deliverables:** Exact differences between Basic and Premium, output formats, source files and what counts as a revision.
 5. **Advertiser dashboard access:** Email verification requirement, Google OAuth setup, account recovery and whether advertiser accounts require admin activation.
 6. **Campaign editing after approval:** What changes require re-approval and whether a live campaign is paused during changes.

@@ -18,7 +18,7 @@ This is the implementation foundation for The Match's sponsored advertising syst
 - `database/campaign-change-requests.sql`: idempotent campaign-change lifecycle migration for an already-bootstrapped advertiser project.
 - `database/verify.sql`: privilege and RLS assertions.
 - `database/test-bootstrap.sql`: disposable PostgreSQL/Auth compatibility fixture for CI only.
-- `database/test-workflows.sql`: RLS, campaign payment/approval, analytics deduplication, refund and design-service lifecycle tests.
+- `database/test-workflows.sql`: RLS, campaign payment/approval, analytics deduplication, campaign-change staging and admin approval, refund and design-service lifecycle tests.
 - `database/scheduler.sql`: Supabase Cron schedule for reservation expiry and scheduled campaign activation.
 - `supabase/functions/advertising-api`: advertiser campaign, payment, admin, refund, metrics and design-service API.
 - `supabase/functions/advertising-media-upload`: advertiser-owned private image/video creative upload and validation.

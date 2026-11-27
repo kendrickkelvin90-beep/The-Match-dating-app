@@ -1,75 +1,91 @@
-# Isolated advertiser backend
+# The Match sponsored advertising — shared Supabase implementation
 
-This is the implementation foundation for The Match's sponsored advertising system. It lives outside the existing `supabase/` directory so the Match member project cannot accidentally apply advertiser tables or triggers.
+This implementation uses the existing `the-match-dating-app` Supabase project. It does not require a third project, a Supabase plan upgrade, or pausing the user's other project.
 
-## Separation and safety
+## Isolation model
 
-- Use a **separate Supabase project** for advertiser accounts and advertising data.
-- Never run `database/bootstrap.sql` in the Match member project.
-- Never use Match member login/signup, CAPTCHA, Google auth or member profile tables for advertiser registration.
-- Never expose a service-role key, B2 key, bank account configuration or analytics HMAC secret in browser code.
-- The Match member project is consulted only to verify the member's JWT and current paid entitlement in the ad-serving path.
-- Sponsored creatives are private B2 objects. Only short-lived signed URLs are returned to an authorized advertiser, admin or eligible member.
+- Advertisers use a separate portal, advertiser profile tables, API actions and admin permissions.
+- The portal uses a dedicated browser auth storage key (`the-match-advertiser-auth`), so its local session does not overwrite the Match member app's browser session.
+- Supabase Auth remains the underlying identity provider, but advertiser accounts receive a dedicated Postgres JWT role: `advertiser`.
+- The Auth Custom Access Token Hook assigns that role only when the account was explicitly registered with `account_type=advertiser` and has no row in `public.profiles`.
+- Existing dating-member accounts are not converted into advertiser accounts. Advertisers must use a separate email address. A member JWT remains `authenticated`; an advertiser JWT is `advertiser`.
+- The `advertiser` database role is not a member of `authenticated` or `anon`. It receives grants only for advertising tables and the two advertising helper/metrics functions.
+- The bootstrap preserves the effective function-execution permissions of existing Match roles while removing implicit `PUBLIC` function execution. This prevents the new advertiser role from inheriting access to existing member SECURITY DEFINER functions. It also updates default function privileges so future functions are not automatically executable by PUBLIC; existing Match roles retain their previous default access.
+- The Auth hook can inspect only `profiles.id` to prevent conversion of an existing member account. It cannot read profile details.
+- Advertiser Edge Functions authenticate the signed JWT and require the `advertiser` role. Member ad serving accepts only `authenticated` member sessions and checks Match Plus entitlement using the existing member database.
+- Sponsored creatives remain private Backblaze B2 objects under the `advertising/` prefix. Use a separate B2 application key restricted to that prefix where supported.
 - No audience targeting by sexual orientation, LGBTQ+ identity, profile answers, location history or other sensitive member data.
+- Never expose service-role keys, B2 credentials, bank account configuration or the analytics HMAC secret in browser code.
+
+## Important Auth behavior
+
+1. The Auth hook is global to the Match Supabase project. It must be enabled in **Authentication → Hooks → Custom Access Token** and point to `private.custom_access_token_hook`.
+2. The hook leaves ordinary member tokens unchanged. Only new advertiser registrations receive the `advertiser` role.
+3. A member account with an existing `public.profiles` row cannot be enrolled as an advertiser. Use a different email for advertiser registration.
+4. Create advertiser accounts with email/password first. A Google identity can be linked from the advertiser workspace; Google sign-in is accepted only when the identity is already linked to an advertiser account.
+5. Do not enable the hook until the shared-project migration has passed the full regression suite and the owner has approved the global Auth configuration change.
 
 ## Code included
 
-- `database/bootstrap.sql`: isolated advertiser schema, RLS, campaign/payment/design/refund/change-request functions, analytics, admin controls and Auth profile trigger.
-- `database/campaign-change-requests.sql`: idempotent campaign-change lifecycle migration for an already-bootstrapped advertiser project.
-- `database/verify.sql`: privilege and RLS assertions.
-- `database/test-bootstrap.sql`: disposable PostgreSQL/Auth compatibility fixture for CI only.
-- `database/test-workflows.sql`: RLS, campaign payment/approval, analytics deduplication, campaign-change staging and admin approval, refund and design-service lifecycle tests.
-- `database/scheduler.sql`: Supabase Cron schedule for reservation expiry and scheduled campaign activation.
+- `database/bootstrap.sql`: shared-project advertising schema, dedicated role, function ACL isolation, Auth hook, RLS, payment/campaign/design/refund/change-request workflows and scheduler functions.
+- `database/verify.sql`: checks advertiser isolation from member tables/functions and advertising RLS/grants.
+- `database/test-bootstrap.sql`: disposable PostgreSQL/Auth fixture for CI only.
+- `database/test-workflows.sql`: advertiser role hook, RLS, campaign payment/approval, analytics rolling 24-hour limits, change requests, refunds and design-service tests.
+- `database/scheduler.sql`: Supabase Cron schedule for unpaid reservation expiry and scheduled campaign activation.
 - `supabase/functions/advertising-api`: advertiser campaign, payment, admin, refund, metrics and design-service API.
 - `supabase/functions/advertising-media-upload`: advertiser-owned private image/video creative upload and validation.
 - `supabase/functions/advertising-design-upload`: admin-only private final artwork upload.
-- `supabase/functions/member-ad-serving`: verifies Match member sessions, checks paid entitlements, rotates eligible campaigns and records pseudonymous events.
-- `advertiser-portal.html` is served from the repository root, with separate auth, campaign, payment, analytics, refund, design-service and campaign-change UI modules (`advertiser-portal-changes.js`).
-- `sponsored-discover-integration.js`: inserts a portrait sponsored card after every 12 organic Discover profiles, with visible-time impression tracking, CTA clicks and lazy muted video.
-- `sponsored-advertising-config.js`: public feature configuration; `enabled` is deliberately `false` until setup and regression testing are complete.
+- `supabase/functions/member-ad-serving`: verifies member JWTs, checks Match Plus entitlements, rotates eligible campaigns and records pseudonymous events in the same project.
+- `advertiser-portal.html` and supporting JS/CSS: separate advertiser workspace and browser session storage.
+- `sponsored-discover-integration.js`: sponsored card after every 12 organic Discover profiles, visible-time impression tracking, CTA clicks and lazy muted video.
+- `sponsored-advertising-config.js`: public config; `enabled` remains `false` until setup and live tests pass.
 
 ## Required server-side configuration
 
-Set these only in the separate advertiser Supabase project's Edge Function secrets:
+Set these only as Edge Function secrets in the existing Match Supabase project:
 
-- Standard advertiser project values: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
-- Match member verification: `MATCH_SUPABASE_URL`, `MATCH_SUPABASE_ANON_KEY`.
-- Private B2: `B2_BUCKET_NAME`, `B2_S3_ENDPOINT`, `B2_REGION`, `B2_ADVERTISING_KEY_ID`, `B2_ADVERTISING_APPLICATION_KEY`. Use a separate B2 key restricted to the advertising prefix where supported.
-- Bank transfer display: `ADVERTISING_BANK_NAME`, `ADVERTISING_ACCOUNT_NAME`, `ADVERTISING_ACCOUNT_NUMBER`.
-- Analytics pseudonymization: `ADVERTISING_ANALYTICS_HMAC_SECRET` (long random secret).
-- Portal CORS: `ADVERTISER_ALLOWED_ORIGINS` (the exact The Match origin).
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `B2_BUCKET_NAME`
+- `B2_S3_ENDPOINT`
+- `B2_REGION`
+- `B2_ADVERTISING_KEY_ID`
+- `B2_ADVERTISING_APPLICATION_KEY`
+- `ADVERTISING_BANK_NAME`
+- `ADVERTISING_ACCOUNT_NAME`
+- `ADVERTISING_ACCOUNT_NUMBER`
+- `ADVERTISING_ANALYTICS_HMAC_SECRET`
+- `ADVERTISER_ALLOWED_ORIGINS` (exact Match origin)
 
-The browser-only `advertiser-portal-config.js` and `sponsored-advertising-config.js` may contain only the advertiser project's URL and publishable/anon key. They must never contain service-role or B2 credentials.
+Do not set `MATCH_SUPABASE_URL` or `MATCH_SUPABASE_ANON_KEY`; member verification and advertising data now use the same Supabase project. The browser config files may contain only the existing project URL and publishable/anon key.
 
-## Setup order
+## Setup order — not yet performed in production
 
-1. Create the separate advertiser Supabase project on a plan approved by the account owner.
-2. Configure advertiser email verification/recovery and Google OAuth redirect URLs in that project.
-3. Apply `database/bootstrap.sql` to the advertiser project only.
-4. Run `database/verify.sql`.
-5. Deploy the four Edge Functions in `supabase/functions/` and set the secrets above.
-6. Add the advertising admin's advertiser-project Auth user ID to `public.advertising_admins` using a trusted SQL/admin session.
-7. Run `database/scheduler.sql` in that project. The campaign clock runs every minute to expire unpaid reservations and activate approved scheduled campaigns.
-8. Set the public portal URL/key in `advertiser-portal-config.js`. Configure the same public values in `sponsored-advertising-config.js`, but keep `enabled: false` until all checks pass.
-9. Verify private B2 upload/download, admin approval, bank confirmation, Match Plus ad-free behavior, frequency limits, analytics and the protected member flows.
-10. Only after explicit approval should the feature flag be enabled, changes merged to `main`, and the production deployment released.
+1. Review the shared-project migration and CI results.
+2. Confirm the Auth Custom Access Token Hook setting and exact dashboard procedure.
+3. Apply `database/bootstrap.sql` to the existing Match project only after explicit owner approval. Never run the old separate-project instructions.
+4. Enable `private.custom_access_token_hook` under Authentication → Hooks → Custom Access Token after migration verification.
+5. Run `database/verify.sql` and Supabase security/performance advisors.
+6. Deploy the four advertising Edge Functions to the existing project and set the server-side secrets.
+7. Configure Google identity linking, email verification/recovery redirect URLs and advertiser admin allowlist.
+8. Configure the private B2 advertising key, bank transfer details and analytics HMAC secret.
+9. Configure the advertiser portal and Discover public URL/key, keeping `enabled: false`.
+10. Test advertiser registration, email verification, sign-in, Google linking, admin approval, bank confirmation, media upload/playback, Match Plus ad-free behavior, frequency limits and all member login/signup/CAPTCHA/profile/chat flows on Android and iOS browsers.
+11. Only after explicit approval should the Discover flag be enabled and the feature launched.
 
-## Automated checks
+## CI and launch gates
 
-The GitHub Actions workflow runs:
-- Node syntax checks for the advertiser portal and Discover integration.
-- Deno type checks for all advertiser Edge Functions.
-- A disposable PostgreSQL 16 test database with RLS, campaign lifecycle, payment approval, rolling 24-hour impression and unique-click caps, campaign-change approval, refund and design-service smoke tests.
+The GitHub Actions workflow runs JavaScript syntax checks, Deno type checks and disposable PostgreSQL integration tests. These tests do not connect to or mutate the live Match database. They do not replace a real-device integration test.
 
-These tests do not connect to or mutate either live Supabase project. Passing CI does not replace a final device/browser regression test on The Match.
+Not yet configured or activated:
+- No production advertising migration has been applied.
+- No Auth hook has been enabled.
+- No advertising Edge Functions have been deployed.
+- No B2 advertising key or HMAC secret has been configured.
+- No bank details or admin allowlist have been configured.
+- No live advertiser/member sessions or Android/iOS device QA have been completed.
+- The sponsored advertising feature flag remains disabled.
+- Nigerian advertising/privacy/legal review, including any ARCON clearance or disclosure obligations, remains a launch gate.
 
-## Remaining launch gates
-
-- Advertiser-requested changes to campaign headline, description, CTA, destination and eligible pre-live schedule are staged in `advertising_campaign_change_requests`; optional replacement creatives are uploaded privately and attached to the request. Admin approval atomically applies the proposed changes and swaps the active creative; rejection leaves the live advert unchanged. Package duration/price cannot be changed after payment.
-- The separate advertiser Supabase project, Google OAuth provider, email templates/redirects, admin allowlist, server secrets, private B2 key and business bank details still need owner-controlled setup.
-- Legal/privacy and Nigerian advertising requirements, including any ARCON clearance or disclosure obligations, still need qualified local review before public launch. The previously rejected advertiser-screening checklist has not been added.
-- Platform-interruption extensions are a manual policy decision; there is no automatic lost-time calculation yet.
-
-## Not activated
-
-The current branch is a work branch only. The advertiser Supabase project has not yet been provisioned or configured, no production database has been migrated, bank details and B2 credentials have not been supplied to the backend, and the Discover feature flag remains off. Do not enable the integration until those prerequisites and live-device regression checks are completed.
+The previously rejected advertiser-screening checklist remains excluded. Platform-interruption extensions remain a manual operational process.

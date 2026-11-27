@@ -2,7 +2,7 @@
 
 **Working branch:** `work/sponsored-ads-shared-supabase-2026-11-27`  
 **Audit date:** 2026-11-27  
-**Status:** Shared-project adaptation in progress. Production database, Auth settings and Edge Functions remain untouched.
+**Status:** Shared-project adaptation in progress. A reduced 13-table RLS foundation exists in production; global Auth settings, broad RLS boundaries, pre-request guard and Edge Functions remain unconfigured.
 
 ## Live-project inspection
 
@@ -43,15 +43,15 @@ A read-only advisor run was performed before any advertising migration:
 - Security: 5 existing RLS-enabled tables have no policies; 62 existing `SECURITY DEFINER` functions are executable by authenticated members. These findings pre-date the advertising migration. Some functions may be intentionally callable and require individual review; this implementation does not revoke or rewrite them because doing so could break Match features.
 - Performance: existing warnings include 14 tables with multiple permissive policies and 8 unused indexes, plus row-policy auth-function evaluation notices. These are baseline findings and are not caused by the advertiser boundary.
 - Health: no health lint findings were returned.
-- The advertiser pre-request guard is specifically designed to prevent advertiser JWTs from reaching those existing member RPCs. It must be enabled before the advertiser Auth hook.
+- The advertiser pre-request guard is designed to prevent advertiser JWTs from reaching existing member RPCs. It is not installed or enabled and must be activated before the advertiser Auth hook.
 - Remediation references: [RLS enabled without policies](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy), [SECURITY DEFINER functions executable by authenticated users](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable), [multiple permissive policies](https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies), [unused indexes](https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index).
 
 ## Database validation performed
 
-- The complete shared-project advertising bootstrap was executed against the live Match database inside a transaction whose final statement was `ROLLBACK`.
-- The transaction completed without SQL errors.
-- A follow-up read-only query confirmed no advertiser role, advertising tables, advertiser Auth registry or Auth Hook functions persisted.
-- No live roles, tables, policies, function grants, Auth settings or project configuration were changed by this test.
+- The complete shared-project advertising bootstrap was previously rehearsed against the live Match database inside a transaction whose final statement was `ROLLBACK`; that rehearsal completed without SQL errors.
+- After that rehearsal, an explicitly approved reduced foundation migration was applied separately. It created 13 advertising tables, enabled RLS on all 13, revoked all direct table privileges from `public`, `anon` and `authenticated`, and granted server-side access to `service_role`.
+- A current read-only verification confirms those 13 tables exist with RLS enabled. The custom Auth hook functions, Data API guard function and `pgrst.db_pre_request` setting remain absent. No advertising Edge Functions are deployed.
+- The full bootstrap has not been applied. Its restrictive RLS boundary changes to every existing public table plus Storage and Realtime remain pending because the live member Edge Function bodies differ from the source snapshots and require reconciliation before advertiser Auth can be enabled.
 - The previous custom-Postgres-role and global function-ACL rewrite approach has been removed from the branch.
 
 ## Approved product configuration
@@ -74,7 +74,7 @@ A read-only advisor run was performed before any advertising migration:
 
 - Finish CI on the latest branch head and review all SQL/RLS/Auth tests.
 - Deploy the ten guarded member Edge Function versions before enabling advertiser Auth.
-- Apply the shared-project database migration only after explicit approval.
+- Rehearse and review the remaining full shared-project database bootstrap against the current live schema. The 13-table foundation already exists; do not treat the live database as empty or blindly rerun a partial setup.
 - Run `database/verify.sql` and Supabase security/performance/health advisors.
 - Confirm the `public` schema is exposed to the Data API.
 - Inspect `pg_db_role_setting` again; if no pre-request hook exists, enable `public.match_advertiser_api_guard` using the optional activation script. If another hook exists, compose it rather than overwrite it.

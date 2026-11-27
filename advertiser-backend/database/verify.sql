@@ -1,4 +1,4 @@
--- Run after database/bootstrap.sql in the separate advertiser Supabase project.
+-- Run after database/bootstrap.sql in the existing Match Supabase project.
 -- This script raises an exception if a required isolation control is missing.
 do $verify$
 declare

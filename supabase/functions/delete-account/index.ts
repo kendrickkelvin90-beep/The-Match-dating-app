@@ -42,6 +42,16 @@ async function sha256Email(email: string): Promise<string> {
     .join("");
 }
 
+function isAdvertiserSession(token: string): boolean {
+  try {
+    const segment = token.split(".")[1];
+    if (!segment) return false;
+    const normalized = segment.replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
+    return payload.role === "anon" && payload.user_role === "advertiser";
+  } catch { return false; }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return response({ error: "Use POST." }, 405);
@@ -65,6 +75,7 @@ Deno.serve(async (req: Request) => {
     });
     const { data: userData, error: userError } = await userClient.auth.getUser(token);
     if (userError || !userData.user) return response({ error: "Your session is invalid. Sign in again." }, 401);
+    if (isAdvertiserSession(token)) return response({ error: "Use the advertiser account controls to close an advertiser account." }, 403);
 
     const body = await req.json().catch(() => ({}));
     if (body?.confirm !== "DELETE_MY_ACCOUNT") {

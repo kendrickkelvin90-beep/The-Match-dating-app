@@ -8,6 +8,7 @@ on:
       - "advertiser-backend/**"
       - "advertiser-portal.*"
       - "advertiser-portal-config.js"
+      - "advertiser-portal-refunds.js"
       - "sponsored-*.js"
       - "match-performance-engine.js"
       - ".github/workflows/advertiser-backend-checks.yml"
@@ -20,6 +21,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: advertiser-checks-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   static-checks:

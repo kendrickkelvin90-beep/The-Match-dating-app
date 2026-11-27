@@ -276,7 +276,7 @@
     const { error } = await state.client.auth.resetPasswordForEmail(email, { redirectTo: window.location.href.split("#")[0] });
     message("authMessage", error ? error.message : "If an account exists for that email, a recovery link has been sent.", !!error);
   });
-  $("signOut").addEventListener("click", async () => { await state.client.auth.signOut(); state.session = null; $("dashboardView").classList.add("hidden"); $("authView").classList.remove("hidden"); });
+  $("signOut").addEventListener("click", async () => { await state.client.auth.signOut({ scope: "local" }); state.session = null; $("dashboardView").classList.add("hidden"); $("authView").classList.remove("hidden"); });
   $("campaignPackage").addEventListener("change", () => { $("packagePrice").textContent = formatNaira(({7:12000,14:22000,30:40000})[$("campaignPackage").value]); });
   $("campaignStartMode").addEventListener("change", () => $("scheduleField").classList.toggle("hidden", $("campaignStartMode").value !== "scheduled"));
   $("campaignCreative").addEventListener("change", async () => {

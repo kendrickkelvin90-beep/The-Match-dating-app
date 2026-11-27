@@ -216,6 +216,13 @@ Deno.serve(async (req: Request) => {
       const description = cleanText(body.description, 500) || null;
       const cta = cleanText(body.cta, 24) || null;
       const destination = body.destination_url ? validDestination(body.destination_url, cta || "learn_more") : null;
+      if (cta && !body.destination_url) {
+        const { data: existingCampaign, error: existingCampaignError } = await admin.from("advertising_campaigns")
+          .select("destination_url").eq("id", campaignId).eq("advertiser_id", user.id).maybeSingle();
+        if (existingCampaignError || !existingCampaign || !validDestination(existingCampaign.destination_url, cta)) {
+          return json({ error: "The existing destination is not valid for the selected call to action. Submit an updated HTTPS destination too." }, 400, origin);
+        }
+      }
       const startMode = cleanText(body.start_mode, 16) || null;
       const scheduledAt = body.scheduled_start_at ? new Date(String(body.scheduled_start_at)) : null;
       const reason = cleanText(body.reason, 500);

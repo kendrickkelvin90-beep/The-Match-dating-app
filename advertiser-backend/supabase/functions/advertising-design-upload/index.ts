@@ -12,14 +12,14 @@ const appKey = Deno.env.get("B2_ADVERTISING_APPLICATION_KEY") ?? "";
 const allowedOrigins = new Set((Deno.env.get("ADVERTISER_ALLOWED_ORIGINS") ??
   "https://match.beyondthebinarymedia.online").split(",").map((v) => v.trim()).filter(Boolean));
 
-function jwtRole(token: string): string {
+function isAdvertiserToken(token: string): boolean {
   try {
     const segment = token.split(".")[1];
-    if (!segment) return "";
+    if (!segment) return false;
     const normalized = segment.replace(/-/g, "+").replace(/_/g, "/");
     const payload = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
-    return typeof payload.role === "string" ? payload.role : "";
-  } catch { return ""; }
+    return payload.role === "anon" && payload.user_role === "advertiser";
+  } catch { return false; }
 }
 
 function json(body: unknown, status: number, origin: string) {
@@ -66,7 +66,7 @@ Deno.serve(async (req: Request) => {
     });
     const { data: authData, error: authError } = await caller.auth.getUser(token);
     const user = authData.user;
-    if (authError || !authData.user?.email_confirmed_at || jwtRole(token) !== "advertiser") return json({ error: "A verified advertiser admin session is required." }, 401, origin);
+    if (authError || !authData.user?.email_confirmed_at || !isAdvertiserToken(token)) return json({ error: "A verified advertiser admin session is required." }, 401, origin);
     const admin = createClient(supabaseUrl, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
     const { data: adminRow } = await admin.from("advertising_admins").select("user_id").eq("user_id", user.id).maybeSingle();
     if (!adminRow) return json({ error: "Advertising administrator access required." }, 403, origin);

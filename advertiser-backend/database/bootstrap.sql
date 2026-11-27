@@ -190,6 +190,8 @@ create table if not exists public.advertising_refunds (
   bank_transfer_reference text
 );
 
+create unique index if not exists advertising_refunds_one_per_payment_idx on public.advertising_refunds(payment_id);
+
 create table if not exists public.advertising_admin_audit (
   id bigint generated always as identity primary key,
   actor_id uuid references public.advertising_admins(user_id),
@@ -752,6 +754,178 @@ $function$;
 revoke all on function public.record_advertising_event(uuid,text,text) from public, anon, authenticated;
 grant execute on function public.record_advertising_event(uuid,text,text) to service_role;
 
+
+
+create or replace function public.admin_record_duplicate_advertising_payment(
+  p_admin_id uuid,
+  p_campaign_id uuid,
+  p_advertiser_id uuid,
+  p_amount_ngn integer,
+  p_bank_transfer_reference text,
+  p_admin_note text
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_payment_id uuid;
+begin
+  perform private.require_advertising_service_role();
+  if not exists (select 1 from public.advertising_admins a where a.user_id = p_admin_id) then
+    raise exception 'Advertising admin access denied' using errcode = '42501';
+  end if;
+  if not exists (
+    select 1 from public.advertising_campaigns c
+    where c.id = p_campaign_id and c.advertiser_id = p_advertiser_id
+  ) then
+    raise exception 'Campaign and advertiser do not match' using errcode = '42501';
+  end if;
+  if p_amount_ngn <= 0 or char_length(btrim(coalesce(p_bank_transfer_reference,''))) < 4 then
+    raise exception 'Duplicate transfer details are invalid' using errcode = '22023';
+  end if;
+  insert into public.advertising_payments(
+    campaign_id,advertiser_id,amount_ngn,bank_transfer_reference,
+    status,confirmed_at,confirmed_by,admin_note
+  ) values (
+    p_campaign_id,p_advertiser_id,p_amount_ngn,btrim(p_bank_transfer_reference),
+    'duplicate',now(),p_admin_id,left(coalesce(p_admin_note,'Verified additional/duplicate transfer'),500)
+  ) returning id into v_payment_id;
+  insert into public.advertising_admin_audit(actor_id,action,entity_type,entity_id,details)
+  values (p_admin_id,'record_duplicate_payment','payment',v_payment_id::text,
+    jsonb_build_object('campaign_id',p_campaign_id,'amount_ngn',p_amount_ngn));
+  return v_payment_id;
+end;
+$function$;
+revoke all on function public.admin_record_duplicate_advertising_payment(uuid,uuid,uuid,integer,text,text) from public, anon, authenticated;
+grant execute on function public.admin_record_duplicate_advertising_payment(uuid,uuid,uuid,integer,text,text) to service_role;
+
+create or replace function public.request_advertising_refund(
+  p_advertiser_id uuid,
+  p_payment_id uuid,
+  p_reason text
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_payment public.advertising_payments%rowtype;
+  v_campaign public.advertising_campaigns%rowtype;
+  v_refund_id uuid;
+begin
+  perform private.require_advertising_service_role();
+  select * into v_payment from public.advertising_payments
+  where id = p_payment_id and advertiser_id = p_advertiser_id for update;
+  if not found or v_payment.status not in ('confirmed','duplicate') then
+    raise exception 'This payment is not eligible for a refund request' using errcode = '22023';
+  end if;
+  select * into v_campaign from public.advertising_campaigns where id = v_payment.campaign_id;
+  if v_payment.status <> 'duplicate'
+     and (v_campaign.status <> 'rejected' or v_campaign.go_live_at is not null) then
+    raise exception 'Refunds are not available after a campaign has started' using errcode = '22023';
+  end if;
+  if char_length(btrim(coalesce(p_reason,''))) < 3 then
+    raise exception 'Please provide a refund reason' using errcode = '22023';
+  end if;
+  insert into public.advertising_refunds(
+    campaign_id,payment_id,advertiser_id,amount_ngn,reason,status
+  ) values (
+    v_payment.campaign_id,v_payment.id,p_advertiser_id,v_payment.amount_ngn,
+    left(btrim(p_reason),500),'requested'
+  ) returning id into v_refund_id;
+  return v_refund_id;
+end;
+$function$;
+revoke all on function public.request_advertising_refund(uuid,uuid,text) from public, anon, authenticated;
+grant execute on function public.request_advertising_refund(uuid,uuid,text) to service_role;
+
+create or replace function public.admin_review_advertising_refund(
+  p_admin_id uuid,
+  p_refund_id uuid,
+  p_approve boolean,
+  p_reason text default null
+)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_refund public.advertising_refunds%rowtype;
+  v_status text;
+begin
+  perform private.require_advertising_service_role();
+  if not exists (select 1 from public.advertising_admins a where a.user_id = p_admin_id) then
+    raise exception 'Advertising admin access denied' using errcode = '42501';
+  end if;
+  select * into v_refund from public.advertising_refunds where id = p_refund_id for update;
+  if not found or v_refund.status <> 'requested' then
+    raise exception 'Refund is not awaiting review' using errcode = '22023';
+  end if;
+  if not p_approve and char_length(btrim(coalesce(p_reason,''))) < 3 then
+    raise exception 'A reason is required to reject a refund' using errcode = '22023';
+  end if;
+  v_status := case when p_approve then 'approved' else 'rejected' end;
+  update public.advertising_refunds
+  set status = v_status, approved_at = case when p_approve then now() else null end,
+      approved_by = p_admin_id, reason = case when p_approve then reason else left(btrim(p_reason),500) end
+  where id = p_refund_id;
+  insert into public.advertising_admin_audit(actor_id,action,entity_type,entity_id,details)
+  values (p_admin_id,'refund_' || v_status,'refund',p_refund_id::text,jsonb_build_object('amount_ngn',v_refund.amount_ngn));
+  return v_status;
+end;
+$function$;
+revoke all on function public.admin_review_advertising_refund(uuid,uuid,boolean,text) from public, anon, authenticated;
+grant execute on function public.admin_review_advertising_refund(uuid,uuid,boolean,text) to service_role;
+
+create or replace function public.admin_mark_advertising_refund_paid(
+  p_admin_id uuid,
+  p_refund_id uuid,
+  p_bank_transfer_reference text
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_refund public.advertising_refunds%rowtype;
+  v_payment public.advertising_payments%rowtype;
+begin
+  perform private.require_advertising_service_role();
+  if not exists (select 1 from public.advertising_admins a where a.user_id = p_admin_id) then
+    raise exception 'Advertising admin access denied' using errcode = '42501';
+  end if;
+  select * into v_refund from public.advertising_refunds where id = p_refund_id for update;
+  if not found or v_refund.status <> 'approved' or char_length(btrim(coalesce(p_bank_transfer_reference,''))) < 4 then
+    raise exception 'Refund is not approved or bank reference is missing' using errcode = '22023';
+  end if;
+  select * into v_payment from public.advertising_payments where id = v_refund.payment_id for update;
+  update public.advertising_refunds
+  set status = 'paid', paid_at = now(), bank_transfer_reference = btrim(p_bank_transfer_reference)
+  where id = p_refund_id;
+  update public.advertising_payments set status = 'refunded' where id = v_payment.id;
+  if v_payment.status = 'confirmed' then
+    update public.advertising_campaigns c
+    set payment_status = 'refunded'
+    where c.id = v_refund.campaign_id
+      and c.status = 'rejected'
+      and not exists (
+        select 1 from public.advertising_payments other
+        where other.campaign_id = c.id and other.id <> v_payment.id and other.status = 'confirmed'
+      );
+  end if;
+  insert into public.advertising_admin_audit(actor_id,action,entity_type,entity_id,details)
+  values (p_admin_id,'refund_paid','refund',p_refund_id::text,
+    jsonb_build_object('amount_ngn',v_refund.amount_ngn,'bank_transfer_reference',p_bank_transfer_reference));
+  return true;
+end;
+$function$;
+revoke all on function public.admin_mark_advertising_refund_paid(uuid,uuid,text) from public, anon, authenticated;
+grant execute on function public.admin_mark_advertising_refund_paid(uuid,uuid,text) to service_role;
 
 create or replace function public.get_advertising_admin_overview(p_admin_id uuid)
 returns table (

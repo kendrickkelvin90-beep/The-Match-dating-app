@@ -84,7 +84,7 @@ grant execute on function public.custom_access_token_hook(jsonb) to supabase_aut
 
 revoke all on schema private from public, anon;
 grant usage on schema public, private to supabase_auth_admin;
-grant usage on schema private to authenticated, anon, service_role;
+grant usage on schema private to authenticated, service_role;
 
 create table if not exists public.advertising_admins (
   user_id uuid primary key references auth.users(id) on delete cascade,

@@ -211,7 +211,7 @@
       $("adminCampaigns").innerHTML = (campaignData.campaigns || []).map((c) => {
         const creative = (c.advertising_creatives || []).find((item) => item.is_current === true);
         const paid = c.payment_status === "confirmed";
-        const ready = !!creative && paid && ["awaiting_approval","scheduled","active","paused"].includes(c.status);
+        const ready = !!creative && paid && c.status === "awaiting_approval";
         const destination = /^https:\/\//i.test(c.destination_url || "") ? c.destination_url : "";
         return `
         <article class="admin-row admin-campaign-card">
@@ -225,8 +225,8 @@
           <p><strong>Destination:</strong> ${destination ? `<a href="${escapeHtml(destination)}" target="_blank" rel="noopener noreferrer">${escapeHtml(destination)}</a>` : "No valid HTTPS destination"}</p>
           <p><strong>Created:</strong> ${formatDate(c.created_at)} · <strong>Scheduled:</strong> ${formatDate(c.scheduled_start_at)} · <strong>Ends:</strong> ${formatDate(c.ends_at)}</p>
           <div class="campaign-actions">
+            <button class="primary admin-approve-button" data-approve="${escapeHtml(c.id)}" ${ready ? "" : "disabled"} title="${ready ? "Approve campaign" : "Approval requires confirmed payment, awaiting approval status and a current creative"}>Approve advert</button>
             <button class="small-outline" data-preview="${escapeHtml(c.id)}" ${creative ? "" : "disabled"}>Preview image / video</button>
-            <button class="small-outline" data-approve="${escapeHtml(c.id)}" ${ready ? "" : "disabled"} title="${ready ? "Approve campaign" : "Approval requires confirmed payment and a current creative"}>Approve</button>
             <button class="small-outline" data-reject="${escapeHtml(c.id)}">Reject</button>
             <button class="small-outline" data-pause="${escapeHtml(c.id)}">${c.status === "paused" ? "Resume" : "Pause"}</button>
           </div>

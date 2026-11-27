@@ -642,11 +642,40 @@ Deno.serve(async (req: Request) => {
       const approve = body.approve === true;
       const reason = cleanText(body.reason, 500);
       if (!campaignId || (!approve && reason.length < 3)) return json({ error: "A campaign and, when rejecting, a reason are required." }, 400, origin);
+      const { data: campaign, error: campaignError } = await admin.from("advertising_campaigns")
+        .select("id,advertiser_id,headline,payment_status,status,start_mode,scheduled_start_at")
+        .eq("id", campaignId).maybeSingle();
+      if (campaignError || !campaign) return json({ error: "Campaign could not be found." }, 404, origin);
+      if (approve && campaign.payment_status !== "confirmed") {
+        return json({ error: "Confirm the actual bank transfer before approving this campaign." }, 409, origin);
+      }
       const { data, error } = await admin.rpc("admin_review_advertising_campaign", {
         p_admin_id: user.id, p_campaign_id: campaignId, p_approve: approve, p_reason: reason,
       });
       if (error) return json({ error: "Campaign review could not be saved." }, 400, origin);
-      return json({ success: true, status: data }, 200, origin);
+
+      const isScheduled = approve && data === "scheduled";
+      const notice = approve ? {
+        type: "advertising_campaign_approved",
+        title: isScheduled ? "Your advert has been approved" : "Your advert is now approved",
+        body: isScheduled
+          ? campaign.headline + " has been approved and is scheduled to start at " + new Date(campaign.scheduled_start_at).toLocaleString("en-NG", { timeZone: "Africa/Lagos" }) + " WAT."
+          : campaign.headline + " has been approved and is now active on The Match.",
+      } : {
+        type: "advertising_campaign_rejected",
+        title: "An update about your advert",
+        body: campaign.headline + " was not approved. Reason: " + reason,
+      };
+      const { error: notificationError } = await admin.from("notifications").insert({
+        user_id: campaign.advertiser_id,
+        type: notice.type,
+        title: notice.title,
+        body: notice.body,
+        action_url: "/advertiser-portal.html",
+        action_label: "View campaign",
+      });
+      if (notificationError) console.error("Advertiser campaign notification could not be saved:", notificationError.message);
+      return json({ success: true, status: data, notification_created: !notificationError }, 200, origin);
     }
 
     if (action === "admin-set-campaign-state") {

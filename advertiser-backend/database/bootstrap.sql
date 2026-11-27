@@ -1588,7 +1588,13 @@ begin
       and c.relkind in ('r','p')
       and c.relname not in ('advertising_campaigns','advertising_design_requests')
   loop
-    execute format('drop policy if exists match_advertiser_data_boundary on %I.%I', rec.nspname, rec.relname);
+    if exists (
+      select 1 from pg_catalog.pg_policies p
+      where p.schemaname=rec.nspname and p.tablename=rec.relname
+        and p.policyname='match_advertiser_data_boundary'
+    ) then
+      continue;
+    end if;
     if rec.relrowsecurity then
       execute format(
         'create policy match_advertiser_data_boundary on %I.%I as restrictive for all to public using ((current_user = ''supabase_auth_admin'') or (auth.jwt()->>''user_role'') is distinct from ''advertiser'') with check ((current_user = ''supabase_auth_admin'') or (auth.jwt()->>''user_role'') is distinct from ''advertiser'')',

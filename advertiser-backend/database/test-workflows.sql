@@ -4,6 +4,7 @@ insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values
 ('10000000-0000-4000-8000-000000000001','one@example.test',now(),'{"account_type":"advertiser","advertiser_type":"individual","display_name":"Advertiser One"}'),
 ('10000000-0000-4000-8000-000000000002','two@example.test',now(),'{"account_type":"advertiser","advertiser_type":"business","display_name":"Advertiser Two"}');
 
+set role supabase_auth_admin;
 select private.custom_access_token_hook(jsonb_build_object(
   'user_id','10000000-0000-4000-8000-000000000001',
   'claims',jsonb_build_object('role','authenticated','user_metadata',(select raw_user_meta_data from auth.users where id='10000000-0000-4000-8000-000000000001'))
@@ -12,6 +13,8 @@ select private.custom_access_token_hook(jsonb_build_object(
   'user_id','10000000-0000-4000-8000-000000000002',
   'claims',jsonb_build_object('role','authenticated','user_metadata',(select raw_user_meta_data from auth.users where id='10000000-0000-4000-8000-000000000002'))
 ));
+reset role;
+
 
 insert into public.advertiser_profiles(user_id,advertiser_type,display_name) values
 ('10000000-0000-4000-8000-000000000001','individual','Advertiser One'),

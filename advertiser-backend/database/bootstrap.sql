@@ -1160,7 +1160,9 @@ returns table (
   campaigns_total bigint,
   active_campaigns bigint,
   pending_campaigns bigint,
-  confirmed_payments bigint,
+  confirmed_campaign_payments bigint,
+  confirmed_design_payments bigint,
+  design_service_revenue_ngn bigint,
   confirmed_revenue_ngn bigint
 )
 language plpgsql
@@ -1175,13 +1177,16 @@ begin
   end if;
   return query
   select
-    count(distinct c.id),
-    count(distinct c.id) filter (where c.status = 'active'),
-    count(distinct c.id) filter (where c.status in ('awaiting_payment','payment_review','awaiting_approval','scheduled')),
-    count(distinct p.id) filter (where p.status = 'confirmed'),
-    coalesce(sum(p.amount_ngn) filter (where p.status = 'confirmed'),0)::bigint
-  from public.advertising_campaigns c
-  full join public.advertising_payments p on p.campaign_id = c.id;
+    (select count(*) from public.advertising_campaigns),
+    (select count(*) from public.advertising_campaigns where status = 'active'),
+    (select count(*) from public.advertising_campaigns where status in ('awaiting_payment','payment_review','awaiting_approval','scheduled')),
+    (select count(*) from public.advertising_payments where status = 'confirmed'),
+    (select count(*) from public.advertising_design_payments where status = 'confirmed'),
+    (select coalesce(sum(amount_ngn),0)::bigint from public.advertising_design_payments where status = 'confirmed'),
+    (
+      (select coalesce(sum(amount_ngn),0) from public.advertising_payments where status = 'confirmed') +
+      (select coalesce(sum(amount_ngn),0) from public.advertising_design_payments where status = 'confirmed')
+    )::bigint;
 end;
 $function$;
 revoke all on function public.get_advertising_admin_overview(uuid) from public, anon, authenticated;

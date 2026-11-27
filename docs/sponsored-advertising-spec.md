@@ -1,8 +1,8 @@
 # The Match Sponsored Advertising — Product Specification (Planning Draft)
 
-**Status:** Planning draft only — not approved for implementation  
+**Status:** Product specification complete for owner review; implementation remains isolated to a test branch and is not approved for production  
 **Prepared:** 2026-11-27  
-**Working branch:** `planning/sponsored-advertising-2026-11-27`  
+**Working branch:** `test/sponsored-advertising-2026-11-27`  
 **Production branch:** `main` (must remain unchanged during planning)
 
 ## 1. Purpose and boundaries
@@ -33,11 +33,11 @@ Advertiser identity and data must be separate from dating-member accounts and pr
 - **Match Plus:** Completely ad-free.
 - **No campaign available:** Continue showing organic profiles normally.
 - **Card actions:** Advert-specific call-to-action; no Like, Pass or Super Like controls.
-- **Multiple advertisers:** Multiple campaigns may run concurrently.
+- **Multiple advertisers:** Multiple campaigns may run concurrently. No arbitrary fixed active-campaign cap; only eligible paid, approved campaigns enter rotation. Capacity is bounded by performance and fair-delivery controls, not by selling priority.
 - **Rotation:** Fair rotation among eligible active campaigns; avoid showing the same advertiser repeatedly to one member in a short period. No preferential placement is purchased through longer package duration.
 - **Advertisers:** Both individuals and registered businesses/organisations may apply.
 
-The exact frequency and repeat-exposure window will be configurable and should be validated against real usage before launch.
+The target frequency is one sponsored card after every 10–15 organic profiles. Use a configurable default of 12 organic profiles, with a per-member repeat cap of one campaign impression per 24 hours and a same-advertiser separation of at least three sponsored slots. If no eligible campaign exists, show organic profiles normally. These are starting safeguards and may be tuned from aggregate performance without changing the agreed moderate experience.
 
 ## 3. Advertising packages and payment
 
@@ -134,7 +134,7 @@ Design charges are separate from advertising package prices and are optional.
 - Redesign/editing: one revision round.
 - Advertiser receives the finished artwork.
 
-Exact design deliverables, file dimensions, formats, source-file inclusion and the definition of a revision round remain to be specified.
+Design deliverables: Basic is one clean static portrait creative using advertiser-supplied copy/assets; Premium includes a more polished custom visual direction and one primary creative; Redesign/editing updates an existing advertiser-supplied creative. Final scope is confirmed in writing before payment. Deliver final export files; editable source files are not included unless separately agreed. A revision round means one consolidated set of reasonable changes submitted together.
 
 ### Approved image and video creative rules
 
@@ -146,7 +146,7 @@ Exact design deliverables, file dimensions, formats, source-file inclusion and t
 - Video playback: muted autoplay only while the advert is visible; sound is enabled only after the member taps.
 - Video assets must be lazy-loaded near visibility so they do not delay organic Discover profile loading.
 - Image/video campaigns use the same approved package prices and fair campaign rotation.
-- Exact image/video pixel dimensions, codec/profile compatibility, thumbnail/poster handling, CTA types and upload validation remain technical design items.
+- Creative specification defaults: portrait 4:5 presentation, responsive to the existing Discover media container; preserve the existing organic profile-card dimensions and layout. Accept JPG, PNG and WebP images up to 10 MB; optimise and generate responsive variants server-side. Accept MP4 video up to 30 seconds and 20 MB, H.264 video with broadly compatible AAC audio where present; reject unsupported codecs and malformed files. Generate a poster thumbnail, require a preview before submission, crop with a visible focal-point preview, and never stretch creative. Video muted autoplay only while visible, sound only after member tap, and lazy-load near viewport. CTA options: Learn More, Visit Website, Contact Us, WhatsApp. WhatsApp CTA uses advertiser-provided number and opens an external WhatsApp link; website/contact actions are tracked as clicks. Validate destinations and show the final URL to the advertiser before submission.
 
 ## 7. Cancellation and refund policy
 
@@ -170,7 +170,7 @@ The advertiser dashboard includes, at no extra charge:
 
 Advertisers may only access statistics and records belonging to their own advertiser account/campaigns.
 
-Technical definitions for an impression, deduplication, click attribution, reporting time zone, reporting delay and bot filtering remain to be agreed before implementation. Do not promise guaranteed impression or click counts.
+Analytics definitions: an impression is counted when at least 50% of the sponsored card is visible for at least one continuous second; count at most one impression per member per campaign per 24 hours. A click is recorded when the member activates the advert CTA; report total clicks and unique member clicks (one unique click per member per campaign per 24 hours). CTR is impressions-based unique clicks divided by impressions. Use Africa/Lagos for displayed dates and campaign scheduling. Dashboard reporting target is near-real-time, with a clear note that counts may take several minutes to settle. Exclude known automated/preload events and server-side duplicate events; do not claim perfect bot detection. No guaranteed impression or click counts.
 
 ## 9. Admin advertising controls
 
@@ -196,23 +196,27 @@ The new admin controls must use the existing server-side admin authorization pat
 - The user wants to consider a broader ARCON arrangement later as The Match grows. However, any advertising clearance, disclosure, consumer-protection, privacy or other legal requirement that applies to a specific advert must be satisfied before publication. The product must not represent ARCON as a fraud-detection service.
 - The advertiser-screening checklist previously proposed in discussion was explicitly rejected and must not be reintroduced as a product requirement. This does not waive applicable legal obligations or the already-agreed payment and advert-approval steps.
 
-## 11. Open decisions before implementation
+## 11. Remaining implementation-time verification (no further product questions)
 
-The following items still need explicit decisions or technical verification:
-1. **Campaign capacity:** Should there be a maximum number of active campaigns, or should the system accept all approved campaigns and rotate them fairly?
-2. **Advert categories and content rules:** Agree the permitted/prohibited categories and any legal disclosures required for the actual ad formats.
-3. **Creative specifications:** Exact responsive pixel/export dimensions, image file types and size limit, video codec compatibility, crop behavior, poster/thumbnail handling, CTA options and upload validation. Image+video launch, shared portrait card presentation, MP4, 30-second and 20-MB video limits, muted visible-only autoplay and lazy loading are approved.
-4. **Advert design deliverables:** Exact differences between Basic and Premium, output formats, source files and what counts as a revision.
-5. **Advertiser dashboard access:** Email verification requirement, Google OAuth setup, account recovery and whether advertiser accounts require admin activation.
-6. **Campaign editing after approval:** What changes require re-approval and whether a live campaign is paused during changes.
-7. **Refund operations:** Expected refund processing window and how advertisers are notified.
-8. **Analytics definitions:** Impression visibility threshold, click attribution, repeat views, reporting timezone and reporting delay.
-9. **Bank details and reference format:** Secure configuration of the business account details and unique reference scheme; do not hardcode sensitive bank details in frontend source.
-10. **Applicable regulatory review:** Confirm which advert categories and formats require pre-publication clearance under current Nigerian requirements.
+The product defaults below are settled for the test implementation. Any technical or legal blocker discovered during implementation must be documented rather than silently changing an approved product decision.
+
+- **Campaign capacity:** No arbitrary fixed campaign cap. All eligible paid and approved campaigns may be active; rotate fairly and fail open to organic profiles.
+- **Permitted categories:** LGBTQ+-affirming and general lawful goods/services relevant to adult members. Exclude illegal products/services, fraudulent or deceptive offers, discriminatory/hateful content, exploitative offers, and categories prohibited by applicable law or platform policy. Do not invent an advertiser-screening checklist; the agreed payment verification and advert approval workflow remains the operational control. Any legally mandatory pre-clearance/disclosure must be observed.
+- **Creative formats:** Both images and videos at launch; shared portrait 4:5 presentation. Images JPG/PNG/WebP up to 10 MB. Videos MP4/H.264 up to 30 seconds and 20 MB, with AAC audio where present, generated poster, preview/crop, muted visible-only autoplay and lazy loading.
+- **CTA:** Learn More, Visit Website, Contact Us or WhatsApp.
+- **Design deliverables:** Basic one clean static creative; Premium custom visual direction and one primary creative; redesign/editing of supplied artwork. Two consolidated revision rounds for Basic/Premium, one for redesign/editing. Final exports included; source/editable files only by separate agreement.
+- **Advertiser access:** Separate advertiser-facing sign-in experience and advertiser identity records; email/password with recovery and Google sign-in. Require verified email before campaign submission. Do not create a dating-member profile or change member auth. Use the existing Supabase auth service only if a safe isolated identity namespace and authorization boundary can be proven; otherwise document the need for a separate auth project before implementation. No advertiser self-activation or privileged access; campaign publication still requires admin approval.
+- **Edits:** Before submission, advertiser may edit freely. While pending, advertiser may withdraw and resubmit. After approval, any creative, destination, headline, package or schedule change creates a change request and pauses delivery until re-approved. No silent live edits.
+- **Refund operations:** Permitted refunds are manually processed to the originating payer's verified bank account, normally within 5–10 business days after approval; duplicate transfers return only the extra payment. Record admin, amount, reason, date and reference. Applicable law overrides this operational target.
+- **Analytics:** Impression requires at least 50% card visibility for one continuous second; at most one impression per member/campaign per 24 hours. Record total clicks and unique clicks, with one unique click per member/campaign per 24 hours. CTR = unique clicks / impressions. Africa/Lagos time zone; reporting may take several minutes to settle. Exclude known preload/automated and duplicate events without claiming perfect bot detection.
+- **Bank details:** Configure through protected server-side secrets/admin configuration; never commit account details, secret keys or bank credentials to frontend source. Generate unguessable, unique payment references per campaign reservation.
+- **Legal/regulatory:** Before accepting a category for launch, verify applicable Nigerian advertising, consumer-protection, privacy and ARCON clearance/disclosure requirements for that actual advert. Do not state that ARCON is a fraud-screening provider. Obtain qualified local review where required.
+
+No further product questions are required to start a safe test implementation. These defaults are not a waiver of legal review.
 
 ## 12. Proposed implementation sequence (not yet authorized)
 
-1. Complete the open product and legal decisions.
+1. Treat the settled defaults in section 11 as the product baseline; record any legal or technical blocker for owner review.
 2. Read-only audit of current auth, admin authorization, Discover rendering, existing payment handling, Supabase schema/RLS and deployment workflow.
 3. Propose an isolated advertiser identity model and separate campaign/payment/creative tables.
 4. Design least-privilege RLS and server-side functions for campaign submission, payment status, approval, scheduling, rotation and metrics.
@@ -231,3 +235,10 @@ The following items still need explicit decisions or technical verification:
 - No changes to Match Plus, Match Lite, Match Coins or membership payment flows.
 - No changes to Discover organic card layout/actions, Stories, Events, Nearby, chat, calls, verification or bottom navigation.
 - No advertising implementation, merge or deployment until the complete specification is approved.
+
+
+## 14. Test-branch implementation boundary
+
+The test branch is the only permitted target for implementation work at this stage. Start with isolated advertiser tables and server-side authorization, campaign lifecycle/payment-reference primitives, upload validation and admin workflow. Keep the Discover insertion behind a disabled-by-default feature flag until end-to-end tests prove that organic card loading and actions remain unchanged. Use existing Backblaze B2 infrastructure only after confirming its current server-side upload/access contract; do not expose B2 credentials or publicise private advertiser assets. Do not change member auth routes, member tables, membership/coin flows, bottom navigation, existing Discover actions or production Supabase data. Test with synthetic advertiser accounts/campaigns and a non-production environment. Do not merge to `main`, enable the feature flag in production, run production migrations, or deploy without a separate explicit approval after review.
+
+Required acceptance tests: advertiser/member identity isolation; advertiser can only read own campaigns and metrics; only server-authorised admins can confirm payments/approve/pause campaigns; unpaid reservations expire after 24 hours; duplicate transfer records cannot activate a campaign twice; schedule and duration boundaries use Africa/Lagos; campaign duration begins at actual activation; rejected/changed creative cannot remain live; image/video MIME/size/duration/codec validation; safe poster and lazy loading; rotation fairness and frequency caps; no sponsored cards for Match Plus; organic fallback when no campaign is eligible; impressions/clicks deduplicate correctly; no tracking before visible impression or CTA click; existing login/signup/Google/CAPTCHA, Discover Like/Pass/Super Like, Stories, Events, Nearby, chat, Match Plus, Match Lite, Coins and bottom navigation regression checks.

@@ -211,7 +211,10 @@
       list.querySelectorAll(".match-sponsored-ad-card").forEach((card) => card.remove());
     }
     previousOrganicCount = organic.length;
-    for (const [anchor, card] of cardsByAnchor) {\n      if (!anchor.isConnected) { card.remove(); cardsByAnchor.delete(anchor); }\n    }\n    organic.forEach((anchor) => {
+    for (const [anchor, card] of cardsByAnchor) {
+      if (!anchor.isConnected) { card.remove(); cardsByAnchor.delete(anchor); }
+    }
+    organic.forEach((anchor) => {
       if (!anchor.dataset.matchSponsoredAnchorId) anchor.dataset.matchSponsoredAnchorId = "sponsored-anchor-" + (++sequence);
       if (processed.has(anchor)) return;
       processed.add(anchor);

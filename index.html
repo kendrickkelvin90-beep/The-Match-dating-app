@@ -26519,6 +26519,131 @@ body.light-theme #verificationPage textarea {
   border-color: #D8D0C2 !important;
 }
 
+
+/* Light theme readability and mobile navigation fit — visual-only overrides. */
+body.light-theme #bottomNavigation.bottom-nav {
+  display:grid !important;
+  grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+  grid-auto-flow:row !important;
+  align-items:stretch !important;
+  gap:3px !important;
+  min-height:calc(66px + env(safe-area-inset-bottom, 0px)) !important;
+  height:auto !important;
+  padding:6px 5px calc(6px + env(safe-area-inset-bottom, 0px)) !important;
+  box-sizing:border-box !important;
+  background:#FFFFFF !important;
+  border-top:1px solid #E5DCCB !important;
+  box-shadow:0 -4px 16px rgba(55,47,31,.08) !important;
+}
+body.light-theme #bottomNavigation.bottom-nav button {
+  min-width:0 !important;
+  min-height:52px !important;
+  width:100% !important;
+  padding:4px 1px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:3px !important;
+  white-space:nowrap !important;
+  font-size:clamp(9px,2.5vw,11px) !important;
+  line-height:1.15 !important;
+  color:#303936 !important;
+  background:transparent !important;
+  border:1px solid transparent !important;
+  border-radius:11px !important;
+}
+body.light-theme #bottomNavigation.bottom-nav button.active {
+  color:#254C46 !important;
+  background:#EAF0EC !important;
+  border-color:#D5E2DA !important;
+}
+body.light-theme #bottomNavigation .nav-icon {
+  color:inherit !important;
+  filter:none !important;
+}
+body.light-theme #bottomNavigation .nav-badge {
+  background:#C39A52 !important;
+  color:#241B0C !important;
+  border:1px solid #FFFFFF !important;
+}
+
+/* Give every Events section enough scroll room to clear the fixed five-item
+   navigation, including Android gesture/navigation safe-area insets. */
+body.light-theme #eventsPage {
+  min-height:100% !important;
+  height:auto !important;
+  overflow-x:hidden !important;
+  overflow-y:visible !important;
+  padding-bottom:calc(112px + env(safe-area-inset-bottom, 0px)) !important;
+  scroll-padding-bottom:calc(112px + env(safe-area-inset-bottom, 0px)) !important;
+}
+body.light-theme #eventsPage .events-shell {
+  padding-bottom:calc(18px + env(safe-area-inset-bottom, 0px)) !important;
+}
+body.light-theme #eventsPage #backFromEvents {
+  margin-bottom:12px !important;
+}
+
+/* Replace inherited white copy on pale/light surfaces with charcoal.
+   Intentional white text on teal primary controls and dark image overlays is
+   preserved below. */
+body.light-theme main :is(h1,h2,h3,h4,h5,h6,p,li,label,small,strong,em,
+  span:not(.nav-icon),dt,dd,figcaption,.status,.description,.subtitle,
+  .helper-text,.empty-state,.section-description,.muted,.text-muted,
+  .form-hint,.event-meta,.event-card-top,.event-card-bottom) {
+  color:#303936 !important;
+  text-shadow:none !important;
+  opacity:1 !important;
+}
+body.light-theme #eventsPage :is(h1,h2,h3,h4,h5,h6,p,li,label,small,strong,
+  span,em,.events-eyebrow,.events-host-kicker,.events-trust-row span,
+  .events-discovery-note p,.event-meta,.event-card-top,.event-card-bottom,
+  .event-status-row,.events-empty,.event-category) {
+  color:#303936 !important;
+  text-shadow:none !important;
+  opacity:1 !important;
+}
+body.light-theme main :is(.eyebrow,.section-kicker,.accent-text),
+body.light-theme #eventsPage :is(.events-eyebrow,.events-host-kicker,
+  .event-category,.event-card-bottom strong) {
+  color:#79591F !important;
+}
+body.light-theme #bottomNavigation *,
+body.light-theme #eventsPage button.primary,
+body.light-theme #eventsPage .btn.primary,
+body.light-theme #verificationPage button.primary,
+body.light-theme #verificationPage .btn.primary,
+body.light-theme #discover .discover-option3-overlay *,
+body.light-theme #discover .discover-profile-overlay *,
+body.light-theme #eventsPage .events-featured-preview *,
+body.light-theme #eventsPage .event-demo-cover *,
+body.light-theme .match-confirm-backdrop *,
+body.light-theme .safety-dialog *,
+body.light-theme #matchFeaturePromoCard * {
+  text-shadow:none;
+}
+body.light-theme #eventsPage button.primary,
+body.light-theme #eventsPage .btn.primary,
+body.light-theme #verificationPage button.primary,
+body.light-theme #verificationPage .btn.primary {
+  color:#FFFFFF !important;
+}
+body.light-theme #discover .discover-option3-overlay *,
+body.light-theme #discover .discover-profile-overlay *,
+body.light-theme #eventsPage .events-featured-preview *,
+body.light-theme #eventsPage .event-demo-cover *,
+body.light-theme .match-confirm-backdrop *,
+body.light-theme .safety-dialog *,
+body.light-theme #matchFeaturePromoCard * {
+  color:inherit;
+}
+@media(max-width:380px) {
+  body.light-theme #bottomNavigation.bottom-nav { gap:1px !important; padding-left:3px !important; padding-right:3px !important; }
+  body.light-theme #bottomNavigation.bottom-nav button { font-size:9px !important; }
+  body.light-theme #bottomNavigation .nav-icon { font-size:19px !important; }
+}
+
 </style>
 <script src="/match-performance-engine.js?v=3"></script>
 <script src="/match-intelligence-engine.js?v=1"></script>

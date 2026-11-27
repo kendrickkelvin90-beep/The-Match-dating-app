@@ -145,6 +145,14 @@ Deno.serve(async (req: Request) => {
     const action = cleanText(body.action, 48) as Action;
     const { user, caller, admin, isAdvertiser, isMatchAdmin } = auth;
     const adminAction = action.startsWith("admin-");
+    const campaignsOpen = Deno.env.get("ADVERTISING_CAMPAIGNS_OPEN") === "true";
+    const campaignSubmissionActions = new Set<Action>([
+      "create-campaign", "request-campaign-change", "submit-payment",
+      "create-design-request", "submit-design-payment",
+    ]);
+    if (!campaignsOpen && campaignSubmissionActions.has(action)) {
+      return json({ error: "Campaign submissions and advertising payments are not open yet. Your advertiser account remains available." }, 403, origin);
+    }
     if (!isAdvertiser && !(isMatchAdmin && adminAction)) {
       return json({ error: "A verified advertiser session is required for this action." }, 403, origin);
     }

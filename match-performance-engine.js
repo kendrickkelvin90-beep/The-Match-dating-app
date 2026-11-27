@@ -51,8 +51,8 @@
    stabilizedCards.add(card);
    requestAnimationFrame(()=>requestAnimationFrame(()=>{
      if(!card.isConnected)return;
-     const stableHeight=card.style.getPropertyValue('height');
-     if(!stableHeight||stableHeight==='auto')return;
+     const stableHeight='auto';
+     card.style.setProperty('height',stableHeight,'important');
      let restoring=false;
      const observer=new MutationObserver(()=>{
        if(!card.isConnected){observer.disconnect();return;}
@@ -79,7 +79,7 @@
    photoBox.classList.add('match-discover-editorial-media');
    overlay.classList.add('match-discover-editorial-body');
    const set=(el,prop,value)=>el&&el.style.setProperty(prop,value,'important');
-   [['display','flex'],['flex-direction','column'],['height','auto'],['min-height','0'],['max-height','none'],['overflow','hidden'],['width','100%'],['max-width','100%'],['margin','0'],['border-radius','24px'],['border','1px solid rgba(214,180,110,.38)'],['background','#10100e'],['box-shadow','0 16px 38px rgba(0,0,0,.28)'],['transform','none'],['transition','none']].forEach(([p,v])=>set(card,p,v));
+   [['display','flex'],['flex-direction','column'],['height','auto'],['min-height','0'],['max-height','none'],['overflow','hidden'],['width','100%'],['max-width','100%'],['margin','0'],['border-radius','24px'],['border','1px solid rgba(214,180,110,.38)'],['background','#10100e'],['box-shadow','0 16px 38px rgba(0,0,0,.28)'],['touch-action','pan-y']].forEach(([p,v])=>set(card,p,v));
    [['position','relative'],['inset','auto'],['display','block'],['flex','0 0 auto'],['width','100%'],['height','clamp(360px,52svh,520px)'],['min-height','360px'],['max-height','520px'],['border-radius','0'],['overflow','hidden']].forEach(([p,v])=>set(photoBox,p,v));
    const photo=photoBox.querySelector('.discover-option3-image');
    [['position','absolute'],['inset','0'],['width','100%'],['height','100%'],['object-fit','cover'],['object-position','center 24%'],['border-radius','0']].forEach(([p,v])=>set(photo,p,v));
@@ -104,7 +104,8 @@
    if(actions){
      [['display','grid'],['grid-template-columns','1fr 1fr 1fr'],['gap','9px'],['width','100%'],['margin','7px 0 0'],['padding','0']].forEach(([p,v])=>set(actions,p,v));
      actions.querySelectorAll('button').forEach((button,index)=>{
-       [['width','100%'],['min-width','0'],['max-width','none'],['height','54px'],['min-height','54px'],['max-height','54px'],['flex','1 1 0'],['border-radius','14px'],['font-size','24px'],['box-shadow','none'],['padding','0 5px']].forEach(([p,v])=>set(button,p,v));
+       button.textContent=index===0?'✕ Pass':index===1?'✦ Super Like':'♥ Like';
+       [['width','100%'],['min-width','0'],['max-width','none'],['height','54px'],['min-height','54px'],['max-height','54px'],['flex','1 1 0'],['border-radius','14px'],['font-size','13px'],['box-shadow','none'],['padding','0 5px']].forEach(([p,v])=>set(button,p,v));
        if(index===0){
          [['background','#efede8'],['border','1px solid #e2ded5'],['color','#4c4942']].forEach(([p,v])=>set(button,p,v));
        }else{

@@ -11,6 +11,22 @@ insert into public.profiles(id) values ('10000000-0000-4000-8000-000000000003');
 -- must not create registry entries from user-editable metadata.
 select public.register_advertiser_account('10000000-0000-4000-8000-000000000001');
 select public.register_advertiser_account('10000000-0000-4000-8000-000000000002');
+
+-- The profile trigger must reject a later attempt to turn an advertiser
+-- identity into a Match dating-member account.
+do $test$
+begin
+  begin
+    insert into public.profiles(id) values ('10000000-0000-4000-8000-000000000001');
+    raise exception 'Advertiser account was allowed to create a Match member profile';
+  exception when check_violation then
+    null;
+  end;
+  if exists (select 1 from public.profiles where id='10000000-0000-4000-8000-000000000001') then
+    raise exception 'Advertiser account unexpectedly acquired a Match member profile';
+  end if;
+end;
+$test$;
 do $test$
 begin
   begin

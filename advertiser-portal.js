@@ -101,8 +101,10 @@
       $("adminPanel").classList.remove("hidden");
       $("adminOverview").innerHTML = `
         <div class="admin-stat"><strong>${overview.campaigns_total}</strong><span>Campaigns</span></div>
-        <div class="admin-stat"><strong>${overview.confirmed_payments}</strong><span>Confirmed transfers</span></div>
-        <div class="admin-stat"><strong>${formatNaira(overview.confirmed_revenue_ngn)}</strong><span>Confirmed revenue</span></div>`;
+        <div class="admin-stat"><strong>${overview.confirmed_campaign_payments}</strong><span>Campaign transfers</span></div>
+        <div class="admin-stat"><strong>${overview.confirmed_design_payments}</strong><span>Design transfers</span></div>
+        <div class="admin-stat"><strong>${formatNaira(overview.design_service_revenue_ngn)}</strong><span>Design service revenue</span></div>
+        <div class="admin-stat"><strong>${formatNaira(overview.confirmed_revenue_ngn)}</strong><span>Total confirmed revenue</span></div>`;
       const [campaignData, paymentData] = await Promise.all([
         callApi({ action: "admin-list-campaigns" }), callApi({ action: "admin-list-payments" }),
       ]);

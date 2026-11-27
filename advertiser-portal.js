@@ -220,15 +220,18 @@
   const showDashboard = async (session) => {
     if (state.handlingSession) return;
     state.handlingSession = true;
-    try {
-      session = await ensureAdvertiserProfile(session);
-      if (!session) { state.handlingSession = false; return; }
-    } catch (error) {
-      $("dashboardView").classList.add("hidden");
-      $("authView").classList.remove("hidden");
-      message("authMessage", error.message, true);
-      state.handlingSession = false;
-      return;
+    const adminRoute = window.location.pathname.endsWith("/advertiser-admin.html") || new URLSearchParams(window.location.search).get("admin") === "1";
+    if (!adminRoute) {
+      try {
+        session = await ensureAdvertiserProfile(session);
+        if (!session) { state.handlingSession = false; return; }
+      } catch (error) {
+        $("dashboardView").classList.add("hidden");
+        $("authView").classList.remove("hidden");
+        message("authMessage", error.message, true);
+        state.handlingSession = false;
+        return;
+      }
     }
     state.handlingSession = false;
     state.session = session;
@@ -240,7 +243,6 @@
       // until the campaign launch flag is enabled.
       message("globalMessage", "You can prepare your advert details here. Campaign submission and payment are not open yet.");
     }
-    const adminRoute = window.location.pathname.endsWith("/advertiser-admin.html") || new URLSearchParams(window.location.search).get("admin") === "1";
     if (adminRoute) {
       document.querySelector(".dashboard-head")?.classList.add("hidden");
       document.querySelector(".dashboard-grid")?.classList.add("hidden");

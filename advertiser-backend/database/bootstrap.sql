@@ -1393,7 +1393,7 @@ begin
   from public.advertising_campaigns c where c.id = p_campaign_id;
 end;
 $function$;
-revoke all on function public.get_my_advertising_campaign_metrics(uuid) from public, anon;
+revoke all on function public.get_my_advertising_campaign_metrics(uuid) from public, anon, authenticated, service_role, advertiser;
 grant execute on function public.get_my_advertising_campaign_metrics(uuid) to advertiser;
 
 -- Identity columns are written only by trusted server functions.

@@ -29,7 +29,7 @@ create policy advertising_change_requests_select_own on public.advertising_campa
   for select to advertiser using (
     advertiser_id = (select auth.uid()) or private.is_advertising_admin()
   );
-revoke all on public.advertising_campaign_change_requests from anon, authenticated, advertiser;
+revoke all on public.advertising_campaign_change_requests from anon, authenticated;
 grant select on public.advertising_campaign_change_requests to advertiser;
 grant select, insert, update, delete on public.advertising_campaign_change_requests to service_role;
 

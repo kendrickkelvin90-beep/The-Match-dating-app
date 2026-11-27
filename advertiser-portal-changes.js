@@ -38,7 +38,7 @@
     if (cta === null) return;
     let scheduledStart = "";
     if (campaign.status === "scheduled" && !campaign.go_live_at) {
-      const localStart = campaign.scheduled_start_at ? new Date(campaign.scheduled_start_at).toISOString().slice(0,16) : "";
+      const localStart = campaign.scheduled_start_at ? new Date(campaign.scheduled_start_at).toLocaleString("sv-SE",{timeZone:"Africa/Lagos"}).replace(" ","T").slice(0,16) : "";
       scheduledStart = prompt("New scheduled start (YYYY-MM-DDTHH:mm local time; leave blank to keep current):",localStart);
       if (scheduledStart === null) return;
     }
@@ -50,7 +50,7 @@
     if (destination.trim() && destination.trim() !== campaign.destination_url) payload.destination_url = destination.trim();
     if (cta.trim() && cta.trim() !== campaign.cta) payload.cta = cta.trim();
     if (scheduledStart.trim()) {
-      const parsedStart = new Date(scheduledStart);
+      const parsedStart = new Date(scheduledStart + ":00+01:00");
       if (Number.isNaN(parsedStart.getTime()) || parsedStart.getTime() <= Date.now()) {
         portal.message("globalMessage","Choose a valid future scheduled start time.",true);
         return;

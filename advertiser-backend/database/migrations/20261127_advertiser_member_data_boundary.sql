@@ -206,4 +206,30 @@ grant execute on function public.get_advertising_campaign_metrics(uuid,uuid)
 revoke all on function public.get_my_advertising_campaign_metrics(uuid)
   from public, anon, authenticated, service_role;
 
+-- The Data API pre-request guard permits only the two owner-scoped list
+-- resources. Metrics and admin operations are served by trusted Edge Functions.
+create or replace function public.match_advertiser_api_guard()
+returns void
+language plpgsql
+set search_path = ''
+as $guard$
+declare
+  v_path text := trim(both '/' from coalesce(current_setting('request.path', true), ''));
+begin
+  if coalesce((select auth.jwt()->>'user_role'), '') <> 'advertiser' then
+    return;
+  end if;
+
+  if v_path in ('advertising_campaigns','advertising_design_requests') then
+    return;
+  end if;
+
+  raise sqlstate 'PGRST'
+    using message = '{"code":"ADVERTISER_ACCESS_RESTRICTED","message":"Advertiser accounts can access advertising data only.","details":null,"hint":null}',
+          detail = '{"status":403}';
+end;
+$guard$;
+revoke all on function public.match_advertiser_api_guard() from public;
+grant execute on function public.match_advertiser_api_guard() to anon, authenticated, service_role, authenticator;
+
 commit;

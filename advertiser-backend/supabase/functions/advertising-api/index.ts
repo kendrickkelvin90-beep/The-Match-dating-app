@@ -12,6 +12,7 @@ const allowedOrigins = new Set(
 );
 
 type Action =
+  | "complete-profile"
   | "create-campaign"
   | "request-campaign-change"
   | "admin-list-campaign-changes"
@@ -79,6 +80,18 @@ function paymentReference() {
   return "TMAD-" + token;
 }
 
+function jwtRole(token: string): string {
+  try {
+    const segment = token.split(".")[1];
+    if (!segment) return "";
+    const normalized = segment.replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
+    return typeof payload.role === "string" ? payload.role : "";
+  } catch {
+    return "";
+  }
+}
+
 async function authenticate(req: Request): Promise<{ user: User; caller: any; admin: any } | null> {
   const header = req.headers.get("Authorization") ?? "";
   const token = header.replace(/^Bearer\s+/i, "");
@@ -89,7 +102,7 @@ async function authenticate(req: Request): Promise<{ user: User; caller: any; ad
     global: { headers: { Authorization: `Bearer ${token}` } },
   });
   const { data, error } = await caller.auth.getUser(token);
-  if (error || !data.user || !data.user.email_confirmed_at) return null;
+  if (error || !data.user || !data.user.email_confirmed_at || jwtRole(token) !== "advertiser") return null;
 
   const admin: any = createClient(supabaseUrl, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
@@ -123,6 +136,40 @@ Deno.serve(async (req: Request) => {
     if (!body) return json({ error: "Invalid request body." }, 400, origin);
     const action = cleanText(body.action, 48) as Action;
     const { user, caller, admin } = auth;
+
+    if (action === "complete-profile") {
+      const memberProfile = await admin.from("profiles").select("id").eq("id", user.id).maybeSingle();
+      if (memberProfile.error) return json({ error: "Account type could not be verified. Please try again." }, 503, origin);
+      if (memberProfile.data) {
+        return json({ error: "This email is already connected to a Match dating-member account. Please use a different email for advertising." }, 403, origin);
+      }
+
+      const metadata = user.user_metadata ?? {};
+      const advertiserType = cleanText(body.advertiser_type ?? metadata.advertiser_type, 16);
+      const displayName = cleanText(body.display_name ?? metadata.display_name, 140) ||
+        cleanText(user.email?.split("@")[0], 140);
+      const contactName = cleanText(body.contact_name ?? metadata.contact_name, 140) || null;
+      const phone = cleanText(body.phone ?? metadata.phone, 32) || null;
+      if (!["individual", "business"].includes(advertiserType) || displayName.length < 2) {
+        return json({ error: "Please complete your advertiser name and account type." }, 400, origin);
+      }
+
+      const existing = await admin.from("advertiser_profiles")
+        .select("user_id").eq("user_id", user.id).maybeSingle();
+      if (existing.error) return json({ error: "Advertiser profile could not be checked." }, 500, origin);
+      if (existing.data) {
+        const { error } = await admin.from("advertiser_profiles")
+          .update({ contact_name: contactName, phone }).eq("user_id", user.id);
+        if (error) return json({ error: "Advertiser profile could not be updated." }, 500, origin);
+      } else {
+        const { error } = await admin.from("advertiser_profiles").insert({
+          user_id: user.id, advertiser_type: advertiserType, display_name: displayName,
+          contact_name: contactName, phone,
+        });
+        if (error) return json({ error: "Advertiser profile could not be created." }, 500, origin);
+      }
+      return json({ success: true }, 200, origin);
+    }
 
     if (action === "create-campaign") {
       const profile = await admin.from("advertiser_profiles")

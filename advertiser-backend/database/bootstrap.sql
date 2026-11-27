@@ -955,7 +955,7 @@ begin
         admin_note = left(coalesce(p_admin_note,''),1000)
     where id = p_request_id;
   elsif p_status = 'first_draft_sent' then
-    if v_request.status <> 'in_progress' then raise exception 'Design is not in progress' using errcode = '22023'; end if;
+    if v_request.status not in ('in_progress','revision') then raise exception 'Design is not in progress' using errcode = '22023'; end if;
     update public.advertising_design_requests set status = 'first_draft_sent',
       admin_note = left(coalesce(p_admin_note,''),1000) where id = p_request_id;
   elsif p_status = 'completed' then
@@ -969,7 +969,7 @@ begin
       delivered_storage_key = p_delivered_storage_key,
       admin_note = left(coalesce(p_admin_note,''),1000) where id = p_request_id;
   elsif p_status = 'cancelled' then
-    if v_request.status not in ('awaiting_payment','paid') then raise exception 'Request cannot be cancelled at this stage' using errcode = '22023'; end if;
+    if v_request.status <> 'awaiting_payment' then raise exception 'Request cannot be cancelled after payment' using errcode = '22023'; end if;
     update public.advertising_design_requests set status = 'cancelled',
       admin_note = left(coalesce(p_admin_note,''),1000) where id = p_request_id;
   else

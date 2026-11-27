@@ -35,6 +35,16 @@ Supabase's supported Custom Access Token Hook role claim is constrained to `anon
 7. **Separate browser session:** the advertiser portal uses `the-match-advertiser-auth`, so its browser session does not overwrite the Match member app session.
 8. **Admin controls:** advertiser admin access is checked server-side against `advertising_admins`; the admin must use a separate advertiser account/email.
 
+## Existing Supabase advisor baseline (read-only)
+
+A read-only advisor run was performed before any advertising migration:
+
+- Security: 5 existing RLS-enabled tables have no policies; 62 existing `SECURITY DEFINER` functions are executable by authenticated members. These findings pre-date the advertising migration. Some functions may be intentionally callable and require individual review; this implementation does not revoke or rewrite them because doing so could break Match features.
+- Performance: existing warnings include 14 tables with multiple permissive policies and 8 unused indexes, plus row-policy auth-function evaluation notices. These are baseline findings and are not caused by the advertiser boundary.
+- Health: no health lint findings were returned.
+- The advertiser pre-request guard is specifically designed to prevent advertiser JWTs from reaching those existing member RPCs. It must be enabled before the advertiser Auth hook.
+- Remediation references: [RLS enabled without policies](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy), [SECURITY DEFINER functions executable by authenticated users](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable), [multiple permissive policies](https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies), [unused indexes](https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index).
+
 ## Database validation performed
 
 - The complete shared-project advertising bootstrap was executed against the live Match database inside a transaction whose final statement was `ROLLBACK`.

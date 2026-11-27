@@ -234,7 +234,7 @@
     const { data, error } = await state.client.auth.signUp({
       email: $("signupEmail").value.trim(), password: $("signupPassword").value,
       options: { data: {
-        account_type: "advertiser",
+        the_match_advertiser_registration: "v1",
         advertiser_type: type,
         display_name: displayName,
         contact_name: $("signupContact").value.trim(),

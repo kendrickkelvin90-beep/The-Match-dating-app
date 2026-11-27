@@ -1,3 +1,4 @@
+begin;
 
 -- Advertiser-requested campaign changes are staged and require admin re-approval.
 create table if not exists public.advertising_campaign_change_requests (
@@ -50,10 +51,6 @@ begin
   end if;
   if char_length(btrim(coalesce(p_reason,''))) < 3 then
     raise exception 'A reason is required' using errcode='22023';
-  end if;
-  if p_headline is null and p_description is null and p_cta is null and p_destination_url is null
-     and p_start_mode is null and p_scheduled_start_at is null then
-    raise exception 'No campaign changes were supplied' using errcode='22023';
   end if;
   if p_headline is not null and char_length(btrim(p_headline)) not between 3 and 90 then raise exception 'Invalid headline'; end if;
   if p_description is not null and char_length(btrim(p_description)) not between 1 and 500 then raise exception 'Invalid description'; end if;
@@ -127,6 +124,9 @@ begin
   select * into v_campaign from public.advertising_campaigns where id=v_request.campaign_id for update;
   if not found then raise exception 'Campaign not found'; end if;
   if p_approve then
+    if v_campaign.payment_status <> 'confirmed' or v_campaign.status not in ('active','paused','scheduled') then
+      raise exception 'Campaign is no longer eligible for changes' using errcode='22023';
+    end if;
     if v_request.proposed_creative_id is not null then
       update public.advertising_creatives set is_current=false where campaign_id=v_campaign.id and is_current;
       update public.advertising_creatives set is_current=true
@@ -164,3 +164,4 @@ $function$;
 revoke all on function public.admin_review_advertising_campaign_change(uuid,uuid,boolean,text) from public,anon,authenticated;
 grant execute on function public.admin_review_advertising_campaign_change(uuid,uuid,boolean,text) to service_role;
 
+commit;

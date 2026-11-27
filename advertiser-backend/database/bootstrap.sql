@@ -770,18 +770,38 @@ begin
   ) then
     return false;
   end if;
+  -- Serialize events per member/campaign so parallel requests cannot bypass rolling caps.
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(p_campaign_id::text || ':' || p_viewer_day_key, 0)
+  );
   if p_event_type = 'impression' then
+    if exists (
+      select 1 from public.advertising_impressions
+      where campaign_id=p_campaign_id and viewer_day_key=p_viewer_day_key
+        and recorded_at > now() - interval '24 hours'
+    ) then
+      return false;
+    end if;
     insert into public.advertising_impressions(campaign_id,viewer_day_key,event_day)
     values (p_campaign_id,p_viewer_day_key,v_today)
     on conflict do nothing;
     get diagnostics v_inserted = row_count;
   else
+    -- Count every click, but only one unique click per member/campaign in any rolling 24h.
     insert into public.advertising_clicks(campaign_id,viewer_day_key,event_day)
     values (p_campaign_id,p_viewer_day_key,v_today);
-    insert into public.advertising_unique_clicks(campaign_id,viewer_day_key,event_day)
-    values (p_campaign_id,p_viewer_day_key,v_today)
-    on conflict do nothing;
-    get diagnostics v_inserted = row_count;
+    if exists (
+      select 1 from public.advertising_unique_clicks
+      where campaign_id=p_campaign_id and viewer_day_key=p_viewer_day_key
+        and first_clicked_at > now() - interval '24 hours'
+    ) then
+      v_inserted := 0;
+    else
+      insert into public.advertising_unique_clicks(campaign_id,viewer_day_key,event_day)
+      values (p_campaign_id,p_viewer_day_key,v_today)
+      on conflict do nothing;
+      get diagnostics v_inserted = row_count;
+    end if;
   end if;
   return v_inserted = 1;
 end;

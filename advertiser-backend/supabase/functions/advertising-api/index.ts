@@ -1,5 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient, type User } from "npm:@supabase/supabase-js@2";
+import { S3Client, GetObjectCommand } from "npm:@aws-sdk/client-s3";
+import { getSignedUrl } from "npm:@aws-sdk/s3-request-presigner";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -222,6 +224,34 @@ Deno.serve(async (req: Request) => {
 
     const isAdmin = await requireAdmin(admin, user.id);
     if (!isAdmin) return json({ error: "Advertising administrator access is required." }, 403, origin);
+
+
+    if (action === "admin-preview-creative") {
+      const campaignId = cleanText(body.campaign_id, 64);
+      if (!campaignId) return json({ error: "Campaign ID is required." }, 400, origin);
+      const { data: campaign, error } = await admin.from("advertising_campaigns")
+        .select("id,advertising_creatives(creative_type,storage_key,poster_storage_key)")
+        .eq("id", campaignId).maybeSingle();
+      if (error || !campaign) return json({ error: "Campaign creative not found." }, 404, origin);
+      const creative = Array.isArray(campaign.advertising_creatives)
+        ? campaign.advertising_creatives.find((item) => item.is_current) ?? campaign.advertising_creatives[0]
+        : campaign.advertising_creatives;
+      if (!creative?.storage_key) return json({ error: "No creative is attached to this campaign." }, 404, origin);
+      const bucket = Deno.env.get("B2_BUCKET_NAME") ?? "";
+      const endpoint = Deno.env.get("B2_S3_ENDPOINT") ?? "";
+      const keyId = Deno.env.get("B2_ADVERTISING_KEY_ID") ?? "";
+      const appKey = Deno.env.get("B2_ADVERTISING_APPLICATION_KEY") ?? "";
+      if (!bucket || !endpoint || !keyId || !appKey) return json({ error: "Advertising media is not configured." }, 503, origin);
+      const host = new URL(endpoint).hostname;
+      const region = Deno.env.get("B2_REGION") || host.match(/^s3\\.([a-z0-9-]+)\\.backblazeb2\\.com$/)?.[1];
+      if (!region) return json({ error: "B2 region is not configured." }, 503, origin);
+      const s3 = new S3Client({ region, endpoint, forcePathStyle: true, credentials: { accessKeyId: keyId, secretAccessKey: appKey } });
+      const previewUrl = await getSignedUrl(s3, new GetObjectCommand({ Bucket: bucket, Key: creative.storage_key }), { expiresIn: 120 });
+      const posterUrl = creative.poster_storage_key
+        ? await getSignedUrl(s3, new GetObjectCommand({ Bucket: bucket, Key: creative.poster_storage_key }), { expiresIn: 120 })
+        : null;
+      return json({ creative_type: creative.creative_type, preview_url: previewUrl, poster_url: posterUrl, expires_in: 120 }, 200, origin);
+    }
 
     if (action === "admin-list-campaigns") {
       const { data, error } = await admin.from("advertising_campaigns")

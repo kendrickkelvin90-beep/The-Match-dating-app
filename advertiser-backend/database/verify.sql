@@ -103,6 +103,7 @@ begin
     where n.nspname='public'
       and c.relkind in ('r','v','m')
       and c.relname not like 'advertising_%'
+      and c.relname <> 'advertiser_profiles'
       and (
         has_table_privilege('advertiser',c.oid,'select')
         or has_table_privilege('advertiser',c.oid,'insert')
@@ -115,8 +116,7 @@ begin
 
   if has_table_privilege('advertiser','public.profiles','select')
      or has_table_privilege('advertiser','public.profiles','insert')
-     or has_table_privilege('advertiser','public.profile_photos','select')
-     or has_table_privilege('advertiser','public.messages','select') then
+     then
     raise exception 'Advertiser role has access to Match member data';
   end if;
 

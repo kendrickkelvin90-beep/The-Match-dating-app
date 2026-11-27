@@ -85,7 +85,7 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - name: Type-check advertiser Edge Functions
+      - name: Type-check advertiser and guarded member Edge Functions
         run: |
           deno check advertiser-backend/supabase/functions/advertising-api/index.ts
           deno check advertiser-backend/supabase/functions/advertising-media-upload/index.ts

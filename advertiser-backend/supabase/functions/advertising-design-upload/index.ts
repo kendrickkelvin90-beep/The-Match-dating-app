@@ -66,7 +66,7 @@ Deno.serve(async (req: Request) => {
     });
     const { data: authData, error: authError } = await caller.auth.getUser(token);
     const user = authData.user;
-    if (authError || !authData.user?.email_confirmed_at || !isAdvertiserToken(token)) return json({ error: "A verified advertiser admin session is required." }, 401, origin);
+    if (authError || !user || !user.email_confirmed_at || !isAdvertiserToken(token)) return json({ error: "A verified advertiser admin session is required." }, 401, origin);
     const admin = createClient(supabaseUrl, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
     const { data: adminRow } = await admin.from("advertising_admins").select("user_id").eq("user_id", user.id).maybeSingle();
     if (!adminRow) return json({ error: "Advertising administrator access required." }, 403, origin);

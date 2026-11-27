@@ -57,7 +57,7 @@
   }
 
   function addAdvertiserRefundButtons() {
-    list.querySelectorAll(".campaign-item[data-campaign-status='rejected']").forEach((card) => {
+    list.querySelectorAll(".campaign-item[data-payment-ids]").forEach((card) => {
       if (card.querySelector("[data-advertiser-refund]")) return;
       const paymentIds = (card.dataset.paymentIds || "").split(",").filter(Boolean);
       if (!paymentIds.length) return;

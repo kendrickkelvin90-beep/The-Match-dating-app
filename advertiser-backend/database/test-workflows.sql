@@ -162,7 +162,7 @@ select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001'
 select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"anon","user_role":"advertiser"}',false);
 do $test$
 begin
-  if not private.is_advertising_admin() then
+  if not public.is_advertising_admin() then
     raise exception 'Advertising admin helper did not recognize the seeded admin';
   end if;
 end;

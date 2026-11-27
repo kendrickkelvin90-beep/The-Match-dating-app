@@ -41,15 +41,14 @@ async function verifyMember(req: Request) {
   return { user: data.user, caller: client };
 }
 
-async function dailyViewerKey(userId: string) {
+async function pseudonymousViewerKey(userId: string) {
   if (!hmacSecret) throw new Error("Analytics signing is not configured");
-  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
-  const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
-  const day = part("year") + "-" + part("month") + "-" + part("day");
   const key = await crypto.subtle.importKey(
     "raw", new TextEncoder().encode(hmacSecret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
   );
-  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(userId + ":" + day));
+  // Stable keyed pseudonym is required for a true rolling 24-hour cap across midnight.
+  // Raw member IDs are never written to advertising analytics.
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(userId));
   return Array.from(new Uint8Array(signature), (value) => value.toString(16).padStart(2, "0")).join("");
 }
 
@@ -99,7 +98,7 @@ Deno.serve(async (req: Request) => {
     const service = createClient(advertiserUrl, advertiserServiceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const viewerKey = await dailyViewerKey(user.id);
+    const viewerKey = await pseudonymousViewerKey(user.id);
     const action = typeof body.action === "string" ? body.action : "";
 
     if (action === "record-event") {
@@ -151,9 +150,11 @@ Deno.serve(async (req: Request) => {
     }
     if (!rows?.length) return json({ ad: null, reason: "no_eligible_campaigns" }, 200);
 
+    const impressionLookback = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { data: seenRows, error: seenError } = await service.from("advertising_impressions")
       .select("campaign_id,recorded_at")
       .eq("viewer_day_key", viewerKey)
+      .gte("recorded_at", impressionLookback)
       .order("recorded_at", { ascending: false })
       .limit(100);
     if (seenError) return json({ ad: null, reason: "rotation_unavailable" }, 200);

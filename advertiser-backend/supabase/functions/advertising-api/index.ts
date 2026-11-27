@@ -18,10 +18,17 @@ type Action =
   | "get-metrics"
   | "get-payment-details"
   | "request-refund"
+  | "create-design-request"
+  | "submit-design-payment"
+  | "request-design-revision"
+  | "get-design-delivery"
   | "admin-preview-creative"
   | "admin-list-campaigns"
   | "admin-list-payments"
   | "admin-list-refunds"
+  | "admin-list-design-requests"
+  | "admin-confirm-design-payment"
+  | "admin-update-design-request"
   | "admin-record-duplicate-payment"
   | "admin-review-refund"
   | "admin-mark-refund-paid"
@@ -221,6 +228,75 @@ Deno.serve(async (req: Request) => {
     }
 
 
+
+    if (action === "create-design-request") {
+      const serviceType = cleanText(body.service_type, 16);
+      const campaignId = body.campaign_id ? cleanText(body.campaign_id, 64) : null;
+      const brief = cleanText(body.brief, 3000);
+      if (!["basic","premium","redesign"].includes(serviceType) || brief.length < 10) {
+        return json({ error: "Choose a design package and describe the artwork you need." }, 400, origin);
+      }
+      const bankName = Deno.env.get("ADVERTISING_BANK_NAME") ?? "";
+      const accountName = Deno.env.get("ADVERTISING_ACCOUNT_NAME") ?? "";
+      const accountNumber = Deno.env.get("ADVERTISING_ACCOUNT_NUMBER") ?? "";
+      if (!bankName || !accountName || !/^\\d{10}$/.test(accountNumber)) {
+        return json({ error: "Advertising bank-transfer instructions have not been configured yet." }, 503, origin);
+      }
+      const reference = "TMAD-DESIGN-" + paymentReference().slice(5);
+      const { data, error } = await admin.rpc("create_advertising_design_request", {
+        p_advertiser_id: user.id, p_service_type: serviceType,
+        p_campaign_id: campaignId, p_brief: brief, p_payment_reference: reference,
+      });
+      if (error || !Array.isArray(data) || !data[0]) return json({ error: "Design request could not be created." }, 400, origin);
+      return json({
+        request: data[0],
+        bank_transfer: { bank_name: bankName, account_name: accountName, account_number: accountNumber },
+      }, 201, origin);
+    }
+
+    if (action === "submit-design-payment") {
+      const paymentId = cleanText(body.payment_id, 64);
+      const transferReference = cleanText(body.bank_transfer_reference, 120);
+      if (!paymentId || transferReference.length < 4) return json({ error: "Enter the design payment reference from your bank transfer." }, 400, origin);
+      const { data, error } = await admin.rpc("submit_advertising_design_payment", {
+        p_advertiser_id: user.id, p_payment_id: paymentId, p_bank_transfer_reference: transferReference,
+      });
+      if (error) return json({ error: "Design payment details could not be submitted." }, 400, origin);
+      return json({ success: data === true, status: "submitted" }, 200, origin);
+    }
+
+    if (action === "request-design-revision") {
+      const requestId = cleanText(body.request_id, 64);
+      if (!requestId) return json({ error: "Design request ID is required." }, 400, origin);
+      const { data, error } = await admin.rpc("advertiser_request_design_revision", {
+        p_advertiser_id: user.id, p_request_id: requestId,
+      });
+      if (error) return json({ error: "No revision is currently available for this design request." }, 400, origin);
+      return json({ success: true, revisions_used: data }, 200, origin);
+    }
+
+    if (action === "get-design-delivery") {
+      const requestId = cleanText(body.request_id, 64);
+      if (!requestId) return json({ error: "Design request ID is required." }, 400, origin);
+      const { data: request, error } = await admin.from("advertising_design_requests")
+        .select("id,status,delivered_storage_key").eq("id", requestId)
+        .eq("advertiser_id", user.id).maybeSingle();
+      if (error || !request || request.status !== "completed" || !request.delivered_storage_key) {
+        return json({ error: "The finished artwork is not available yet." }, 404, origin);
+      }
+      const bucket = Deno.env.get("B2_BUCKET_NAME") ?? "";
+      const endpoint = Deno.env.get("B2_S3_ENDPOINT") ?? "";
+      const keyId = Deno.env.get("B2_ADVERTISING_KEY_ID") ?? "";
+      const appKey = Deno.env.get("B2_ADVERTISING_APPLICATION_KEY") ?? "";
+      if (!bucket || !endpoint || !keyId || !appKey) return json({ error: "Design delivery is not configured." }, 503, origin);
+      const host = new URL(endpoint).hostname;
+      const region = Deno.env.get("B2_REGION") || host.match(/^s3\\.([a-z0-9-]+)\\.backblazeb2\\.com$/)?.[1];
+      if (!region) return json({ error: "B2 region is not configured." }, 503, origin);
+      const s3 = new S3Client({ region, endpoint, forcePathStyle: true, credentials: { accessKeyId: keyId, secretAccessKey: appKey } });
+      const url = await getSignedUrl(s3, new GetObjectCommand({ Bucket: bucket, Key: request.delivered_storage_key }), { expiresIn: 300 });
+      return json({ download_url: url, expires_in: 300 }, 200, origin);
+    }
+
     if (action === "request-refund") {
       const paymentId = cleanText(body.payment_id, 64);
       const reason = cleanText(body.reason, 500);
@@ -287,6 +363,43 @@ Deno.serve(async (req: Request) => {
       return json({ payments: data ?? [] }, 200, origin);
     }
 
+
+
+    if (action === "admin-list-design-requests") {
+      const { data, error } = await admin.from("advertising_design_requests")
+        .select("*,advertiser_profiles(display_name,phone),advertising_design_payments(id,amount_ngn,status,bank_transfer_reference,payment_reference)")
+        .order("created_at", { ascending: false }).limit(250);
+      if (error) return json({ error: "Design service queue could not be loaded." }, 500, origin);
+      return json({ requests: data ?? [] }, 200, origin);
+    }
+
+    if (action === "admin-confirm-design-payment") {
+      const paymentId = cleanText(body.payment_id, 64);
+      if (!paymentId) return json({ error: "Design payment ID is required." }, 400, origin);
+      const { data, error } = await admin.rpc("admin_confirm_advertising_design_payment", {
+        p_admin_id: user.id, p_payment_id: paymentId, p_admin_note: cleanText(body.admin_note, 500),
+      });
+      if (error) return json({ error: "Design payment could not be confirmed." }, 400, origin);
+      return json({ success: data === true }, 200, origin);
+    }
+
+    if (action === "admin-update-design-request") {
+      const requestId = cleanText(body.request_id, 64);
+      const status = cleanText(body.status, 24);
+      const deliveryAt = body.delivery_at ? new Date(String(body.delivery_at)) : null;
+      if (!requestId || !["in_progress","first_draft_sent","completed","cancelled"].includes(status) ||
+          (body.delivery_at && (!deliveryAt || Number.isNaN(deliveryAt.getTime())))) {
+        return json({ error: "Invalid design request update." }, 400, origin);
+      }
+      const { data, error } = await admin.rpc("admin_update_advertising_design_request", {
+        p_admin_id: user.id, p_request_id: requestId, p_status: status,
+        p_delivery_at: deliveryAt?.toISOString() ?? null,
+        p_delivered_storage_key: cleanText(body.delivered_storage_key, 500) || null,
+        p_admin_note: cleanText(body.admin_note, 1000),
+      });
+      if (error) return json({ error: "Design request status could not be updated." }, 400, origin);
+      return json({ success: true, status: data }, 200, origin);
+    }
 
     if (action === "admin-list-refunds") {
       const { data, error } = await admin.from("advertising_refunds")

@@ -230,7 +230,7 @@ Deno.serve(async (req: Request) => {
       const campaignId = cleanText(body.campaign_id, 64);
       if (!campaignId) return json({ error: "Campaign ID is required." }, 400, origin);
       const { data: campaign, error } = await admin.from("advertising_campaigns")
-        .select("id,advertising_creatives(creative_type,storage_key,poster_storage_key)")
+        .select("id,advertising_creatives(creative_type,storage_key,poster_storage_key,is_current)")
         .eq("id", campaignId).maybeSingle();
       if (error || !campaign) return json({ error: "Campaign creative not found." }, 404, origin);
       const creative = Array.isArray(campaign.advertising_creatives)

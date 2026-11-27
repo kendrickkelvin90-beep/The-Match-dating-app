@@ -17,6 +17,7 @@ type Action =
   | "list-campaigns"
   | "get-metrics"
   | "get-payment-details"
+  | "cancel-campaign"
   | "request-refund"
   | "create-design-request"
   | "list-design-requests"
@@ -203,6 +204,17 @@ Deno.serve(async (req: Request) => {
       return json({ campaigns: data ?? [] }, 200, origin);
     }
 
+
+
+    if (action === "cancel-campaign") {
+      const campaignId = cleanText(body.campaign_id, 64);
+      if (!campaignId) return json({ error: "Campaign ID is required." }, 400, origin);
+      const { data, error } = await admin.rpc("cancel_unpaid_advertising_campaign", {
+        p_advertiser_id: user.id, p_campaign_id: campaignId,
+      });
+      if (error) return json({ error: "Only unpaid campaign reservations can be cancelled for free." }, 400, origin);
+      return json({ success: data === true }, 200, origin);
+    }
 
     if (action === "get-payment-details") {
       const campaignId = cleanText(body.campaign_id, 64);

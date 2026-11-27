@@ -54,7 +54,7 @@
    const style=document.createElement('style');
    style.id='match-discover-hd-styles';
    style.textContent=
-     '#profileList .match-discover-hd-card{width:100%;max-width:100%;overflow:hidden;}'+
+     '#profileList .match-discover-hd-card{width:100%;max-width:100%;}'+
      '#profileList .match-discover-hd-photo{display:block;width:100%;height:clamp(440px,72svh,780px);max-height:780px;object-fit:cover;object-position:center center;image-rendering:auto;}'+
      '@media(max-width:600px){#profileList .match-discover-hd-photo{height:clamp(460px,69svh,740px);max-height:740px;}}'+
      '@media(min-width:900px){#profileList .match-discover-hd-card{margin-inline:auto;}}';
@@ -107,9 +107,9 @@
  else start();
 
  window.MatchPerformanceEngine={
-   version:'1.2-discover-hd-priority',
+   version:'1.3-discover-card-overflow-fix',
    targetFirstCardMs:2000,
-   status:'Discover-only lazy loading; first photo prioritized; large HD presentation enabled',
+   status:'Discover-only lazy loading; first photo prioritized; card content is no longer clipped by the performance layer',
    refresh:()=>{attachDiscoverList();tuneDiscover();}
  };
 })();

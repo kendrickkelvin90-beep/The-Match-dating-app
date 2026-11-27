@@ -9,9 +9,9 @@ This implementation uses the existing `the-match-dating-app` Supabase project. I
 - Supabase Auth remains the underlying identity provider, but advertiser accounts must use a separate email from an existing dating-member account.
 - The Custom Access Token Hook leaves ordinary member tokens unchanged. It grants the supported JWT role `anon` and custom claim `user_role=advertiser` only to users already inserted into a protected server-managed advertiser registry, and only while no `public.profiles` row exists. User-editable metadata never grants access. A verified-session server enrollment endpoint must perform the registry insert.
 - The existing before-user-created hook is not modified.
-- Advertiser JWTs do not receive the `authenticated` database role. The Data API pre-request guard allows only the two read-only advertiser list endpoints and the advertiser metrics RPC. All other advertiser Data API paths are rejected.
+- Advertiser JWTs do not receive the `authenticated` database role. The Data API pre-request guard allows only the two read-only advertiser list endpoints. Metrics are returned by the trusted advertising Edge Function using a service-role-only RPC. All other advertiser Data API paths are rejected.
 - A restrictive RLS boundary is added to every existing public table except the two read-only advertiser list tables. Matching boundaries also protect Storage objects and Realtime messages. Normal member JWTs have no `user_role=advertiser` claim, so existing member policies continue to apply.
-- Advertiser direct Data API access is limited to `advertising_campaigns`, `advertising_design_requests` and `get_my_advertising_campaign_metrics`. Other advertiser reads/writes use trusted Edge Functions with ownership/admin checks.
+- Advertiser direct Data API access is limited to `advertising_campaigns` and `advertising_design_requests`. Metrics and all other advertiser reads/writes use trusted Edge Functions with ownership/admin checks.
 - Guarded source snapshots are provided for ten existing member Edge Functions, but the currently deployed live versions were found to differ from those snapshots. Do not deploy those snapshots as-is. Before activation, reconcile each guard against the latest live function body, preserve all current live behavior, and deploy only the reviewed merged versions. The advertiser API, media upload and design upload functions accept only a verified `role=anon`, `user_role=advertiser` session. Member ad serving accepts only normal `role=authenticated` member sessions.
 - Sponsored creatives remain private Backblaze B2 objects under the `advertising/` prefix. Use a separate B2 application key restricted to that prefix where supported.
 - No targeting by sexual orientation, LGBTQ+ identity, profile answers, location history or other sensitive member data.
@@ -25,7 +25,7 @@ This implementation uses the existing `the-match-dating-app` Supabase project. I
 4. The existing `before-user-created` hook remains untouched. The custom access-token hook is a separate global Auth setting and must be tested with member login, signup, CAPTCHA, Google sign-in and token refresh before activation. The hook reads only the protected advertiser registry; user-editable metadata is never sufficient to issue an advertiser claim.
 5. The Data API guard is a separate PostgREST setting: `pgrst.db_pre_request`. The bootstrap creates `public.match_advertiser_api_guard()` but does not register it. Inspect `pg_db_role_setting` before using the optional `database/enable-pre-request.sql`. If another pre-request function is configured, compose the functions rather than overwriting it. The current project was inspected and no authenticator pre-request function was configured at audit time.
 6. The advertiser portal uses email/password first. Google identity linking requires Supabase manual identity linking, which is a global Auth setting; review its impact on member accounts before enabling it.
-7. The advertiser admin must itself use an advertiser account and be added to the server-side `advertising_admins` allowlist.
+7. Existing Match administrators are added to the server-side `advertising_admins` allowlist and use their normal member session for admin-only Edge Function actions. They are not converted into advertiser accounts.
 
 ## Code included
 
@@ -88,11 +88,11 @@ The GitHub Actions workflow runs JavaScript syntax checks, Deno type checks and 
 
 Not yet configured or activated:
 - A reduced 13-table advertising foundation migration has been applied to the live project. All 13 tables have RLS enabled; `anon` and `authenticated` have no direct table access, and `service_role` retains server-side access. The full bootstrap, Auth hook, Data API guard and broad member-data boundaries have not been applied.
-- No Data API pre-request setting has been enabled.
+- The Data API pre-request guard is enabled on the live project; the global Auth Hook remains disabled.
 - No Auth hook has been enabled.
-- No advertising Edge Functions or reconciled guarded member Edge Functions have been deployed.
+- Five advertising Edge Functions are deployed; the existing member Edge Functions have not been modified for advertiser sessions.
 - No B2 advertising key or HMAC secret has been configured.
-- No bank details or admin allowlist have been configured.
+- The advertising admin allowlist has been seeded from existing Match admins; bank transfer details are configured as Edge Function secrets.
 - No live advertiser/member sessions or Android/iOS device QA have been completed. The live project currently has no custom advertiser Auth hook, no Data API pre-request guard and no deployed advertising Edge Functions.
 - The sponsored advertising feature flag remains disabled.
 - Nigerian advertising/privacy/legal review, including any ARCON clearance or disclosure obligations, remains a launch gate.

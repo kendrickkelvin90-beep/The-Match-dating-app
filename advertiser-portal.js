@@ -235,13 +235,29 @@
     $("authView").classList.add("hidden"); $("dashboardView").classList.remove("hidden");
     $("welcomeText").textContent = session.user?.email ? "Signed in as " + session.user.email : "Manage your sponsored advertising.";
     if (config.campaignsEnabled !== true) {
-      ["campaignForm", "paymentForm", "designRequestForm", "designPaymentForm"].forEach((id) => {
-        const form = $(id);
-        if (form) form.querySelectorAll("input,select,textarea,button").forEach((control) => { control.disabled = true; });
-      });
-      message("globalMessage", "Advertiser accounts are open. Campaign submissions and advertising payments are not open yet.");
+      // Keep the advertiser workspace usable: members can enter details and select
+      // creative files. The server remains authoritative and rejects submissions
+      // until the campaign launch flag is enabled.
+      message("globalMessage", "You can prepare your advert details here. Campaign submission and payment are not open yet.");
     }
-    try { await refreshCampaigns(); await loadAdminPanel(); }
+    const adminRoute = new URLSearchParams(window.location.search).get("admin") === "1";
+    if (adminRoute) {
+      document.querySelector(".dashboard-head")?.classList.add("hidden");
+      document.querySelector(".dashboard-grid")?.classList.add("hidden");
+      document.querySelector(".workspace-tabs")?.classList.add("hidden");
+      $("adminPanel").classList.add("hidden");
+      $("adminAccessDenied")?.classList.add("hidden");
+      await loadAdminPanel();
+      if ($("adminPanel").classList.contains("hidden")) $("adminAccessDenied")?.classList.remove("hidden");
+    } else {
+      $("adminPanel").classList.add("hidden");
+      $("adminAccessDenied")?.classList.add("hidden");
+      document.querySelector(".dashboard-head")?.classList.remove("hidden");
+      document.querySelector(".dashboard-grid")?.classList.remove("hidden");
+      document.querySelector(".workspace-tabs")?.classList.remove("hidden");
+      await refreshCampaigns();
+    }
+    try { /* Session and page visibility are established above. */ }
     catch (error) { message("globalMessage", error.message, true); }
   };
 
@@ -268,6 +284,11 @@
     },
   });
   document.querySelectorAll("[data-auth-tab]").forEach((button) => button.addEventListener("click", () => showAuthTab(button.dataset.authTab)));
+  document.querySelectorAll("[data-workspace-tab]").forEach((button) => button.addEventListener("click", () => {
+    const target = button.dataset.workspaceTab;
+    document.querySelectorAll("[data-workspace-tab]").forEach((tab) => tab.classList.toggle("active", tab === button));
+    document.querySelectorAll("[data-workspace-panel]").forEach((panel) => panel.classList.toggle("hidden", panel.dataset.workspacePanel !== target));
+  }));
   document.querySelectorAll("[data-password-toggle]").forEach((button) => button.addEventListener("click", () => {
     const input = $(button.dataset.passwordToggle);
     if (!input) return;
@@ -493,7 +514,7 @@
     } catch (error) { message("globalMessage",error.message,true); }
     finally { setBusy(button,false); }
   });
-  $("refreshCampaigns").addEventListener("click", async () => { try { await refreshCampaigns(); await loadAdminPanel(); } catch (error) { message("globalMessage",error.message,true); } });
+  $("refreshCampaigns").addEventListener("click", async () => { try { await refreshCampaigns(); } catch (error) { message("globalMessage",error.message,true); } });
   $("copyAccount").addEventListener("click", () => navigator.clipboard?.writeText($("bankAccountNumber").textContent));
   $("copyReference").addEventListener("click", () => navigator.clipboard?.writeText($("bankReference").textContent));
   window.TheMatchAdvertisingPortal = { callApi, callMediaUpload, createPoster, client: state.client, refreshCampaigns, message, escapeHtml, formatNaira };

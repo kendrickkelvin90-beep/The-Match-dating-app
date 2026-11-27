@@ -1,7 +1,7 @@
 (() => {
   const config = window.THE_MATCH_ADVERTISER_CONFIG || {};
   const $ = (id) => document.getElementById(id);
-  const state = { client: null, session: null, pendingCampaign: null, pendingBank: null, creativeFile: null, posterFile: null, handlingSession: false };
+  const state = { client: null, session: null, pendingCampaign: null, pendingBank: null, creativeFile: null, posterFile: null, handlingSession: false, passwordRecovery: false };
   const formatNaira = (amount) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(Number(amount || 0));
   const formatDate = (value) => value ? new Date(value).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" }) + " WAT" : "—";
   const message = (target, text, error = false) => { const el = $(target); if (!el) return; el.textContent = text || ""; el.classList.toggle("error", !!error); };
@@ -333,9 +333,51 @@
   });
   $("forgotPassword").addEventListener("click", async () => {
     const email = $("signinEmail").value.trim();
-    if (!email) return message("authMessage", "Enter your email address first.");
-    const { error } = await state.client.auth.resetPasswordForEmail(email, { redirectTo: window.location.href.split("#")[0] });
-    message("authMessage", error ? error.message : "If an account exists for that email, a recovery link has been sent.", !!error);
+    if (!email) return message("authMessage", "Enter the exact email address used when you created your Individual advertiser account.");
+    const button = $("forgotPassword");
+    setBusy(button, true, "Sending recovery email…");
+    try {
+      const { error } = await state.client.auth.resetPasswordForEmail(email, { redirectTo: window.location.href.split("#")[0] });
+      if (error) {
+        const rateLimited = /rate limit|too many requests|seconds|60/i.test(error.message || "");
+        message("authMessage", rateLimited
+          ? "Please wait 60 seconds before requesting another reset email. Resend sends the email; the security cooldown is enforced by account protection."
+          : error.message || "We could not send the recovery email. Please try again.", true);
+      } else {
+        message("authMessage", "If an advertiser account exists for that exact email, a password-reset link has been sent through The Match email service. Check Inbox and Spam, then open the link on this same device.");
+      }
+    } catch (error) {
+      message("authMessage", error.message || "We could not send the recovery email. Please try again.", true);
+    } finally { setBusy(button, false); }
+  });
+  $("resetPasswordForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = $("saveNewPassword");
+    const password = $("resetPassword").value;
+    if (password.length < 8) return message("authMessage", "Your new password must be at least 8 characters.", true);
+    if (password !== $("resetConfirmPassword").value) return message("authMessage", "The two new passwords do not match.", true);
+    setBusy(button, true, "Saving password…");
+    try {
+      const { error } = await state.client.auth.updateUser({ password });
+      if (error) throw error;
+      state.passwordRecovery = false;
+      $("resetPasswordForm").classList.add("hidden");
+      $("signinForm").classList.remove("hidden");
+      $("resetPasswordForm").reset();
+      message("authMessage", "Your password has been updated. Signing you into your advertiser workspace…");
+      const { data } = await state.client.auth.getSession();
+      if (data.session) await showDashboard(data.session);
+    } catch (error) {
+      message("authMessage", error.message || "Your password could not be updated. Please reopen the latest recovery email link.", true);
+    } finally { setBusy(button, false); }
+  });
+  $("cancelPasswordReset").addEventListener("click", async () => {
+    state.passwordRecovery = false;
+    $("resetPasswordForm").classList.add("hidden");
+    $("signinForm").classList.remove("hidden");
+    $("resetPasswordForm").reset();
+    message("authMessage", "You can sign in with your existing password.");
+    await state.client.auth.signOut({ scope: "local" });
   });
   $("signOut").addEventListener("click", async () => { await state.client.auth.signOut({ scope: "local" }); state.session = null; $("dashboardView").classList.add("hidden"); $("authView").classList.remove("hidden"); });
   $("campaignPackage").addEventListener("change", () => { $("packagePrice").textContent = formatNaira(({7:12000,14:22000,30:40000})[$("campaignPackage").value]); });
@@ -423,6 +465,18 @@
   $("copyAccount").addEventListener("click", () => navigator.clipboard?.writeText($("bankAccountNumber").textContent));
   $("copyReference").addEventListener("click", () => navigator.clipboard?.writeText($("bankReference").textContent));
   window.TheMatchAdvertisingPortal = { callApi, callMediaUpload, createPoster, client: state.client, refreshCampaigns, message, escapeHtml, formatNaira };
-  state.client.auth.onAuthStateChange((_event, session) => { if (session && $("dashboardView").classList.contains("hidden")) showDashboard(session); });
-  state.client.auth.getSession().then(({ data }) => { if (data.session) showDashboard(data.session); });
+  state.client.auth.onAuthStateChange((event, session) => {
+    if (event === "PASSWORD_RECOVERY") {
+      state.passwordRecovery = true;
+      $("dashboardView").classList.add("hidden");
+      $("authView").classList.remove("hidden");
+      $("signinForm").classList.add("hidden");
+      $("signupForm").classList.add("hidden");
+      $("resetPasswordForm").classList.remove("hidden");
+      message("authMessage", "Recovery link verified. Set a new password below.");
+      return;
+    }
+    if (session && !state.passwordRecovery && $("dashboardView").classList.contains("hidden")) showDashboard(session);
+  });
+  state.client.auth.getSession().then(({ data }) => { if (data.session && !state.passwordRecovery) showDashboard(data.session); });
 })();

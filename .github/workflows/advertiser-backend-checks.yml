@@ -24,6 +24,19 @@ permissions:
 jobs:
   static-checks:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: advertising_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d advertising_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -36,6 +49,18 @@ jobs:
           node --check sponsored-discover-integration.js
           node --check sponsored-advertising-config.js
           node --check match-performance-engine.js
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+      - name: Test isolated advertiser database, RLS and campaign lifecycle
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d advertising_test -v ON_ERROR_STOP=1 -f advertiser-backend/database/test-bootstrap.sql
+          psql -h localhost -U postgres -d advertising_test -v ON_ERROR_STOP=1 -f advertiser-backend/database/bootstrap.sql
+          psql -h localhost -U postgres -d advertising_test -v ON_ERROR_STOP=1 -f advertiser-backend/database/verify.sql
+          psql -h localhost -U postgres -d advertising_test -v ON_ERROR_STOP=1 -f advertiser-backend/database/test-workflows.sql
       - name: Check public config contains no server secrets
         run: |
           ! grep -Eiq 'service_role|secret_key|B2_APPLICATION_KEY|ADVERTISING_ACCOUNT_NUMBER' advertiser-portal-config.js

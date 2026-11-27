@@ -11,7 +11,8 @@ create schema if not exists private;
 -- those sessions from accessing Match member data.
 set local search_path = public;
 revoke all on schema private from public, anon;
-grant usage on schema private to authenticated, anon, service_role, supabase_auth_admin;
+grant usage on schema public, private to supabase_auth_admin;
+grant usage on schema private to authenticated, anon, service_role;
 grant usage on schema auth to anon;
 grant execute on function auth.uid(), auth.jwt() to anon;
 
@@ -1589,7 +1590,7 @@ begin
     execute format('drop policy if exists match_advertiser_data_boundary on %I.%I', rec.nspname, rec.relname);
     if rec.relrowsecurity then
       execute format(
-        'create policy match_advertiser_data_boundary on %I.%I as restrictive for all to public using ((auth.jwt()->>''user_role'') is distinct from ''advertiser'') with check ((auth.jwt()->>''user_role'') is distinct from ''advertiser'')',
+        'create policy match_advertiser_data_boundary on %I.%I as restrictive for all to public using ((current_user = ''supabase_auth_admin'') or (auth.jwt()->>''user_role'') is distinct from ''advertiser'') with check ((current_user = ''supabase_auth_admin'') or (auth.jwt()->>''user_role'') is distinct from ''advertiser'')',
         rec.nspname, rec.relname
       );
     else
@@ -1598,7 +1599,7 @@ begin
       -- advertiser JWTs before they can see or change member data.
       execute format('alter table %I.%I enable row level security', rec.nspname, rec.relname);
       execute format(
-        'create policy match_advertiser_data_boundary on %I.%I as permissive for all to public using ((auth.jwt()->>''user_role'') is distinct from ''advertiser'') with check ((auth.jwt()->>''user_role'') is distinct from ''advertiser'')',
+        'create policy match_advertiser_data_boundary on %I.%I as permissive for all to public using ((current_user = ''supabase_auth_admin'') or (auth.jwt()->>''user_role'') is distinct from ''advertiser'') with check ((current_user = ''supabase_auth_admin'') or (auth.jwt()->>''user_role'') is distinct from ''advertiser'')',
         rec.nspname, rec.relname
       );
     end if;
@@ -1612,11 +1613,11 @@ do $service_boundaries$
 begin
   if to_regclass('storage.objects') is not null then
     execute 'drop policy if exists match_advertiser_data_boundary on storage.objects';
-    execute 'create policy match_advertiser_data_boundary on storage.objects as restrictive for all to public using ((auth.jwt()->>''user_role'') is distinct from ''advertiser'') with check ((auth.jwt()->>''user_role'') is distinct from ''advertiser'')';
+    execute 'create policy match_advertiser_data_boundary on storage.objects as restrictive for all to public using ((current_user = ''supabase_auth_admin'') or (auth.jwt()->>''user_role'') is distinct from ''advertiser'') with check ((current_user = ''supabase_auth_admin'') or (auth.jwt()->>''user_role'') is distinct from ''advertiser'')';
   end if;
   if to_regclass('realtime.messages') is not null then
     execute 'drop policy if exists match_advertiser_data_boundary on realtime.messages';
-    execute 'create policy match_advertiser_data_boundary on realtime.messages as restrictive for all to public using ((auth.jwt()->>''user_role'') is distinct from ''advertiser'') with check ((auth.jwt()->>''user_role'') is distinct from ''advertiser'')';
+    execute 'create policy match_advertiser_data_boundary on realtime.messages as restrictive for all to public using ((current_user = ''supabase_auth_admin'') or (auth.jwt()->>''user_role'') is distinct from ''advertiser'') with check ((current_user = ''supabase_auth_admin'') or (auth.jwt()->>''user_role'') is distinct from ''advertiser'')';
   end if;
 end;
 $service_boundaries$;

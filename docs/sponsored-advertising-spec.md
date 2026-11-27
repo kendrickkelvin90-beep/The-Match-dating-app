@@ -1,6 +1,6 @@
-# The Match Sponsored Advertising — Product Specification (Planning Draft)
+# The Match Sponsored Advertising — Approved Product Specification
 
-**Status:** Planning draft only — not approved for implementation  
+**Status:** Approved for isolated implementation and testing only — not approved to merge, deploy or activate  
 **Prepared:** 2026-11-27  
 **Working branch:** `planning/sponsored-advertising-2026-11-27`  
 **Production branch:** `main` (must remain unchanged during planning)
@@ -28,16 +28,20 @@ Advertiser identity and data must be separate from dating-member accounts and pr
 - **Format:** Native-style sponsored cards, always clearly labelled **Sponsored**. Both image and video adverts launch from day one.
 - **Display shape:** Image and video use the same portrait-style sponsored-card dimensions as the existing Discover profile-card media area. Sponsored cards must fit the existing Discover experience without resizing or redesigning organic member cards. Exact pixel/export dimensions remain to be technically specified against the current responsive card container.
 - **Placement:** Discover only.
-- **Frequency target:** Approximately one sponsored card after every 10–15 organic member profiles.
+- **Frequency:** One sponsored card after every 12 organic member profiles (moderate frequency).
 - **Member experience:** No top banners, intrusive pop-ups, chat ads or interruption of an active conversation.
 - **Match Plus:** Completely ad-free.
 - **No campaign available:** Continue showing organic profiles normally.
+
+
+- **Privacy:** Do not target adverts using sexual orientation, LGBTQ+ identity, profile answers, location history or other sensitive member data. Do not sell member data or introduce retargeting.
 - **Card actions:** Advert-specific call-to-action; no Like, Pass or Super Like controls.
 - **Multiple advertisers:** Multiple campaigns may run concurrently.
-- **Rotation:** Fair rotation among eligible active campaigns; avoid showing the same advertiser repeatedly to one member in a short period. No preferential placement is purchased through longer package duration.
+- **Rotation:** Fair rotation among all eligible paid and approved active campaigns; avoid showing the same advertiser repeatedly to one member. No preferential placement is purchased through longer package duration. No arbitrary cap on simultaneous campaigns.
+- **Exposure caps:** At most one impression per member/campaign in any rolling 24-hour period; keep at least three sponsored slots between campaigns from the same advertiser where other eligible advertisers are available.
 - **Advertisers:** Both individuals and registered businesses/organisations may apply.
 
-The exact frequency and repeat-exposure window will be configurable and should be validated against real usage before launch.
+The initial implementation uses the approved 12-profile interval and rolling 24-hour repeat-exposure cap. These may be tuned later only with a documented product decision.
 
 ## 3. Advertising packages and payment
 
@@ -109,7 +113,7 @@ Both individuals and businesses/organisations are accepted. Proposed application
 - Immediate or scheduled start and preferred start date.
 - Creative-production option, if requested.
 
-Advertisers may run multiple campaigns from one advertiser account. They may edit campaign details before submission and request changes while awaiting approval. Changes after approval or campaign launch should be handled through a documented change request so the live advert is not silently altered.
+Advertisers may run multiple campaigns from one advertiser account. Email verification is required before campaign submission. Advertisers may edit freely before submission and withdraw/resubmit while pending. Changes to approved or live campaigns require a change request and admin re-approval; pending changes never alter the live advert. Package price and duration are locked after payment.
 
 ## 6. Creative submission and optional design services
 
@@ -132,9 +136,11 @@ Design charges are separate from advertising package prices and are optional.
 - The delivery deadline is confirmed before accepting each design request.
 - Basic and Premium design: two reasonable revision rounds.
 - Redesign/editing: one revision round.
-- Advertiser receives the finished artwork.
-
-Exact design deliverables, file dimensions, formats, source-file inclusion and the definition of a revision round remain to be specified.
+- Advertiser receives the finished artwork. Editable source files are excluded unless separately agreed.
+- Basic: one clean static creative using advertiser-supplied copy and assets.
+- Premium: a more polished custom visual direction and one primary creative.
+- Redesign/editing: update existing advertiser-supplied artwork.
+- Exact scope is confirmed in writing before payment.
 
 ### Approved image and video creative rules
 
@@ -146,7 +152,10 @@ Exact design deliverables, file dimensions, formats, source-file inclusion and t
 - Video playback: muted autoplay only while the advert is visible; sound is enabled only after the member taps.
 - Video assets must be lazy-loaded near visibility so they do not delay organic Discover profile loading.
 - Image/video campaigns use the same approved package prices and fair campaign rotation.
-- Exact image/video pixel dimensions, codec/profile compatibility, thumbnail/poster handling, CTA types and upload validation remain technical design items.
+- Image types: JPG, PNG or WebP, maximum 10 MB.
+- Video codec: H.264 in MP4; AAC audio where present. A poster thumbnail is required.
+- Shared creative aspect ratio: portrait 4:5, cropped responsively without stretching.
+- CTA options: Learn More, Visit Website, Contact Us or WhatsApp. Show the destination before submission and track CTA clicks.
 
 ## 7. Cancellation and refund policy
 
@@ -157,7 +166,7 @@ Approved policy:
 - Duplicate payment: refund the extra payment.
 - Verified platform delivery interruption: The Match may offer a campaign extension for the verified lost time.
 
-The customer-facing terms should explain how to request a permitted refund and how a verified delivery interruption is measured. Applicable law takes precedence over this policy.
+Approved refunds are handled manually to the originating payer's verified bank account, normally within 5–10 business days after approval. The customer-facing terms should explain how to request a permitted refund and how a verified delivery interruption is measured. Applicable law takes precedence over this policy.
 
 ## 8. Advertiser performance dashboard
 
@@ -170,7 +179,13 @@ The advertiser dashboard includes, at no extra charge:
 
 Advertisers may only access statistics and records belonging to their own advertiser account/campaigns.
 
-Technical definitions for an impression, deduplication, click attribution, reporting time zone, reporting delay and bot filtering remain to be agreed before implementation. Do not promise guaranteed impression or click counts.
+- Impression: at least 50% of the sponsored card is visible continuously for one second.
+- Repeat impressions: maximum one per member/campaign in any rolling 24-hour period.
+- Total clicks count each tracked CTA click. Unique clicks count at most once per member/campaign in any rolling 24-hour period.
+- CTR = unique clicks divided by impressions.
+- Reporting timezone: Africa/Lagos. Metrics may take several minutes to settle.
+- Exclude known preload, automated and duplicate events where detectable; do not claim perfect bot detection.
+- Do not promise guaranteed impression or click counts.
 
 ## 9. Admin advertising controls
 
@@ -186,7 +201,7 @@ Add a distinct advertising area to the existing admin dashboard. Planned control
 - View individual advertiser records.
 - View confirmed advertising revenue and payment history.
 
-The new admin controls must use the existing server-side admin authorization pattern (including server-side verification such as `is_match_admin()`). Do not trust a client-side admin flag. Keep advertising revenue and records separate from Match Plus, Match Lite and Match Coins accounting.
+The separate advertiser project must use its own server-side `advertising_admins` allowlist and verified Auth session. Do not trust a client-side admin flag or user-editable Auth metadata. Keep advertising revenue and records separate from Match Plus, Match Lite and Match Coins accounting.
 
 ## 10. Delivery and regulatory considerations
 
@@ -196,35 +211,20 @@ The new admin controls must use the existing server-side admin authorization pat
 - The user wants to consider a broader ARCON arrangement later as The Match grows. However, any advertising clearance, disclosure, consumer-protection, privacy or other legal requirement that applies to a specific advert must be satisfied before publication. The product must not represent ARCON as a fraud-detection service.
 - The advertiser-screening checklist previously proposed in discussion was explicitly rejected and must not be reintroduced as a product requirement. This does not waive applicable legal obligations or the already-agreed payment and advert-approval steps.
 
-## 11. Open decisions before implementation
+## 11. Remaining launch gates
 
-The following items still need explicit decisions or technical verification:
-1. **Campaign capacity:** Should there be a maximum number of active campaigns, or should the system accept all approved campaigns and rotate them fairly?
-2. **Advert categories and content rules:** Agree the permitted/prohibited categories and any legal disclosures required for the actual ad formats.
-3. **Creative specifications:** Exact responsive pixel/export dimensions, image file types and size limit, video codec compatibility, crop behavior, poster/thumbnail handling, CTA options and upload validation. Image+video launch, shared portrait card presentation, MP4, 30-second and 20-MB video limits, muted visible-only autoplay and lazy loading are approved.
-4. **Advert design deliverables:** Exact differences between Basic and Premium, output formats, source files and what counts as a revision.
-5. **Advertiser dashboard access:** Email verification requirement, Google OAuth setup, account recovery and whether advertiser accounts require admin activation.
-6. **Campaign editing after approval:** What changes require re-approval and whether a live campaign is paused during changes.
-7. **Refund operations:** Expected refund processing window and how advertisers are notified.
-8. **Analytics definitions:** Impression visibility threshold, click attribution, repeat views, reporting timezone and reporting delay.
-9. **Bank details and reference format:** Secure configuration of the business account details and unique reference scheme; do not hardcode sensitive bank details in frontend source.
-10. **Applicable regulatory review:** Confirm which advert categories and formats require pre-publication clearance under current Nigerian requirements.
+The product decisions above are settled. The following owner-controlled setup, legal review and live validation remain:
+1. Create and configure the separate advertiser Supabase project, Google OAuth, email verification/recovery and redirect URLs.
+2. Configure protected server-side secrets, the dedicated private B2 advertising key, the business bank details and the advertising admin allowlist.
+3. Confirm applicable Nigerian advertising, consumer-protection and privacy obligations, including any ARCON clearance or disclosure requirements, with qualified local review before publication.
+4. Complete real Android and iOS browser testing, including image/video playback, crop, upload, payment/admin workflows and Discover performance.
+5. Verify the Match Plus ad-free entitlement and all protected member flows against the real member project before enabling the integration.
 
-## 12. Proposed implementation sequence (not yet authorized)
+## 12. Implementation and release status
 
-1. Complete the open product and legal decisions.
-2. Read-only audit of current auth, admin authorization, Discover rendering, existing payment handling, Supabase schema/RLS and deployment workflow.
-3. Propose an isolated advertiser identity model and separate campaign/payment/creative tables.
-4. Design least-privilege RLS and server-side functions for campaign submission, payment status, approval, scheduling, rotation and metrics.
-5. Implement advertiser sign-in separately from member auth, after verifying supported Supabase OAuth configuration.
-6. Implement the advertiser application, bank-transfer instructions and advertiser dashboard.
-7. Implement admin campaign/payment controls.
-8. Integrate sponsored cards into Discover behind a feature flag, respecting Match Plus ad-free status and current organic profile behavior.
-9. Add analytics and campaign rotation with safe exposure caps.
-10. Add tests for authorization isolation, payment deadline/duplicate payment, campaign state transitions, scheduling, refund cases, rotation, Match Plus ad-free behavior and regression of existing member features.
-11. Run checks and create a reviewable PR. Do not merge to `main` or deploy until the owner explicitly approves after inspecting the changes.
+The read-only architecture audit is complete. The isolated implementation is underway on `planning/sponsored-advertising-2026-11-27` and is tracked in draft PR #338. Automated PostgreSQL/RLS, portal syntax, Edge Function type and member regression checks are being run on the branch. The feature flag remains disabled. The separate advertiser Supabase project, secrets, bank details, legal review and live-device testing remain launch gates. Do not merge to `main`, deploy, apply production migrations or enable the feature until Kelvin separately approves after inspection.
 
-## 13. Explicit non-goals until separately approved
+## 13. Explicit production protections
 
 - No changes to production Supabase schema or data during planning.
 - No changes to member login/signup/Google sign-in/CAPTCHA.

@@ -6,3 +6,6 @@ verify_jwt = true
 # This endpoint accepts Match-member JWTs from the separate Match project.
 # The handler verifies each JWT against that project's Auth API before serving or recording anything.
 verify_jwt = false
+
+[functions.advertising-media-upload]
+verify_jwt = true

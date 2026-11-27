@@ -26644,6 +26644,32 @@ body.light-theme #matchFeaturePromoCard * {
   body.light-theme #bottomNavigation .nav-icon { font-size:19px !important; }
 }
 
+
+/* Keep foreground colours correct on controls whose labels inherit text. */
+body.light-theme #bottomNavigation.bottom-nav button.active *,
+body.light-theme #bottomNavigation.bottom-nav button.active span {
+  color:#254C46 !important;
+}
+body.light-theme #eventsPage button.primary *,
+body.light-theme #eventsPage .btn.primary *,
+body.light-theme #verificationPage button.primary *,
+body.light-theme #verificationPage .btn.primary * {
+  color:#FFFFFF !important;
+}
+body.light-theme #discover .discover-option3-overlay *,
+body.light-theme #discover .discover-profile-overlay *,
+body.light-theme #eventsPage .events-featured-preview *,
+body.light-theme #eventsPage .event-demo-cover *,
+body.light-theme .match-confirm-backdrop *,
+body.light-theme .safety-dialog *,
+body.light-theme #matchFeaturePromoCard * {
+  color:#FFFFFF !important;
+}
+body.light-theme #eventsPage .events-featured-preview .events-featured-kicker,
+body.light-theme #eventsPage .events-featured-preview .events-featured-meta strong {
+  color:#F0CF86 !important;
+}
+
 </style>
 <script src="/match-performance-engine.js?v=3"></script>
 <script src="/match-intelligence-engine.js?v=1"></script>

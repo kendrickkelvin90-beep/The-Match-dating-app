@@ -40,7 +40,7 @@ begin
      or has_table_privilege('authenticated','public.advertiser_profiles','select')
      or has_function_privilege('anon','public.get_advertising_campaign_metrics(uuid,uuid)','execute')
      or has_function_privilege('authenticated','public.get_advertising_campaign_metrics(uuid,uuid)','execute')
-     or has_function_privilege('authenticated','public.get_my_advertising_campaign_metrics(uuid)','execute') then
+     or to_regprocedure('public.get_my_advertising_campaign_metrics(uuid)') is not null then
     raise exception 'Normal member role has direct access to advertiser-only records';
   end if;
 
@@ -55,7 +55,7 @@ begin
     raise exception 'Campaign/payment/event writer RPCs must remain service-role only';
   end if;
 
-  if has_function_privilege('anon','public.get_my_advertising_campaign_metrics(uuid)','execute')
+  if to_regprocedure('public.get_my_advertising_campaign_metrics(uuid)') is not null
      or has_function_privilege('anon','public.get_advertising_campaign_metrics(uuid,uuid)','execute')
      or has_function_privilege('authenticated','public.get_advertising_campaign_metrics(uuid,uuid)','execute')
      or not has_function_privilege('service_role','public.get_advertising_campaign_metrics(uuid,uuid)','execute')

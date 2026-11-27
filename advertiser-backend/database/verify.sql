@@ -51,8 +51,8 @@ begin
 
   if not has_function_privilege('anon','public.get_my_advertising_campaign_metrics(uuid)','execute')
      or has_function_privilege('authenticated','public.get_my_advertising_campaign_metrics(uuid)','execute')
-     or not has_function_privilege('anon','private.is_advertising_admin()','execute')
-     or has_function_privilege('authenticated','private.is_advertising_admin()','execute') then
+     or not has_function_privilege('anon','public.is_advertising_admin()','execute')
+     or has_function_privilege('authenticated','public.is_advertising_admin()','execute') then
     raise exception 'Advertiser-only read RPC/helper grants are incorrect';
   end if;
 

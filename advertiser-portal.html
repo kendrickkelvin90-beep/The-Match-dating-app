@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#101010">
   <title>The Match — Advertiser Portal</title>
-  <link rel="stylesheet" href="advertiser-portal.css?v=20261127-portalfix1">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.min.js" onerror="this.onerror=null;this.src='https://unpkg.com/@supabase/supabase-js@2.119.2/dist/umd/supabase.min.js'"></script>
-  <script src="advertiser-portal-config.js?v=20261127-portalfix1"></script>
-  <script defer src="advertiser-portal.js?v=20261127-portalfix1"></script>
-  <script defer src="advertiser-portal-refunds.js?v=20261127-portalfix1"></script>
-  <script defer src="advertiser-portal-design.js?v=20261127-portalfix1"></script>
-  <script defer src="advertiser-portal-changes.js?v=20261127-portalfix1"></script>
+  <link rel="stylesheet" href="advertiser-portal.css?v=20261127-authfix2">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2" onerror="this.onerror=null;this.src='https://unpkg.com/@supabase/supabase-js@2.119.2'"></script>
+  <script src="advertiser-portal-config.js?v=20261127-authfix2"></script>
+  <script defer src="advertiser-portal.js?v=20261127-authfix2"></script>
+  <script defer src="advertiser-portal-refunds.js?v=20261127-authfix2"></script>
+  <script defer src="advertiser-portal-design.js?v=20261127-authfix2"></script>
+  <script defer src="advertiser-portal-changes.js?v=20261127-authfix2"></script>
 </head>
 <body>
   <main class="shell">
@@ -39,7 +39,7 @@
         </div>
         <form id="signinForm" class="auth-form">
           <label>Email address<input type="email" id="signinEmail" autocomplete="email" required></label>
-          <label>Password<input type="password" id="signinPassword" autocomplete="current-password" required minlength="8"></label>
+          <label>Password<div class="password-field"><input type="password" id="signinPassword" autocomplete="current-password" required><button class="password-toggle" type="button" data-password-toggle="signinPassword" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
           <button class="primary" type="submit">Sign in</button>
           <button class="text-button" type="button" id="forgotPassword">Forgot password?</button>
         </form>
@@ -49,7 +49,8 @@
           <label>Contact person (if applicable)<input id="signupContact" maxlength="140"></label>
           <label>Phone / WhatsApp<input id="signupPhone" type="tel" maxlength="32" autocomplete="tel"></label>
           <label>Email address<input id="signupEmail" type="email" autocomplete="email" required></label>
-          <label>Password<input id="signupPassword" type="password" autocomplete="new-password" required minlength="8"></label>
+          <label>Password<div class="password-field"><input id="signupPassword" type="password" autocomplete="new-password" required minlength="8"><button class="password-toggle" type="button" data-password-toggle="signupPassword" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
+          <label>Confirm password<div class="password-field"><input id="signupConfirmPassword" type="password" autocomplete="new-password" required minlength="8"><button class="password-toggle" type="button" data-password-toggle="signupConfirmPassword" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></label>
           <label class="check"><input id="signupTerms" type="checkbox" required><span>I agree to the advertising terms and understand that campaigns go live only after payment confirmation and advert approval.</span></label>
           <button class="primary" type="submit">Create account</button>
         </form>

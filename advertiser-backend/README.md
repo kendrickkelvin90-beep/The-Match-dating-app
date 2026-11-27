@@ -7,7 +7,7 @@ This implementation uses the existing `the-match-dating-app` Supabase project. I
 - Advertisers use a separate portal, advertiser profile tables, API actions and admin permissions.
 - The portal uses its own browser auth storage key (`the-match-advertiser-auth`), so its local session does not overwrite the Match member app's browser session.
 - Supabase Auth remains the underlying identity provider, but advertiser accounts must use a separate email from an existing dating-member account.
-- The Custom Access Token Hook leaves ordinary member tokens unchanged. For an advertiser registration marked with `the_match_advertiser_registration=v1`, and only when no `public.profiles` row exists, it sets the supported JWT role to `anon` and adds the custom claim `user_role=advertiser`. It does not create or convert a Match member profile.
+- The Custom Access Token Hook leaves ordinary member tokens unchanged. It grants the supported JWT role `anon` and custom claim `user_role=advertiser` only to users already inserted into a protected server-managed advertiser registry, and only while no `public.profiles` row exists. User-editable metadata never grants access. A verified-session server enrollment endpoint must perform the registry insert.
 - The existing before-user-created hook is not modified.
 - Advertiser JWTs do not receive the `authenticated` database role. The Data API pre-request guard allows only the two read-only advertiser list endpoints and the advertiser metrics RPC. All other advertiser Data API paths are rejected.
 - A restrictive RLS boundary is added to every existing public table except the two read-only advertiser list tables. Matching boundaries also protect Storage objects and Realtime messages. Normal member JWTs have no `user_role=advertiser` claim, so existing member policies continue to apply.
@@ -22,7 +22,7 @@ This implementation uses the existing `the-match-dating-app` Supabase project. I
 1. The Custom Access Token Hook is global to the Match Supabase project. It must be configured under **Authentication → Hooks → Custom Access Token** with `pg-functions://postgres/public/custom_access_token_hook`.
 2. The hook assigns `role=anon` and `user_role=advertiser` only to a new advertiser registration with the namespaced marker and no existing Match profile. Existing members keep their normal `authenticated` role and claims.
 3. Advertisers must use a separate email from an existing dating-member account. A member with a `public.profiles` row cannot be enrolled as an advertiser.
-4. The existing `before-user-created` hook remains untouched. The custom access-token hook is a separate global Auth setting and must be tested with member login, signup, CAPTCHA, Google sign-in and token refresh before activation.
+4. The existing `before-user-created` hook remains untouched. The custom access-token hook is a separate global Auth setting and must be tested with member login, signup, CAPTCHA, Google sign-in and token refresh before activation. The hook reads only the protected advertiser registry; user-editable metadata is never sufficient to issue an advertiser claim.
 5. The Data API guard is a separate PostgREST setting: `pgrst.db_pre_request`. The bootstrap creates `public.match_advertiser_api_guard()` but does not register it. Inspect `pg_db_role_setting` before using the optional `database/enable-pre-request.sql`. If another pre-request function is configured, compose the functions rather than overwriting it. The current project was inspected and no authenticator pre-request function was configured at audit time.
 6. The advertiser portal uses email/password first. Google identity linking requires Supabase manual identity linking, which is a global Auth setting; review its impact on member accounts before enabling it.
 7. The advertiser admin must itself use an advertiser account and be added to the server-side `advertising_admins` allowlist.
@@ -37,6 +37,7 @@ This implementation uses the existing `the-match-dating-app` Supabase project. I
 - `database/test-workflows.sql`: custom Auth claim, member-data boundary, Data API pre-request, campaign, payment, analytics, refund and design-service tests.
 - `database/scheduler.sql`: Supabase Cron schedule for unpaid reservation expiry and scheduled campaign activation.
 - `database/campaign-change-requests.sql`: idempotent campaign change-request migration; server-side only.
+- `supabase/functions/advertiser-register`: verifies a signed-in, email-confirmed account and checks it has no Match member profile before trusted advertiser enrollment.
 - `supabase/functions/advertising-api`: advertiser campaign, payment, admin, refund, metrics and design-service API.
 - `supabase/functions/advertising-media-upload`: advertiser-owned private image/video creative upload and validation.
 - `supabase/functions/advertising-design-upload`: admin-only private final artwork upload.
@@ -69,7 +70,7 @@ Do not set `MATCH_SUPABASE_URL` or `MATCH_SUPABASE_ANON_KEY`; member verificatio
 ## Setup order — not yet performed in production
 
 1. Review the shared-project migration and CI results.
-2. Deploy the ten guarded member Edge Function versions from `supabase/functions/` before enabling advertiser Auth. Their only behavior change is to reject the advertiser custom claim; ordinary member sessions continue through the existing code.
+2. Deploy the trusted advertiser registration Edge Function and the ten guarded member Edge Function versions from `supabase/functions/` before enabling advertiser Auth. Their only behavior change is to reject the advertiser custom claim; ordinary member sessions continue through the existing code.
 3. Apply `database/bootstrap.sql` to the existing Match project only after explicit owner approval. Never run the old separate-project instructions.
 4. Run `database/verify.sql` and Supabase security/performance advisors. Confirm the `public` schema is exposed to the Data API.
 5. Inspect `pg_db_role_setting`; if no pre-request hook exists, run `database/enable-pre-request.sql`. Do not overwrite another pre-request integration.

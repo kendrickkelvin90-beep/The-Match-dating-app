@@ -1,7 +1,7 @@
 (() => {
   const config = window.THE_MATCH_ADVERTISER_CONFIG || {};
   const $ = (id) => document.getElementById(id);
-  const state = { client: null, session: null, pendingCampaign: null, pendingBank: null, creativeFile: null, posterFile: null, handlingSession: false, passwordRecovery: false, pendingEnrollmentSession: null };
+  const state = { client: null, session: null, pendingCampaign: null, pendingBank: null, creativeFile: null, posterFile: null, handlingSession: false, passwordRecovery: false, pendingEnrollmentSession: null, previewObjectUrl: null };
   const formatNaira = (amount) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(Number(amount || 0));
   const formatDate = (value) => value ? new Date(value).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" }) + " WAT" : "—";
   const message = (target, text, error = false) => { const el = $(target); if (!el) return; el.textContent = text || ""; el.classList.toggle("error", !!error); };
@@ -43,6 +43,7 @@
       const video = document.createElement("video");
       video.muted = true; video.playsInline = true; video.preload = "metadata"; video.src = objectUrl;
       await new Promise((resolve, reject) => { video.onloadeddata = resolve; video.onerror = reject; });
+      if (Number.isFinite(video.duration) && video.duration > 30) throw new Error("Advert videos must be 30 seconds or shorter.");
       video.currentTime = Math.min(0.5, Math.max(0, video.duration / 4));
       await new Promise((resolve) => { video.onseeked = resolve; });
       const canvas = document.createElement("canvas");
@@ -255,7 +256,7 @@
       document.querySelector(".dashboard-head")?.classList.remove("hidden");
       document.querySelector(".dashboard-grid")?.classList.remove("hidden");
       document.querySelector(".workspace-tabs")?.classList.remove("hidden");
-      await refreshCampaigns();
+      // Campaign history loads only when its tab is opened, keeping first paint fast.
     }
     try { /* Session and page visibility are established above. */ }
     catch (error) { message("globalMessage", error.message, true); }
@@ -284,10 +285,14 @@
     },
   });
   document.querySelectorAll("[data-auth-tab]").forEach((button) => button.addEventListener("click", () => showAuthTab(button.dataset.authTab)));
-  document.querySelectorAll("[data-workspace-tab]").forEach((button) => button.addEventListener("click", () => {
+  document.querySelectorAll("[data-workspace-tab]").forEach((button) => button.addEventListener("click", async () => {
     const target = button.dataset.workspaceTab;
     document.querySelectorAll("[data-workspace-tab]").forEach((tab) => tab.classList.toggle("active", tab === button));
     document.querySelectorAll("[data-workspace-panel]").forEach((panel) => panel.classList.toggle("hidden", panel.dataset.workspacePanel !== target));
+    if (target === "campaigns") {
+      try { await refreshCampaigns(); }
+      catch (error) { message("globalMessage", error.message || "Campaign history could not be loaded.", true); }
+    }
   }));
   document.querySelectorAll("[data-password-toggle]").forEach((button) => button.addEventListener("click", () => {
     const input = $(button.dataset.passwordToggle);
@@ -437,14 +442,31 @@
   $("campaignStartMode").addEventListener("change", () => $("scheduleField").classList.toggle("hidden", $("campaignStartMode").value !== "scheduled"));
   $("campaignCreative").addEventListener("change", async () => {
     const file = $("campaignCreative").files?.[0]; state.creativeFile = file || null; state.posterFile = null;
-    const preview = $("creativePreview"); preview.innerHTML = "";
+    const preview = $("creativePreview"); preview.replaceChildren();
+    if (state.previewObjectUrl) URL.revokeObjectURL(state.previewObjectUrl);
+    state.previewObjectUrl = null;
     if (!file) { preview.textContent = "Your creative preview appears here"; return; }
-    if (file.type.startsWith("image/")) {
-      const img = document.createElement("img"); img.src = URL.createObjectURL(file); img.onload = () => URL.revokeObjectURL(img.src); preview.append(img);
-    } else if (file.type === "video/mp4") {
-      const video = document.createElement("video"); video.src = URL.createObjectURL(file); video.controls = true; video.muted = true; preview.append(video);
-      try { state.posterFile = await createPoster(file); } catch (error) { message("globalMessage", error.message, true); }
-    } else { preview.textContent = "Choose a JPG, PNG, WebP or MP4 file."; }
+    const isImage = ["image/jpeg", "image/png", "image/webp"].includes(file.type);
+    const isVideo = file.type === "video/mp4";
+    if ((!isImage && !isVideo) || (isImage && file.size > 10 * 1024 * 1024) || (isVideo && file.size > 20 * 1024 * 1024)) {
+      state.creativeFile = null; $("campaignCreative").value = "";
+      preview.textContent = "Choose JPG, PNG or WebP up to 10 MB, or MP4 up to 20 MB.";
+      return message("globalMessage", "That file type or size is outside the advert upload limits.", true);
+    }
+    state.previewObjectUrl = URL.createObjectURL(file);
+    if (isImage) {
+      const img = document.createElement("img"); img.decoding = "async"; img.loading = "lazy";
+      img.src = state.previewObjectUrl; preview.append(img);
+    } else {
+      const video = document.createElement("video"); video.src = state.previewObjectUrl;
+      video.controls = true; video.muted = true; video.playsInline = true; video.preload = "metadata";
+      preview.append(video);
+      try { state.posterFile = await createPoster(file); }
+      catch (error) { state.creativeFile = null; message("globalMessage", error.message || "Video preview could not be prepared.", true); }
+    }
+  });
+  window.addEventListener("pagehide", () => {
+    if (state.previewObjectUrl) URL.revokeObjectURL(state.previewObjectUrl);
   });
   $("campaignForm").addEventListener("submit", async (event) => {
     event.preventDefault();

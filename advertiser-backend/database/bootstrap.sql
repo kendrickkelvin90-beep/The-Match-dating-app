@@ -1593,6 +1593,9 @@ begin
       where p.schemaname=rec.nspname and p.tablename=rec.relname
         and p.policyname='match_advertiser_data_boundary'
     ) then
+      if not rec.relrowsecurity then
+        execute format('alter table %I.%I enable row level security', rec.nspname, rec.relname);
+      end if;
       continue;
     end if;
     if rec.relrowsecurity then

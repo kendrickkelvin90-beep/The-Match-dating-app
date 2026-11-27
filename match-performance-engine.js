@@ -90,6 +90,20 @@
    // its buttons; all existing click handlers and entitlement checks remain.
    [['position','relative'],['inset','auto'],['left','auto'],['right','auto'],['bottom','auto'],['z-index','2'],['display','flex'],['flex-direction','column'],['gap','8px'],['padding','18px 16px'],['background','#fffdf8'],['color','#211f1b'],['pointer-events','auto'],['box-sizing','border-box'],['width','100%'],['text-shadow','none']].forEach(([p,v])=>set(overlay,p,v));
    card.appendChild(overlay);
+   const applyEditorialTheme=()=>{
+     const dark=!document.body.classList.contains('light-theme');
+     set(overlay,'background',dark?'linear-gradient(155deg,#1c1a15,#11100d)':'#fffdf8');
+     set(overlay,'color',dark?'#f5f0e6':'#211f1b');
+     set(overlay.querySelector('h2'),'color',dark?'#f8f3e8':'#211f1b');
+     set(overlay.querySelector('.distance'),'color',dark?'#d8c39a':'#75684f');
+     set(toggle,'background',dark?'#242016':'#f7f1e5');
+     set(toggle,'color',dark?'#e7cc91':'#6e501d');
+     set(details,'background',dark?'#242016':'#f7f3eb');
+     set(details,'color',dark?'#f1e8d7':'#302b22');
+     actions?.querySelectorAll('button').forEach((button,index)=>{
+       if(index===0){set(button,'background',dark?'#292824':'#efede8');set(button,'color',dark?'#f2eee5':'#4c4942');}
+     });
+   };
    const heading=overlay.querySelector('h2');
    [['color','#211f1b'],['font-size','clamp(25px,6vw,31px)'],['line-height','1.12'],['letter-spacing','-.55px'],['text-shadow','none'],['margin','0']].forEach(([p,v])=>set(heading,p,v));
    const distance=overlay.querySelector('.distance');
@@ -116,6 +130,7 @@
        }
      });
    }
+   applyEditorialTheme();
  }
 
  function addCardPresentation(card){
@@ -260,6 +275,18 @@
 
  function start(){
    attachDiscoverList();
+   const themeObserver=new MutationObserver(()=>{
+     discoverList?.querySelectorAll('.match-discover-editorial-card').forEach(card=>{
+       const panel=card.querySelector('.match-discover-editorial-body');
+       if(!panel)return;
+       const dark=!document.body.classList.contains('light-theme');
+       panel.style.setProperty('background',dark?'linear-gradient(155deg,#1c1a15,#11100d)':'#fffdf8','important');
+       panel.style.setProperty('color',dark?'#f5f0e6':'#211f1b','important');
+       const h=panel.querySelector('h2');if(h)h.style.setProperty('color',dark?'#f8f3e8':'#211f1b','important');
+       const d=panel.querySelector('.distance');if(d)d.style.setProperty('color',dark?'#d8c39a':'#75684f','important');
+     });
+   });
+   themeObserver.observe(document.body,{attributes:true,attributeFilter:['class']});
    if(!discoverList){
      waitingObserver=new MutationObserver(()=>attachDiscoverList());
      waitingObserver.observe(document.documentElement,{childList:true,subtree:true});

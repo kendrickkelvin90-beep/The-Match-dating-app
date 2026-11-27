@@ -96,6 +96,23 @@ begin
     raise exception 'Scheduler entrypoint must not be executable by app users';
   end if;
 
+  if exists (
+    select 1
+    from pg_catalog.pg_class c
+    join pg_catalog.pg_namespace n on n.oid=c.relnamespace
+    where n.nspname='public'
+      and c.relkind in ('r','v','m')
+      and c.relname not like 'advertising_%'
+      and (
+        has_table_privilege('advertiser',c.oid,'select')
+        or has_table_privilege('advertiser',c.oid,'insert')
+        or has_table_privilege('advertiser',c.oid,'update')
+        or has_table_privilege('advertiser',c.oid,'delete')
+      )
+  ) then
+    raise exception 'Advertiser role has a direct grant on a non-advertising Match table or view';
+  end if;
+
   if has_table_privilege('advertiser','public.profiles','select')
      or has_table_privilege('advertiser','public.profiles','insert')
      or has_table_privilege('advertiser','public.profile_photos','select')

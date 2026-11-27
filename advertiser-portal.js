@@ -272,7 +272,7 @@
   $("refreshCampaigns").addEventListener("click", async () => { try { await refreshCampaigns(); await loadAdminPanel(); } catch (error) { message("globalMessage",error.message,true); } });
   $("copyAccount").addEventListener("click", () => navigator.clipboard?.writeText($("bankAccountNumber").textContent));
   $("copyReference").addEventListener("click", () => navigator.clipboard?.writeText($("bankReference").textContent));
-  window.TheMatchAdvertisingPortal = { callApi, refreshCampaigns, message, escapeHtml, formatNaira };
+  window.TheMatchAdvertisingPortal = { callApi, client: state.client, refreshCampaigns, message, escapeHtml, formatNaira };
   state.client.auth.onAuthStateChange((_event, session) => { if (session && $("dashboardView").classList.contains("hidden")) showDashboard(session); });
   state.client.auth.getSession().then(({ data }) => { if (data.session) showDashboard(data.session); });
 })();

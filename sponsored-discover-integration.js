@@ -5,20 +5,19 @@
 (() => {
   "use strict";
   if (window.__matchSponsoredDiscoverLoaded) return;
-  window.__matchSponsoredDiscoverLoaded = true;
 
-  const config = window.MATCH_SPONSORED_AD_CONFIG || {};
-  if (config.enabled !== true || !config.advertiserSupabaseUrl || !config.publishableKey) return;
-
-  const endpoint = config.advertiserSupabaseUrl.replace(/\/$/, "") + "/functions/v1/member-ad-serving";
   let booted = false;
 
   function boot() {
-    if (booted) return true;
+    if (booted || window.__matchSponsoredDiscoverLoaded) return true;
+    const config = window.MATCH_SPONSORED_AD_CONFIG || {};
+    if (config.enabled !== true || !config.advertiserSupabaseUrl || !config.publishableKey) return false;
+    const endpoint = config.advertiserSupabaseUrl.replace(/\/$/, "") + "/functions/v1/member-ad-serving";
     const list = document.getElementById("profileList");
     const discover = document.getElementById("discover");
     const db = window.db;
     if (!list || !discover || !db?.auth) return false;
+    window.__matchSponsoredDiscoverLoaded = true;
     booted = true;
   const organicSelector = ".discover-profile-card-stack,.member-card,.discover-option3-card";
   const processed = new WeakSet();
@@ -224,8 +223,8 @@
       processed.add(anchor);
       organicCounter += 1;
       const ordinal = organicCounter;
-      if (ordinal % 12 === 0) {
-        const slotIndex = Math.floor(ordinal / 12);
+      if (ordinal % 6 === 0) {
+        const slotIndex = Math.floor(ordinal / 6);
         loadAd(anchor, slotIndex + feedGeneration * 1000).catch(() => {});
       }
     });

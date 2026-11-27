@@ -121,10 +121,17 @@ Deno.serve(async (req: Request) => {
 
     // Match Plus is explicitly ad-free. Check the authoritative membership row
     // with the member JWT; fail closed if the entitlement cannot be verified.
-    const membershipCheck = await caller.from("premium_memberships")
-      .select("premium_until").eq("user_id", user.id).gt("premium_until", new Date().toISOString()).maybeSingle();
-    if (membershipCheck.error) return json({ ad: null, reason: "membership_check_unavailable" }, 200);
-    if (membershipCheck.data) return json({ ad: null, reason: "ad_free_membership" }, 200);
+    const [legacyMembership, matchPlusMembership] = await Promise.all([
+      caller.from("premium_memberships")
+        .select("premium_until").eq("user_id", user.id).gt("premium_until", new Date().toISOString()).maybeSingle(),
+      caller.rpc("match_plus_active_tier"),
+    ]);
+    if (legacyMembership.error || matchPlusMembership.error) {
+      return json({ ad: null, reason: "membership_check_unavailable" }, 200);
+    }
+    if (legacyMembership.data || matchPlusMembership.data) {
+      return json({ ad: null, reason: "ad_free_membership" }, 200);
+    }
 
     if (!bucket || !endpoint || !keyId || !appKey) return json({ ad: null, reason: "media_unavailable" }, 200);
 

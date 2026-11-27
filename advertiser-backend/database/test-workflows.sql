@@ -279,4 +279,59 @@ end;
 $test$;
 reset role;
 
+
+-- Admin-reviewed campaign changes never alter the active advert before approval.
+set role service_role;
+select set_config('request.jwt.claims','{"role":"service_role"}',false);
+select public.request_advertising_campaign_change(
+  '10000000-0000-4000-8000-000000000001',
+  (select id from public.advertising_campaigns where payment_reference='TMAD-CI-REFERENCE-001'),
+  'Updated CI headline',null,null,'https://example.test/updated',null,null,
+  'Advertiser supplied updated campaign details'
+);
+select public.attach_advertising_change_creative(
+  '10000000-0000-4000-8000-000000000001',
+  (select id from public.advertising_campaign_change_requests where campaign_id =
+    (select id from public.advertising_campaigns where payment_reference='TMAD-CI-REFERENCE-001') and status='pending'),
+  'image',
+  'advertising/10000000-0000-4000-8000-000000000001/' ||
+    (select id::text from public.advertising_campaigns where payment_reference='TMAD-CI-REFERENCE-001') ||
+    '/ci-replacement.jpg',
+  null,'image/jpeg',100,null,null,null
+);
+do $test$
+begin
+  if (select headline from public.advertising_campaigns where payment_reference='TMAD-CI-REFERENCE-001') <> 'Approved campaign' then
+    raise exception 'Pending campaign change altered the live campaign before review';
+  end if;
+  if (select count(*) from public.advertising_creatives where campaign_id =
+      (select id from public.advertising_campaigns where payment_reference='TMAD-CI-REFERENCE-001') and is_current) <> 1 then
+    raise exception 'Pending creative replaced the live creative before review';
+  end if;
+end;
+$test$;
+select public.admin_review_advertising_campaign_change(
+  '10000000-0000-4000-8000-000000000001',
+  (select id from public.advertising_campaign_change_requests where campaign_id =
+    (select id from public.advertising_campaigns where payment_reference='TMAD-CI-REFERENCE-001') and status='pending'),
+  true,null
+);
+do $test$
+begin
+  if (select headline from public.advertising_campaigns where payment_reference='TMAD-CI-REFERENCE-001') <> 'Updated CI headline' then
+    raise exception 'Approved campaign headline change was not applied';
+  end if;
+  if (select count(*) from public.advertising_creatives where campaign_id =
+      (select id from public.advertising_campaigns where payment_reference='TMAD-CI-REFERENCE-001') and is_current) <> 1 then
+    raise exception 'Approved creative change did not preserve exactly one current creative';
+  end if;
+  if not exists (select 1 from public.advertising_campaign_change_requests
+      where campaign_id=(select id from public.advertising_campaigns where payment_reference='TMAD-CI-REFERENCE-001')
+      and status='approved') then
+    raise exception 'Campaign change approval was not recorded';
+  end if;
+end;
+$test$;
+reset role;
+
 select private.process_advertising_campaign_clock_cron();

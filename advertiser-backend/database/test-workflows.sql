@@ -110,6 +110,37 @@ end;
 $test$;
 reset role;
 
+insert into storage.objects(id) values ('20000000-0000-4000-8000-000000000001');
+insert into realtime.messages(id) values ('20000000-0000-4000-8000-000000000001');
+
+
+-- Storage and Realtime are also member-only surfaces.
+set role anon;
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',false);
+select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"anon","user_role":"advertiser"}',false);
+do $test$
+begin
+  if (select count(*) from storage.objects) <> 0
+     or (select count(*) from realtime.messages) <> 0 then
+    raise exception 'Advertiser session could read Match Storage or Realtime data';
+  end if;
+end;
+$test$;
+reset role;
+
+set role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000003',false);
+select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000003","role":"authenticated"}',false);
+do $test$
+begin
+  if (select count(*) from storage.objects) <> 1
+     or (select count(*) from realtime.messages) <> 1 then
+    raise exception 'Normal Match member lost existing Storage or Realtime access';
+  end if;
+end;
+$test$;
+reset role;
+
 insert into public.advertising_admins(user_id)
 values ('10000000-0000-4000-8000-000000000001');
 

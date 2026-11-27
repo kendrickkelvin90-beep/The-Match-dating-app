@@ -2,14 +2,14 @@
 
 **Working branch:** `planning/sponsored-advertising-2026-11-27`  
 **Audit date:** 2026-11-27  
-**Status:** Read-only audit completed; implementation must remain isolated from production.
+**Status:** Read-only audit completed; isolated implementation is in progress on the work branch. Production remains untouched.
 
 ## Repository findings
 
 ### Application architecture
 - The production app is a large, single-file `index.html` application (approximately 1.1 MB), with supporting JavaScript modules and Supabase Edge Functions.
 - The repository has an existing Supabase migration history and uses database-side authorization for important member operations.
-- The production branch currently contains no sponsored-advertising implementation.
+- The production branch currently contains no sponsored-advertising implementation; all current work is isolated on the draft PR branch.
 
 ### Authentication boundary
 - The existing Match signup hook is configured as a Supabase Auth before-user-created hook and checks the Match deleted-account email blocklist for every signup handled by that project.
@@ -56,7 +56,7 @@
 - 24-hour unpaid reservation; unique campaign payment reference; manual bank transaction confirmation; receipt upload is optional evidence, not proof.
 - Advert approval is separate from payment confirmation. Immediate and scheduled campaigns are supported. Duration begins at actual go-live.
 - Multiple eligible campaigns may run concurrently with fair rotation. No arbitrary active-campaign cap and no longer-package ranking preference.
-- Exposure safeguards: at most one impression per member/campaign per 24 hours; same advertiser separated by at least three sponsored slots.
+- Exposure safeguards: at most one impression per member/campaign in any rolling 24-hour period; one unique click per member/campaign in any rolling 24-hour period; same advertiser separated by at least three sponsored slots.
 - Analytics: impression means at least 50% visible for one continuous second; clicks and unique clicks; one unique click per member/campaign per 24 hours; CTR uses unique clicks / impressions; Africa/Lagos reporting; reporting may take several minutes to settle.
 - No guaranteed impression/click volume. No sensitive LGBTQ identity/orientation targeting, retargeting or sale of member data.
 - Design services: Basic ₦5,000; Premium ₦10,000; redesign/editing ₦3,000. Work starts after confirmed design payment; first design target 24–48 hours subject to workload; deadline confirmed before acceptance; two reasonable revision rounds for Basic/Premium and one for redesign/editing.
@@ -81,7 +81,7 @@ Before turning on the Discover feature flag:
 - Verify payment references are unique, unpaid reservations expire after 24 hours, duplicate transfers are detected, and client-submitted receipts never mark a campaign paid.
 - Verify campaign approval and payment are both required; scheduled and immediate start boundaries use Africa/Lagos consistently; duration starts only at actual activation.
 - Verify creatives enforce type, size, codec/duration and ownership checks; B2 objects remain private; no public object URLs or credentials are exposed.
-- Verify rotation, one-impression-per-member/campaign/day, advertiser spacing, unique-click dedupe and CTR.
+- Verify rotation, one-impression-per-member/campaign in any rolling 24-hour period, advertiser spacing, unique-click dedupe and CTR.
 - Verify Match Plus receives no ads and unavailable inventory falls back to organic profiles.
 - Verify Discover performance is not degraded by video downloads, image downloads or analytics calls.
 - Run regression tests for member login/signup/CAPTCHA/Google sign-in, onboarding, Discover profile loading/actions, Stories, Events, Nearby, chat/calls, memberships, Match Coins, admin and bottom navigation.

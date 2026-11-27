@@ -12,7 +12,19 @@
     list.querySelectorAll(".campaign-item[data-campaign-id]").forEach((card) => {
       if (!["active","paused","scheduled"].includes(card.dataset.campaignStatus)) return;
       if (card.querySelector("[data-campaign-change]")) return;
-      if ((card.dataset.hasPendingChange || "") === "true") return;
+      if ((card.dataset.hasPendingChange || "") === "true") {
+        if (card.dataset.pendingChangeRequest && card.dataset.pendingChangeCreative !== "true" &&
+            !card.querySelector("[data-attach-change]")) {
+          const attach = document.createElement("button");
+          attach.type = "button";
+          attach.className = "small-outline";
+          attach.dataset.attachChange = card.dataset.pendingChangeRequest;
+          attach.dataset.campaignId = card.dataset.campaignId;
+          attach.textContent = "Attach replacement creative";
+          card.querySelector(".campaign-actions")?.append(attach);
+        }
+        return;
+      }
       const button = document.createElement("button");
       button.type = "button";
       button.className = "small-outline";
@@ -20,6 +32,27 @@
       button.textContent = "Request changes";
       card.querySelector(".campaign-actions")?.append(button);
     });
+  }
+
+  function openReplacementPicker(button,campaignId,changeRequestId) {
+    const picker = document.createElement("input");
+    picker.type = "file";
+    picker.accept = "image/jpeg,image/png,image/webp,video/mp4";
+    picker.onchange = async () => {
+      const file = picker.files && picker.files[0];
+      if (!file) return;
+      button.disabled = true;
+      try {
+        const poster = file.type === "video/mp4" ? await portal.createPoster(file) : null;
+        await portal.callMediaUpload(campaignId,file,poster,changeRequestId);
+        portal.message("globalMessage","Replacement creative uploaded privately for admin review.");
+        await portal.refreshCampaigns();
+      } catch (error) {
+        portal.message("globalMessage",error.message,true);
+        await portal.refreshCampaigns().catch(() => undefined);
+      } finally { button.disabled = false; }
+    };
+    picker.click();
   }
 
   async function requestChange(button) {
@@ -72,20 +105,11 @@
     try {
       const result = await portal.callApi(payload);
       portal.message("globalMessage","Change request submitted. Your live advert remains unchanged until admin approval.");
+      await portal.refreshCampaigns();
       if (confirm("Attach a replacement image or video to this change request now?")) {
-        const picker = document.createElement("input");
-        picker.type = "file";
-        picker.accept = "image/jpeg,image/png,image/webp,video/mp4";
-        picker.onchange = async () => {
-          const file = picker.files && picker.files[0];
-          if (!file) return;
-          try {
-            const poster = file.type === "video/mp4" ? await portal.createPoster(file) : null;
-            await portal.callMediaUpload(campaignId,file,poster,result.change_request_id);
-            portal.message("globalMessage","Replacement creative uploaded privately for admin review.");
-          } catch (error) { portal.message("globalMessage",error.message,true); }
-        };
-        picker.click();
+        const attachButton = Array.from(document.querySelectorAll("[data-attach-change]"))
+          .find((item) => item.dataset.attachChange === result.change_request_id);
+        if (attachButton) openReplacementPicker(attachButton,campaignId,result.change_request_id);
       }
     } catch (error) {
       portal.message("globalMessage",error.message,true);
@@ -157,6 +181,8 @@
   }
 
   $("campaignList")?.addEventListener("click", (event) => {
+    const attach = event.target.closest("[data-attach-change]");
+    if (attach) { openReplacementPicker(attach,attach.dataset.campaignId,attach.dataset.attachChange); return; }
     const button = event.target.closest("[data-campaign-change]");
     if (button) requestChange(button);
   });

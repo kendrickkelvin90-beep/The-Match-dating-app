@@ -244,7 +244,6 @@
     setBusy(button,false);
     if (error) return message("authMessage", error.message, true);
     if (data.session) {
-      await state.client.from("advertiser_profiles").update({ contact_name: $("signupContact").value.trim() || null, phone: $("signupPhone").value.trim() || null }).eq("user_id", data.user.id);
       await showDashboard(data.session);
     } else message("authMessage", "Account created. Check your email to verify your advertiser account, then sign in.");
   });

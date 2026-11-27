@@ -4,8 +4,11 @@ on:
   push:
     branches:
       - planning/sponsored-advertising-2026-11-27
+      - work/sponsored-ads-shared-supabase-2026-11-27
     paths:
       - "advertiser-backend/**"
+      - "supabase/functions/**"
+      - "docs/sponsored-advertising-*.md"
       - "advertiser-portal.*"
       - "advertiser-portal-config.js"
       - "advertiser-portal-refunds.js"
@@ -54,6 +57,7 @@ jobs:
         run: |
           node --check advertiser-portal.js
           node --check advertiser-portal-changes.js
+          node --check advertiser-portal-changes.js
       - name: Check Discover integration JavaScript syntax
         run: |
           node --check sponsored-discover-integration.js
@@ -63,7 +67,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client
-      - name: Test isolated advertiser database, RLS and campaign lifecycle
+      - name: Test shared-project advertiser claim isolation, RLS and campaign lifecycle
         env:
           PGPASSWORD: postgres
         run: |
@@ -85,3 +89,13 @@ jobs:
           deno check advertiser-backend/supabase/functions/advertising-media-upload/index.ts
           deno check advertiser-backend/supabase/functions/advertising-design-upload/index.ts
           deno check advertiser-backend/supabase/functions/member-ad-serving/index.ts
+          deno check supabase/functions/nearby-reverse-geocode/index.ts
+          deno check supabase/functions/b2-media-upload/index.ts
+          deno check supabase/functions/voice-call/index.ts
+          deno check supabase/functions/b2-media-access/index.ts
+          deno check supabase/functions/admin-moderate-member/index.ts
+          deno check supabase/functions/open-view-once-chat-media/index.ts
+          deno check supabase/functions/delete-account/index.ts
+          deno check supabase/functions/b2-media-migrate/index.ts
+          deno check supabase/functions/b2-storage-cleanup/index.ts
+          deno check supabase/functions/b2-media/index.ts

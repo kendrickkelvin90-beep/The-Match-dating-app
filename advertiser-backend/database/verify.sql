@@ -84,7 +84,7 @@ begin
 
   if not has_function_privilege('anon','public.match_advertiser_api_guard()','execute')
      or not has_function_privilege('authenticator','public.match_advertiser_api_guard()','execute')
-     or not (select p.prosecdef from pg_catalog.pg_proc p
+     or (select p.prosecdef from pg_catalog.pg_proc p
        where p.oid='public.match_advertiser_api_guard()'::regprocedure) then
     raise exception 'Advertiser Data API pre-request guard is not configured safely';
   end if;

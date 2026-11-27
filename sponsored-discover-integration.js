@@ -16,7 +16,7 @@
   if (!list || !discover || !db?.auth) return;
 
   const endpoint = config.advertiserSupabaseUrl.replace(/\/$/, "") + "/functions/v1/member-ad-serving";
-  const organicSelector = ".member-card,.discover-option3-card";
+  const organicSelector = ".discover-profile-card-stack,.member-card,.discover-option3-card";
   const processed = new WeakSet();
   const requested = new WeakSet();
   const cardsByAnchor = new Map();

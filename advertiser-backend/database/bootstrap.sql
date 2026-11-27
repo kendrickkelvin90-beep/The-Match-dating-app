@@ -58,10 +58,6 @@ begin
     raise exception 'A verified Auth account is required';
   end if;
 
-  if exists (select 1 from public.profiles p where p.id = p_user_id) then
-    raise exception 'A Match member account cannot be enrolled as an advertiser';
-  end if;
-
   insert into private.advertiser_auth_registry(user_id)
   values (p_user_id)
   on conflict (user_id) do nothing;
@@ -73,29 +69,9 @@ $register$;
 revoke all on function public.register_advertiser_account(uuid)
   from public, anon, authenticated;
 grant execute on function public.register_advertiser_account(uuid) to service_role;
--- Serialize member profile creation against advertiser enrollment. Both paths
--- lock the same Auth user row, preventing a race that could convert account type.
-create or replace function private.prevent_advertiser_member_profile()
-returns trigger
-language plpgsql
-security definer
-set search_path = ''
-as $function$
-begin
-  perform 1 from auth.users u where u.id = new.id for update;
-  if exists (select 1 from private.advertiser_auth_registry r where r.user_id = new.id) then
-    raise exception 'Advertiser accounts cannot create Match member profiles'
-      using errcode = '23514';
-  end if;
-  return new;
-end;
-$function$;
-revoke all on function private.prevent_advertiser_member_profile()
-  from public, anon, authenticated, service_role;
+-- A person may use both Match experiences. Do not block profile creation
+-- merely because the same verified Auth identity is enrolled as an advertiser.
 drop trigger if exists prevent_advertiser_member_profile on public.profiles;
-create trigger prevent_advertiser_member_profile
-before insert on public.profiles
-for each row execute function private.prevent_advertiser_member_profile();
 
 
 
@@ -113,11 +89,13 @@ begin
   -- protected registry only after verifying the session, email and member profile.
   if v_user_id is not null and exists (
     select 1 from private.advertiser_auth_registry r where r.user_id=v_user_id
-  ) and not exists (
-    select 1 from public.profiles p where p.id=v_user_id
   ) then
     v_claims := jsonb_set(v_claims,'{user_role}',to_jsonb('advertiser'::text),true);
-    v_claims := jsonb_set(v_claims,'{role}',to_jsonb('anon'::text),true);
+    -- Advertiser-only identities stay in the anon database role. Members who
+    -- also advertise keep authenticated so their dating app access is preserved.
+    if not exists (select 1 from public.profiles p where p.id=v_user_id) then
+      v_claims := jsonb_set(v_claims,'{role}',to_jsonb('anon'::text),true);
+    end if;
   end if;
 
   return jsonb_build_object('claims',v_claims);
@@ -1591,9 +1569,8 @@ grant execute on function public.admin_review_advertising_campaign_change(uuid,u
 
 
 
--- Data API pre-request boundary. The Auth hook sets role=anon and
--- user_role=advertiser for advertiser accounts. Only the two read-only
--- advertiser list endpoints are allowed; metrics use a server-only RPC.
+-- Data API boundary. Advertiser-only identities remain isolated. A verified
+-- identity that also has a Match member profile keeps normal member API access.
 create or replace function public.match_advertiser_api_guard()
 returns void
 language plpgsql
@@ -1603,6 +1580,11 @@ declare
   v_path text := trim(both '/' from coalesce(current_setting('request.path', true), ''));
 begin
   if coalesce((select auth.jwt()->>'user_role'), '') <> 'advertiser' then
+    return;
+  end if;
+
+  if coalesce((select auth.jwt()->>'role'), '') = 'authenticated'
+     and private.is_dual_member_advertiser() then
     return;
   end if;
 
@@ -1621,9 +1603,8 @@ $guard$;
 revoke all on function public.match_advertiser_api_guard() from public;
 grant execute on function public.match_advertiser_api_guard() to anon, authenticated, service_role, authenticator;
 
--- Restrictive RLS boundary for every public table except the two read-only
--- advertiser list tables. This also protects GraphQL and Realtime paths that
--- do not execute the PostgREST pre-request hook.
+-- Restrictive RLS boundary for advertiser-only identities. Dual-role members
+-- retain their ordinary member access while advertiser-only accounts stay isolated.
 do $boundary$
 declare
   rec record;
@@ -1648,7 +1629,7 @@ begin
     end if;
     if rec.relrowsecurity then
       execute format(
-        'create policy match_advertiser_data_boundary on %I.%I as restrictive for all to public using ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'') with check ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'')',
+        'create policy match_advertiser_data_boundary on %I.%I as restrictive for all to public using ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'' or private.is_dual_member_advertiser()) with check ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'' or private.is_dual_member_advertiser())',
         rec.nspname, rec.relname
       );
     else
@@ -1657,7 +1638,7 @@ begin
       -- advertiser JWTs before they can see or change member data.
       execute format('alter table %I.%I enable row level security', rec.nspname, rec.relname);
       execute format(
-        'create policy match_advertiser_data_boundary on %I.%I as permissive for all to public using ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'') with check ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'')',
+        'create policy match_advertiser_data_boundary on %I.%I as permissive for all to public using ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'' or private.is_dual_member_advertiser()) with check ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'' or private.is_dual_member_advertiser())',
         rec.nspname, rec.relname
       );
     end if;

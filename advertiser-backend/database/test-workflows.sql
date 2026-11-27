@@ -120,6 +120,45 @@ end;
 $test$;
 reset role;
 
+-- Verify impression and unique-click caps are rolling 24-hour windows, not calendar-day caps.
+set role service_role;
+select set_config('request.jwt.claims','{"role":"service_role"}',false);
+update public.advertising_impressions
+set recorded_at=now()-interval '25 hours',
+    event_day=(now() at time zone 'Africa/Lagos')::date - 1
+where campaign_id=(select id from public.advertising_campaigns where payment_reference='TMAD-CI-REFERENCE-001')
+  and viewer_day_key=repeat('a',64);
+do $test$
+declare v_campaign uuid;
+begin
+  select id into v_campaign from public.advertising_campaigns where payment_reference='TMAD-CI-REFERENCE-001';
+  if not public.record_advertising_event(v_campaign,repeat('a',64),'impression') then
+    raise exception 'Impression was not allowed after the rolling 24-hour window elapsed';
+  end if;
+  update public.advertising_impressions set recorded_at=now()-interval '23 hours'
+  where id=(select id from public.advertising_impressions where campaign_id=v_campaign
+    and viewer_day_key=repeat('a',64) order by recorded_at desc limit 1);
+  if public.record_advertising_event(v_campaign,repeat('a',64),'impression') then
+    raise exception 'Impression was allowed inside the rolling 24-hour window';
+  end if;
+
+  update public.advertising_unique_clicks
+  set first_clicked_at=now()-interval '25 hours',
+      event_day=(now() at time zone 'Africa/Lagos')::date - 1
+  where campaign_id=v_campaign and viewer_day_key=repeat('a',64);
+  if not public.record_advertising_event(v_campaign,repeat('a',64),'click') then
+    raise exception 'Unique click was not allowed after the rolling 24-hour window elapsed';
+  end if;
+  update public.advertising_unique_clicks set first_clicked_at=now()-interval '23 hours'
+  where id=(select id from public.advertising_unique_clicks where campaign_id=v_campaign
+    and viewer_day_key=repeat('a',64) order by first_clicked_at desc limit 1);
+  if public.record_advertising_event(v_campaign,repeat('a',64),'click') then
+    raise exception 'Unique click was allowed inside the rolling 24-hour window';
+  end if;
+end;
+$test$;
+reset role;
+
 set role service_role;
 select set_config('request.jwt.claims','{"role":"service_role"}',false);
 select * from public.create_advertising_design_request(

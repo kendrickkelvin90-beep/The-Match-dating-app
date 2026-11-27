@@ -1,7 +1,7 @@
 (() => {
   const config = window.THE_MATCH_ADVERTISER_CONFIG || {};
   const $ = (id) => document.getElementById(id);
-  const state = { client: null, session: null, pendingCampaign: null, pendingBank: null, creativeFile: null, posterFile: null, handlingSession: false, passwordRecovery: false };
+  const state = { client: null, session: null, pendingCampaign: null, pendingBank: null, creativeFile: null, posterFile: null, handlingSession: false, passwordRecovery: false, pendingEnrollmentSession: null };
   const formatNaira = (amount) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(Number(amount || 0));
   const formatDate = (value) => value ? new Date(value).toLocaleString("en-NG", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Lagos" }) + " WAT" : "—";
   const message = (target, text, error = false) => { const el = $(target); if (!el) return; el.textContent = text || ""; el.classList.toggle("error", !!error); };
@@ -16,6 +16,7 @@
     document.querySelectorAll("[data-auth-tab]").forEach((button) => button.classList.toggle("active", button.dataset.authTab === tab));
     $("signinForm").classList.toggle("hidden", tab !== "signin");
     $("signupForm").classList.toggle("hidden", tab !== "signup");
+    $("advertiserEnrollmentForm").classList.add("hidden");
     message("authMessage", "");
   };
   const setBusy = (button, busy, label) => { button.disabled = busy; if (busy) { button.dataset.oldLabel = button.textContent; button.textContent = label || "Please wait…"; } else if (button.dataset.oldLabel) { button.textContent = button.dataset.oldLabel; delete button.dataset.oldLabel; } };
@@ -171,50 +172,49 @@
       if (!segment) return false;
       const normalized = segment.replace(/-/g, "+").replace(/_/g, "/");
       const payload = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
-      return payload.role === "anon" && payload.user_role === "advertiser";
+      return ["anon", "authenticated"].includes(payload.role) && payload.user_role === "advertiser";
     } catch { return false; }
   };
-  const enrollAdvertiserSession = async (session) => {
-    if (!session?.user?.email_confirmed_at) {
-      throw new Error("Please verify your email first. Then return here and sign in to finish advertiser registration.");
-    }
+  const enrollAdvertiserSession = async (session, details) => {
+    if (!session?.user?.email_confirmed_at) throw new Error("Please verify your Match email first, then return here and sign in.");
     const baseUrl = config.supabaseUrl.endsWith("/") ? config.supabaseUrl.slice(0, -1) : config.supabaseUrl;
     const response = await fetch(baseUrl + "/functions/v1/advertiser-register", {
       method: "POST",
-      headers: {
-        apikey: config.publishableKey,
-        Authorization: "Bearer " + session.access_token,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({}),
+      headers: { apikey: config.publishableKey, Authorization: "Bearer " + session.access_token, "Content-Type": "application/json" },
+      body: JSON.stringify(details),
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok || !result.success) throw new Error(result.error || "Advertiser registration could not be completed.");
     const { data, error } = await state.client.auth.refreshSession();
-    if (error || !data.session) throw new Error("Registration is saved. Please sign in again to finish activating your advertiser session.");
+    if (error || !data.session) throw new Error("Your advertiser enrolment was saved. Please sign in again to activate it.");
     return data.session;
+  };
+  const completeAdvertiserProfile = async (session, details = {}) => {
+    const metadata = session.user?.user_metadata || {};
+    await callApi({ action: "complete-profile", advertiser_type: details.advertiser_type || metadata.advertiser_type, display_name: details.display_name || metadata.display_name, contact_name: details.contact_name ?? metadata.contact_name, phone: details.phone ?? metadata.phone });
   };
   const ensureAdvertiserProfile = async (session) => {
     let activeSession = session;
     if (!isAdvertiserSession(activeSession?.access_token)) {
       const metadata = activeSession?.user?.user_metadata || {};
-      if (metadata.the_match_advertiser_registration !== "v1") {
-        await state.client.auth.signOut({ scope: "local" });
-        throw new Error("This is not an advertiser account. Create an advertiser account with a separate email, or use the Google identity linked to an existing advertiser account.");
+      if (metadata.the_match_advertiser_registration === "v1") {
+        activeSession = await enrollAdvertiserSession(activeSession, { advertiser_type: metadata.advertiser_type, display_name: metadata.display_name, contact_name: metadata.contact_name || "", phone: metadata.phone || "" });
+        if (!isAdvertiserSession(activeSession?.access_token)) throw new Error("Your advertiser enrolment was saved, but access is not active yet. Please sign in again.");
+        await completeAdvertiserProfile(activeSession);
+        return activeSession;
       }
-      activeSession = await enrollAdvertiserSession(activeSession);
-      if (!isAdvertiserSession(activeSession?.access_token)) {
-        throw new Error("Your advertiser account is registered, but secure advertiser access is not active yet. Please try again after setup is completed.");
-      }
+      state.pendingEnrollmentSession = activeSession;
+      $("dashboardView").classList.add("hidden");
+      $("authView").classList.remove("hidden");
+      $("signinForm").classList.add("hidden");
+      $("signupForm").classList.add("hidden");
+      $("resetPasswordForm").classList.add("hidden");
+      $("advertiserEnrollmentForm").classList.remove("hidden");
+      $("enrollName").value = activeSession.user?.user_metadata?.full_name || activeSession.user?.email?.split("@")[0] || "";
+      message("authMessage", "Your verified Match account can use the advertising portal too. Complete your advertiser details below.");
+      return null;
     }
-    const metadata = activeSession.user?.user_metadata || {};
-    await callApi({
-      action: "complete-profile",
-      advertiser_type: metadata.advertiser_type,
-      display_name: metadata.display_name,
-      contact_name: metadata.contact_name,
-      phone: metadata.phone,
-    });
+    await completeAdvertiserProfile(activeSession);
     return activeSession;
   };
   const showDashboard = async (session) => {
@@ -222,6 +222,7 @@
     state.handlingSession = true;
     try {
       session = await ensureAdvertiserProfile(session);
+      if (!session) { state.handlingSession = false; return; }
     } catch (error) {
       $("dashboardView").classList.add("hidden");
       $("authView").classList.remove("hidden");
@@ -253,7 +254,7 @@
 
   if (!config.supabaseUrl || !config.publishableKey || !window.supabase?.createClient) {
     $("setupNotice").classList.remove("hidden");
-    $("setupNotice").textContent = "Advertiser portal setup is pending: the shared Match Supabase project has not been connected yet. Advertiser sessions use a separate browser storage key and a dedicated database role.";
+    $("setupNotice").textContent = "Advertiser portal setup is pending: the shared Match Supabase project has not been connected yet. The portal keeps its browser session separate while preserving the same verified Match identity.";
     $("authView").querySelectorAll("button,input,select").forEach((el) => el.disabled = true);
     return;
   }
@@ -279,6 +280,31 @@
       : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
   }));
   $("signupType").addEventListener("change", () => { $("signupNameLabel").firstChild.textContent = $("signupType").value === "business" ? "Business / organisation name" : "Your name"; });
+  $("enrollType").addEventListener("change", () => { $("enrollNameLabel").firstChild.textContent = $("enrollType").value === "business" ? "Business / organisation name" : "Your name"; });
+  $("advertiserEnrollmentForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = event.submitter;
+    const session = state.pendingEnrollmentSession;
+    if (!session) return message("authMessage", "Please sign in to your Match account again.", true);
+    const details = { advertiser_type: $("enrollType").value, display_name: $("enrollName").value.trim(), contact_name: $("enrollContact").value.trim(), phone: $("enrollPhone").value.trim() };
+    if (details.display_name.length < 2) return message("authMessage", "Enter a name with at least two characters.", true);
+    setBusy(button, true, "Activating advertiser access…");
+    try {
+      const activeSession = await enrollAdvertiserSession(session, details);
+      if (!isAdvertiserSession(activeSession?.access_token)) throw new Error("Advertiser access could not be activated. Please sign in again.");
+      await completeAdvertiserProfile(activeSession, details);
+      state.pendingEnrollmentSession = null;
+      await showDashboard(activeSession);
+    } catch (error) { message("authMessage", error.message || "Advertiser enrolment could not be completed.", true); }
+    finally { setBusy(button, false); }
+  });
+  $("cancelEnrollment").addEventListener("click", async () => {
+    state.pendingEnrollmentSession = null;
+    await state.client.auth.signOut({ scope: "local" });
+    $("advertiserEnrollmentForm").classList.add("hidden");
+    $("signinForm").classList.remove("hidden");
+    message("authMessage", "You can sign in again whenever you are ready.");
+  });
   $("signinForm").addEventListener("submit", async (event) => {
     event.preventDefault(); const button = event.submitter; setBusy(button,true);
     const { data, error } = await state.client.auth.signInWithPassword({ email: $("signinEmail").value.trim(), password: $("signinPassword").value });
@@ -307,7 +333,13 @@
     if (error) return message("authMessage", error.message, true);
     if (data.session) {
       await showDashboard(data.session);
-    } else message("authMessage", "Account created. Check your email to verify your advertiser account, then sign in.");
+    } else if (data.user?.identities?.length === 0) {
+      showAuthTab("signin");
+      $("signinEmail").value = $("signupEmail").value.trim();
+      message("authMessage", "This email already has a Match account. Sign in with the same email and password you use for The Match, then complete advertiser setup.");
+    } else {
+      message("authMessage", "Account created. Check your email to verify your account, then sign in.");
+    }
   });
   $("googleSignIn").addEventListener("click", async () => {
     const { error } = await state.client.auth.signInWithOAuth({
@@ -333,7 +365,7 @@
   });
   $("forgotPassword").addEventListener("click", async () => {
     const email = $("signinEmail").value.trim();
-    if (!email) return message("authMessage", "Enter the exact email address used when you created your Individual advertiser account.");
+    if (!email) return message("authMessage", "Enter the email address you use to sign in to The Match.");
     const button = $("forgotPassword");
     setBusy(button, true, "Sending recovery email…");
     try {

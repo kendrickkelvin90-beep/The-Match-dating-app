@@ -41,7 +41,7 @@ function jwtClaims(token: string): Record<string, unknown> {
 async function verifyMember(req: Request) {
   const header = req.headers.get("Authorization") ?? "";
   const token = header.replace(/^Bearer\s+/i, "");
-  if (!token || token === header || !projectUrl || !anonKey || jwtClaims(token).role !== "authenticated" || jwtClaims(token).user_role === "advertiser") return null;
+  if (!token || token === header || !projectUrl || !anonKey || jwtClaims(token).role !== "authenticated") return null;
   const client = createClient(projectUrl, anonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
     global: { headers: { Authorization: `Bearer ${token}` } },

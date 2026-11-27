@@ -53,11 +53,17 @@ Deno.serve(async (req: Request) => {
     return response({ error: "A verified advertiser account is required." }, 401, origin);
   }
 
-  // This metadata value is only an explicit enrollment intent, never an
-  // authorization claim. The service-side SQL function independently checks
-  // the verified Auth user and rejects anyone with a Match member profile.
-  if (user.user_metadata?.the_match_advertiser_registration !== "v1") {
-    return response({ error: "This account has not started advertiser registration." }, 403, origin);
+  // Any verified Match Auth identity may enrol, including an existing dating
+  // member. The protected registry, not user-editable metadata, grants access.
+  const body = await req.json().catch(() => ({})) as Record<string, unknown>;
+  const clean = (value: unknown, max: number) =>
+    typeof value === "string" ? value.trim().replace(/[<>]/g, "").slice(0, max) : "";
+  const advertiserType = clean(body.advertiser_type, 16);
+  const displayName = clean(body.display_name, 140);
+  const contactName = clean(body.contact_name, 140);
+  const phone = clean(body.phone, 32);
+  if (!["individual", "business"].includes(advertiserType) || displayName.length < 2) {
+    return response({ error: "Choose Individual or Business / Organisation and enter the advertiser name." }, 400, origin);
   }
 
   const admin = createClient(url, serviceKey, {
@@ -67,16 +73,28 @@ Deno.serve(async (req: Request) => {
     p_user_id: user.id,
   });
   if (enrollError) {
-    const memberAccount = /Match member account/i.test(enrollError.message);
-    return response({
-      error: memberAccount
-        ? "This email already belongs to a Match dating-member account. Please use a separate email for advertising."
-        : "Advertiser registration could not be completed. Please try again.",
-    }, memberAccount ? 403 : 400, origin);
+    console.error("Advertiser enrollment failed:", enrollError.message);
+    return response({ error: "Advertiser registration could not be completed. Please try again." }, 400, origin);
+  }
+
+  const { error: profileError } = await admin.from("advertiser_profiles").upsert({
+    user_id: user.id,
+    advertiser_type: advertiserType,
+    display_name: displayName,
+    contact_name: contactName || null,
+    phone: phone || null,
+  }, { onConflict: "user_id", ignoreDuplicates: true });
+  if (profileError) {
+    console.error("Advertiser profile creation failed:", profileError.message);
+    return response({ error: "Your advertiser access was enrolled, but the advertiser profile could not be saved. Please retry." }, 500, origin);
   }
 
   return response({
     success: true,
-    next_step: "Refresh the advertiser session to receive its separate advertiser access token.",
+    advertiser_type: advertiserType,
+    display_name: displayName,
+    contact_name: contactName,
+    phone,
+    next_step: "Refresh the session to activate advertiser access.",
   }, 200, origin);
 });

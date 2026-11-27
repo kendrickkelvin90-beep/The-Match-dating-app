@@ -30,8 +30,8 @@ drop policy if exists advertiser_auth_hook_registry_access on private.advertiser
 create policy advertiser_auth_hook_registry_access on private.advertiser_auth_registry
   for all to supabase_auth_admin using (true) with check (true);
 
--- Auth hook may inspect only profile IDs to prevent a dating-member account
--- from being silently converted into an advertiser account.
+-- Auth hook may inspect only profile IDs to decide whether an advertiser
+-- identity should retain the normal Match member database role.
 grant usage on schema public to supabase_auth_admin;
 grant select (id) on public.profiles to supabase_auth_admin;
 drop policy if exists advertiser_auth_hook_member_profile_guard on public.profiles;
@@ -58,10 +58,6 @@ begin
     raise exception 'A verified Auth account is required';
   end if;
 
-  if exists (select 1 from public.profiles p where p.id = p_user_id) then
-    raise exception 'A Match member account cannot be enrolled as an advertiser';
-  end if;
-
   insert into private.advertiser_auth_registry(user_id)
   values (p_user_id)
   on conflict (user_id) do nothing;
@@ -73,29 +69,9 @@ $register$;
 revoke all on function public.register_advertiser_account(uuid)
   from public, anon, authenticated;
 grant execute on function public.register_advertiser_account(uuid) to service_role;
--- Serialize member profile creation against advertiser enrollment. Both paths
--- lock the same Auth user row, preventing a race that could convert account type.
-create or replace function private.prevent_advertiser_member_profile()
-returns trigger
-language plpgsql
-security definer
-set search_path = ''
-as $function$
-begin
-  perform 1 from auth.users u where u.id = new.id for update;
-  if exists (select 1 from private.advertiser_auth_registry r where r.user_id = new.id) then
-    raise exception 'Advertiser accounts cannot create Match member profiles'
-      using errcode = '23514';
-  end if;
-  return new;
-end;
-$function$;
-revoke all on function private.prevent_advertiser_member_profile()
-  from public, anon, authenticated, service_role;
+-- A person may use both Match experiences. Do not block profile creation
+-- merely because the same verified Auth identity is enrolled as an advertiser.
 drop trigger if exists prevent_advertiser_member_profile on public.profiles;
-create trigger prevent_advertiser_member_profile
-before insert on public.profiles
-for each row execute function private.prevent_advertiser_member_profile();
 
 
 
@@ -110,14 +86,16 @@ declare
 begin
   -- Never grant advertiser privileges from user-editable user_metadata.
   -- A trusted server-side enrollment endpoint inserts the user into this
-  -- protected registry only after verifying the session, email and member profile.
+  -- protected registry only after the Edge Function verifies the session and email.
   if v_user_id is not null and exists (
     select 1 from private.advertiser_auth_registry r where r.user_id=v_user_id
-  ) and not exists (
-    select 1 from public.profiles p where p.id=v_user_id
   ) then
     v_claims := jsonb_set(v_claims,'{user_role}',to_jsonb('advertiser'::text),true);
-    v_claims := jsonb_set(v_claims,'{role}',to_jsonb('anon'::text),true);
+    -- Advertiser-only identities stay in the anon database role. Members who
+    -- also advertise keep authenticated so their dating app access is preserved.
+    if not exists (select 1 from public.profiles p where p.id=v_user_id) then
+      v_claims := jsonb_set(v_claims,'{role}',to_jsonb('anon'::text),true);
+    end if;
   end if;
 
   return jsonb_build_object('claims',v_claims);
@@ -422,39 +400,39 @@ grant all on public.advertiser_profiles, public.advertising_campaigns,
 
 drop policy if exists advertiser_profile_owner_read on public.advertiser_profiles;
 create policy advertiser_profile_owner_read on public.advertiser_profiles
-  for select to anon using (user_id = (select auth.uid()));
+  for select to anon, authenticated using (user_id = (select auth.uid()));
 drop policy if exists advertiser_profile_owner_update on public.advertiser_profiles;
 create policy advertiser_profile_owner_update on public.advertiser_profiles
-  for update to anon using (user_id = (select auth.uid()))
+  for update to anon, authenticated using (user_id = (select auth.uid()))
   with check (user_id = (select auth.uid()));
 
 drop policy if exists advertising_campaign_owner_read on public.advertising_campaigns;
 create policy advertising_campaign_owner_read on public.advertising_campaigns
-  for select to anon using (
+  for select to anon, authenticated using (
     coalesce((select auth.jwt()->>'user_role'),'') = 'advertiser'
     and advertiser_id = (select auth.uid())
   );
 drop policy if exists advertising_creative_owner_read on public.advertising_creatives;
 create policy advertising_creative_owner_read on public.advertising_creatives
-  for select to anon using (
+  for select to anon, authenticated using (
     exists (select 1 from public.advertising_campaigns c
       where c.id = campaign_id and c.advertiser_id = (select auth.uid()))
   );
 drop policy if exists advertising_payment_owner_read on public.advertising_payments;
 create policy advertising_payment_owner_read on public.advertising_payments
-  for select to anon using (advertiser_id = (select auth.uid()));
+  for select to anon, authenticated using (advertiser_id = (select auth.uid()));
 drop policy if exists advertising_design_owner_read on public.advertising_design_requests;
 create policy advertising_design_owner_read on public.advertising_design_requests
-  for select to anon using (
+  for select to anon, authenticated using (
     coalesce((select auth.jwt()->>'user_role'),'') = 'advertiser'
     and advertiser_id = (select auth.uid())
   );
 drop policy if exists advertising_design_payment_owner_read on public.advertising_design_payments;
 create policy advertising_design_payment_owner_read on public.advertising_design_payments
-  for select to anon using (advertiser_id = (select auth.uid()));
+  for select to anon, authenticated using (advertiser_id = (select auth.uid()));
 drop policy if exists advertising_refund_owner_read on public.advertising_refunds;
 create policy advertising_refund_owner_read on public.advertising_refunds
-  for select to anon using (advertiser_id = (select auth.uid()));
+  for select to anon, authenticated using (advertiser_id = (select auth.uid()));
 
 -- Analytics event rows, admin audit and the admin allowlist are never exposed
 -- to normal advertiser clients. Service-role server functions own all writes.
@@ -1450,7 +1428,7 @@ create index if not exists advertising_change_requests_admin_queue_idx
 alter table public.advertising_campaign_change_requests enable row level security;
 drop policy if exists advertising_change_requests_select_own on public.advertising_campaign_change_requests;
 create policy advertising_change_requests_select_own on public.advertising_campaign_change_requests
-  for select to anon using (advertiser_id = (select auth.uid()));
+  for select to anon, authenticated using (advertiser_id = (select auth.uid()));
 revoke all on public.advertising_campaign_change_requests from anon, authenticated;
 
 grant select, insert, update, delete on public.advertising_campaign_change_requests to service_role;
@@ -1591,9 +1569,22 @@ grant execute on function public.admin_review_advertising_campaign_change(uuid,u
 
 
 
--- Data API pre-request boundary. The Auth hook sets role=anon and
--- user_role=advertiser for advertiser accounts. Only the two read-only
--- advertiser list endpoints are allowed; metrics use a server-only RPC.
+-- This SECURITY DEFINER helper lets an advertiser identity retain member
+-- access only when the same Auth user really has a Match profile.
+create or replace function public.is_dual_member_advertiser()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+  select exists (select 1 from public.profiles p where p.id = (select auth.uid()));
+$function$;
+revoke all on function public.is_dual_member_advertiser() from public;
+grant execute on function public.is_dual_member_advertiser() to anon, authenticated, authenticator, service_role;
+
+-- Data API boundary. Advertiser-only identities remain isolated. A verified
+-- identity that also has a Match member profile keeps normal member API access.
 create or replace function public.match_advertiser_api_guard()
 returns void
 language plpgsql
@@ -1603,6 +1594,11 @@ declare
   v_path text := trim(both '/' from coalesce(current_setting('request.path', true), ''));
 begin
   if coalesce((select auth.jwt()->>'user_role'), '') <> 'advertiser' then
+    return;
+  end if;
+
+  if coalesce((select auth.jwt()->>'role'), '') = 'authenticated'
+     and public.is_dual_member_advertiser() then
     return;
   end if;
 
@@ -1621,9 +1617,8 @@ $guard$;
 revoke all on function public.match_advertiser_api_guard() from public;
 grant execute on function public.match_advertiser_api_guard() to anon, authenticated, service_role, authenticator;
 
--- Restrictive RLS boundary for every public table except the two read-only
--- advertiser list tables. This also protects GraphQL and Realtime paths that
--- do not execute the PostgREST pre-request hook.
+-- Restrictive RLS boundary for advertiser-only identities. Dual-role members
+-- retain their ordinary member access while advertiser-only accounts stay isolated.
 do $boundary$
 declare
   rec record;
@@ -1648,7 +1643,7 @@ begin
     end if;
     if rec.relrowsecurity then
       execute format(
-        'create policy match_advertiser_data_boundary on %I.%I as restrictive for all to public using ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'') with check ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'')',
+        'create policy match_advertiser_data_boundary on %I.%I as restrictive for all to public using ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'' or public.is_dual_member_advertiser()) with check ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'' or public.is_dual_member_advertiser())',
         rec.nspname, rec.relname
       );
     else
@@ -1657,7 +1652,7 @@ begin
       -- advertiser JWTs before they can see or change member data.
       execute format('alter table %I.%I enable row level security', rec.nspname, rec.relname);
       execute format(
-        'create policy match_advertiser_data_boundary on %I.%I as permissive for all to public using ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'') with check ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'')',
+        'create policy match_advertiser_data_boundary on %I.%I as permissive for all to public using ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'' or public.is_dual_member_advertiser()) with check ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'' or public.is_dual_member_advertiser())',
         rec.nspname, rec.relname
       );
     end if;
@@ -1671,11 +1666,11 @@ do $service_boundaries$
 begin
   if to_regclass('storage.objects') is not null then
     execute 'drop policy if exists match_advertiser_data_boundary on storage.objects';
-    execute 'create policy match_advertiser_data_boundary on storage.objects as restrictive for all to public using ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'') with check ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'')';
+    execute 'create policy match_advertiser_data_boundary on storage.objects as restrictive for all to public using ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'' or public.is_dual_member_advertiser()) with check ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'' or public.is_dual_member_advertiser())';
   end if;
   if to_regclass('realtime.messages') is not null then
     execute 'drop policy if exists match_advertiser_data_boundary on realtime.messages';
-    execute 'create policy match_advertiser_data_boundary on realtime.messages as restrictive for all to public using ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'') with check ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'')';
+    execute 'create policy match_advertiser_data_boundary on realtime.messages as restrictive for all to public using ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'' or public.is_dual_member_advertiser()) with check ((current_user = ''supabase_auth_admin'') or ((select auth.jwt()->>''user_role'')) is distinct from ''advertiser'' or public.is_dual_member_advertiser())';
   end if;
 end;
 $service_boundaries$;

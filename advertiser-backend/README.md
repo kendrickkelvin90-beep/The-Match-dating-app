@@ -14,7 +14,8 @@ This is the implementation foundation for The Match's sponsored advertising syst
 
 ## Code included
 
-- `database/bootstrap.sql`: isolated advertiser schema, RLS, campaign/payment/design/refund functions, analytics, admin controls and Auth profile trigger.
+- `database/bootstrap.sql`: isolated advertiser schema, RLS, campaign/payment/design/refund/change-request functions, analytics, admin controls and Auth profile trigger.
+- `database/campaign-change-requests.sql`: idempotent campaign-change lifecycle migration for an already-bootstrapped advertiser project.
 - `database/verify.sql`: privilege and RLS assertions.
 - `database/test-bootstrap.sql`: disposable PostgreSQL/Auth compatibility fixture for CI only.
 - `database/test-workflows.sql`: RLS, campaign payment/approval, analytics deduplication, refund and design-service lifecycle tests.
@@ -23,7 +24,7 @@ This is the implementation foundation for The Match's sponsored advertising syst
 - `supabase/functions/advertising-media-upload`: advertiser-owned private image/video creative upload and validation.
 - `supabase/functions/advertising-design-upload`: admin-only private final artwork upload.
 - `supabase/functions/member-ad-serving`: verifies Match member sessions, checks paid entitlements, rotates eligible campaigns and records pseudonymous events.
-- `portal/..` is served from the repository root as `advertiser-portal.html`, with separate auth, campaign, payment, analytics, refund and design-service UI modules.
+- `advertiser-portal.html` is served from the repository root, with separate auth, campaign, payment, analytics, refund, design-service and campaign-change UI modules (`advertiser-portal-changes.js`).
 - `sponsored-discover-integration.js`: inserts a portrait sponsored card after every 12 organic Discover profiles, with visible-time impression tracking, CTA clicks and lazy muted video.
 - `sponsored-advertising-config.js`: public feature configuration; `enabled` is deliberately `false` until setup and regression testing are complete.
 
@@ -64,7 +65,7 @@ These tests do not connect to or mutate either live Supabase project. Passing CI
 
 ## Remaining launch gates
 
-- Campaign change requests after approval/live (pause, propose new details/creative, re-review, then resume) are not implemented yet. Current creative replacement is blocked after approval; do not enable advertiser campaign editing until this workflow exists.
+- Advertiser-requested changes to campaign headline, description, CTA, destination and eligible pre-live schedule are staged in `advertising_campaign_change_requests`; optional replacement creatives are uploaded privately and attached to the request. Admin approval atomically applies the proposed changes and swaps the active creative; rejection leaves the live advert unchanged. Package duration/price cannot be changed after payment.
 - The separate advertiser Supabase project, Google OAuth provider, email templates/redirects, admin allowlist, server secrets, private B2 key and business bank details still need owner-controlled setup.
 - Legal/privacy and Nigerian advertising requirements, including any ARCON clearance or disclosure obligations, still need qualified local review before public launch. The previously rejected advertiser-screening checklist has not been added.
 - Platform-interruption extensions are a manual policy decision; there is no automatic lost-time calculation yet.

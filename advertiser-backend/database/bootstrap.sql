@@ -371,7 +371,7 @@ create policy advertiser_profile_owner_update on public.advertiser_profiles
   with check (user_id = (select auth.uid()));
 
 create policy advertising_campaign_owner_read on public.advertising_campaigns
-  for select to anon using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
+  for select to anon using (coalesce((select auth.jwt()->>'user_role'),'') = 'advertiser' and (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin())));
 create policy advertising_creative_owner_read on public.advertising_creatives
   for select to anon using (
     exists (select 1 from public.advertising_campaigns c
@@ -1400,7 +1400,7 @@ create policy advertising_change_requests_select_own on public.advertising_campa
     advertiser_id = (select auth.uid()) or private.is_advertising_admin()
   );
 revoke all on public.advertising_campaign_change_requests from anon, authenticated;
-grant select on public.advertising_campaign_change_requests to anon;
+
 grant select, insert, update, delete on public.advertising_campaign_change_requests to service_role;
 
 create or replace function public.request_advertising_campaign_change(

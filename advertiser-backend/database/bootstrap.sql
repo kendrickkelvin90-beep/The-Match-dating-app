@@ -599,6 +599,54 @@ $function$;
 revoke all on function public.admin_set_advertising_campaign_state(uuid,uuid,text) from public, anon, authenticated;
 grant execute on function public.admin_set_advertising_campaign_state(uuid,uuid,text) to service_role;
 
+
+create or replace function public.process_advertising_campaign_clock()
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_expired integer;
+  v_started integer;
+  v_completed integer;
+begin
+  perform private.require_advertising_service_role();
+
+  update public.advertising_campaigns
+  set status = 'expired_unpaid'
+  where status = 'awaiting_payment'
+    and payment_status = 'awaiting_payment'
+    and payment_deadline_at <= now();
+  get diagnostics v_expired = row_count;
+
+  update public.advertising_campaigns
+  set status = 'active',
+      go_live_at = now(),
+      ends_at = now() + make_interval(days => package_days)
+  where status = 'scheduled'
+    and payment_status = 'confirmed'
+    and approved_at is not null
+    and scheduled_start_at <= now();
+  get diagnostics v_started = row_count;
+
+  update public.advertising_campaigns
+  set status = 'completed'
+  where status in ('active','paused')
+    and ends_at is not null
+    and ends_at <= now();
+  get diagnostics v_completed = row_count;
+
+  return jsonb_build_object(
+    'expired_unpaid',v_expired,
+    'started',v_started,
+    'completed',v_completed
+  );
+end;
+$function$;
+revoke all on function public.process_advertising_campaign_clock() from public, anon, authenticated;
+grant execute on function public.process_advertising_campaign_clock() to service_role;
+
 create or replace function public.record_advertising_event(
   p_campaign_id uuid,
   p_viewer_day_key text,

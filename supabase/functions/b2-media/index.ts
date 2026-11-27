@@ -47,6 +47,16 @@ async function moderateImageBytes(bytes: Uint8Array, contentType: string) {
 
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4", "video/webm", "video/quicktime"]);
 
+function isAdvertiserSession(token: string): boolean {
+  try {
+    const segment = token.split(".")[1];
+    if (!segment) return false;
+    const normalized = segment.replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
+    return payload.role === "anon" && payload.user_role === "advertiser";
+  } catch { return false; }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -65,6 +75,7 @@ Deno.serve(async (req: Request) => {
     if (!authResponse.ok) return json({ error: "Invalid or expired session" }, 401);
     const user = await authResponse.json();
     if (!user?.id) return json({ error: "Unable to identify authenticated user" }, 401);
+    if (isAdvertiserSession(authHeader.slice(7))) return json({ error: "Advertiser accounts cannot use member media." }, 403);
 
     const bucket = Deno.env.get("B2_BUCKET_NAME")!;
 

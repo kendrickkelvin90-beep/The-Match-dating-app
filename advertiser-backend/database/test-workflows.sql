@@ -119,3 +119,63 @@ begin
 end;
 $test$;
 reset role;
+
+set role service_role;
+select set_config('request.jwt.claims','{"role":"service_role"}',false);
+select * from public.create_advertising_design_request(
+  '10000000-0000-4000-8000-000000000001',
+  'basic',null,'A clear promotional artwork brief for the design team.',
+  'TMAD-DESIGN-CI-0001'
+);
+select public.submit_advertising_design_payment(
+  '10000000-0000-4000-8000-000000000001',
+  (select id from public.advertising_design_payments where payment_reference = 'TMAD-DESIGN-CI-0001'),
+  'BANKREF-DESIGN-CI-01'
+);
+select public.admin_confirm_advertising_design_payment(
+  '10000000-0000-4000-8000-000000000001',
+  (select id from public.advertising_design_payments where payment_reference = 'TMAD-DESIGN-CI-0001'),
+  'Design fee confirmed'
+);
+select public.admin_update_advertising_design_request(
+  '10000000-0000-4000-8000-000000000001',
+  (select design_request_id from public.advertising_design_payments where payment_reference = 'TMAD-DESIGN-CI-0001'),
+  'in_progress',now() + interval '36 hours',null,'Delivery deadline agreed'
+);
+select public.admin_update_advertising_design_request(
+  '10000000-0000-4000-8000-000000000001',
+  (select design_request_id from public.advertising_design_payments where payment_reference = 'TMAD-DESIGN-CI-0001'),
+  'first_draft_sent',null,null,null
+);
+select public.advertiser_request_design_revision(
+  '10000000-0000-4000-8000-000000000001',
+  (select design_request_id from public.advertising_design_payments where payment_reference = 'TMAD-DESIGN-CI-0001')
+);
+select public.admin_update_advertising_design_request(
+  '10000000-0000-4000-8000-000000000001',
+  (select design_request_id from public.advertising_design_payments where payment_reference = 'TMAD-DESIGN-CI-0001'),
+  'first_draft_sent',null,null,'Revision completed'
+);
+select public.admin_update_advertising_design_request(
+  '10000000-0000-4000-8000-000000000001',
+  (select design_request_id from public.advertising_design_payments where payment_reference = 'TMAD-DESIGN-CI-0001'),
+  'completed',null,
+  'advertising-designs/10000000-0000-4000-8000-000000000001/' ||
+    (select design_request_id::text from public.advertising_design_payments where payment_reference = 'TMAD-DESIGN-CI-0001') ||
+    '/final.png',
+  'Final artwork supplied'
+);
+do $test$
+begin
+  if not exists (
+    select 1 from public.advertising_design_requests r
+    join public.advertising_design_payments p on p.design_request_id = r.id
+    where p.payment_reference = 'TMAD-DESIGN-CI-0001'
+      and r.status = 'completed' and r.revisions_used = 1
+      and p.status = 'confirmed'
+  ) then
+    raise exception 'Design service payment, revision or delivery lifecycle failed';
+  end if;
+end;
+$test$;
+reset role;

@@ -13,6 +13,9 @@ const allowedOrigins = new Set(
 
 type Action =
   | "create-campaign"
+  | "request-campaign-change"
+  | "admin-list-campaign-changes"
+  | "admin-review-campaign-change"
   | "submit-payment"
   | "list-campaigns"
   | "get-metrics"
@@ -206,6 +209,30 @@ Deno.serve(async (req: Request) => {
 
 
 
+    if (action === "request-campaign-change") {
+      const campaignId = cleanText(body.campaign_id, 64);
+      const headline = cleanText(body.headline, 90) || null;
+      const description = cleanText(body.description, 500) || null;
+      const cta = cleanText(body.cta, 24) || null;
+      const destination = body.destination_url ? validDestination(body.destination_url, cta || "learn_more") : null;
+      const startMode = cleanText(body.start_mode, 16) || null;
+      const scheduledAt = body.scheduled_start_at ? new Date(String(body.scheduled_start_at)) : null;
+      const reason = cleanText(body.reason, 500);
+      if (!campaignId || reason.length < 3 || (body.destination_url && !destination) ||
+          (startMode && startMode !== "scheduled") ||
+          (body.scheduled_start_at && (!scheduledAt || Number.isNaN(scheduledAt.getTime()) || scheduledAt.getTime() <= Date.now()))) {
+        return json({ error: "Check the requested changes and include a reason." }, 400, origin);
+      }
+      const { data, error } = await admin.rpc("request_advertising_campaign_change", {
+        p_advertiser_id: user.id, p_campaign_id: campaignId,
+        p_headline: headline, p_description: description, p_cta: cta,
+        p_destination_url: destination, p_start_mode: startMode,
+        p_scheduled_start_at: scheduledAt?.toISOString() ?? null, p_reason: reason,
+      });
+      if (error) return json({ error: "A change request could not be submitted. Ensure the campaign is paid, approved and has no pending request." }, 400, origin);
+      return json({ success: true, change_request_id: data, status: "pending" }, 201, origin);
+    }
+
     if (action === "cancel-campaign") {
       const campaignId = cleanText(body.campaign_id, 64);
       if (!campaignId) return json({ error: "Campaign ID is required." }, 400, origin);
@@ -230,7 +257,7 @@ Deno.serve(async (req: Request) => {
       const bankName = Deno.env.get("ADVERTISING_BANK_NAME") ?? "";
       const accountName = Deno.env.get("ADVERTISING_ACCOUNT_NAME") ?? "";
       const accountNumber = Deno.env.get("ADVERTISING_ACCOUNT_NUMBER") ?? "";
-      if (!bankName || !accountName || !/^\\d{10}$/.test(accountNumber)) {
+      if (!bankName || !accountName || !/^\d{10}$/.test(accountNumber)) {
         return json({ error: "Advertising bank-transfer instructions have not been configured yet." }, 503, origin);
       }
       return json({
@@ -261,7 +288,7 @@ Deno.serve(async (req: Request) => {
       const bankName = Deno.env.get("ADVERTISING_BANK_NAME") ?? "";
       const accountName = Deno.env.get("ADVERTISING_ACCOUNT_NAME") ?? "";
       const accountNumber = Deno.env.get("ADVERTISING_ACCOUNT_NUMBER") ?? "";
-      if (!bankName || !accountName || !/^\\d{10}$/.test(accountNumber)) {
+      if (!bankName || !accountName || !/^\d{10}$/.test(accountNumber)) {
         return json({ error: "Advertising bank-transfer instructions have not been configured yet." }, 503, origin);
       }
       const reference = "TMAD-DESIGN-" + paymentReference().slice(5);
@@ -312,7 +339,7 @@ Deno.serve(async (req: Request) => {
       const appKey = Deno.env.get("B2_ADVERTISING_APPLICATION_KEY") ?? "";
       if (!bucket || !endpoint || !keyId || !appKey) return json({ error: "Design delivery is not configured." }, 503, origin);
       const host = new URL(endpoint).hostname;
-      const region = Deno.env.get("B2_REGION") || host.match(/^s3\\.([a-z0-9-]+)\\.backblazeb2\\.com$/)?.[1];
+      const region = Deno.env.get("B2_REGION") || host.match(/^s3\.([a-z0-9-]+)\.backblazeb2\.com$/)?.[1];
       if (!region) return json({ error: "B2 region is not configured." }, 503, origin);
       const s3 = new S3Client({ region, endpoint, forcePathStyle: true, credentials: { accessKeyId: keyId, secretAccessKey: appKey } });
       const url = await getSignedUrl(s3, new GetObjectCommand({ Bucket: bucket, Key: request.delivered_storage_key }), { expiresIn: 300 });
@@ -359,7 +386,7 @@ Deno.serve(async (req: Request) => {
       const appKey = Deno.env.get("B2_ADVERTISING_APPLICATION_KEY") ?? "";
       if (!bucket || !endpoint || !keyId || !appKey) return json({ error: "Advertising media is not configured." }, 503, origin);
       const host = new URL(endpoint).hostname;
-      const region = Deno.env.get("B2_REGION") || host.match(/^s3\\.([a-z0-9-]+)\\.backblazeb2\\.com$/)?.[1];
+      const region = Deno.env.get("B2_REGION") || host.match(/^s3\.([a-z0-9-]+)\.backblazeb2\.com$/)?.[1];
       if (!region) return json({ error: "B2 region is not configured." }, 503, origin);
       const s3 = new S3Client({ region, endpoint, forcePathStyle: true, credentials: { accessKeyId: keyId, secretAccessKey: appKey } });
       const previewUrl = await getSignedUrl(s3, new GetObjectCommand({ Bucket: bucket, Key: creative.storage_key }), { expiresIn: 120 });
@@ -367,6 +394,26 @@ Deno.serve(async (req: Request) => {
         ? await getSignedUrl(s3, new GetObjectCommand({ Bucket: bucket, Key: creative.poster_storage_key }), { expiresIn: 120 })
         : null;
       return json({ creative_type: creative.creative_type, preview_url: previewUrl, poster_url: posterUrl, expires_in: 120 }, 200, origin);
+    }
+
+    if (action === "admin-list-campaign-changes") {
+      const { data, error } = await admin.from("advertising_campaign_change_requests")
+        .select("*,advertising_campaigns(headline,status,package_days),advertiser_profiles(display_name,phone)")
+        .order("created_at", { ascending: false }).limit(250);
+      if (error) return json({ error: "Campaign change queue could not be loaded." }, 500, origin);
+      return json({ requests: data ?? [] }, 200, origin);
+    }
+
+    if (action === "admin-review-campaign-change") {
+      const requestId = cleanText(body.change_request_id, 64);
+      const approve = body.approve === true;
+      const reason = cleanText(body.reason, 500);
+      if (!requestId || (!approve && reason.length < 3)) return json({ error: "A change request and rejection reason are required." }, 400, origin);
+      const { data, error } = await admin.rpc("admin_review_advertising_campaign_change", {
+        p_admin_id: user.id, p_change_request_id: requestId, p_approve: approve, p_reason: reason,
+      });
+      if (error) return json({ error: "Campaign change review could not be saved." }, 400, origin);
+      return json({ success: true, status: data }, 200, origin);
     }
 
     if (action === "admin-list-campaigns") {

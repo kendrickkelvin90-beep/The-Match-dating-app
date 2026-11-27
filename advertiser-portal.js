@@ -59,7 +59,7 @@
     const result = await callApi({ action: "list-campaigns" });
     const campaigns = result.campaigns || [];
     $("campaignList").innerHTML = campaigns.length ? campaigns.map((campaign) => `
-      <article class="campaign-item">
+      <article class="campaign-item" data-campaign-id="${escapeHtml(campaign.id)}" data-campaign-status="${escapeHtml(campaign.status)}" data-payment-ids="${escapeHtml((campaign.advertising_payments || []).filter((p) => p.status === "confirmed").map((p) => p.id).join(","))}">
         <h3>${escapeHtml(campaign.headline)}</h3>
         <div class="campaign-meta"><span class="status ${campaign.status === "active" ? "active" : ""}">${escapeHtml(campaign.status.replaceAll("_"," "))}</span><span class="status">${campaign.package_days} days</span><span class="status">${formatNaira(campaign.package_price_ngn)}</span></div>
         <p>Payment: ${escapeHtml(campaign.payment_status.replaceAll("_"," "))}</p>
@@ -272,6 +272,7 @@
   $("refreshCampaigns").addEventListener("click", async () => { try { await refreshCampaigns(); await loadAdminPanel(); } catch (error) { message("globalMessage",error.message,true); } });
   $("copyAccount").addEventListener("click", () => navigator.clipboard?.writeText($("bankAccountNumber").textContent));
   $("copyReference").addEventListener("click", () => navigator.clipboard?.writeText($("bankReference").textContent));
-  window.TheMatchAdvertisingPortal = { callApi, refreshCampaigns, message, escapeHtml, formatNaira };\n  state.client.auth.onAuthStateChange((_event, session) => { if (session && $("dashboardView").classList.contains("hidden")) showDashboard(session); });
+  window.TheMatchAdvertisingPortal = { callApi, refreshCampaigns, message, escapeHtml, formatNaira };
+  state.client.auth.onAuthStateChange((_event, session) => { if (session && $("dashboardView").classList.contains("hidden")) showDashboard(session); });
   state.client.auth.getSession().then(({ data }) => { if (data.session) showDashboard(data.session); });
 })();

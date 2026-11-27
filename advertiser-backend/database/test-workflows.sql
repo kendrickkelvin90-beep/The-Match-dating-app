@@ -7,6 +7,12 @@ insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values
 
 insert into public.profiles(id) values ('10000000-0000-4000-8000-000000000003');
 
+-- Simulate trusted server-side enrollment. User-editable metadata alone must
+-- never populate this protected registry or grant the advertiser JWT claim.
+insert into private.advertiser_auth_registry(user_id) values
+('10000000-0000-4000-8000-000000000001'),
+('10000000-0000-4000-8000-000000000002');
+
 set role supabase_auth_admin;
 select public.custom_access_token_hook(jsonb_build_object(
   'user_id','10000000-0000-4000-8000-000000000001',

@@ -7,8 +7,7 @@ begin
   if exists (
     select 1
     from pg_catalog.pg_db_role_setting s
-    where s.setrole = 'authenticator'::regrole
-      and exists (
+    where exists (
         select 1 from unnest(s.setconfig) cfg
         where cfg like 'pgrst.db_pre_request=%'
       )

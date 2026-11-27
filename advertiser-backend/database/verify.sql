@@ -107,7 +107,10 @@ begin
      or has_table_privilege('authenticated','public.advertising_campaign_change_requests','update')
      or has_table_privilege('authenticated','public.advertising_campaign_change_requests','delete')
      or has_table_privilege('anon','public.advertising_campaign_change_requests','select')
-     or not has_table_privilege('service_role','public.advertising_campaign_change_requests','select,insert,update,delete') then
+     or not has_table_privilege('service_role','public.advertising_campaign_change_requests','select')
+     or not has_table_privilege('service_role','public.advertising_campaign_change_requests','insert')
+     or not has_table_privilege('service_role','public.advertising_campaign_change_requests','update')
+     or not has_table_privilege('service_role','public.advertising_campaign_change_requests','delete') then
     raise exception 'Campaign change requests must be owner-readable and service-role writable under RLS';
   end if;
 

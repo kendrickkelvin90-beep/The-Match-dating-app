@@ -145,7 +145,8 @@ Deno.serve(async (req: Request) => {
     const action = cleanText(body.action, 48) as Action;
     const { user, caller, admin, isAdvertiser, isMatchAdmin } = auth;
     const adminAction = action.startsWith("admin-");
-    const campaignsOpen = Deno.env.get("ADVERTISING_CAMPAIGNS_OPEN") === "true";
+    // Campaign submissions are now intentionally open. Discover ad serving remains separately disabled.
+    const campaignsOpen = true;
     const campaignSubmissionActions = new Set<Action>([
       "create-campaign", "request-campaign-change", "submit-payment",
       "create-design-request", "submit-design-payment",

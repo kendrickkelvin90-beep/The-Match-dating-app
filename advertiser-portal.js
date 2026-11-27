@@ -181,45 +181,57 @@
     } else { preview.textContent = "Choose a JPG, PNG, WebP or MP4 file."; }
   });
   $("campaignForm").addEventListener("submit", async (event) => {
-    event.preventDefault(); const button = $("createCampaignButton"); setBusy(button,true,"Preparing campaign…");
+    event.preventDefault();
+    const button = $("createCampaignButton");
+    setBusy(button, true, "Preparing campaign…");
     try {
       if (!state.creativeFile) throw new Error("Choose an image or video creative first.");
-      const startMode = $("campaignStartMode").value;
-      let scheduled = null;
-      if (startMode === "scheduled") {
-        const raw = $("campaignSchedule").value;
-        if (!raw) throw new Error("Choose a scheduled start time in WAT.");
-        scheduled = new Date(raw + ":00+01:00");
-        if (Number.isNaN(scheduled.getTime()) || scheduled.getTime() <= Date.now()) throw new Error("Scheduled start must be in the future.");
+      let campaign = state.pendingCampaign;
+      let created = null;
+      if (!campaign) {
+        const startMode = $("campaignStartMode").value;
+        let scheduled = null;
+        if (startMode === "scheduled") {
+          const raw = $("campaignSchedule").value;
+          if (!raw) throw new Error("Choose a scheduled start time in WAT.");
+          scheduled = new Date(raw + ":00+01:00");
+          if (Number.isNaN(scheduled.getTime()) || scheduled.getTime() <= Date.now()) throw new Error("Scheduled start must be in the future.");
+        }
+        created = await callApi({
+          action: "create-campaign",
+          headline: $("campaignHeadline").value,
+          description: $("campaignDescription").value,
+          cta: $("campaignCta").value,
+          destination_url: $("campaignUrl").value,
+          package_days: Number($("campaignPackage").value),
+          start_mode: startMode,
+          scheduled_start_at: scheduled?.toISOString() ?? null,
+        });
+        campaign = created.campaign;
+        state.pendingCampaign = campaign;
+        state.pendingBank = created.bank_transfer;
       }
-      const created = await callApi({
-        action: "create-campaign",
-        headline: $("campaignHeadline").value,
-        description: $("campaignDescription").value,
-        cta: $("campaignCta").value,
-        destination_url: $("campaignUrl").value,
-        package_days: Number($("campaignPackage").value),
-        start_mode: startMode,
-        scheduled_start_at: scheduled?.toISOString() ?? null,
-      });
-      const campaign = created.campaign;
-      state.pendingCampaign = campaign; state.pendingBank = created.bank_transfer;
-      setBusy(button,true,"Uploading creative…");
+      setBusy(button, true, "Uploading creative…");
       await callMediaUpload(campaign.campaign_id, state.creativeFile, state.posterFile);
+      if (!created) created = await callApi({ action: "get-payment-details", campaign_id: campaign.campaign_id });
+      if (!created.bank_transfer) created.bank_transfer = state.pendingBank;
       $("bankName").textContent = created.bank_transfer.bank_name;
       $("bankAccountName").textContent = created.bank_transfer.account_name;
       $("bankAccountNumber").textContent = created.bank_transfer.account_number;
-      $("bankAmount").textContent = formatNaira(campaign.amount_ngn);
-      $("bankReference").textContent = campaign.payment_reference;
+      $("bankAmount").textContent = formatNaira(campaign.amount_ngn ?? created.campaign.amount_ngn);
+      $("bankReference").textContent = campaign.payment_reference ?? created.campaign.payment_reference;
       $("bankDeadline").textContent = formatDate(created.payment_deadline_at);
       $("paymentStep").classList.remove("hidden");
-      $("paymentForm").dataset.campaignId = campaign.campaign_id;
-      $("paymentForm").dataset.amount = campaign.amount_ngn;
-      message("globalMessage","Campaign created and creative uploaded. Complete the transfer within 24 hours.");
+      $("paymentForm").dataset.campaignId = campaign.campaign_id ?? created.campaign.campaign_id;
+      $("paymentForm").dataset.amount = campaign.amount_ngn ?? created.campaign.amount_ngn;
+      message("globalMessage", "Campaign created and creative uploaded. Complete the transfer within 24 hours.");
       await refreshCampaigns();
-      $("paymentStep").scrollIntoView({ behavior:"smooth", block:"start" });
-    } catch (error) { message("globalMessage",error.message,true); }
-    finally { setBusy(button,false); }
+      $("paymentStep").scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (error) {
+      message("globalMessage", error.message, true);
+    } finally {
+      setBusy(button, false);
+    }
   });
   $("paymentForm").addEventListener("submit", async (event) => {
     event.preventDefault(); const button = event.submitter; setBusy(button,true);

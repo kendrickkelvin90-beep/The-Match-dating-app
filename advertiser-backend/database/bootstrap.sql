@@ -382,7 +382,7 @@ create policy advertising_creative_owner_read on public.advertising_creatives
 create policy advertising_payment_owner_read on public.advertising_payments
   for select to anon using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
 create policy advertising_design_owner_read on public.advertising_design_requests
-  for select to anon using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
+  for select to anon using (coalesce((select auth.jwt()->>'user_role'),'') = 'advertiser' and (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin())));
 create policy advertising_design_payment_owner_read on public.advertising_design_payments
   for select to anon using (advertiser_id = (select auth.uid()) or (select private.is_advertising_admin()));
 create policy advertising_refund_owner_read on public.advertising_refunds

@@ -168,11 +168,21 @@ create table if not exists public.advertising_clicks (
   campaign_id uuid not null references public.advertising_campaigns(id) on delete cascade,
   viewer_day_key text not null check (char_length(viewer_day_key) between 32 and 128),
   event_day date not null,
-  recorded_at timestamptz not null default now(),
-  unique (campaign_id, viewer_day_key, event_day)
+  recorded_at timestamptz not null default now()
 );
 create index if not exists advertising_clicks_campaign_day_idx
   on public.advertising_clicks(campaign_id, event_day);
+
+create table if not exists public.advertising_unique_clicks (
+  id bigint generated always as identity primary key,
+  campaign_id uuid not null references public.advertising_campaigns(id) on delete cascade,
+  viewer_day_key text not null check (char_length(viewer_day_key) between 32 and 128),
+  event_day date not null,
+  first_clicked_at timestamptz not null default now(),
+  unique (campaign_id, viewer_day_key, event_day)
+);
+create index if not exists advertising_unique_clicks_campaign_day_idx
+  on public.advertising_unique_clicks(campaign_id, event_day);
 
 create table if not exists public.advertising_refunds (
   id uuid primary key default gen_random_uuid(),
@@ -275,6 +285,7 @@ alter table public.advertising_design_requests enable row level security;
 alter table public.advertising_design_payments enable row level security;
 alter table public.advertising_impressions enable row level security;
 alter table public.advertising_clicks enable row level security;
+alter table public.advertising_unique_clicks enable row level security;
 alter table public.advertising_refunds enable row level security;
 alter table public.advertising_admin_audit enable row level security;
 
@@ -294,7 +305,7 @@ grant select on public.advertising_admins to service_role;
 grant all on public.advertiser_profiles, public.advertising_campaigns,
   public.advertising_creatives, public.advertising_payments,
   public.advertising_design_requests, public.advertising_design_payments, public.advertising_impressions,
-  public.advertising_clicks, public.advertising_refunds,
+  public.advertising_clicks, public.advertising_unique_clicks, public.advertising_refunds,
   public.advertising_admins, public.advertising_admin_audit to service_role;
 
 create policy advertiser_profile_owner_read on public.advertiser_profiles
@@ -321,7 +332,7 @@ create policy advertising_refund_owner_read on public.advertising_refunds
 
 -- Analytics event rows, admin audit and the admin allowlist are never exposed
 -- to normal advertiser clients. Service-role server functions own all writes.
-revoke all on public.advertising_impressions, public.advertising_clicks,
+revoke all on public.advertising_impressions, public.advertising_clicks, public.advertising_unique_clicks,
   public.advertising_admin_audit, public.advertising_admins
 from anon, authenticated;
 
@@ -745,6 +756,8 @@ begin
     get diagnostics v_inserted = row_count;
   else
     insert into public.advertising_clicks(campaign_id,viewer_day_key,event_day)
+    values (p_campaign_id,p_viewer_day_key,v_today);
+    insert into public.advertising_unique_clicks(campaign_id,viewer_day_key,event_day)
     values (p_campaign_id,p_viewer_day_key,v_today)
     on conflict do nothing;
     get diagnostics v_inserted = row_count;
@@ -982,6 +995,7 @@ declare
   v_owner uuid;
   v_impressions bigint;
   v_clicks bigint;
+  v_unique_clicks bigint;
 begin
   if (select auth.uid()) is null then
     raise exception 'Authentication required' using errcode = '28000';
@@ -999,12 +1013,14 @@ begin
   from public.advertising_impressions i where i.campaign_id = p_campaign_id;
   select count(*) into v_clicks
   from public.advertising_clicks k where k.campaign_id = p_campaign_id;
+  select count(*) into v_unique_clicks
+  from public.advertising_unique_clicks k where k.campaign_id = p_campaign_id;
 
   return query
   select c.id, c.status, c.payment_status, c.package_days, c.go_live_at, c.ends_at,
-    v_impressions, v_clicks, v_clicks,
+    v_impressions, v_clicks, v_unique_clicks,
     case when v_impressions = 0 then 0::numeric
-      else round((v_clicks::numeric / v_impressions::numeric) * 100, 2) end
+      else round((v_unique_clicks::numeric / v_impressions::numeric) * 100, 2) end
   from public.advertising_campaigns c where c.id = p_campaign_id;
 end;
 $function$;

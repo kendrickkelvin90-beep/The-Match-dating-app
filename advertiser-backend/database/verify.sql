@@ -91,6 +91,11 @@ begin
     raise exception 'Design payment confirmation RPC must be service-role only';
   end if;
 
+  if has_function_privilege('authenticated','private.process_advertising_campaign_clock_cron()','execute')
+     or has_function_privilege('anon','private.process_advertising_campaign_clock_cron()','execute') then
+    raise exception 'Scheduler entrypoint must not be executable by app users';
+  end if;
+
   if not has_schema_privilege('authenticated','private','usage') then
     raise exception 'Authenticated role cannot execute the private admin helper used by RLS';
   end if;

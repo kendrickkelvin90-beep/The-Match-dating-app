@@ -28,6 +28,7 @@ type Action =
   | "request-design-revision"
   | "get-design-delivery"
   | "admin-preview-creative"
+  | "admin-preview-change-creative"
   | "admin-list-campaigns"
   | "admin-list-payments"
   | "admin-list-refunds"
@@ -380,6 +381,34 @@ Deno.serve(async (req: Request) => {
         ? campaign.advertising_creatives.find((item: { is_current: boolean }) => item.is_current) ?? campaign.advertising_creatives[0]
         : campaign.advertising_creatives;
       if (!creative?.storage_key) return json({ error: "No creative is attached to this campaign." }, 404, origin);
+      const bucket = Deno.env.get("B2_BUCKET_NAME") ?? "";
+      const endpoint = Deno.env.get("B2_S3_ENDPOINT") ?? "";
+      const keyId = Deno.env.get("B2_ADVERTISING_KEY_ID") ?? "";
+      const appKey = Deno.env.get("B2_ADVERTISING_APPLICATION_KEY") ?? "";
+      if (!bucket || !endpoint || !keyId || !appKey) return json({ error: "Advertising media is not configured." }, 503, origin);
+      const host = new URL(endpoint).hostname;
+      const region = Deno.env.get("B2_REGION") || host.match(/^s3\.([a-z0-9-]+)\.backblazeb2\.com$/)?.[1];
+      if (!region) return json({ error: "B2 region is not configured." }, 503, origin);
+      const s3 = new S3Client({ region, endpoint, forcePathStyle: true, credentials: { accessKeyId: keyId, secretAccessKey: appKey } });
+      const previewUrl = await getSignedUrl(s3, new GetObjectCommand({ Bucket: bucket, Key: creative.storage_key }), { expiresIn: 120 });
+      const posterUrl = creative.poster_storage_key
+        ? await getSignedUrl(s3, new GetObjectCommand({ Bucket: bucket, Key: creative.poster_storage_key }), { expiresIn: 120 })
+        : null;
+      return json({ creative_type: creative.creative_type, preview_url: previewUrl, poster_url: posterUrl, expires_in: 120 }, 200, origin);
+    }
+
+    if (action === "admin-preview-change-creative") {
+      const requestId = cleanText(body.change_request_id, 64);
+      if (!requestId) return json({ error: "Change request ID is required." }, 400, origin);
+      const { data: request, error: requestError } = await admin.from("advertising_campaign_change_requests")
+        .select("id,campaign_id,proposed_creative_id,status").eq("id", requestId).maybeSingle();
+      if (requestError || !request || request.status !== "pending" || !request.proposed_creative_id) {
+        return json({ error: "No pending replacement creative is attached to this request." }, 404, origin);
+      }
+      const { data: creative, error: creativeError } = await admin.from("advertising_creatives")
+        .select("creative_type,storage_key,poster_storage_key").eq("id", request.proposed_creative_id)
+        .eq("campaign_id", request.campaign_id).maybeSingle();
+      if (creativeError || !creative) return json({ error: "Replacement creative not found." }, 404, origin);
       const bucket = Deno.env.get("B2_BUCKET_NAME") ?? "";
       const endpoint = Deno.env.get("B2_S3_ENDPOINT") ?? "";
       const keyId = Deno.env.get("B2_ADVERTISING_KEY_ID") ?? "";

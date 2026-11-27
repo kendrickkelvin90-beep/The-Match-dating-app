@@ -95,7 +95,16 @@ begin
   exception when sqlstate 'PGRST' then
     null;
   end;
+  perform set_config('request.path','rpc/is_match_admin',false);
+  begin
+    perform public.match_advertiser_api_guard();
+    raise exception 'Advertiser Data API guard allowed a member security-definer RPC';
+  exception when sqlstate 'PGRST' then
+    null;
+  end;
   perform set_config('request.path','advertising_campaigns',false);
+  perform public.match_advertiser_api_guard();
+  perform set_config('request.path','rpc/get_my_advertising_campaign_metrics',false);
   perform public.match_advertiser_api_guard();
 end;
 $test$;

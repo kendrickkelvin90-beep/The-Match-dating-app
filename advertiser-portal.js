@@ -175,47 +175,46 @@
       return ["anon", "authenticated"].includes(payload.role) && payload.user_role === "advertiser";
     } catch { return false; }
   };
-  const enrollAdvertiserSession = async (session) => {
-    if (!session?.user?.email_confirmed_at) {
-      throw new Error("Please verify your email first. Then return here and sign in to finish advertiser registration.");
-    }
+  const enrollAdvertiserSession = async (session, details) => {
+    if (!session?.user?.email_confirmed_at) throw new Error("Please verify your Match email first, then return here and sign in.");
     const baseUrl = config.supabaseUrl.endsWith("/") ? config.supabaseUrl.slice(0, -1) : config.supabaseUrl;
     const response = await fetch(baseUrl + "/functions/v1/advertiser-register", {
       method: "POST",
-      headers: {
-        apikey: config.publishableKey,
-        Authorization: "Bearer " + session.access_token,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({}),
+      headers: { apikey: config.publishableKey, Authorization: "Bearer " + session.access_token, "Content-Type": "application/json" },
+      body: JSON.stringify(details),
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok || !result.success) throw new Error(result.error || "Advertiser registration could not be completed.");
     const { data, error } = await state.client.auth.refreshSession();
-    if (error || !data.session) throw new Error("Registration is saved. Please sign in again to finish activating your advertiser session.");
+    if (error || !data.session) throw new Error("Your advertiser enrolment was saved. Please sign in again to activate it.");
     return data.session;
+  };
+  const completeAdvertiserProfile = async (session, details = {}) => {
+    const metadata = session.user?.user_metadata || {};
+    await callApi({ action: "complete-profile", advertiser_type: details.advertiser_type || metadata.advertiser_type, display_name: details.display_name || metadata.display_name, contact_name: details.contact_name ?? metadata.contact_name, phone: details.phone ?? metadata.phone });
   };
   const ensureAdvertiserProfile = async (session) => {
     let activeSession = session;
     if (!isAdvertiserSession(activeSession?.access_token)) {
       const metadata = activeSession?.user?.user_metadata || {};
-      if (metadata.the_match_advertiser_registration !== "v1") {
-        await state.client.auth.signOut({ scope: "local" });
-        throw new Error("This is not an advertiser account. Create an advertiser account with a separate email, or use the Google identity linked to an existing advertiser account.");
+      if (metadata.the_match_advertiser_registration === "v1") {
+        activeSession = await enrollAdvertiserSession(activeSession, { advertiser_type: metadata.advertiser_type, display_name: metadata.display_name, contact_name: metadata.contact_name || "", phone: metadata.phone || "" });
+        if (!isAdvertiserSession(activeSession?.access_token)) throw new Error("Your advertiser enrolment was saved, but access is not active yet. Please sign in again.");
+        await completeAdvertiserProfile(activeSession);
+        return activeSession;
       }
-      activeSession = await enrollAdvertiserSession(activeSession);
-      if (!isAdvertiserSession(activeSession?.access_token)) {
-        throw new Error("Your advertiser account is registered, but secure advertiser access is not active yet. Please try again after setup is completed.");
-      }
+      state.pendingEnrollmentSession = activeSession;
+      $("dashboardView").classList.add("hidden");
+      $("authView").classList.remove("hidden");
+      $("signinForm").classList.add("hidden");
+      $("signupForm").classList.add("hidden");
+      $("resetPasswordForm").classList.add("hidden");
+      $("advertiserEnrollmentForm").classList.remove("hidden");
+      $("enrollName").value = activeSession.user?.user_metadata?.full_name || activeSession.user?.email?.split("@")[0] || "";
+      message("authMessage", "Your verified Match account can use the advertising portal too. Complete your advertiser details below.");
+      return null;
     }
-    const metadata = activeSession.user?.user_metadata || {};
-    await callApi({
-      action: "complete-profile",
-      advertiser_type: metadata.advertiser_type,
-      display_name: metadata.display_name,
-      contact_name: metadata.contact_name,
-      phone: metadata.phone,
-    });
+    await completeAdvertiserProfile(activeSession);
     return activeSession;
   };
   const showDashboard = async (session) => {
@@ -223,6 +222,7 @@
     state.handlingSession = true;
     try {
       session = await ensureAdvertiserProfile(session);
+      if (!session) { state.handlingSession = false; return; }
     } catch (error) {
       $("dashboardView").classList.add("hidden");
       $("authView").classList.remove("hidden");

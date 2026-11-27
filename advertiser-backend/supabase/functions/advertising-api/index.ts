@@ -14,6 +14,7 @@ type Action =
   | "submit-payment"
   | "list-campaigns"
   | "get-metrics"
+  | "get-payment-details"
   | "admin-list-campaigns"
   | "admin-list-payments"
   | "admin-confirm-payment"
@@ -184,6 +185,31 @@ Deno.serve(async (req: Request) => {
         .eq("advertiser_id", user.id).order("created_at", { ascending: false }).limit(100);
       if (error) return json({ error: "Campaigns could not be loaded." }, 500, origin);
       return json({ campaigns: data ?? [] }, 200, origin);
+    }
+
+
+    if (action === "get-payment-details") {
+      const campaignId = cleanText(body.campaign_id, 64);
+      if (!campaignId) return json({ error: "Campaign ID is required." }, 400, origin);
+      const { data: campaign, error } = await admin.from("advertising_campaigns")
+        .select("id,advertiser_id,package_price_ngn,payment_reference,payment_deadline_at,payment_status,status")
+        .eq("id", campaignId).eq("advertiser_id", user.id).maybeSingle();
+      if (error || !campaign) return json({ error: "Campaign not found." }, 404, origin);
+      if (campaign.payment_status !== "awaiting_payment" || campaign.status !== "awaiting_payment" ||
+          new Date(campaign.payment_deadline_at).getTime() <= Date.now()) {
+        return json({ error: "This campaign is no longer awaiting payment. Refresh your campaign status." }, 409, origin);
+      }
+      const bankName = Deno.env.get("ADVERTISING_BANK_NAME") ?? "";
+      const accountName = Deno.env.get("ADVERTISING_ACCOUNT_NAME") ?? "";
+      const accountNumber = Deno.env.get("ADVERTISING_ACCOUNT_NUMBER") ?? "";
+      if (!bankName || !accountName || !/^\\d{10}$/.test(accountNumber)) {
+        return json({ error: "Advertising bank-transfer instructions have not been configured yet." }, 503, origin);
+      }
+      return json({
+        campaign: { campaign_id: campaign.id, payment_reference: campaign.payment_reference, amount_ngn: campaign.package_price_ngn },
+        bank_transfer: { bank_name: bankName, account_name: accountName, account_number: accountNumber },
+        payment_deadline_at: campaign.payment_deadline_at,
+      }, 200, origin);
     }
 
     if (action === "get-metrics") {

@@ -67,6 +67,7 @@
         <p>Payment: ${escapeHtml(campaign.payment_status.replaceAll("_"," "))}</p>
         <p>Reference: <strong>${escapeHtml(campaign.payment_reference)}</strong></p>
         <p>Live: ${formatDate(campaign.go_live_at)} · Ends: ${formatDate(campaign.ends_at)}</p>
+        ${(campaign.advertising_campaign_change_requests || []).slice().sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0,1).map((request) => "<p class=\"fineprint\">Latest change request: <strong>" + escapeHtml(request.status.replaceAll("_"," ")) + "</strong>" + (request.admin_reason ? " · Admin note: " + escapeHtml(request.admin_reason) : "") + "</p>").join("")}
         <div class="campaign-actions"><button class="small-outline" data-metrics="${escapeHtml(campaign.id)}">View performance</button>${campaign.status === "awaiting_payment" && campaign.payment_status === "awaiting_payment" ? `${(campaign.advertising_creatives || []).some((creative) => creative.is_current) ? `<button class="small-outline" data-resume-payment="${escapeHtml(campaign.id)}">Resume payment</button>` : `<button class="small-outline" data-finish-creative="${escapeHtml(campaign.id)}">Finish creative</button>`}<button class="small-outline" data-cancel-campaign="${escapeHtml(campaign.id)}">Cancel reservation</button>` : ""}</div>
         <div class="fineprint" id="metrics-${escapeHtml(campaign.id)}"></div>
       </article>`).join("") : '<p class="muted">You have no campaigns yet. Create your first sponsored advert to get started.</p>';

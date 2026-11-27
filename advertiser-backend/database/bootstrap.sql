@@ -725,6 +725,24 @@ $function$;
 revoke all on function public.process_advertising_campaign_clock() from public, anon, authenticated;
 grant execute on function public.process_advertising_campaign_clock() to service_role;
 
+
+create or replace function private.process_advertising_campaign_clock_cron()
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+begin
+  if session_user <> 'postgres' then
+    raise exception 'Only the database scheduler may run this maintenance function' using errcode = '42501';
+  end if;
+  perform set_config('request.jwt.claims','{"role":"service_role"}',true);
+  perform public.process_advertising_campaign_clock();
+end;
+$function$;
+revoke all on function private.process_advertising_campaign_clock_cron() from public, anon, authenticated, service_role;
+grant execute on function private.process_advertising_campaign_clock_cron() to postgres;
+
 create or replace function public.record_advertising_event(
   p_campaign_id uuid,
   p_viewer_day_key text,

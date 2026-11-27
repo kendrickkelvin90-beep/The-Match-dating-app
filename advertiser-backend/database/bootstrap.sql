@@ -1579,19 +1579,29 @@ declare
   rec record;
 begin
   for rec in
-    select n.nspname, c.relname
+    select n.nspname, c.relname, c.relrowsecurity
     from pg_catalog.pg_class c
     join pg_catalog.pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'public'
       and c.relkind in ('r','p')
-      and c.relrowsecurity
       and c.relname not in ('advertising_campaigns','advertising_design_requests')
   loop
     execute format('drop policy if exists match_advertiser_data_boundary on %I.%I', rec.nspname, rec.relname);
-    execute format(
-      'create policy match_advertiser_data_boundary on %I.%I as restrictive for all to public using ((auth.jwt()->>''user_role'') is distinct from ''advertiser'') with check ((auth.jwt()->>''user_role'') is distinct from ''advertiser'')',
-      rec.nspname, rec.relname
-    );
+    if rec.relrowsecurity then
+      execute format(
+        'create policy match_advertiser_data_boundary on %I.%I as restrictive for all to public using ((auth.jwt()->>''user_role'') is distinct from ''advertiser'') with check ((auth.jwt()->>''user_role'') is distinct from ''advertiser'')',
+        rec.nspname, rec.relname
+      );
+    else
+      -- Enabling RLS on a previously unprotected table with this permissive
+      -- policy preserves its old behavior for non-advertisers, but blocks
+      -- advertiser JWTs before they can see or change member data.
+      execute format('alter table %I.%I enable row level security', rec.nspname, rec.relname);
+      execute format(
+        'create policy match_advertiser_data_boundary on %I.%I as permissive for all to public using ((auth.jwt()->>''user_role'') is distinct from ''advertiser'') with check ((auth.jwt()->>''user_role'') is distinct from ''advertiser'')',
+        rec.nspname, rec.relname
+      );
+    end if;
   end loop;
 end;
 $boundary$;

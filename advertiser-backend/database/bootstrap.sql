@@ -69,9 +69,38 @@ $register$;
 revoke all on function public.register_advertiser_account(uuid)
   from public, anon, authenticated;
 grant execute on function public.register_advertiser_account(uuid) to service_role;
--- A person may use both Match experiences. Do not block profile creation
--- merely because the same verified Auth identity is enrolled as an advertiser.
+-- Existing Match members may enroll as advertisers because their profile
+-- already exists. An advertiser-only identity must not later be converted into
+-- a dating-member identity through a direct profile insert. The shared row lock
+-- keeps advertiser enrollment and member-profile creation race-safe.
+create or replace function private.prevent_advertiser_member_profile()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+begin
+  perform 1 from auth.users u where u.id = new.id for update;
+
+  if exists (
+    select 1 from private.advertiser_auth_registry r
+    where r.user_id = new.id
+  ) then
+    raise exception 'Advertiser accounts cannot create Match member profiles'
+      using errcode = '23514';
+  end if;
+
+  return new;
+end;
+$function$;
+
+revoke all on function private.prevent_advertiser_member_profile()
+  from public, anon, authenticated, service_role;
+
 drop trigger if exists prevent_advertiser_member_profile on public.profiles;
+create trigger prevent_advertiser_member_profile
+before insert on public.profiles
+for each row execute function private.prevent_advertiser_member_profile();
 
 
 

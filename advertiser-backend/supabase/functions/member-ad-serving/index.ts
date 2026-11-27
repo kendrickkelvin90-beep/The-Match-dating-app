@@ -29,20 +29,19 @@ function json(body: unknown, status: number) {
   });
 }
 
-function jwtRole(token: string): string {
+function jwtClaims(token: string): Record<string, unknown> {
   try {
     const segment = token.split(".")[1];
-    if (!segment) return "";
+    if (!segment) return {};
     const normalized = segment.replace(/-/g, "+").replace(/_/g, "/");
-    const payload = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
-    return typeof payload.role === "string" ? payload.role : "";
-  } catch { return ""; }
+    return JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
+  } catch { return {}; }
 }
 
 async function verifyMember(req: Request) {
   const header = req.headers.get("Authorization") ?? "";
   const token = header.replace(/^Bearer\s+/i, "");
-  if (!token || token === header || !projectUrl || !anonKey || jwtRole(token) !== "authenticated") return null;
+  if (!token || token === header || !projectUrl || !anonKey || jwtClaims(token).role !== "authenticated" || jwtClaims(token).user_role === "advertiser") return null;
   const client = createClient(projectUrl, anonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
     global: { headers: { Authorization: `Bearer ${token}` } },

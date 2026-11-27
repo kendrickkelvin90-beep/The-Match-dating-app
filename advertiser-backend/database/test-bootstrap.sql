@@ -2,6 +2,8 @@
 -- Never deploy this file to Supabase or to the Match member project.
 create role anon nologin;
 create role authenticated nologin;
+create role authenticator nologin noinherit;
+create role supabase_auth_admin nologin noinherit;
 create role service_role nologin bypassrls;
 
 create schema auth;
@@ -25,7 +27,10 @@ stable
 as $function$
   select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb;
 $function$;
-grant usage on schema auth to anon, authenticated, service_role;
+grant usage on schema auth to anon, authenticated, service_role, supabase_auth_admin;
 grant execute on function auth.uid() to public;
 grant execute on function auth.jwt() to public;
-grant usage on schema public to anon, authenticated, service_role;
+create table public.profiles (id uuid primary key);
+alter table public.profiles enable row level security;
+grant select (id) on public.profiles to supabase_auth_admin;
+grant usage on schema public to anon, authenticated, service_role, authenticator, supabase_auth_admin;

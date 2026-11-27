@@ -31,6 +31,16 @@ function json(body: unknown, status: number, origin: string) {
   });
 }
 
+function isAdvertiserToken(token: string): boolean {
+  try {
+    const segment = token.split(".")[1];
+    if (!segment) return false;
+    const normalized = segment.replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
+    return payload.role === "anon" && payload.user_role === "advertiser";
+  } catch { return false; }
+}
+
 function bytesStartWith(bytes: Uint8Array, expected: number[]) {
   return expected.every((value, index) => bytes[index] === value);
 }
@@ -111,7 +121,7 @@ Deno.serve(async (req: Request) => {
     });
     const { data: authData, error: authError } = await caller.auth.getUser(token);
     const user = authData.user;
-    if (authError || !user?.email_confirmed_at) return json({ error: "Verify your advertiser email before uploading." }, 401, origin);
+    if (authError || !user?.email_confirmed_at || !isAdvertiserToken(token)) return json({ error: "A verified advertiser session is required before uploading." }, 401, origin);
 
     const form = await req.formData();
     const campaignId = String(form.get("campaign_id") ?? "");

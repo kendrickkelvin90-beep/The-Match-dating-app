@@ -57,6 +57,16 @@ function safeFilename(path: string) {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "media";
 }
 
+function isAdvertiserSession(token: string): boolean {
+  try {
+    const segment = token.split(".")[1];
+    if (!segment) return false;
+    const normalized = segment.replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
+    return payload.role === "anon" && payload.user_role === "advertiser";
+  } catch { return false; }
+}
+
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get("Origin") || "";
   if (origin && !allowedOrigins.has(origin)) return json({ error: "Origin not allowed" }, 403);
@@ -116,6 +126,7 @@ Deno.serve(async (req: Request) => {
       });
       const { data: userData, error: authError } = await caller.auth.getUser(token);
       if (authError || !userData.user) return json({ error: "Invalid session" }, 401, origin);
+      if (isAdvertiserSession(token)) return json({ error: "Advertiser accounts cannot use member media migration." }, 403, origin);
       const { data: isAdmin, error: adminError } = await caller.rpc("is_match_admin");
       if (adminError || isAdmin !== true) return json({ error: "Admin access required" }, 403, origin);
     }

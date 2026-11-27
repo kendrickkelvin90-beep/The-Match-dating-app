@@ -98,7 +98,7 @@ Advertisers may register and sign in using:
 - Email and password, including password recovery.
 - Google sign-in.
 
-Advertiser accounts must be separate from dating-member accounts. The implementation must not modify or reuse member login/signup flows in a way that risks breaking them.
+Advertiser accounts must remain a separate account type with their own advertiser profile, portal, permissions and data. To avoid a third Supabase project, the implementation uses the existing Match Auth service with a separate browser storage key. Advertiser JWTs use the supported `anon` database role plus a custom `user_role=advertiser` claim; a Data API pre-request guard, restrictive RLS boundaries, Storage/Realtime policies and member Edge Function guards prevent access to member data. Existing dating-member accounts cannot be converted into advertiser accounts; advertisers must use a different email. The member login/signup screens, CAPTCHA, member profile creation and member session storage remain unchanged. The global Custom Access Token Hook must coexist with the existing before-user-created hook and pass member auth regression tests before activation.
 
 Both individuals and businesses/organisations are accepted. Proposed application fields:
 - Advertiser type (individual or business/organisation).
@@ -201,7 +201,7 @@ Add a distinct advertising area to the existing admin dashboard. Planned control
 - View individual advertiser records.
 - View confirmed advertising revenue and payment history.
 
-The separate advertiser project must use its own server-side `advertising_admins` allowlist and verified Auth session. Do not trust a client-side admin flag or user-editable Auth metadata. Keep advertising revenue and records separate from Match Plus, Match Lite and Match Coins accounting.
+The advertising tables must use a server-side `advertising_admins` allowlist. The Auth hook adds `user_role=advertiser` only for the explicit advertiser-registration marker and only when no dating-member profile exists; it keeps the supported JWT role at `anon`. The Data API guard permits only two read-only advertiser list endpoints and the advertiser metrics RPC. All other advertising reads/writes remain server-side. Do not trust a client-side admin flag or user-editable metadata for privileges. Keep advertising revenue and records separate from Match Plus, Match Lite and Match Coins accounting.
 
 ## 10. Delivery and regulatory considerations
 
@@ -214,7 +214,7 @@ The separate advertiser project must use its own server-side `advertising_admins
 ## 11. Remaining launch gates
 
 The product decisions above are settled. The following owner-controlled setup, legal review and live validation remain:
-1. Create and configure the separate advertiser Supabase project, Google OAuth, email verification/recovery and redirect URLs.
+1. Adapt and verify the advertiser schema, custom-claim Auth hook, Data API pre-request guard and restrictive member-data RLS boundaries in the existing Match Supabase project; deploy member Edge Function guards before enabling advertiser Auth.
 2. Configure protected server-side secrets, the dedicated private B2 advertising key, the business bank details and the advertising admin allowlist.
 3. Confirm applicable Nigerian advertising, consumer-protection and privacy obligations, including any ARCON clearance or disclosure requirements, with qualified local review before publication.
 4. Complete real Android and iOS browser testing, including image/video playback, crop, upload, payment/admin workflows and Discover performance.
@@ -222,12 +222,12 @@ The product decisions above are settled. The following owner-controlled setup, l
 
 ## 12. Implementation and release status
 
-The read-only architecture audit is complete. The isolated implementation is underway on `planning/sponsored-advertising-2026-11-27` and is tracked in draft PR #338. Automated PostgreSQL/RLS, portal syntax, Edge Function type and member regression checks are being run on the branch. The feature flag remains disabled. The separate advertiser Supabase project, secrets, bank details, legal review and live-device testing remain launch gates. Do not merge to `main`, deploy, apply production migrations or enable the feature until Kelvin separately approves after inspection.
+The shared-project architecture adaptation is underway on `work/sponsored-ads-shared-supabase-2026-11-27` and tracked in draft PR #339. Automated PostgreSQL/RLS, portal syntax, Edge Function type and member regression checks are being run on the branch. The feature flag remains disabled. The member Edge Function guard deployment, database migration, Data API pre-request setting, Auth hook, advertising secrets, B2 key, bank details, legal review and live-device testing remain launch gates. Do not merge to `main`, deploy, apply production migrations or enable the feature until Kelvin separately approves after inspection.
 
 ## 13. Explicit production protections
 
 - No changes to production Supabase schema or data during planning.
-- No changes to member login/signup/Google sign-in/CAPTCHA.
+- No changes to member login/signup UI, CAPTCHA, member profile creation or member browser session key. The additional global Auth token hook must leave ordinary member claims unchanged and pass regression tests before activation.
 - No changes to Match Plus, Match Lite, Match Coins or membership payment flows.
 - No changes to Discover organic card layout/actions, Stories, Events, Nearby, chat, calls, verification or bottom navigation.
 - No advertising implementation, merge or deployment until the complete specification is approved.

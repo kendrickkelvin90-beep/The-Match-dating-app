@@ -1,26 +1,154 @@
--- Integration smoke tests for the isolated advertiser database.
+-- Integration smoke tests for advertiser-role isolation in the shared-project model.
 -- Run only against the disposable CI PostgreSQL database.
 insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values
-('10000000-0000-4000-8000-000000000001','one@example.test',now(),'{"advertiser_type":"individual","display_name":"Advertiser One"}'),
-('10000000-0000-4000-8000-000000000002','two@example.test',now(),'{"advertiser_type":"business","display_name":"Advertiser Two"}');
+('10000000-0000-4000-8000-000000000001','one@example.test',now(),'{"the_match_advertiser_registration":"v1","advertiser_type":"individual","display_name":"Advertiser One"}'),
+('10000000-0000-4000-8000-000000000002','two@example.test',now(),'{"the_match_advertiser_registration":"v1","advertiser_type":"business","display_name":"Advertiser Two"}'),
+('10000000-0000-4000-8000-000000000003','member@example.test',now(),'{"the_match_advertiser_registration":"v1","advertiser_type":"individual","display_name":"Should Not Convert"}');
+
+insert into public.profiles(id) values ('10000000-0000-4000-8000-000000000003');
+
+set role supabase_auth_admin;
+select public.custom_access_token_hook(jsonb_build_object(
+  'user_id','10000000-0000-4000-8000-000000000001',
+  'claims',jsonb_build_object('role','authenticated','user_metadata','{"the_match_advertiser_registration":"v1","advertiser_type":"individual","display_name":"Advertiser One"}'::jsonb)
+));
+select public.custom_access_token_hook(jsonb_build_object(
+  'user_id','10000000-0000-4000-8000-000000000002',
+  'claims',jsonb_build_object('role','authenticated','user_metadata','{"the_match_advertiser_registration":"v1","advertiser_type":"business","display_name":"Advertiser Two"}'::jsonb)
+));
+select public.custom_access_token_hook(jsonb_build_object(
+  'user_id','10000000-0000-4000-8000-000000000003',
+  'claims',jsonb_build_object('role','authenticated','user_metadata','{"the_match_advertiser_registration":"v1","advertiser_type":"individual","display_name":"Should Not Convert"}'::jsonb)
+));
+reset role;
 
 do $test$
 begin
-  if (select count(*) from public.advertiser_profiles) <> 2 then
-    raise exception 'Advertiser Auth trigger did not create exactly two isolated profiles';
+  if exists (select 1 from private.advertiser_auth_registry where user_id='10000000-0000-4000-8000-000000000003') then
+    raise exception 'An existing dating-member profile was converted into an advertiser account';
+  end if;
+  if (select public.custom_access_token_hook(jsonb_build_object(
+      'user_id','10000000-0000-4000-8000-000000000003',
+      'claims',jsonb_build_object('role','authenticated','user_metadata','{"the_match_advertiser_registration":"v1"}'::jsonb)
+    ))->'claims'->>'role') <> 'authenticated'
+    or (select public.custom_access_token_hook(jsonb_build_object(
+      'user_id','10000000-0000-4000-8000-000000000003',
+      'claims',jsonb_build_object('role','authenticated','user_metadata','{"the_match_advertiser_registration":"v1"}'::jsonb)
+    ))->'claims'->>'user_role') = 'advertiser' then
+    raise exception 'Existing dating-member account did not retain the normal member role';
   end if;
 end;
 $test$;
 
-set role authenticated;
-select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',false);
+insert into public.advertiser_profiles(user_id,advertiser_type,display_name) values
+('10000000-0000-4000-8000-000000000001','individual','Advertiser One'),
+('10000000-0000-4000-8000-000000000002','business','Advertiser Two');
+
 do $test$
 begin
-  if (select count(*) from public.advertiser_profiles) <> 1 then
-    raise exception 'Advertiser profile RLS did not isolate the current account';
+  if (select count(*) from private.advertiser_auth_registry) <> 2
+     or (select count(*) from public.advertiser_profiles) <> 2 then
+    raise exception 'Advertiser token hook did not isolate the two advertiser accounts';
   end if;
-  if (select count(*) from public.advertiser_profiles where user_id = '10000000-0000-4000-8000-000000000002') <> 0 then
-    raise exception 'Advertiser can read another advertiser profile';
+  if (select public.custom_access_token_hook(jsonb_build_object(
+      'user_id','10000000-0000-4000-8000-000000000001',
+      'claims',jsonb_build_object('role','authenticated')
+    ))->'claims'->>'role') <> 'anon'
+    or (select public.custom_access_token_hook(jsonb_build_object(
+      'user_id','10000000-0000-4000-8000-000000000001',
+      'claims',jsonb_build_object('role','authenticated')
+    ))->'claims'->>'user_role') <> 'advertiser' then
+    raise exception 'Advertiser JWT did not receive the supported anon role and advertiser custom claim';
+  end if;
+end;
+$test$;
+
+set role anon;
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',false);
+select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"anon","user_role":"advertiser"}',false);
+do $test$
+begin
+  if has_table_privilege('anon','public.advertiser_profiles','select') then
+    raise exception 'Advertiser browser must not directly read advertiser_profiles';
+  end if;
+end;
+$test$;
+reset role;
+
+-- The Auth hook custom claim blocks member table reads even when a table's
+-- ordinary permissive policy would otherwise allow an authenticated user.
+set role anon;
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',false);
+select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"anon","user_role":"advertiser"}',false);
+do $test$
+begin
+  if (select count(*) from public.profiles) <> 0 then
+    raise exception 'Advertiser session could read Match member profiles';
+  end if;
+  if (select count(*) from public.legacy_open_table) <> 0 then
+    raise exception 'Advertiser session could read a legacy public table without prior RLS';
+  end if;
+  perform set_config('request.path','profiles',false);
+  begin
+    perform public.match_advertiser_api_guard();
+    raise exception 'Advertiser Data API guard did not reject a member table path';
+  exception when sqlstate 'PGRST' then
+    null;
+  end;
+  perform set_config('request.path','rpc/is_match_admin',false);
+  begin
+    perform public.match_advertiser_api_guard();
+    raise exception 'Advertiser Data API guard allowed a member security-definer RPC';
+  exception when sqlstate 'PGRST' then
+    null;
+  end;
+  perform set_config('request.path','advertising_campaigns',false);
+  perform public.match_advertiser_api_guard();
+  perform set_config('request.path','rpc/get_my_advertising_campaign_metrics',false);
+  perform public.match_advertiser_api_guard();
+end;
+$test$;
+reset role;
+
+set role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000003',false);
+select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000003","role":"authenticated"}',false);
+do $test$
+begin
+  if (select count(*) from public.profiles) <> 1
+     or (select count(*) from public.legacy_open_table) <> 1 then
+    raise exception 'Normal Match member lost existing access to a public table';
+  end if;
+end;
+$test$;
+reset role;
+
+insert into storage.objects(id) values ('20000000-0000-4000-8000-000000000001');
+insert into realtime.messages(id) values ('20000000-0000-4000-8000-000000000001');
+
+
+-- Storage and Realtime are also member-only surfaces.
+set role anon;
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',false);
+select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"anon","user_role":"advertiser"}',false);
+do $test$
+begin
+  if (select count(*) from storage.objects) <> 0
+     or (select count(*) from realtime.messages) <> 0 then
+    raise exception 'Advertiser session could read Match Storage or Realtime data';
+  end if;
+end;
+$test$;
+reset role;
+
+set role authenticated;
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000003',false);
+select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000003","role":"authenticated"}',false);
+do $test$
+begin
+  if (select count(*) from storage.objects) <> 1
+     or (select count(*) from realtime.messages) <> 1 then
+    raise exception 'Normal Match member lost existing Storage or Realtime access';
   end if;
 end;
 $test$;
@@ -29,11 +157,12 @@ reset role;
 insert into public.advertising_admins(user_id)
 values ('10000000-0000-4000-8000-000000000001');
 
-set role authenticated;
+set role anon;
 select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',false);
+select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"anon","user_role":"advertiser"}',false);
 do $test$
 begin
-  if not private.is_advertising_admin() then
+  if not public.is_advertising_admin() then
     raise exception 'Advertising admin helper did not recognize the seeded admin';
   end if;
 end;
@@ -102,8 +231,9 @@ end;
 $test$;
 reset role;
 
-set role authenticated;
+set role anon;
 select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',false);
+select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"anon","user_role":"advertiser"}',false);
 do $test$
 begin
   if (select count(*) from public.get_my_advertising_campaign_metrics(

@@ -4,10 +4,11 @@ import { S3Client, GetObjectCommand } from "npm:@aws-sdk/client-s3";
 import { getSignedUrl } from "npm:@aws-sdk/s3-request-presigner";
 
 const appOrigin = "https://match.beyondthebinarymedia.online";
-const advertiserUrl = Deno.env.get("SUPABASE_URL") ?? "";
+const projectUrl = Deno.env.get("SUPABASE_URL") ?? "";
+const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const advertiserServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const matchUrl = Deno.env.get("MATCH_SUPABASE_URL") ?? "";
-const matchAnonKey = Deno.env.get("MATCH_SUPABASE_ANON_KEY") ?? "";
+
+
 const bucket = Deno.env.get("B2_BUCKET_NAME") ?? "";
 const endpoint = Deno.env.get("B2_S3_ENDPOINT") ?? "";
 const keyId = Deno.env.get("B2_ADVERTISING_KEY_ID") ?? "";
@@ -28,11 +29,20 @@ function json(body: unknown, status: number) {
   });
 }
 
+function jwtClaims(token: string): Record<string, unknown> {
+  try {
+    const segment = token.split(".")[1];
+    if (!segment) return {};
+    const normalized = segment.replace(/-/g, "+").replace(/_/g, "/");
+    return JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
+  } catch { return {}; }
+}
+
 async function verifyMember(req: Request) {
   const header = req.headers.get("Authorization") ?? "";
   const token = header.replace(/^Bearer\s+/i, "");
-  if (!token || token === header || !matchUrl || !matchAnonKey) return null;
-  const client = createClient(matchUrl, matchAnonKey, {
+  if (!token || token === header || !projectUrl || !anonKey || jwtClaims(token).role !== "authenticated" || jwtClaims(token).user_role === "advertiser") return null;
+  const client = createClient(projectUrl, anonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
     global: { headers: { Authorization: `Bearer ${token}` } },
   });
@@ -92,10 +102,10 @@ Deno.serve(async (req: Request) => {
     const memberAuth = await verifyMember(req);
     if (!memberAuth) return json({ error: "A valid Match member session is required." }, 401);
     const { user, caller } = memberAuth;
-    if (!advertiserUrl || !advertiserServiceKey) return json({ error: "Advertising service is not configured." }, 503);
+    if (!projectUrl || !advertiserServiceKey) return json({ error: "Advertising service is not configured." }, 503);
     const body = await req.json().catch(() => null) as Record<string, unknown> | null;
     if (!body) return json({ error: "Invalid request." }, 400);
-    const service = createClient(advertiserUrl, advertiserServiceKey, {
+    const service = createClient(projectUrl, advertiserServiceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
     const viewerKey = await pseudonymousViewerKey(user.id);

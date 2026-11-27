@@ -1,5 +1,5 @@
 /* The Match — Discover sponsored-card integration.
- * Runs only when the separate advertiser project is configured and enabled.
+ * Runs only when the shared Match Supabase project is configured and enabled.
  * It never adds advertisers to member profile data or changes member actions.
  */
 (() => {

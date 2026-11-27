@@ -15,6 +15,18 @@ function reply(body: Record<string, unknown>, status = 200) {
   });
 }
 
+function isAdvertiserSession(token: string): boolean {
+  try {
+    const segment = token.split(".")[1];
+    if (!segment) return false;
+    const normalized = segment.replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
+    return payload.role === "anon" && payload.user_role === "advertiser";
+  } catch {
+    return false;
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return reply({ error: "Method not allowed" }, 405);
@@ -41,6 +53,7 @@ Deno.serve(async (req: Request) => {
     });
     const { data: authData, error: authError } = await authClient.auth.getUser(jwt);
     if (authError || !authData.user) return reply({ error: "Your session is invalid. Please sign in again." }, 401);
+    if (isAdvertiserSession(jwt)) return reply({ error: "Advertiser accounts cannot use member calling services." }, 403);
     const userId = authData.user.id;
 
     const admin = createClient(supabaseUrl, serviceKey, {

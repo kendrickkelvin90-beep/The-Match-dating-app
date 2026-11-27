@@ -41,6 +41,16 @@ function createB2Client() {
   });
 }
 
+function isAdvertiserSession(token: string): boolean {
+  try {
+    const segment = token.split(".")[1];
+    if (!segment) return false;
+    const normalized = segment.replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
+    return payload.role === "anon" && payload.user_role === "advertiser";
+  } catch { return false; }
+}
+
 Deno.serve(async (req: Request) => {
   const cors = corsHeaders(req);
   if (!cors.allowed) return json({ error: "Origin not allowed." }, 403, cors.headers);
@@ -66,6 +76,7 @@ Deno.serve(async (req: Request) => {
     });
     const { data: authData, error: authError } = await caller.auth.getUser(token);
     if (authError || !authData.user) return json({ error: "Your session is invalid. Sign in again." }, 401, cors.headers);
+    if (isAdvertiserSession(token)) return json({ error: "Advertiser accounts cannot access member chat media." }, 403, cors.headers);
 
     const body = await req.json().catch(() => null) as { media_id?: unknown } | null;
     const mediaId = typeof body?.media_id === "string" ? body.media_id : "";

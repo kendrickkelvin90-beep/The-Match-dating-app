@@ -12,6 +12,18 @@ create schema if not exists private;
 set local search_path = public;
 revoke all on schema private from public, anon;
 grant usage on schema public, private to supabase_auth_admin;
+-- The Auth token hook evaluates the profile RLS policy, which calls this
+-- narrowly scoped SECURITY DEFINER helper. Keep its execution grant in sync.
+do $grant$
+begin
+  if to_regprocedure('private.is_dual_member_advertiser()') is not null then
+    execute 'grant execute on function private.is_dual_member_advertiser() to supabase_auth_admin';
+  end if;
+  if to_regprocedure('public.is_dual_member_advertiser()') is not null then
+    execute 'grant execute on function public.is_dual_member_advertiser() to supabase_auth_admin';
+  end if;
+end;
+$grant$;
 grant usage on schema private to authenticated, service_role;
 revoke usage on schema private from public, anon;
 grant usage on schema auth to anon, authenticated, authenticator, service_role;
@@ -69,9 +81,38 @@ $register$;
 revoke all on function public.register_advertiser_account(uuid)
   from public, anon, authenticated;
 grant execute on function public.register_advertiser_account(uuid) to service_role;
--- A person may use both Match experiences. Do not block profile creation
--- merely because the same verified Auth identity is enrolled as an advertiser.
+-- Existing Match members may enroll as advertisers because their profile
+-- already exists. An advertiser-only identity must not later be converted into
+-- a dating-member identity through a direct profile insert. The shared row lock
+-- keeps advertiser enrollment and member-profile creation race-safe.
+create or replace function private.prevent_advertiser_member_profile()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+begin
+  perform 1 from auth.users u where u.id = new.id for update;
+
+  if exists (
+    select 1 from private.advertiser_auth_registry r
+    where r.user_id = new.id
+  ) then
+    raise exception 'Advertiser accounts cannot create Match member profiles'
+      using errcode = '23514';
+  end if;
+
+  return new;
+end;
+$function$;
+
+revoke all on function private.prevent_advertiser_member_profile()
+  from public, anon, authenticated, service_role;
+
 drop trigger if exists prevent_advertiser_member_profile on public.profiles;
+create trigger prevent_advertiser_member_profile
+before insert on public.profiles
+for each row execute function private.prevent_advertiser_member_profile();
 
 
 
@@ -1582,6 +1623,7 @@ as $function$
 $function$;
 revoke all on function public.is_dual_member_advertiser() from public;
 grant execute on function public.is_dual_member_advertiser() to anon, authenticated, authenticator, service_role;
+grant execute on function public.is_dual_member_advertiser() to supabase_auth_admin;
 
 -- Data API boundary. Advertiser-only identities remain isolated. A verified
 -- identity that also has a Match member profile keeps normal member API access.

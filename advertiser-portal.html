@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#101010">
   <title>The Match — Advertiser Portal</title>
-  <link rel="stylesheet" href="advertiser-portal.css?v=20261127-dualaccount1">
+  <link rel="stylesheet" href="advertiser-portal.css?v=20261127-portalsteps1">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2" onerror="this.onerror=null;this.src='https://unpkg.com/@supabase/supabase-js@2.119.2'"></script>
-  <script src="advertiser-portal-config.js?v=20261127-dualaccount1"></script>
-  <script defer src="advertiser-portal.js?v=20261127-dualaccount1"></script>
-  <script defer src="advertiser-portal-refunds.js?v=20261127-dualaccount1"></script>
-  <script defer src="advertiser-portal-design.js?v=20261127-dualaccount1"></script>
-  <script defer src="advertiser-portal-changes.js?v=20261127-dualaccount1"></script>
+  <script src="advertiser-portal-config.js?v=20261127-portalsteps1"></script>
+  <script defer src="advertiser-portal.js?v=20261127-portalsteps1"></script>
+  <script defer src="advertiser-portal-refunds.js?v=20261127-portalsteps1"></script>
+  <script defer src="advertiser-portal-design.js?v=20261127-portalsteps1"></script>
+  <script defer src="advertiser-portal-changes.js?v=20261127-portalsteps1"></script>
 </head>
 <body>
   <main class="shell">
@@ -85,8 +85,12 @@
           <button class="outline" id="signOut">Sign out</button>
         </div>
       </div>
+      <nav class="workspace-tabs" aria-label="Advertiser workspace pages">
+        <button type="button" class="workspace-tab active" data-workspace-tab="create">Create advert</button>
+        <button type="button" class="workspace-tab" data-workspace-tab="campaigns">My campaigns</button>
+      </nav>
       <div class="dashboard-grid">
-        <section class="panel create-panel">
+        <section class="panel create-panel" data-workspace-panel="create">
           <div class="panel-heading"><div><p class="eyebrow">NEW CAMPAIGN</p><h2>Build a sponsored advert</h2></div><span class="step-pill">01 — 03</span></div>
           <form id="campaignForm">
             <label>Advert headline<input id="campaignHeadline" maxlength="90" required minlength="3" placeholder="A clear, short headline"></label>
@@ -128,10 +132,11 @@
           </div>
         </section>
 
-        <section class="panel campaigns-panel">
+        <section class="panel campaigns-panel hidden" data-workspace-panel="campaigns">
           <div class="panel-heading"><div><p class="eyebrow">YOUR ADVERTISING</p><h2>Campaign history</h2></div><button class="small-outline" id="refreshCampaigns">Refresh</button></div>
           <div id="campaignList" class="campaign-list"><p class="muted">Loading your campaigns…</p></div>
-          <div class="design-services">
+          <details class="design-services">
+            <summary>Optional creative support · Design services</summary>
             <p class="eyebrow">OPTIONAL CREATIVE SUPPORT</p><h3>Need help with your artwork?</h3>
             <div class="service-row"><span>Basic design</span><strong>₦5,000</strong></div>
             <div class="service-row"><span>Premium design</span><strong>₦10,000</strong></div>
@@ -157,7 +162,7 @@
               </form>
             </div>
             <div id="designRequestList" class="campaign-list"></div>
-          </div>
+          </details>
         </section>
       </div>
       <section id="adminPanel" class="panel admin-panel hidden">
@@ -166,6 +171,7 @@
         <div class="admin-columns"><div><h3>Campaign review queue</h3><div id="adminCampaigns"></div></div><div><h3>Payment confirmation queue</h3><div id="adminPayments"></div></div><div><h3>Refund queue</h3><div id="adminRefunds"></div></div><div><h3>Design service queue</h3><div id="adminDesignRequests"></div></div></div>
       </section>
     </section>
+    <section id="adminAccessDenied" class="notice hidden" role="alert">This sign-in is not authorised for advertising administration.</section>
     <footer><span>© The Match</span><span>Sponsored adverts are clearly labelled. No sensitive member-profile targeting.</span></footer>
     <p id="globalMessage" class="message" aria-live="polite"></p>
   </main>

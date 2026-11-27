@@ -27,16 +27,26 @@ begin
   end if;
 end;
 $test$;
+-- Ensure the Auth hook can evaluate the profile RLS helper in the
+-- disposable integration database after its baseline schema is installed.
+do $grant$
+begin
+  if to_regprocedure('private.is_dual_member_advertiser()') is not null then
+    execute 'grant execute on function private.is_dual_member_advertiser() to supabase_auth_admin';
+  end if;
+  if to_regprocedure('public.is_dual_member_advertiser()') is not null then
+    execute 'grant execute on function public.is_dual_member_advertiser() to supabase_auth_admin';
+  end if;
+end;
+$grant$;
+
+-- Existing Match members are explicitly allowed to add advertiser access
+-- to the same Auth identity; their dating profile remains intact.
+select public.register_advertiser_account('10000000-0000-4000-8000-000000000003');
 do $test$
 begin
-  begin
-    perform public.register_advertiser_account('10000000-0000-4000-8000-000000000003');
-    raise exception 'A Match member account was enrolled as an advertiser';
-  exception when others then
-    if sqlerrm = 'A Match member account was enrolled as an advertiser' then raise; end if;
-  end;
-  if exists (select 1 from private.advertiser_auth_registry where user_id='10000000-0000-4000-8000-000000000003') then
-    raise exception 'Member account was inserted into the advertiser registry';
+  if not exists (select 1 from private.advertiser_auth_registry where user_id='10000000-0000-4000-8000-000000000003') then
+    raise exception 'Existing Match member was not enrolled as an advertiser';
   end if;
 end;
 $test$;
@@ -57,31 +67,31 @@ select public.custom_access_token_hook(jsonb_build_object(
 reset role;
 
 do $test$
+declare
+  v_claims jsonb;
 begin
-  if exists (select 1 from private.advertiser_auth_registry where user_id='10000000-0000-4000-8000-000000000003') then
-    raise exception 'An existing dating-member profile was converted into an advertiser account';
+  if not exists (select 1 from private.advertiser_auth_registry where user_id='10000000-0000-4000-8000-000000000003') then
+    raise exception 'Existing Match member advertiser enrollment was not retained';
   end if;
-  if (select public.custom_access_token_hook(jsonb_build_object(
-      'user_id','10000000-0000-4000-8000-000000000003',
-      'claims',jsonb_build_object('role','authenticated','user_metadata','{"the_match_advertiser_registration":"v1"}'::jsonb)
-    ))->'claims'->>'role') <> 'authenticated'
-    or (select public.custom_access_token_hook(jsonb_build_object(
-      'user_id','10000000-0000-4000-8000-000000000003',
-      'claims',jsonb_build_object('role','authenticated','user_metadata','{"the_match_advertiser_registration":"v1"}'::jsonb)
-    ))->'claims'->>'user_role') = 'advertiser' then
-    raise exception 'Existing dating-member account did not retain the normal member role';
+  v_claims := public.custom_access_token_hook(jsonb_build_object(
+    'user_id','10000000-0000-4000-8000-000000000003',
+    'claims',jsonb_build_object('role','authenticated','user_metadata','{"the_match_advertiser_registration":"v1"}'::jsonb)
+  ))->'claims';
+  if v_claims->>'role' <> 'authenticated' or v_claims->>'user_role' <> 'advertiser' then
+    raise exception 'Dual-role Match member did not retain authenticated access and advertiser permission';
   end if;
 end;
 $test$;
 
 insert into public.advertiser_profiles(user_id,advertiser_type,display_name) values
 ('10000000-0000-4000-8000-000000000001','individual','Advertiser One'),
-('10000000-0000-4000-8000-000000000002','business','Advertiser Two');
+('10000000-0000-4000-8000-000000000002','business','Advertiser Two'),
+('10000000-0000-4000-8000-000000000003','individual','Existing Match Member');
 
 do $test$
 begin
-  if (select count(*) from private.advertiser_auth_registry) <> 2
-     or (select count(*) from public.advertiser_profiles) <> 2 then
+  if (select count(*) from private.advertiser_auth_registry) <> 3
+     or (select count(*) from public.advertiser_profiles) <> 3 then
     raise exception 'Advertiser token hook did not isolate the two advertiser accounts';
   end if;
   if (select public.custom_access_token_hook(jsonb_build_object(
@@ -151,7 +161,7 @@ reset role;
 
 set role authenticated;
 select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000003',false);
-select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000003","role":"authenticated"}',false);
+select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000003","role":"authenticated","user_role":"advertiser"}',false);
 do $test$
 begin
   if (select count(*) from public.profiles) <> 1

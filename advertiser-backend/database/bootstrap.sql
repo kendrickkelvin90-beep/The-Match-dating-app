@@ -1415,9 +1415,7 @@ create index if not exists advertising_change_requests_admin_queue_idx
 alter table public.advertising_campaign_change_requests enable row level security;
 drop policy if exists advertising_change_requests_select_own on public.advertising_campaign_change_requests;
 create policy advertising_change_requests_select_own on public.advertising_campaign_change_requests
-  for select to anon using (
-    advertiser_id = (select auth.uid()) or public.is_advertising_admin()
-  );
+  for select to anon using (advertiser_id = (select auth.uid()));
 revoke all on public.advertising_campaign_change_requests from anon, authenticated;
 
 grant select, insert, update, delete on public.advertising_campaign_change_requests to service_role;

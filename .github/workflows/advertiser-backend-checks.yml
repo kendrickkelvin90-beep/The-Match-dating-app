@@ -66,8 +66,14 @@ jobs:
           node --check match-performance-engine.js
       - name: Install PostgreSQL client
         run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
+          if ! command -v psql >/dev/null 2>&1; then
+            # The hosted Ubuntu image may have a temporarily unavailable
+            # Microsoft package feed; remove that unrelated feed before apt.
+            sudo rm -f /etc/apt/sources.list.d/microsoft*.list /etc/apt/sources.list.d/microsoft*.sources
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client
+          fi
+          psql --version
       - name: Test shared-project advertiser claim isolation, RLS and campaign lifecycle
         env:
           PGPASSWORD: postgres

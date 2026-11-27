@@ -47,7 +47,8 @@ begin
   select * into v_campaign from public.advertising_campaigns
    where id=p_campaign_id and advertiser_id=p_advertiser_id for update;
   if not found then raise exception 'Campaign not found' using errcode='42501'; end if;
-  if v_campaign.payment_status <> 'confirmed' or v_campaign.status not in ('active','paused','scheduled') then
+  if v_campaign.payment_status <> 'confirmed' or v_campaign.status not in ('active','paused','scheduled')
+     or (v_campaign.ends_at is not null and v_campaign.ends_at <= now()) then
     raise exception 'Only paid, approved campaigns that have not ended can be changed' using errcode='22023';
   end if;
   if char_length(btrim(coalesce(p_reason,''))) < 3 then
@@ -125,7 +126,8 @@ begin
   select * into v_campaign from public.advertising_campaigns where id=v_request.campaign_id for update;
   if not found then raise exception 'Campaign not found'; end if;
   if p_approve then
-    if v_campaign.payment_status <> 'confirmed' or v_campaign.status not in ('active','paused','scheduled') then
+    if v_campaign.payment_status <> 'confirmed' or v_campaign.status not in ('active','paused','scheduled')
+       or (v_campaign.ends_at is not null and v_campaign.ends_at <= now()) then
       raise exception 'Campaign is no longer eligible for changes' using errcode='22023';
     end if;
     if v_request.proposed_creative_id is not null then

@@ -25760,6 +25760,443 @@ body:has(#chatPage:not(.hidden)) > main > #chatPage.panel:not(.hidden) {
 #discover .discover-photo-arrow {
   top:18%!important; transform:translateY(-50%)!important; z-index:8!important;
 }
+
+
+/* THE MATCH — Champagne Cream + Deep Teal Light Theme
+   Scoped to light-theme only. Dark theme and application logic remain untouched. */
+:root {
+  --tm-light-bg: #F8F4EA;
+  --tm-light-surface: #FFFFFF;
+  --tm-light-cream: #E9DFC9;
+  --tm-light-gold: #C39A52;
+  --tm-light-teal: #254C46;
+  --tm-light-teal-hover: #1D403B;
+  --tm-light-text: #303936;
+  --tm-light-muted: #515B56;
+  --tm-light-border: #E5DCCB;
+  --tm-light-soft: #F1EBDD;
+}
+
+html:has(body.light-theme) {
+  background: var(--tm-light-bg) !important;
+  color-scheme: light;
+}
+body.light-theme,
+body.light-theme:has(#discover:not(.hidden)),
+body.light-theme:has(#matches:not(.hidden)),
+body.light-theme:has(#likes:not(.hidden)),
+body.light-theme:has(#messages:not(.hidden)),
+body.light-theme:has(#settings:not(.hidden)),
+body.light-theme:has(#memberProfilePage:not(.hidden)),
+body.light-theme:has(#chatPage:not(.hidden)),
+body.light-theme:has(#profile:not(.hidden)),
+body.light-theme:has(#nearbyPage:not(.hidden)),
+body.light-theme:has(#notificationsPage:not(.hidden)),
+body.light-theme:has(#eventsPage:not(.hidden)) {
+  background: var(--tm-light-bg) !important;
+  color: var(--tm-light-text) !important;
+}
+
+/* Page foundations and shared surfaces */
+body.light-theme header,
+body.light-theme main,
+body.light-theme footer,
+body.light-theme #discover,
+body.light-theme #matches,
+body.light-theme #likes,
+body.light-theme #messages,
+body.light-theme #settings,
+body.light-theme #memberProfilePage,
+body.light-theme #profile,
+body.light-theme #nearbyPage,
+body.light-theme #notificationsPage,
+body.light-theme #eventsPage,
+body.light-theme #walletPage,
+body.light-theme #premiumPage,
+body.light-theme #matchCoinsPage {
+  background-color: var(--tm-light-bg) !important;
+  color: var(--tm-light-text) !important;
+}
+body.light-theme .panel,
+body.light-theme .member-card,
+body.light-theme .settings-card,
+body.light-theme .setting-row,
+body.light-theme .notification-card,
+body.light-theme .wallet-card,
+body.light-theme .premium-card,
+body.light-theme .match-coin-card,
+body.light-theme #notificationsList > *,
+body.light-theme #matchesList > *,
+body.light-theme #likesList > *,
+body.light-theme #conversationList > *,
+body.light-theme #nearbyMembersList > * {
+  background: var(--tm-light-surface) !important;
+  color: var(--tm-light-text) !important;
+  border-color: var(--tm-light-border) !important;
+  box-shadow: 0 5px 18px rgba(55, 47, 31, .055) !important;
+}
+
+/* Clear, consistent typography. Avoid low-contrast pale-gold body copy. */
+body.light-theme h1,
+body.light-theme h2,
+body.light-theme h3,
+body.light-theme h4,
+body.light-theme h5,
+body.light-theme p,
+body.light-theme label,
+body.light-theme .small,
+body.light-theme .status,
+body.light-theme li,
+body.light-theme strong,
+body.light-theme .subtitle,
+body.light-theme .muted,
+body.light-theme .description {
+  color: var(--tm-light-text) !important;
+  opacity: 1 !important;
+}
+body.light-theme small,
+body.light-theme .secondary-text,
+body.light-theme .helper-text,
+body.light-theme .timestamp,
+body.light-theme .text-muted {
+  color: var(--tm-light-muted) !important;
+  opacity: 1 !important;
+}
+body.light-theme a,
+body.light-theme .link {
+  color: var(--tm-light-teal) !important;
+  text-decoration-color: rgba(37, 76, 70, .35);
+}
+body.light-theme [class*="verif"],
+body.light-theme [class*="verified"],
+body.light-theme [aria-label*="verified" i] {
+  color: var(--tm-light-teal) !important;
+  opacity: 1 !important;
+}
+
+/* Inputs, selects, text areas and placeholders */
+body.light-theme input,
+body.light-theme select,
+body.light-theme textarea,
+body.light-theme [contenteditable="true"] {
+  background: #FFFFFF !important;
+  color: var(--tm-light-text) !important;
+  border-color: #D8D0C2 !important;
+  caret-color: var(--tm-light-teal);
+}
+body.light-theme input::placeholder,
+body.light-theme textarea::placeholder {
+  color: #68716C !important;
+  opacity: 1 !important;
+}
+body.light-theme input:focus,
+body.light-theme select:focus,
+body.light-theme textarea:focus {
+  border-color: var(--tm-light-teal) !important;
+  box-shadow: 0 0 0 3px rgba(37, 76, 70, .12) !important;
+  outline: none !important;
+}
+
+/* Signature actions, tabs, chips and switches */
+body.light-theme button.primary,
+body.light-theme .btn.primary,
+body.light-theme button.btn.primary,
+body.light-theme .primary,
+body.light-theme [data-primary-action="true"] {
+  background: var(--tm-light-teal) !important;
+  border-color: var(--tm-light-teal) !important;
+  color: #FFFFFF !important;
+}
+body.light-theme button.primary:active,
+body.light-theme .btn.primary:active {
+  background: var(--tm-light-teal-hover) !important;
+}
+body.light-theme button.secondary,
+body.light-theme .btn.secondary,
+body.light-theme button.btn.secondary,
+body.light-theme .secondary {
+  background: #FFFFFF !important;
+  border: 1px solid #B9C9C2 !important;
+  color: var(--tm-light-teal) !important;
+}
+body.light-theme [role="tab"],
+body.light-theme .tab,
+body.light-theme .filter-chip,
+body.light-theme .message-inbox-filter {
+  background: #FFFFFF !important;
+  color: var(--tm-light-teal) !important;
+  border-color: #C9D5CF !important;
+}
+body.light-theme [role="tab"][aria-selected="true"],
+body.light-theme [role="tab"].active,
+body.light-theme .tab.active,
+body.light-theme .filter-chip.active,
+body.light-theme .message-inbox-filter.active,
+body.light-theme button[aria-pressed="true"] {
+  background: var(--tm-light-teal) !important;
+  border-color: var(--tm-light-teal) !important;
+  color: #FFFFFF !important;
+}
+body.light-theme input[type="checkbox"],
+body.light-theme input[type="radio"] {
+  accent-color: var(--tm-light-teal) !important;
+}
+body.light-theme input[type="checkbox"]:checked,
+body.light-theme input[type="radio"]:checked {
+  accent-color: var(--tm-light-teal) !important;
+}
+
+/* Discover: retain the approved full-photo card and its readable photo overlay.
+   Only the page chrome, stories, controls and surrounding surfaces are themed. */
+body.light-theme #discover {
+  background: var(--tm-light-bg) !important;
+  color: var(--tm-light-text) !important;
+}
+body.light-theme #discover > .small,
+body.light-theme #discover .small,
+body.light-theme #discover .status,
+body.light-theme #discover > h2,
+body.light-theme #discover #storiesSection,
+body.light-theme #discover .story-circle,
+body.light-theme #discover .story-item,
+body.light-theme #discover .story-circle span,
+body.light-theme #discover .story-item span {
+  color: var(--tm-light-text) !important;
+  opacity: 1 !important;
+}
+body.light-theme #discover #storiesSection {
+  border-bottom-color: var(--tm-light-border) !important;
+}
+body.light-theme #discover .story-plus {
+  background: #FFFFFF !important;
+  border-color: var(--tm-light-teal) !important;
+  color: var(--tm-light-teal) !important;
+}
+body.light-theme #discover .story-avatar {
+  border-color: var(--tm-light-teal) !important;
+  outline-color: #D9C69D !important;
+}
+body.light-theme #discover #refreshNearby {
+  background: var(--tm-light-teal) !important;
+  color: #FFFFFF !important;
+  border-color: var(--tm-light-teal) !important;
+}
+body.light-theme #discover #profileList > .discover-option3-card {
+  border-color: #D9C69D !important;
+}
+/* Keep profile-name/photo overlay text white for contrast over photography. */
+body.light-theme #discover .discover-option3-overlay h2 {
+  color: #FFFFFF !important;
+}
+body.light-theme #discover .discover-option3-overlay .distance {
+  color: #F0D69C !important;
+}
+body.light-theme #discover .discover-option3-overlay button[aria-expanded] {
+  background: rgba(20, 31, 28, .92) !important;
+  border-color: rgba(225, 196, 133, .72) !important;
+  color: #F7E7C3 !important;
+}
+body.light-theme #discover .discover-floating-actions .btn.secondary {
+  background: #FFFFFF !important;
+  border-color: #FFFFFF !important;
+  color: var(--tm-light-teal) !important;
+}
+body.light-theme #discover .discover-floating-actions .discover-super-like {
+  background: radial-gradient(circle at 34% 22%, #FFF2C6, #E5BD69 52%, #A9762D) !important;
+  border-color: #E5BD69 !important;
+  color: #211708 !important;
+}
+body.light-theme #discover .discover-floating-actions .btn.primary {
+  background: var(--tm-light-teal) !important;
+  border-color: #FFFFFF !important;
+  color: #FFFFFF !important;
+}
+
+/* Inbox / chat preview: explicitly remove the old forced-black page and rows. */
+body.light-theme:has(#messages:not(.hidden)),
+body.light-theme:has(#messages:not(.hidden)) #messages {
+  background: var(--tm-light-bg) !important;
+  color: var(--tm-light-text) !important;
+}
+body.light-theme #messages h2,
+body.light-theme #messages h3,
+body.light-theme #messages p {
+  color: var(--tm-light-text) !important;
+}
+body.light-theme #messages #conversationList > *,
+body.light-theme #messages #conversationList > button,
+body.light-theme #messages #conversationList .conversation-row {
+  background: #FFFFFF !important;
+  color: var(--tm-light-text) !important;
+  border: 1px solid var(--tm-light-border) !important;
+  box-shadow: 0 4px 16px rgba(55, 47, 31, .06) !important;
+}
+body.light-theme #messages #conversationList strong,
+body.light-theme #messages #conversationList [data-message-preview],
+body.light-theme #messages #conversationList p,
+body.light-theme #messages #conversationList span {
+  color: var(--tm-light-text) !important;
+  opacity: 1 !important;
+}
+body.light-theme #messages #conversationList [data-message-preview] {
+  color: #515B56 !important;
+}
+body.light-theme #messages #conversationList > .conversation-row[data-unread="true"] {
+  background: #F1EBDD !important;
+  border-color: #C8B78F !important;
+}
+body.light-theme #messages #conversationList > .conversation-row[data-unread="true"] strong {
+  color: #254C46 !important;
+}
+body.light-theme #messages .message-inbox-filter {
+  background: #FFFFFF !important;
+  color: var(--tm-light-teal) !important;
+  border-color: #C9D5CF !important;
+}
+body.light-theme #messages .message-inbox-filter.active {
+  background: var(--tm-light-teal) !important;
+  color: #FFFFFF !important;
+  border-color: var(--tm-light-teal) !important;
+}
+body.light-theme #messages .conversation-favorite-toggle {
+  background: #F8F4EA !important;
+  color: #80612B !important;
+  border-color: #D9C69D !important;
+}
+
+/* Active conversation: cream canvas, white incoming bubbles, champagne outgoing. */
+body.light-theme #chatPage:not(.hidden) {
+  background: var(--tm-light-bg) !important;
+  color: var(--tm-light-text) !important;
+}
+body.light-theme #chatPage:not(.hidden) #chatPageContent,
+body.light-theme #chatPage:not(.hidden) #activeConversation,
+body.light-theme #chatPage:not(.hidden) #chatMessages {
+  background: var(--tm-light-bg) !important;
+  color: var(--tm-light-text) !important;
+}
+body.light-theme #chatPage:not(.hidden) h2,
+body.light-theme #chatPage:not(.hidden) h3,
+body.light-theme #chatPage:not(.hidden) p,
+body.light-theme #chatPage:not(.hidden) #chatPageStatus {
+  color: var(--tm-light-text) !important;
+}
+body.light-theme #chatPage:not(.hidden) .chat-bubble.received {
+  background: #FFFFFF !important;
+  color: #303936 !important;
+  border-color: #E5DCCB !important;
+}
+body.light-theme #chatPage:not(.hidden) .chat-bubble.sent {
+  background: #E9DFC9 !important;
+  color: #303936 !important;
+  border-color: #D7BD87 !important;
+}
+body.light-theme #chatPage:not(.hidden) .chat-bubble small,
+body.light-theme #chatPage:not(.hidden) .chat-bubble small span {
+  color: #515B56 !important;
+}
+body.light-theme #chatPage:not(.hidden) #chatMessageInput {
+  background: #FFFFFF !important;
+  color: #303936 !important;
+  border-color: #D8D0C2 !important;
+}
+body.light-theme #chatPage:not(.hidden) #sendChatMessage {
+  background: var(--tm-light-teal) !important;
+  border-color: var(--tm-light-teal) !important;
+  color: #FFFFFF !important;
+}
+body.light-theme #chatPage:not(.hidden) #chatReplyPreview,
+body.light-theme #chatPage:not(.hidden) #chatEmojiPicker {
+  background: #FFFFFF !important;
+  color: #303936 !important;
+  border-color: var(--tm-light-border) !important;
+}
+body.light-theme #chatPage:not(.hidden) #chatReplyPreview button,
+body.light-theme #chatPage:not(.hidden) #chatEmojiPicker button {
+  background: #F1EBDD !important;
+  color: #254C46 !important;
+}
+body.light-theme #chatPage:not(.hidden) .chat-empty-state,
+body.light-theme #chatPage:not(.hidden) [data-empty-message] {
+  background: #F1EBDD !important;
+  color: #515B56 !important;
+  border-color: #D9C69D !important;
+}
+
+/* Profile, settings, verification, wallet, premium and events surfaces */
+body.light-theme #settings > *,
+body.light-theme #profile > *,
+body.light-theme #nearbyPage > *,
+body.light-theme #notificationsPage > *,
+body.light-theme #memberProfilePage > *,
+body.light-theme #premiumPage > *,
+body.light-theme #walletPage > *,
+body.light-theme #matchCoinsPage > * {
+  color: var(--tm-light-text);
+}
+body.light-theme #settings button,
+body.light-theme #profile button,
+body.light-theme #nearbyPage button,
+body.light-theme #notificationsPage button,
+body.light-theme #premiumPage button,
+body.light-theme #walletPage button,
+body.light-theme #matchCoinsPage button {
+  opacity: 1;
+}
+body.light-theme #profile input,
+body.light-theme #profile select,
+body.light-theme #profile textarea,
+body.light-theme #settings input,
+body.light-theme #settings select,
+body.light-theme #settings textarea {
+  background: #FFFFFF !important;
+  color: var(--tm-light-text) !important;
+  border-color: #D8D0C2 !important;
+}
+body.light-theme #eventsPage .events-heading,
+body.light-theme #eventsPage .events-filters,
+body.light-theme #eventsPage .events-host-intro,
+body.light-theme #eventsPage .events-info-card,
+body.light-theme #eventsPage .events-fee-card,
+body.light-theme #eventsPage .event-card,
+body.light-theme #eventsPage .event-demo-card {
+  background: #FFFFFF !important;
+  border-color: var(--tm-light-border) !important;
+  color: var(--tm-light-text) !important;
+}
+body.light-theme #eventsPage .events-heading h2,
+body.light-theme #eventsPage .events-host-intro h3,
+body.light-theme #eventsPage .events-section-title,
+body.light-theme #eventsPage .event-card h3,
+body.light-theme #eventsPage .event-demo-card h3 {
+  color: var(--tm-light-text) !important;
+}
+body.light-theme #eventsPage .events-heading p,
+body.light-theme #eventsPage .events-host-intro p,
+body.light-theme #eventsPage .event-card p,
+body.light-theme #eventsPage .event-demo-card p {
+  color: var(--tm-light-muted) !important;
+}
+body.light-theme #bottomNavigation,
+body.light-theme .bottom-nav {
+  background: #FFFFFF !important;
+  border-top-color: var(--tm-light-border) !important;
+}
+body.light-theme .bottom-nav button {
+  color: #515B56 !important;
+  background: transparent !important;
+}
+body.light-theme .bottom-nav button.active {
+  color: #FFFFFF !important;
+  background: var(--tm-light-teal) !important;
+}
+body.light-theme .bottom-nav .nav-badge,
+body.light-theme #notificationBadge {
+  background: var(--tm-light-gold) !important;
+  color: #241B0C !important;
+  border-color: #FFFFFF !important;
+}
+
 </style>
 <script src="/match-performance-engine.js?v=3"></script>
 <script src="/match-intelligence-engine.js?v=1"></script>

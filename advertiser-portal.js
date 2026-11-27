@@ -165,17 +165,17 @@
     try { await callApi({ action: "admin-review-campaign", campaign_id: campaignId, approve, reason }); await loadAdminPanel(); await refreshCampaigns(); }
     catch (error) { message("globalMessage", error.message, true); }
   };
-  const tokenRole = (token) => {
+  const isAdvertiserSession = (token) => {
     try {
       const segment = token?.split(".")[1];
-      if (!segment) return "";
+      if (!segment) return false;
       const normalized = segment.replace(/-/g, "+").replace(/_/g, "/");
       const payload = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
-      return typeof payload.role === "string" ? payload.role : "";
-    } catch { return ""; }
+      return payload.role === "anon" && payload.user_role === "advertiser";
+    } catch { return false; }
   };
   const ensureAdvertiserProfile = async (session) => {
-    if (tokenRole(session?.access_token) !== "advertiser") {
+    if (!isAdvertiserSession(session?.access_token)) {
       await state.client.auth.signOut({ scope: "local" });
       throw new Error("This is not an advertiser account. Create an advertiser account with a separate email, or use the Google identity linked to an existing advertiser account.");
     }
@@ -257,7 +257,7 @@
   $("linkGoogle").addEventListener("click", async () => {
     try {
       const { data: { session } } = await state.client.auth.getSession();
-      if (tokenRole(session?.access_token) !== "advertiser") {
+      if (!isAdvertiserSession(session?.access_token)) {
         throw new Error("Sign in to your advertiser account before linking Google.");
       }
       const { error } = await state.client.auth.linkIdentity({

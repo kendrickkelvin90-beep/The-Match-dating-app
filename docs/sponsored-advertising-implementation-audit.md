@@ -10,6 +10,7 @@
 - Read-only inspection found 59 public base tables; all 59 currently have RLS enabled.
 - The project currently has no public views or materialized views in the public schema.
 - The `authenticator` database role currently has no `pgrst.db_pre_request` setting.
+- A read-only function privilege scan found no existing public `SECURITY DEFINER` functions executable by `anon`. The only private `SECURITY DEFINER` function with that EXECUTE grant is a trigger on `public.profile_photos`; the live `anon` role has no `USAGE` on the `private` schema. The migration preserves that boundary.
 - The existing before-user-created Auth hook is not modified.
 - The live database has no advertiser trigger on `auth.users`; the previous advertising bootstrap trigger that would have created advertiser profiles for every Auth user has been removed.
 - The existing project must not be paused, deleted, upgraded or replaced to make room for advertising.

@@ -8,15 +8,15 @@ insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values
 insert into public.profiles(id) values ('10000000-0000-4000-8000-000000000003');
 
 set role supabase_auth_admin;
-select private.custom_access_token_hook(jsonb_build_object(
+select public.custom_access_token_hook(jsonb_build_object(
   'user_id','10000000-0000-4000-8000-000000000001',
   'claims',jsonb_build_object('role','authenticated','user_metadata','{"account_type":"advertiser","advertiser_type":"individual","display_name":"Advertiser One"}'::jsonb)
 ));
-select private.custom_access_token_hook(jsonb_build_object(
+select public.custom_access_token_hook(jsonb_build_object(
   'user_id','10000000-0000-4000-8000-000000000002',
   'claims',jsonb_build_object('role','authenticated','user_metadata','{"account_type":"advertiser","advertiser_type":"business","display_name":"Advertiser Two"}'::jsonb)
 ));
-select private.custom_access_token_hook(jsonb_build_object(
+select public.custom_access_token_hook(jsonb_build_object(
   'user_id','10000000-0000-4000-8000-000000000003',
   'claims',jsonb_build_object('role','authenticated','user_metadata','{"account_type":"advertiser","advertiser_type":"individual","display_name":"Should Not Convert"}'::jsonb)
 ));
@@ -27,7 +27,7 @@ begin
   if exists (select 1 from private.advertiser_auth_registry where user_id='10000000-0000-4000-8000-000000000003') then
     raise exception 'An existing dating-member profile was converted into an advertiser account';
   end if;
-  if (select private.custom_access_token_hook(jsonb_build_object(
+  if (select public.custom_access_token_hook(jsonb_build_object(
       'user_id','10000000-0000-4000-8000-000000000003',
       'claims',jsonb_build_object('role','authenticated','user_metadata','{"account_type":"advertiser"}'::jsonb)
     ))->'claims'->>'role') <> 'authenticated' then
@@ -46,7 +46,7 @@ begin
      or (select count(*) from public.advertiser_profiles) <> 2 then
     raise exception 'Advertiser token hook did not isolate the two advertiser accounts';
   end if;
-  if (select private.custom_access_token_hook(jsonb_build_object(
+  if (select public.custom_access_token_hook(jsonb_build_object(
       'user_id','10000000-0000-4000-8000-000000000001',
       'claims',jsonb_build_object('role','authenticated')
     ))->'claims'->>'role') <> 'advertiser' then

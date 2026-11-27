@@ -122,8 +122,13 @@ begin
   end;
   perform set_config('request.path','advertising_campaigns',false);
   perform public.match_advertiser_api_guard();
-  perform set_config('request.path','rpc/get_my_advertising_campaign_metrics',false);
-  perform public.match_advertiser_api_guard();
+  perform set_config('request.path','rpc/get_advertising_campaign_metrics',false);
+  begin
+    perform public.match_advertiser_api_guard();
+    raise exception 'Advertiser Data API guard allowed a server-only metrics RPC';
+  exception when sqlstate 'PGRST' then
+    null;
+  end;
 end;
 $test$;
 reset role;
@@ -175,13 +180,12 @@ reset role;
 insert into public.advertising_admins(user_id)
 values ('10000000-0000-4000-8000-000000000001');
 
-set role anon;
-select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',false);
-select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"anon","user_role":"advertiser"}',false);
+set role service_role;
+select set_config('request.jwt.claims','{"role":"service_role"}',false);
 do $test$
 begin
-  if not public.is_advertising_admin() then
-    raise exception 'Advertising admin helper did not recognize the seeded admin';
+  if not exists (select 1 from public.advertising_admins where user_id='10000000-0000-4000-8000-000000000001') then
+    raise exception 'Advertising admin allowlist did not retain the seeded Match admin';
   end if;
 end;
 $test$;
@@ -249,20 +253,21 @@ end;
 $test$;
 reset role;
 
-set role anon;
-select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',false);
-select set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"anon","user_role":"advertiser"}',false);
+set role service_role;
+select set_config('request.jwt.claims','{"role":"service_role"}',false);
 do $test$
 begin
-  if (select count(*) from public.get_my_advertising_campaign_metrics(
-    (select id from public.advertising_campaigns where payment_reference = 'TMAD-CI-REFERENCE-001')
+  if (select count(*) from public.get_advertising_campaign_metrics(
+    (select id from public.advertising_campaigns where payment_reference = 'TMAD-CI-REFERENCE-001'),
+    '10000000-0000-4000-8000-000000000001'
   )) <> 1 then
-    raise exception 'Advertiser metrics RPC did not return the owned campaign';
+    raise exception 'Server-side metrics RPC did not return the owned campaign';
   end if;
-  if not exists (select 1 from public.get_my_advertising_campaign_metrics(
-    (select id from public.advertising_campaigns where payment_reference = 'TMAD-CI-REFERENCE-001')
+  if not exists (select 1 from public.get_advertising_campaign_metrics(
+    (select id from public.advertising_campaigns where payment_reference = 'TMAD-CI-REFERENCE-001'),
+    '10000000-0000-4000-8000-000000000001'
   ) m where m.clicks = 2 and m.unique_clicks = 1 and m.ctr = 100) then
-    raise exception 'Advertiser metrics did not calculate unique-click CTR correctly';
+    raise exception 'Server-side metrics did not calculate unique-click CTR correctly';
   end if;
 end;
 $test$;

@@ -7,11 +7,23 @@ insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values
 
 insert into public.profiles(id) values ('10000000-0000-4000-8000-000000000003');
 
--- Simulate trusted server-side enrollment. User-editable metadata alone must
--- never populate this protected registry or grant the advertiser JWT claim.
-insert into private.advertiser_auth_registry(user_id) values
-('10000000-0000-4000-8000-000000000001'),
-('10000000-0000-4000-8000-000000000002');
+-- Simulate the trusted service-side enrollment endpoint. The Auth hook
+-- must not create registry entries from user-editable metadata.
+select public.register_advertiser_account('10000000-0000-4000-8000-000000000001');
+select public.register_advertiser_account('10000000-0000-4000-8000-000000000002');
+do $test$
+begin
+  begin
+    perform public.register_advertiser_account('10000000-0000-4000-8000-000000000003');
+    raise exception 'A Match member account was enrolled as an advertiser';
+  exception when others then
+    if sqlerrm = 'A Match member account was enrolled as an advertiser' then raise; end if;
+  end;
+  if exists (select 1 from private.advertiser_auth_registry where user_id='10000000-0000-4000-8000-000000000003') then
+    raise exception 'Member account was inserted into the advertiser registry';
+  end if;
+end;
+$test$;
 
 set role supabase_auth_admin;
 select public.custom_access_token_hook(jsonb_build_object(

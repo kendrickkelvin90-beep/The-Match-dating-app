@@ -33,7 +33,7 @@ begin
   if v_uid is null then
     raise exception 'Please sign in to manage your profile effect.';
   end if;
-  if p_effect_code not in ('sparkle','glow','hearts','shimmer') then
+  if p_effect_code is null or p_effect_code not in ('sparkle','glow','hearts','shimmer') then
     raise exception 'Choose a valid profile effect.';
   end if;
   if p_active is null then

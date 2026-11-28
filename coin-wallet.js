@@ -180,6 +180,8 @@
         const {error}=await client.rpc("set_my_profile_effect",{p_effect_code:effectCode,p_active:activate});
         if(error)throw error;
         await refresh();
+        profileEffectCache.clear();
+        scheduleProfileEffectScan();
         status(activate?"Your animated profile effect is active. It will appear on your Discover card and full profile wherever profile effects are supported.":"Your animated profile effect has been deactivated.");
       }catch(e){status(e.message||"Could not update your profile effect.");effectToggle.disabled=false;}
       return;
@@ -378,10 +380,3 @@
     profileEffectScanQueued=true;
     window.setTimeout(scanMatchProfileEffects,120);
   }
-  if(document.body){
-    new MutationObserver(scheduleProfileEffectScan).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["data-user-id","data-profile-id","data-member-id"]});
-    scheduleProfileEffectScan();
-    document.addEventListener("match:profile-rendered",scheduleProfileEffectScan);
-    document.addEventListener("match:profile-opened",scheduleProfileEffectScan);
-  }
-})();

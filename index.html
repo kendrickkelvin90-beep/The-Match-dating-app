@@ -12908,7 +12908,7 @@ if (!people.length && !discoverEventCards.length) {
       const card = currentCard;
       card.className = "member-card discover-event-card";
       card.dataset.eventId = eventCard.id;
-      card.style.cssText = "position:relative;display:flex;flex-direction:column;width:calc(100vw - 28px);max-width:calc(100vw - 28px);height:calc(100dvh - 260px);min-height:0;max-height:none;box-sizing:border-box;margin:0 14px;padding:10px;border:1px solid rgba(224,190,116,.88);border-radius:28px;background:#090909;box-shadow:0 12px 34px rgba(0,0,0,.42);overflow:hidden;touch-action:pan-y;";
+      card.style.cssText = "position:relative;display:flex;flex-direction:column;width:calc(100vw - 28px);max-width:calc(100vw - 28px);height:min(82dvh,calc(100dvh - 346px));min-height:360px;max-height:min(82dvh,calc(100dvh - 346px));box-sizing:border-box;margin:0 14px;padding:10px;border:1px solid rgba(224,190,116,.88);border-radius:28px;background:#090909;box-shadow:0 12px 34px rgba(0,0,0,.42);overflow:hidden;touch-action:pan-y;";
       const flyer = document.createElement("img");
       flyer.alt = "Flyer for " + (eventCard.title || "community event");
       flyer.src = eventCard.posterUrl || "";
@@ -12949,7 +12949,7 @@ if (!people.length && !discoverEventCards.length) {
       content.append(tag,title,description,meta,price,hint);
       card.appendChild(content);
       const actions = document.createElement("div");
-      actions.style.cssText = "display:flex;flex:0 0 auto;justify-content:center;align-items:center;gap:24px;padding:6px 0 2px;min-height:62px;";
+      actions.style.cssText = "position:relative;z-index:5;display:flex;flex:0 0 62px;justify-content:center;align-items:center;gap:24px;margin-top:auto;padding:2px 0 0;min-height:62px;background:#090909;";
       const passEvent = document.createElement("button");
       passEvent.type = "button";
       passEvent.textContent = "✕";

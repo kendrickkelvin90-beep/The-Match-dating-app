@@ -13085,13 +13085,10 @@ if (!people.length && !discoverEventCards.length) {
           if (Math.abs(dx) < 90 || Math.abs(dx) < Math.abs(dy)) return;
           if (dx < 0) passAd.click(); else likeAd.click();
         }, { passive: true });
-        const cardStack = document.createElement("div");
-        cardStack.className = "discover-profile-card-stack";
-        cardStack.style.cssText = "position:relative;isolation:isolate;width:100%;max-width:100%;margin:0 auto 12px;padding:0 0 9px;box-sizing:border-box;";
-        const rear = document.createElement("div");
-        rear.setAttribute("aria-hidden","true");
-        rear.style.cssText = "position:absolute;z-index:0;left:9px;right:9px;top:7px;bottom:1px;border:1px solid rgba(214,180,110,.22);border-radius:25px;background:#171613;";
-        cardStack.append(rear,card); list.replaceChildren(cardStack);
+        // Use the exact same single-card container as an organic Discover profile.
+        // No wrapper, rear layer, or second card is added: the advert replaces the profile card.
+        card.style.cssText="position:relative;z-index:2;display:block;width:100%;max-width:none;height:72vh;min-height:320px;max-height:720px;box-sizing:border-box;margin:0;padding:0;border:0;border-radius:24px;background:#080808;box-shadow:none;touch-action:pan-y;overflow:hidden;will-change:transform,opacity;animation:none;transition:none;";
+        list.replaceChildren(card);
         window.matchRecordSponsoredEvent?.(ad.campaign_id,"impression");
         return;
       }
@@ -13720,7 +13717,19 @@ like.onclick=async()=>{
       return;
     }
 
-    status("discoverStatus",matchError ? "Like saved successfully! Mutual-match status will refresh shortly. ❤️" : "Like sent successfully! ❤️");
+    const likeSuccessMessage = matchError
+      ? "Like saved successfully! Mutual-match status will refresh shortly. ❤️"
+      : "Like sent successfully! ❤️";
+    status("discoverStatus", likeSuccessMessage);
+    // Show the confirmation briefly, then clear it. Reset the timer for every
+    // successful like so each new profile gets its own short-lived confirmation.
+    window.clearTimeout(window.__matchDiscoverLikeToastTimer);
+    window.__matchDiscoverLikeToastTimer = window.setTimeout(() => {
+      const notice = $("discoverStatus");
+      if (notice && notice.textContent === likeSuccessMessage) {
+        status("discoverStatus", "");
+      }
+    }, 2200);
     personIndex++;
     await showPerson();
 

@@ -1,304 +1,39 @@
-/* The Match — Discover sponsored-card integration.
- * Runs only when the shared Match Supabase project is configured and enabled.
- * It never adds advertisers to member profile data or changes member actions.
+/* The Match — sponsored Discover feed data helpers.
+ * Ads are requested as feed entries by index.html and rendered in the existing portrait slot.
+ * This file deliberately does not insert DOM nodes or create a second card outside the portrait.
  */
 (() => {
   "use strict";
-  if (window.__matchSponsoredDiscoverLoaded) return;
-
-  let booted = false;
-
-  function boot() {
-    if (booted || window.__matchSponsoredDiscoverLoaded) return true;
-    const config = window.MATCH_SPONSORED_AD_CONFIG || {};
-    if (config.enabled !== true || !config.advertiserSupabaseUrl || !config.publishableKey) return false;
-    const endpoint = config.advertiserSupabaseUrl.replace(/\/$/, "") + "/functions/v1/member-ad-serving";
-    const list = document.getElementById("profileList");
-    const discover = document.getElementById("discover");
-    const db = window.db;
-    if (!list || !discover || !db?.auth) return false;
-    window.__matchSponsoredDiscoverLoaded = true;
-    booted = true;
-  // Count actual rendered profile cards, including nested and reused card elements.
-  const organicSelector = ".member-card,.discover-option3-card";
-  const lastFingerprint = new WeakMap();
-  const seenProfileKeys = new Set();
-  const cardsByAnchor = new Map();
-  let observer = null;
-  let sequence = 0;
-  let organicCounter = 0;
-  let feedGeneration = 0;
-  let previousOrganicCount = 0;
-  let adRequestQueue = Promise.resolve();
-  const impressionTimers = new WeakMap();
-
-  const safeText = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-  }[char]));
-
+  if (window.__matchSponsoredFeedHelpersLoaded) return;
+  const config = window.MATCH_SPONSORED_AD_CONFIG || {};
+  const endpoint = String(config.advertiserSupabaseUrl || "").replace(/\/$/, "") + "/functions/v1/member-ad-serving";
   async function memberRequest(action, payload = {}) {
-    const { data } = await db.auth.getSession();
-    const token = data?.session?.access_token;
-    if (!token) return null;
+    const db = window.db;
+    if (config.enabled !== true || !config.publishableKey || !endpoint || !db?.auth) return null;
+    const { data, error } = await db.auth.getSession();
+    if (error || !data?.session?.access_token) return null;
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "apikey": config.publishableKey,
-        "Authorization": "Bearer " + token
+        "Authorization": "Bearer " + data.session.access_token
       },
       body: JSON.stringify({ action, ...payload }),
       cache: "no-store"
     });
     if (!response.ok) return null;
-    return await response.json().catch(() => null);
+    return response.json().catch(() => null);
   }
-
-  function ctaLabel(cta) {
-    return ({
-      learn_more: "Learn More",
-      visit_website: "Visit Website",
-      contact_us: "Contact Us",
-      whatsapp: "WhatsApp"
-    })[cta] || "Learn More";
-  }
-
-  function createCard(ad) {
-    const card = document.createElement("article");
-    card.className = "match-sponsored-ad-card";
-    card.dataset.campaignId = ad.campaign_id;
-    card.setAttribute("aria-label", "Sponsored advert");
-
-    const media = document.createElement("div");
-    media.className = "match-sponsored-ad-media";
-    if (ad.creative_type === "video") {
-      const video = document.createElement("video");
-      video.className = "match-sponsored-ad-video";
-      video.muted = true;
-      video.loop = true;
-      video.playsInline = true;
-      video.preload = "none";
-      video.poster = ad.poster_url || "";
-      video.dataset.src = ad.creative_url;
-      media.appendChild(video);
-
-      const sound = document.createElement("button");
-      sound.type = "button";
-      sound.className = "match-sponsored-ad-sound";
-      sound.textContent = "Tap for sound";
-      sound.addEventListener("click", () => {
-        video.muted = !video.muted;
-        sound.textContent = video.muted ? "Tap for sound" : "Sound on";
-        if (!video.paused) video.play().catch(() => {});
-      });
-      media.appendChild(sound);
-    } else {
-      const image = document.createElement("img");
-      image.className = "match-sponsored-ad-image";
-      image.src = ad.creative_url;
-      image.alt = "Sponsored advert";
-      image.loading = "lazy";
-      image.decoding = "async";
-      media.appendChild(image);
-    }
-
-    const body = document.createElement("div");
-    body.className = "match-sponsored-ad-body";
-    const label = document.createElement("span");
-    label.className = "match-sponsored-ad-label";
-    label.textContent = "Sponsored";
-    const headline = document.createElement("h3");
-    headline.textContent = ad.headline || "";
-    const description = document.createElement("p");
-    description.textContent = ad.description || "";
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "match-sponsored-ad-cta";
-    button.textContent = ctaLabel(ad.cta);
-    button.addEventListener("click", () => {
-      // Open synchronously so mobile browsers do not block the destination.
-      const destination = window.open(ad.destination_url, "_blank", "noopener,noreferrer");
-      if (destination) destination.opener = null;
-      memberRequest("record-event", { campaign_id: ad.campaign_id, event_type: "click" }).catch(() => {});
-    });
-    body.append(label, headline, description, button);
-    card.append(media, body);
-    return card;
-  }
-
-  function installStyles() {
-    if (document.getElementById("match-sponsored-ad-styles")) return;
-    const style = document.createElement("style");
-    style.id = "match-sponsored-ad-styles";
-    style.textContent = [
-      "#discover #profileList .match-sponsored-ad-card{display:block;width:100%;max-width:100%;margin:18px 0 22px;overflow:hidden;border:1px solid rgba(214,180,110,.38);border-radius:22px;background:#15130f;color:#f6f0e5;box-sizing:border-box;}",
-      "#discover .match-sponsored-ad-media{position:relative;width:100%;aspect-ratio:4/5;max-height:720px;overflow:hidden;background:#0d0d0d;}",
-      "#discover .match-sponsored-ad-image,#discover .match-sponsored-ad-video{display:block;width:100%;height:100%;object-fit:cover;object-position:center center;}",
-      "#discover .match-sponsored-ad-body{display:flex;flex-direction:column;gap:8px;padding:16px;background:linear-gradient(155deg,#1b1915,#100f0d);}",
-      "#discover .match-sponsored-ad-label{align-self:flex-start;border:1px solid rgba(214,180,110,.42);border-radius:999px;padding:4px 9px;color:#e7cc91;font-size:10px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;}",
-      "#discover .match-sponsored-ad-body h3{margin:0;color:#f8f3e8;font-size:22px;line-height:1.2;}",
-      "#discover .match-sponsored-ad-body p{margin:0;color:#d3cbbb;font-size:14px;line-height:1.45;}",
-      "#discover .match-sponsored-ad-cta{align-self:stretch;min-height:48px;margin-top:4px;border:1px solid #d2aa62;border-radius:13px;background:linear-gradient(135deg,#f4dfad,#c99b4b);color:#33230b;font-size:14px;font-weight:800;}",
-      "#discover .match-sponsored-ad-sound{position:absolute;right:12px;bottom:12px;border:1px solid #ffffff55;border-radius:999px;padding:8px 12px;background:#0009;color:#fff;font-size:11px;}",
-      "body.light-theme #discover #profileList .match-sponsored-ad-card{background:#fffdf8;color:#211f1b;border-color:rgba(177,137,62,.32);}",
-      "body.light-theme #discover .match-sponsored-ad-body{background:#fffdf8;}",
-      "body.light-theme #discover .match-sponsored-ad-body h3{color:#211f1b;}",
-      "body.light-theme #discover .match-sponsored-ad-body p{color:#625a4c;}",
-      "@media(min-width:900px){#discover #profileList .match-sponsored-ad-card{max-width:620px;margin-left:auto;margin-right:auto;}}"
-    ].join("");
-    document.head.appendChild(style);
-  }
-
-  async function loadAd(anchor, slotIndex) {
-    if (anchor.dataset.matchSponsoredLastSlot === String(slotIndex)) return;
-    anchor.dataset.matchSponsoredLastSlot = String(slotIndex);
-    const previousCard = cardsByAnchor.get(anchor);
-    if (previousCard) previousCard.remove();
-    const request = async () => {
-      const excluded = Array.from(cardsByAnchor.values()).filter((card) => card.isConnected).map((card) => card.dataset.campaignId).filter(Boolean);
-      const response = await memberRequest("get-ad", {
-        slot_index: slotIndex,
-        exclude_campaign_ids: excluded
-      });
-      const ad = response?.ad;
-      if (!ad || !ad.campaign_id || !ad.creative_url) return;
-      const card = createCard(ad);
-      card.dataset.anchorId = anchor.dataset.matchSponsoredAnchorId;
-      cardsByAnchor.set(anchor, card);
-      anchor.insertAdjacentElement("afterend", card);
-      observeCard(card);
-    };
-    adRequestQueue = adRequestQueue.then(request).catch(() => {});
-    return adRequestQueue;
-  }
-
-  function observeCard(card) {
-    if (!observer) {
-      observer = new IntersectionObserver((entries) => {
-        for (const entry of entries) {
-          const target = entry.target;
-          const video = target.querySelector("video");
-          if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
-            target.dataset.visibleHalf = "true";
-            if (video && !video.src && video.dataset.src) {
-              video.src = video.dataset.src;
-              video.load();
-            }
-            if (video) video.play().catch(() => {});
-            if (!impressionTimers.has(target) && target.dataset.impressionRecorded !== "true") {
-              const timer = window.setTimeout(() => {
-                impressionTimers.delete(target);
-                if (!target.isConnected || !target.dataset.campaignId || target.dataset.visibleHalf !== "true") return;
-                target.dataset.impressionRecorded = "true";
-                memberRequest("record-event", { campaign_id: target.dataset.campaignId, event_type: "impression" }).catch(() => {});
-              }, 1000);
-              impressionTimers.set(target, timer);
-            }
-          } else {
-            target.dataset.visibleHalf = "false";
-            const timer = impressionTimers.get(target);
-            if (timer) { window.clearTimeout(timer); impressionTimers.delete(target); }
-            if (video) video.pause();
-          }
-        }
-      }, { threshold: [0, 0.5, 1] });
-    }
-    observer.observe(card);
-  }
-
-  function profileFingerprint(card) {
-    const profileId = card.dataset.profileId || card.dataset.userId ||
-      card.dataset.memberId || card.getAttribute("data-profile-id") ||
-      card.getAttribute("data-user-id") || "";
-    const image = card.querySelector("img");
-    const imageUrl = image?.currentSrc || image?.src || image?.getAttribute("data-src") || "";
-    const heading = card.querySelector("h1,h2,h3,[class*='name']");
-    const name = (heading?.textContent || "").replace(/\s+/g, " ").trim();
-    if (!profileId && (!imageUrl || !name)) return "";
-    return profileId + "|" + imageUrl + "|" + name;
-  }
-
-  function scan() {
-    if (!list.isConnected || !discover.isConnected) return;
-    const candidates = Array.from(list.querySelectorAll(organicSelector));
-    // Count an outer card once when it contains nested matching card markup.
-    const organic = candidates.filter((node) => {
-      let parent = node.parentElement;
-      while (parent && parent !== list) {
-        if (parent.matches?.(organicSelector)) return false;
-        parent = parent.parentElement;
-      }
-      return !node.closest(".match-sponsored-ad-card");
-    });
-
-    if (!organic.length && previousOrganicCount > 0) {
-      feedGeneration++;
-      sequence = 0;
-      organicCounter = 0;
-      seenProfileKeys.clear();
-      cardsByAnchor.forEach((card) => card.remove());
-      cardsByAnchor.clear();
-      list.querySelectorAll(".match-sponsored-ad-card").forEach((card) => card.remove());
-    }
-    previousOrganicCount = organic.length;
-
-    organic.forEach((anchor) => {
-      const fingerprint = profileFingerprint(anchor);
-      if (!fingerprint || lastFingerprint.get(anchor) === fingerprint) return;
-      lastFingerprint.set(anchor, fingerprint);
-      if (seenProfileKeys.has(fingerprint)) return;
-      seenProfileKeys.add(fingerprint);
-
-      if (!anchor.dataset.matchSponsoredAnchorId) {
-        anchor.dataset.matchSponsoredAnchorId = "sponsored-anchor-" + (++sequence);
-      }
-      organicCounter += 1;
-      const ordinal = organicCounter;
-      if (ordinal % 6 === 0) {
-        const slotIndex = Math.floor(ordinal / 6);
-        loadAd(anchor, slotIndex + feedGeneration * 1000).catch(() => {});
-      }
-    });
-  }
-
-  installStyles();
-  scan();
-  let scanScheduled = false;
-  const listObserver = new MutationObserver(() => {
-    if (scanScheduled) return;
-    scanScheduled = true;
-    requestAnimationFrame(() => { scanScheduled = false; scan(); });
-  });
-  listObserver.observe(list, { childList: true, subtree: true, attributes: true, characterData: true });
-  const pageObserver = new MutationObserver(() => {
-    if (!discover.isConnected) {
-      listObserver.disconnect();
-      pageObserver.disconnect();
-      observer?.disconnect();
-    }
-  });
-  pageObserver.observe(document.documentElement, { childList: true, subtree: true });
-
-  db.auth.onAuthStateChange((event) => {
-    if (event === "SIGNED_OUT") {
-      list.querySelectorAll(".match-sponsored-ad-card").forEach((card) => card.remove());
-      observer?.disconnect();
-    }
-  });
-    return true;
-  }
-
-  // Discover and the shared Supabase client may be created after this script.
-  // Keep watching until both exist, then install the feed observer exactly once.
-  const startupObserver = new MutationObserver(() => {
-    if (boot()) startupObserver.disconnect();
-  });
-  startupObserver.observe(document.documentElement, { childList: true, subtree: true });
-  const startupTimer = window.setInterval(() => {
-    if (boot()) {
-      window.clearInterval(startupTimer);
-      startupObserver.disconnect();
-    }
-  }, 250);
-  boot();
+  window.matchGetSponsoredAd = async (slotIndex) => {
+    const result = await memberRequest("get-ad", { slot_index: Number(slotIndex) || 1 });
+    const ad = result?.ad;
+    if (!ad?.campaign_id || !ad?.creative_url || !ad?.destination_url) return null;
+    return ad;
+  };
+  window.matchRecordSponsoredEvent = (campaignId, eventType) => {
+    if (!campaignId || !["impression", "click"].includes(eventType)) return Promise.resolve(null);
+    return memberRequest("record-event", { campaign_id: campaignId, event_type: eventType }).catch(() => null);
+  };
+  window.__matchSponsoredFeedHelpersLoaded = true;
 })();

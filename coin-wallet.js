@@ -132,11 +132,15 @@
     const activeBadge=await client.rpc("get_active_profile_badge_ids",{p_user_ids:[user.id]});
     if(!activeBadge.error) badgeIsActive=(activeBadge.data||[]).some(row=>row.user_id===user.id);
     else console.warn("Profile badge status is unavailable; coin store remains usable.",activeBadge.error);
-    renderStore(inventory.data||[],badgeIsActive);
+    let activeEffect = null;
+    const activeEffects = await client.rpc("get_active_profile_effects",{p_user_ids:[user.id]});
+    if(!activeEffects.error) activeEffect=(activeEffects.data||[]).find(row=>row.user_id===user.id)?.effect_code||null;
+    else console.warn("Profile effect status is unavailable.",activeEffects.error);
+    renderStore(inventory.data||[],badgeIsActive,activeEffect);
     document.getElementById("cwLedger").innerHTML=ledger.data?.length?ledger.data.map(x=>'<div class="cw-row"><span><strong>'+esc(x.description)+'</strong><br><small class="cw-muted">'+esc(new Date(x.created_at).toLocaleString())+'</small></span><strong style="color:'+(x.amount>0?'#62c78c':'#d58c8c')+'">'+(x.amount>0?'+':'')+x.amount+' coins</strong></div>').join(""):'No wallet transactions yet.';
     document.getElementById("cwRequests").innerHTML=requests.data?.length?requests.data.map(x=>'<div class="cw-row"><span>'+x.coins+' coins · '+money(x.amount_ngn)+'<br><small class="cw-muted">'+esc(x.admin_note||'Submitted '+new Date(x.created_at).toLocaleString())+'</small></span><strong>'+esc(x.status)+'</strong></div>').join(""):'No coin purchase requests yet.';
   }
-  function renderStore(rows,badgeIsActive){
+  function renderStore(rows,badgeIsActive,activeEffect){
     const owned=new Map(rows.map(row=>[row.item_code,Number(row.quantity||0)]));
     document.getElementById("cwStoreItems").innerHTML=STORE_ITEMS.map(item=>{
       const count=(owned.get(item.code)||0)*item.quantity;
@@ -146,7 +150,10 @@
       const boostControl=(item.code==="profile_boost_24h"||item.code==="profile_boost_3")&&count>0
         ? '<div class="cw-badge-state"><span>Ready to use</span><button type="button" class="cw-button primary" data-cw-boost-activate="'+item.code+'">'+(item.code==="profile_boost_3"?'Use 3-boost pack':'Activate 24-hour boost')+'</button></div>'
         : '';
-      return '<article class="cw-card"><h3>'+item.name+'</h3><div class="cw-price">'+item.cost+' coins</div><p class="cw-muted">In your inventory: <strong>'+count+'</strong></p><button class="cw-button primary" data-cw-store-item="'+item.code+'">Buy '+item.name+'</button>'+badgeControl+boostControl+'</article>';
+      const effectControl=item.code==="animated_effect"&&count>0
+        ? '<div class="cw-badge-state" style="display:block"><label for="cwProfileEffect">Choose your profile effect</label><select id="cwProfileEffect" class="cw-effect-select"><option value="sparkle" '+(activeEffect==="sparkle"?"selected":"")+'>✨ Sparkle</option><option value="glow" '+(activeEffect==="glow"?"selected":"")+'>✧ Soft glow</option><option value="hearts" '+(activeEffect==="hearts"?"selected":"")+'>♡ Floating hearts</option><option value="shimmer" '+(activeEffect==="shimmer"?"selected":"")+'>✦ Shimmer</option></select><button type="button" class="cw-button primary" data-cw-effect-toggle="'+(activeEffect?"off":"on")+'">'+(activeEffect?"Deactivate effect":"Activate effect")+'</button><p class="cw-muted">'+(activeEffect?"Your selected effect is active on supported Discover and profile views.":"Permanent unlock · Choose any style and change it whenever you like.")+'</p></div>'
+        : '';
+      return '<article class="cw-card"><h3>'+item.name+'</h3><div class="cw-price">'+item.cost+' coins</div><p class="cw-muted">In your inventory: <strong>'+count+'</strong></p><button class="cw-button primary" data-cw-store-item="'+item.code+'">Buy '+item.name+'</button>'+badgeControl+boostControl+effectControl+'</article>';
     }).join("");
   }
   document.getElementById("cwPackages").innerHTML=PACKS.map((p,i)=>'<article class="cw-card '+(i===1?'cw-package-featured':'')+'">'+(i===1?'<span class="cw-package-tag">MOST POPULAR</span>':'')+'<h3>'+p[1]+'</h3><div class="cw-price">'+p[2]+'</div><strong>'+p[3]+'</strong><button class="cw-button primary" data-cw-package="'+p[0]+'">Choose package</button></article>').join("");
@@ -161,6 +168,20 @@
         await refresh();
         status(activate?"Your Special Profile Badge is now active and visible on your profile, Discover and member profile views.":"Your Special Profile Badge has been deactivated.");
       }catch(error){status(error.message||"Could not update your profile badge.");badgeToggle.disabled=false;}
+      return;
+    }
+    const effectToggle=event.target.closest("[data-cw-effect-toggle]");
+    if(effectToggle){
+      const select=document.getElementById("cwProfileEffect");
+      const effectCode=select?.value||"sparkle";
+      const activate=effectToggle.dataset.cwEffectToggle==="on";
+      effectToggle.disabled=true;
+      try{
+        const {error}=await client.rpc("set_my_profile_effect",{p_effect_code:effectCode,p_active:activate});
+        if(error)throw error;
+        await refresh();
+        status(activate?"Your animated profile effect is active. It will appear on your Discover card and full profile wherever profile effects are supported.":"Your animated profile effect has been deactivated.");
+      }catch(e){status(e.message||"Could not update your profile effect.");effectToggle.disabled=false;}
       return;
     }
     const boostButton=event.target.closest("[data-cw-boost-activate]");
@@ -300,4 +321,67 @@
   page.querySelector('[data-cw-tab="plus"]')?.addEventListener("click",()=>setTab("plus"));
   page.querySelector('[data-cw-tab="store"]')?.addEventListener("click",()=>setTab("store"));
   document.getElementById("adminPanel")?.querySelector(".admin-shell")?.addEventListener("click",event=>{if(event.target.closest("#adminRefreshBtn"))loadAdminQueue();});
+
+  // Display active effects on profile surfaces carrying the member ID. This observer
+  // is deliberately isolated from authentication and the existing profile renderers.
+  const profileEffectStyle=document.createElement("style");
+  profileEffectStyle.textContent=`
+    .tm-profile-effect-host{position:relative!important;isolation:isolate}
+    .tm-profile-effect-host:after{content:"";position:absolute;inset:-4px;border:2px solid transparent;border-radius:inherit;pointer-events:none;z-index:5}
+    .tm-profile-effect-host[data-match-profile-effect="sparkle"]:after{border-color:#e7c77f;box-shadow:0 0 10px rgba(231,199,127,.8),inset 0 0 8px rgba(231,199,127,.2);animation:tmEffectPulse 2.4s ease-in-out infinite}
+    .tm-profile-effect-host[data-match-profile-effect="glow"]:after{border-color:#a9e5d7;box-shadow:0 0 18px 4px rgba(120,220,196,.55);animation:tmEffectGlow 2.8s ease-in-out infinite}
+    .tm-profile-effect-host[data-match-profile-effect="hearts"]:before{content:"♡  ♥  ♡";position:absolute;top:-15px;right:2px;color:#ed9bb5;font-size:17px;letter-spacing:5px;text-shadow:0 1px 8px rgba(237,155,181,.8);pointer-events:none;z-index:6;animation:tmEffectFloat 3s ease-in-out infinite}
+    .tm-profile-effect-host[data-match-profile-effect="shimmer"]:after{border-color:rgba(255,255,255,.75);background:linear-gradient(110deg,transparent 15%,rgba(255,255,255,.28) 45%,transparent 70%);background-size:220% 100%;animation:tmEffectShimmer 2.6s linear infinite}
+    @keyframes tmEffectPulse{50%{filter:brightness(1.35);transform:scale(1.012)}}
+    @keyframes tmEffectGlow{50%{box-shadow:0 0 24px 7px rgba(120,220,196,.72)}}
+    @keyframes tmEffectFloat{50%{transform:translateY(-5px)}}
+    @keyframes tmEffectShimmer{to{background-position:-220% 0}}
+    @media(prefers-reduced-motion:reduce){.tm-profile-effect-host:before,.tm-profile-effect-host:after{animation:none!important}}
+  `;
+  document.head.appendChild(profileEffectStyle);
+  const profileEffectCache=new Map();
+  let profileEffectScanQueued=false;
+  async function scanMatchProfileEffects(){
+    profileEffectScanQueued=false;
+    const nodes=[...document.querySelectorAll("[data-user-id],[data-profile-id],[data-member-id]")];
+    const byId=new Map();
+    for(const node of nodes){
+      const id=node.dataset.userId||node.dataset.profileId||node.dataset.memberId;
+      if(!id||! /^[0-9a-f-]{36}$/i.test(id))continue;
+      const host=node.closest("[data-profile-card],[data-discover-card],.profile-card,.discover-card,.profile-details,.profile-modal,.profile-view,article")||node;
+      byId.set(id,host);
+    }
+    const missing=[...byId.keys()].filter(id=>!profileEffectCache.has(id));
+    for(let i=0;i<missing.length;i+=100){
+      const batch=missing.slice(i,i+100);
+      try{
+        const {data,error}=await client.rpc("get_active_profile_effects",{p_user_ids:batch});
+        if(error)throw error;
+        batch.forEach(id=>profileEffectCache.set(id,null));
+        (data||[]).forEach(row=>profileEffectCache.set(row.user_id,row.effect_code));
+      }catch(error){console.warn("Could not load profile effects for visible members.",error);return;}
+    }
+    byId.forEach((host,id)=>{
+      const effect=profileEffectCache.get(id);
+      if(effect){
+        const image=host.matches("img")?host:host.querySelector("img");
+        const visualHost=image?.parentElement||host;
+        visualHost.classList.add("tm-profile-effect-host");
+        if(visualHost.dataset.matchProfileEffect!==effect)visualHost.dataset.matchProfileEffect=effect;
+      }else{
+        host.querySelectorAll(".tm-profile-effect-host").forEach(el=>{el.classList.remove("tm-profile-effect-host");delete el.dataset.matchProfileEffect;});
+      }
+    });
+  }
+  function scheduleProfileEffectScan(){
+    if(profileEffectScanQueued)return;
+    profileEffectScanQueued=true;
+    window.setTimeout(scanMatchProfileEffects,120);
+  }
+  if(document.body){
+    new MutationObserver(scheduleProfileEffectScan).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["data-user-id","data-profile-id","data-member-id"]});
+    scheduleProfileEffectScan();
+    document.addEventListener("match:profile-rendered",scheduleProfileEffectScan);
+    document.addEventListener("match:profile-opened",scheduleProfileEffectScan);
+  }
 })();

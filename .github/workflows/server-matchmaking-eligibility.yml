@@ -213,6 +213,8 @@ jobs:
           print("Verified unassigned profiles are view-only in Discover")
 
 
+          PY
+
       - name: Prepare isolated Discover schema and synthetic fixtures
         env:
           PGPASSWORD: postgres

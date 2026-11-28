@@ -18,6 +18,54 @@ create policy member_profile_effects_active_read
   on public.member_profile_effects for select to authenticated
   using (true);
 
+-- Animated Profile Effect is a one-time permanent unlock. Preserve safe retries
+-- by returning the prior wallet balance for the same idempotency key.
+create or replace function public.coin_buy_store_item(
+  p_item_code text,
+  p_idempotency_key text
+) returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_uid uuid := auth.uid();
+  v_balance integer;
+begin
+  if v_uid is null then raise exception 'Sign in to continue'; end if;
+  if p_idempotency_key is null or length(p_idempotency_key) not between 8 and 120 then
+    raise exception 'A valid purchase reference is required';
+  end if;
+
+  if p_item_code = 'animated_effect' then
+    if exists (
+      select 1 from public.coin_ledger
+      where user_id=v_uid and idempotency_key=p_idempotency_key
+    ) then
+      select balance into v_balance from public.coin_wallets where user_id=v_uid;
+      return coalesce(v_balance,0);
+    end if;
+    if exists (
+      select 1 from public.coin_store_inventory
+      where user_id=v_uid and item_code='animated_effect' and quantity>0
+    ) then
+      raise exception 'You already own the permanent Animated Profile Effect unlock.';
+    end if;
+  end if;
+
+  if p_item_code not in ('super_like_1','super_like_5','extra_likes_10','extra_likes_30',
+    'profile_boost_24h','profile_boost_3','priority_7d','priority_30d',
+    'decorative_badge','animated_effect') then
+    raise exception 'This store item is not available for purchase';
+  end if;
+
+  return public.coin_spend(p_item_code,1,p_idempotency_key);
+end;
+$function$;
+
+revoke all on function public.coin_buy_store_item(text,text) from public,anon;
+grant execute on function public.coin_buy_store_item(text,text) to authenticated;
+
 create or replace function public.set_my_profile_effect(
   p_effect_code text,
   p_active boolean

@@ -153,7 +153,10 @@
       const effectControl=item.code==="animated_effect"&&count>0
         ? '<div class="cw-badge-state" style="display:block"><label for="cwProfileEffect">Choose your profile effect</label><select id="cwProfileEffect" class="cw-effect-select"><option value="sparkle" '+(activeEffect==="sparkle"?"selected":"")+'>✨ Sparkle</option><option value="glow" '+(activeEffect==="glow"?"selected":"")+'>✧ Soft glow</option><option value="hearts" '+(activeEffect==="hearts"?"selected":"")+'>♡ Floating hearts</option><option value="shimmer" '+(activeEffect==="shimmer"?"selected":"")+'>✦ Shimmer</option></select><button type="button" class="cw-button primary" data-cw-effect-toggle="'+(activeEffect?"off":"on")+'">'+(activeEffect?"Deactivate effect":"Activate effect")+'</button><p class="cw-muted">'+(activeEffect?"Your selected effect is active on supported Discover and profile views.":"Permanent unlock · Choose any style and change it whenever you like.")+'</p></div>'
         : '';
-      return '<article class="cw-card"><h3>'+item.name+'</h3><div class="cw-price">'+item.cost+' coins</div><p class="cw-muted">In your inventory: <strong>'+count+'</strong></p><button class="cw-button primary" data-cw-store-item="'+item.code+'">Buy '+item.name+'</button>'+badgeControl+boostControl+effectControl+'</article>';
+      const purchaseControl=item.code==="animated_effect"&&count>0
+        ? '<button class="cw-button" type="button" disabled>Permanent unlock owned</button>'
+        : '<button class="cw-button primary" data-cw-store-item="'+item.code+'">Buy '+item.name+'</button>';
+      return '<article class="cw-card"><h3>'+item.name+'</h3><div class="cw-price">'+item.cost+' coins</div><p class="cw-muted">In your inventory: <strong>'+count+'</strong></p>'+purchaseControl+badgeControl+boostControl+effectControl+'</article>';
     }).join("");
   }
   document.getElementById("cwPackages").innerHTML=PACKS.map((p,i)=>'<article class="cw-card '+(i===1?'cw-package-featured':'')+'">'+(i===1?'<span class="cw-package-tag">MOST POPULAR</span>':'')+'<h3>'+p[1]+'</h3><div class="cw-price">'+p[2]+'</div><strong>'+p[3]+'</strong><button class="cw-button primary" data-cw-package="'+p[0]+'">Choose package</button></article>').join("");

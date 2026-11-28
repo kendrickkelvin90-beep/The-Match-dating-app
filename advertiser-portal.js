@@ -75,7 +75,7 @@
   };
   const refreshCampaigns = async () => {
     const result = await callApi({ action: "list-campaigns" });
-    const campaigns = result.campaigns || [];
+    const campaigns = (result.campaigns || []).filter((campaign) => campaign.status !== "deleted");
     $("campaignList").innerHTML = campaigns.length ? campaigns.map((campaign) => `
       <article class="campaign-item" data-campaign-id="${escapeHtml(campaign.id)}" data-campaign-status="${escapeHtml(campaign.status)}" data-has-pending-change="${(campaign.advertising_campaign_change_requests || []).some((request) => request.status === "pending") ? "true" : "false"}" data-pending-change-request="${escapeHtml((campaign.advertising_campaign_change_requests || []).find((request) => request.status === "pending")?.id || "")}" data-pending-change-creative="${(campaign.advertising_campaign_change_requests || []).find((request) => request.status === "pending")?.proposed_creative_id ? "true" : "false"}" data-has-creative="${(campaign.advertising_creatives || []).some((creative) => creative.is_current) ? "true" : "false"}" data-payment-ids="${escapeHtml((campaign.advertising_payments || []).filter((p) => p.status === "duplicate" || (campaign.status === "rejected" && p.status === "confirmed")).map((p) => p.id).join(","))}">
         <h3>${escapeHtml(campaign.headline)}</h3>
@@ -84,7 +84,7 @@
         <p>Reference: <strong>${escapeHtml(campaign.payment_reference)}</strong></p>
         <p>Live: ${formatDate(campaign.go_live_at)} · Ends: ${formatDate(campaign.ends_at)}</p>
         ${(campaign.advertising_campaign_change_requests || []).slice().sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0,1).map((request) => "<p class=\"fineprint\">Latest change request: <strong>" + escapeHtml(request.status.replaceAll("_"," ")) + "</strong>" + (request.admin_reason ? " · Admin note: " + escapeHtml(request.admin_reason) : "") + "</p>").join("")}
-        <div class="campaign-actions"><button class="small-outline" data-metrics="${escapeHtml(campaign.id)}">View performance</button>${campaign.status === "awaiting_payment" && campaign.payment_status === "awaiting_payment" ? `${(campaign.advertising_creatives || []).some((creative) => creative.is_current) ? `<button class="small-outline" data-resume-payment="${escapeHtml(campaign.id)}">Resume payment</button>` : `<button class="small-outline" data-finish-creative="${escapeHtml(campaign.id)}">Finish creative</button>`}<button class="small-outline" data-cancel-campaign="${escapeHtml(campaign.id)}">Cancel reservation</button>` : ""}</div>
+        <div class="campaign-actions"><button class="small-outline" data-metrics="${escapeHtml(campaign.id)}">View performance</button>${campaign.status === "awaiting_payment" && campaign.payment_status === "awaiting_payment" ? `${(campaign.advertising_creatives || []).some((creative) => creative.is_current) ? `<button class="small-outline" data-resume-payment="${escapeHtml(campaign.id)}">Resume payment</button>` : `<button class="small-outline" data-finish-creative="${escapeHtml(campaign.id)}">Finish creative</button>`}<button class="small-outline" data-cancel-campaign="${escapeHtml(campaign.id)}">Cancel reservation</button>` : ""}${campaign.status !== "deleted" ? `<button class="small-outline" data-delete-campaign="${escapeHtml(campaign.id)}">Delete advert</button>` : ""}</div>
         <div class="fineprint" id="metrics-${escapeHtml(campaign.id)}"></div>
       </article>`).join("") : '<p class="muted">You have no campaigns yet. Create your first sponsored advert to get started.</p>';
     $("campaignList").querySelectorAll("[data-finish-creative]").forEach((button) => button.addEventListener("click", () => {
@@ -110,6 +110,15 @@
       button.disabled = true;
       try { await callApi({ action: "cancel-campaign", campaign_id: button.dataset.cancelCampaign }); message("globalMessage", "Unpaid campaign reservation cancelled."); await refreshCampaigns(); }
       catch (error) { message("globalMessage", error.message, true); button.disabled = false; }
+    }));
+    $("campaignList").querySelectorAll("[data-delete-campaign]").forEach((button) => button.addEventListener("click", async () => {
+      if (!confirm("Delete this advert? It will immediately stop appearing in Discover and disappear from your campaign list. Payment and campaign records will be retained for accounting. This action cannot be undone.")) return;
+      button.disabled = true;
+      try {
+        await callApi({ action: "delete-campaign", campaign_id: button.dataset.deleteCampaign });
+        message("globalMessage", "Advert deleted. It will no longer appear in Discover.");
+        await refreshCampaigns();
+      } catch (error) { message("globalMessage", error.message || "The advert could not be deleted.", true); button.disabled = false; }
     }));
     $("campaignList").querySelectorAll("[data-resume-payment]").forEach((button) => button.addEventListener("click", async () => {
       button.disabled = true;

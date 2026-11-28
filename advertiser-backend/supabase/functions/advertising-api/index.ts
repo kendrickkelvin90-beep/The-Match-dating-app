@@ -22,6 +22,7 @@ type Action =
   | "get-metrics"
   | "get-payment-details"
   | "cancel-campaign"
+  | "delete-campaign"
   | "request-refund"
   | "create-design-request"
   | "list-design-requests"
@@ -319,6 +320,16 @@ Deno.serve(async (req: Request) => {
       });
       if (error) return json({ error: "Only unpaid campaign reservations can be cancelled for free." }, 400, origin);
       return json({ success: data === true }, 200, origin);
+    }
+
+    if (action === "delete-campaign") {
+      const campaignId = cleanText(body.campaign_id, 64);
+      if (!campaignId) return json({ error: "Campaign ID is required." }, 400, origin);
+      const { data, error } = await admin.rpc("delete_advertising_campaign", {
+        p_advertiser_id: user.id, p_campaign_id: campaignId,
+      });
+      if (error || data !== true) return json({ error: "The advert could not be deleted. Confirm that it belongs to your advertiser account and has not already been deleted." }, 404, origin);
+      return json({ success: true, status: "deleted" }, 200, origin);
     }
 
     if (action === "get-payment-details") {

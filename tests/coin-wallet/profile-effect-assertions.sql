@@ -33,18 +33,24 @@ end $$;
 
 select set_config('request.jwt.claim.sub','66666666-6666-4666-8666-666666666666',false);
 select public.test_assert(
-  public.set_my_profile_effect('hearts',true)='hearts'
-  and (select count(*)=1 from public.get_active_profile_effects(array['66666666-6666-4666-8666-666666666666'::uuid])),
-  'changing the active effect did not replace the previous effect'
+  public.set_my_profile_effect('hearts',true)='hearts',
+  'member could not switch to a different owned profile effect'
+);
+select public.test_assert(
+  (select count(*)=1 from public.get_active_profile_effects(array['66666666-6666-4666-8666-666666666666'::uuid])),
+  'changing the active effect did not retain one active effect'
 );
 select public.test_assert(
   (select effect_code='hearts' from public.get_active_profile_effects(array['66666666-6666-4666-8666-666666666666'::uuid])),
   'the newly selected effect is not active'
 );
 select public.test_assert(
-  public.set_my_profile_effect('hearts',false)='hearts'
-  and (select count(*)=0 from public.get_active_profile_effects(array['66666666-6666-4666-8666-666666666666'::uuid])),
-  'member could not deactivate their selected effect'
+  public.set_my_profile_effect('hearts',false)='hearts',
+  'member could not request effect deactivation'
+);
+select public.test_assert(
+  (select count(*)=0 from public.get_active_profile_effects(array['66666666-6666-4666-8666-666666666666'::uuid])),
+  'deactivated profile effect remains publicly active'
 );
 select public.test_assert(
   not has_function_privilege('anon','public.set_my_profile_effect(text,boolean)','EXECUTE')

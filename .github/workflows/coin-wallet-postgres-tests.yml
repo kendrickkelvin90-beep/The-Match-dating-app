@@ -42,6 +42,7 @@ jobs:
       - name: Check frontend JavaScript syntax
         run: |
           node --check gifts.js
+          node --check coin-wallet.js
           python3 - <<'PY'
           from html.parser import HTMLParser
           from pathlib import Path
@@ -94,6 +95,8 @@ jobs:
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261105090000_individual_coin_store_purchases.sql
       - name: Apply profile badge activation migration to disposable database
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261105110000_activate_special_profile_badge.sql
+      - name: Apply animated profile effects migration to disposable database
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261128130000_animated_profile_effects.sql
       - name: Apply purchased profile boost migration to disposable database
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261105143000_activate_purchased_profile_boosts.sql
       - name: Create Discover Super Like fixture tables
@@ -110,6 +113,8 @@ jobs:
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/coin-wallet/gift-notification-assertions.sql
       - name: Run profile badge activation assertions
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/coin-wallet/profile-badge-assertions.sql
+      - name: Run animated profile effects assertions
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/coin-wallet/profile-effect-assertions.sql
       - name: Run purchased profile boost assertions
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/coin-wallet/purchased-profile-boost-assertions.sql
       - name: Run Discover Super Like assertions

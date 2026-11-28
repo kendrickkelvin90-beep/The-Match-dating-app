@@ -351,7 +351,8 @@
       const id=node.dataset.userId||node.dataset.profileId||node.dataset.memberId;
       if(!id||! /^[0-9a-f-]{36}$/i.test(id))continue;
       const host=node.closest("[data-profile-card],[data-discover-card],.profile-card,.discover-card,.profile-details,.profile-modal,.profile-view,article")||node;
-      byId.set(id,host);
+      if(!byId.has(id))byId.set(id,new Set());
+      byId.get(id).add(host);
     }
     const missing=[...byId.keys()].filter(id=>!profileEffectCache.has(id));
     for(let i=0;i<missing.length;i+=100){
@@ -363,16 +364,19 @@
         (data||[]).forEach(row=>profileEffectCache.set(row.user_id,row.effect_code));
       }catch(error){console.warn("Could not load profile effects for visible members.",error);return;}
     }
-    byId.forEach((host,id)=>{
+    byId.forEach((hosts,id)=>{
       const effect=profileEffectCache.get(id);
-      if(effect){
-        const image=host.matches("img")?host:host.querySelector("img");
-        const visualHost=image?.parentElement||host;
-        visualHost.classList.add("tm-profile-effect-host");
-        if(visualHost.dataset.matchProfileEffect!==effect)visualHost.dataset.matchProfileEffect=effect;
-      }else{
-        host.querySelectorAll(".tm-profile-effect-host").forEach(el=>{el.classList.remove("tm-profile-effect-host");delete el.dataset.matchProfileEffect;});
-      }
+      hosts.forEach(host=>{
+        if(effect){
+          const image=host.matches("img")?host:host.querySelector("img");
+          const visualHost=image?.parentElement||host;
+          visualHost.classList.add("tm-profile-effect-host");
+          if(visualHost.dataset.matchProfileEffect!==effect)visualHost.dataset.matchProfileEffect=effect;
+        }else{
+          if(host.classList?.contains("tm-profile-effect-host")){host.classList.remove("tm-profile-effect-host");delete host.dataset.matchProfileEffect;}
+          host.querySelectorAll(".tm-profile-effect-host").forEach(el=>{el.classList.remove("tm-profile-effect-host");delete el.dataset.matchProfileEffect;});
+        }
+      });
     });
   }
   function scheduleProfileEffectScan(){
@@ -380,3 +384,10 @@
     profileEffectScanQueued=true;
     window.setTimeout(scanMatchProfileEffects,120);
   }
+  if(document.body){
+    new MutationObserver(scheduleProfileEffectScan).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["data-user-id","data-profile-id","data-member-id"]});
+    scheduleProfileEffectScan();
+    document.addEventListener("match:profile-rendered",scheduleProfileEffectScan);
+    document.addEventListener("match:profile-opened",scheduleProfileEffectScan);
+  }
+})();

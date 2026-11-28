@@ -12892,11 +12892,13 @@ if (!people.length && !discoverEventCards.length) {
     let sponsoredSlotIndex = 0;
     for (let index = 0; index < people.length; index++) {
       discoverFeed.push(people[index]);
-      if ((index + 1) % 3 === 0 && eventFeedIndex < discoverEventCards.length) {
-        discoverFeed.push(discoverEventCards[eventFeedIndex++]);
-      }
+      // The advert is the very next feed item after each six organic profiles.
+      // Community events remain separate feed items and never count toward this interval.
       if ((index + 1) % 6 === 0) {
         discoverFeed.push({ __matchSponsoredAdSlot: true, slotIndex: ++sponsoredSlotIndex });
+      }
+      if ((index + 1) % 3 === 0 && eventFeedIndex < discoverEventCards.length) {
+        discoverFeed.push(discoverEventCards[eventFeedIndex++]);
       }
     }
     while (eventFeedIndex < discoverEventCards.length) discoverFeed.push(discoverEventCards[eventFeedIndex++]);
@@ -13019,76 +13021,88 @@ if (!people.length && !discoverEventCards.length) {
       }
       if (p?.__matchSponsoredAd) {
         const ad = p.ad || {};
+        // Advertisements use the same standalone Discover feed-card layout as community events.
+        // They never share a card with an organic profile photo or create a second stacked card.
         const card = document.createElement("div");
-        card.className = "member-card discover-option3-card match-sponsored-portrait-slot";
+        card.className = "member-card discover-event-card match-sponsored-event-card";
         card.dataset.sponsoredCampaignId = String(ad.campaign_id || "");
-        card.style.cssText = "position:relative;z-index:2;display:block;width:100%;max-width:none;height:72vh;min-height:320px;max-height:720px;box-sizing:border-box;margin:0;padding:0;border:0;border-radius:24px;background:#080808;box-shadow:none;touch-action:pan-y;overflow:hidden;will-change:transform,opacity;";
-        const media = document.createElement("div");
-        media.style.cssText = "position:absolute;inset:0;width:100%;height:100%;overflow:hidden;background:#050505;border-radius:inherit;";
+        card.style.cssText = "position:relative;display:flex;flex-direction:column;width:calc(100vw - 28px);max-width:calc(100vw - 28px);height:calc(100dvh - 260px);min-height:0;max-height:none;box-sizing:border-box;margin:0 14px;padding:10px;border:1px solid rgba(224,190,116,.88);border-radius:28px;background:#090909;box-shadow:0 12px 34px rgba(0,0,0,.42);overflow:hidden;touch-action:pan-y;";
+        let media;
         if (ad.creative_type === "video") {
-          const video = document.createElement("video");
-          video.src = ad.creative_url || ""; video.poster = ad.poster_url || "";
-          video.autoplay = true; video.muted = true; video.loop = true; video.playsInline = true;
-          video.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;";
-          media.appendChild(video);
+          media = document.createElement("video");
+          media.src = ad.creative_url || "";
+          media.poster = ad.poster_url || "";
+          media.autoplay = true;
+          media.muted = true;
+          media.loop = true;
+          media.playsInline = true;
+          media.controls = true;
+          media.style.cssText = "display:block;flex:0 1 46%;width:100%;height:46%;min-height:110px;max-height:46%;object-fit:contain;object-position:center;background:#050505;border-radius:18px;";
         } else {
-          const image = document.createElement("img");
-          image.src = ad.creative_url || ""; image.alt = ad.headline || "Sponsored advert";
-          image.loading = "eager";
-          image.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;background:#080808;display:block;";
-          media.appendChild(image);
+          media = document.createElement("img");
+          media.alt = ad.headline || "Sponsored advert";
+          media.src = ad.creative_url || "";
+          media.loading = "eager";
+          media.style.cssText = "display:block;flex:0 1 46%;width:100%;height:46%;min-height:110px;max-height:46%;object-fit:contain;object-position:center;background:#050505;border-radius:18px;";
         }
-        const shade = document.createElement("div");
-        shade.style.cssText = "position:absolute;inset:35% 0 0;background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.35) 35%,rgba(0,0,0,.94) 100%);pointer-events:none;";
-        media.appendChild(shade);
-        const info = document.createElement("div");
-        info.style.cssText = "position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;flex-direction:column;gap:8px;padding:18px 16px 100px;box-sizing:border-box;color:#fff;max-height:58%;overflow:auto;";
-        const sponsoredLabel = document.createElement("span");
-        sponsoredLabel.textContent = "SPONSORED";
-        sponsoredLabel.style.cssText = "align-self:flex-start;padding:5px 10px;border:1px solid rgba(232,202,139,.65);border-radius:999px;background:rgba(12,10,8,.78);color:#f4d995;font-size:10px;font-weight:850;letter-spacing:1.2px;";
-        const headline = document.createElement("h2");
-        headline.textContent = ad.headline || "Sponsored";
-        headline.style.cssText = "margin:0;color:#fff;font-size:clamp(20px,5.5vw,27px);line-height:1.2;font-weight:850;overflow-wrap:anywhere;";
+        card.appendChild(media);
+        const content = document.createElement("div");
+        content.style.cssText = "display:flex;flex:1 1 auto;min-height:0;min-width:0;flex-direction:column;justify-content:center;gap:6px;padding:8px 8px 2px;color:#f6f0e3;overflow:hidden;";
+        const tag = document.createElement("span");
+        tag.textContent = "SPONSORED ADVERT";
+        tag.style.cssText = "color:#e6c47e;font-size:11px;font-weight:850;letter-spacing:1.8px;";
+        const title = document.createElement("h2");
+        title.textContent = ad.headline || "Sponsored advert";
+        title.style.cssText = "margin:0;font-size:clamp(23px,6vw,30px);line-height:1.15;font-weight:850;";
         const description = document.createElement("p");
-        description.textContent = ad.description || "";
-        description.style.cssText = "margin:0;color:#f0ece4;font-size:14px;line-height:1.45;overflow-wrap:anywhere;white-space:normal;";
+        description.textContent = ad.description || "Discover this sponsored offer.";
+        description.style.cssText = "margin:0;color:#c8c0b1;font-size:14px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;";
         const learn = document.createElement("button");
         learn.type = "button";
         learn.textContent = ({"learn_more":"Learn More","visit_website":"Visit Website","contact_us":"Contact Us","whatsapp":"WhatsApp"})[ad.cta] || "Learn More";
-        learn.style.cssText = "width:100%;min-height:46px;border:1px solid #d2aa62;border-radius:999px;background:linear-gradient(135deg,#f4dfad,#c99b4b);color:#33230b;font-size:14px;font-weight:850;";
+        learn.style.cssText = "width:100%;min-height:42px;border:1px solid #d2aa62;border-radius:999px;background:linear-gradient(135deg,#f4dfad,#c99b4b);color:#33230b;font-size:14px;font-weight:850;";
         const openDestination = () => {
-          if (ad.destination_url) window.open(ad.destination_url,"_blank","noopener,noreferrer");
+          if (ad.destination_url) {
+            const opened = window.open(ad.destination_url,"_blank","noopener,noreferrer");
+            if (opened) opened.opener = null;
+          }
           window.matchRecordSponsoredEvent?.(ad.campaign_id,"click");
         };
         learn.addEventListener("click",openDestination);
-        info.append(sponsoredLabel,headline,description,learn);
-        media.appendChild(info); card.appendChild(media);
+        content.append(tag,title,description,learn);
+        card.appendChild(content);
         const actions = document.createElement("div");
-        actions.style.cssText = "position:absolute;z-index:5;left:0;right:0;bottom:12px;display:flex;justify-content:center;align-items:center;gap:clamp(10px,4vw,18px);pointer-events:none;";
-        const makeAction = (label, aria, style) => { const b=document.createElement("button"); b.type="button"; b.textContent=label; b.setAttribute("aria-label",aria); b.style.cssText=style+";pointer-events:auto;"; return b; };
-        const passAd = makeAction("✕","Pass this advert","flex:0 0 68px;width:68px;height:68px;border-radius:50%;border:1px solid rgba(255,255,255,.58);background:linear-gradient(145deg,#171717,#050505);color:#fff;font-size:36px");
-        const likeAd = makeAction("♥","Open this advert","flex:0 0 68px;width:68px;height:68px;border-radius:50%;border:1px solid rgba(255,224,145,.95);background:radial-gradient(circle at 32% 22%,#fff1c0 0%,#e8c16d 48%,#bd8735 100%);color:#160f05;font-size:34px;font-weight:900");
-        const superAd = makeAction("✦","Learn more about this advert","flex:0 0 68px;width:68px;height:68px;border-radius:50%;border:1px solid rgba(255,232,175,.95);background:radial-gradient(circle at 35% 20%,#fff6d5 0%,#e6c27a 48%,#b98a3f 100%);color:#241707;font-size:34px;font-weight:900");
-        const advanceAd = async direction => { passAd.disabled=likeAd.disabled=superAd.disabled=true; await animateDiscoverCardExit(card,direction); personIndex++; await showPerson(); };
-        passAd.onclick = () => advanceAd("left");
-        likeAd.onclick = () => { openDestination(); void advanceAd("right"); };
-        superAd.onclick = () => { openDestination(); void advanceAd("right"); };
-        actions.append(passAd,superAd,likeAd); card.appendChild(actions);
-        let adTouchStartX = 0, adTouchStartY = 0;
-        card.addEventListener("touchstart", event => {
-          adTouchStartX = event.changedTouches[0].clientX;
-          adTouchStartY = event.changedTouches[0].clientY;
-        }, { passive: true });
-        card.addEventListener("touchend", event => {
-          const dx = event.changedTouches[0].clientX - adTouchStartX;
-          const dy = event.changedTouches[0].clientY - adTouchStartY;
-          if (Math.abs(dx) < 90 || Math.abs(dx) < Math.abs(dy)) return;
-          if (dx < 0) passAd.click(); else likeAd.click();
-        }, { passive: true });
-        // Use the exact same single-card container as an organic Discover profile.
-        // No wrapper, rear layer, or second card is added: the advert replaces the profile card.
-        card.style.cssText="position:relative;z-index:2;display:block;width:100%;max-width:none;height:72vh;min-height:320px;max-height:720px;box-sizing:border-box;margin:0;padding:0;border:0;border-radius:24px;background:#080808;box-shadow:none;touch-action:pan-y;overflow:hidden;will-change:transform,opacity;animation:none;transition:none;";
+        actions.style.cssText = "display:flex;flex:0 0 auto;justify-content:center;align-items:center;gap:24px;padding:6px 0 2px;min-height:62px;";
+        const passAd = document.createElement("button");
+        passAd.type = "button";
+        passAd.textContent = "✕";
+        passAd.setAttribute("aria-label","Pass this advert");
+        passAd.style.cssText = "flex:0 0 58px;width:58px;height:58px;min-width:58px;min-height:58px;display:flex;align-items:center;justify-content:center;padding:0;border-radius:50%;border:1px solid #888;background:#171717;color:#fff;font-size:32px;line-height:1;box-sizing:border-box;";
+        const likeAd = document.createElement("button");
+        likeAd.type = "button";
+        likeAd.textContent = "♥";
+        likeAd.setAttribute("aria-label","Open this advert");
+        likeAd.title = "Open advertiser destination";
+        likeAd.style.cssText = "flex:0 0 58px;width:58px;height:58px;min-width:58px;min-height:58px;display:flex;align-items:center;justify-content:center;padding:0;border-radius:50%;border:1px solid #f5d995;background:linear-gradient(145deg,#f7dfaa,#bd8b39);color:#211707;font-size:30px;font-weight:900;line-height:1;box-sizing:border-box;";
+        const advanceAd = async (direction, openLink) => {
+          passAd.disabled = likeAd.disabled = true;
+          if (openLink) openDestination();
+          await animateDiscoverCardExit(card,direction);
+          personIndex++;
+          await showPerson();
+        };
+        passAd.onclick = () => advanceAd("left",false);
+        likeAd.onclick = () => advanceAd("right",true);
+        actions.append(passAd,likeAd);
+        card.appendChild(actions);
         list.replaceChildren(card);
+        let touchStartX=0,touchStartY=0;
+        card.addEventListener("touchstart",event=>{touchStartX=event.changedTouches[0].clientX;touchStartY=event.changedTouches[0].clientY;},{passive:true});
+        card.addEventListener("touchend",event=>{
+          const dx=event.changedTouches[0].clientX-touchStartX,dy=event.changedTouches[0].clientY-touchStartY;
+          if(Math.abs(dx)<90||Math.abs(dx)<Math.abs(dy))return;
+          if(dx<0)passAd.click();else likeAd.click();
+        },{passive:true});
         window.matchRecordSponsoredEvent?.(ad.campaign_id,"impression");
         return;
       }

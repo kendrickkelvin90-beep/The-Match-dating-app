@@ -12885,24 +12885,18 @@ if (!people.length && !discoverEventCards.length) {
       return discoverPhotoCache.get(userId);
     };
 
-    // Build the ordered Discover feed: every six organic profiles are followed by one sponsored portrait slot.
-    // Community events remain interleaved independently and never count as organic swipes.
+    // Every six organic profiles, reserve the next feed position for a sponsored portrait slot.
+    // Ads are fetched only when that slot becomes active, so the first profile never waits on ad delivery.
     const discoverFeed = [];
     let eventFeedIndex = 0;
     let sponsoredSlotIndex = 0;
-    const fetchSponsoredForSlot = async () => {
-      if (typeof window.matchGetSponsoredAd !== "function") return null;
-      try { return await window.matchGetSponsoredAd(++sponsoredSlotIndex); }
-      catch (error) { console.warn("[The Match] Sponsored slot unavailable.", error); return null; }
-    };
     for (let index = 0; index < people.length; index++) {
       discoverFeed.push(people[index]);
       if ((index + 1) % 3 === 0 && eventFeedIndex < discoverEventCards.length) {
         discoverFeed.push(discoverEventCards[eventFeedIndex++]);
       }
       if ((index + 1) % 6 === 0) {
-        const sponsoredAd = await fetchSponsoredForSlot();
-        if (sponsoredAd) discoverFeed.push({ __matchSponsoredAd: true, ad: sponsoredAd });
+        discoverFeed.push({ __matchSponsoredAdSlot: true, slotIndex: ++sponsoredSlotIndex });
       }
     }
     while (eventFeedIndex < discoverEventCards.length) discoverFeed.push(discoverEventCards[eventFeedIndex++]);
@@ -13015,7 +13009,14 @@ if (!people.length && !discoverEventCards.length) {
         return;
       }
 
-      const p=discoverFeed[personIndex];
+      let p=discoverFeed[personIndex];
+      if (p?.__matchSponsoredAdSlot) {
+        let ad = null;
+        try { ad = await window.matchGetSponsoredAd?.(p.slotIndex); }
+        catch (error) { console.warn("[The Match] Sponsored advert could not load.", error); }
+        if (!ad) { personIndex++; await showPerson(); return; }
+        p = { __matchSponsoredAd: true, ad };
+      }
       if (p?.__matchSponsoredAd) {
         const ad = p.ad || {};
         const card = document.createElement("div");

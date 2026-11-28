@@ -12885,19 +12885,27 @@ if (!people.length && !discoverEventCards.length) {
       return discoverPhotoCache.get(userId);
     };
 
-    // Mix one event after every three member cards. All eligible published
-    // events are included, while member ordering and matching data stay intact.
+    // Build the ordered Discover feed: every six organic profiles are followed by one sponsored portrait slot.
+    // Community events remain interleaved independently and never count as organic swipes.
     const discoverFeed = [];
     let eventFeedIndex = 0;
-    people.forEach((person, index) => {
-      discoverFeed.push(person);
+    let sponsoredSlotIndex = 0;
+    const fetchSponsoredForSlot = async () => {
+      if (typeof window.matchGetSponsoredAd !== "function") return null;
+      try { return await window.matchGetSponsoredAd(++sponsoredSlotIndex); }
+      catch (error) { console.warn("[The Match] Sponsored slot unavailable.", error); return null; }
+    };
+    for (let index = 0; index < people.length; index++) {
+      discoverFeed.push(people[index]);
       if ((index + 1) % 3 === 0 && eventFeedIndex < discoverEventCards.length) {
         discoverFeed.push(discoverEventCards[eventFeedIndex++]);
       }
-    });
-    while (eventFeedIndex < discoverEventCards.length) {
-      discoverFeed.push(discoverEventCards[eventFeedIndex++]);
+      if ((index + 1) % 6 === 0) {
+        const sponsoredAd = await fetchSponsoredForSlot();
+        if (sponsoredAd) discoverFeed.push({ __matchSponsoredAd: true, ad: sponsoredAd });
+      }
     }
+    while (eventFeedIndex < discoverEventCards.length) discoverFeed.push(discoverEventCards[eventFeedIndex++]);
     if (!people.length) discoverFeed.push(...discoverEventCards);
 
     async function showDiscoverEvent(eventCard, currentCard) {
@@ -13008,6 +13016,73 @@ if (!people.length && !discoverEventCards.length) {
       }
 
       const p=discoverFeed[personIndex];
+      if (p?.__matchSponsoredAd) {
+        const ad = p.ad || {};
+        const card = document.createElement("div");
+        card.className = "member-card discover-option3-card match-sponsored-portrait-slot";
+        card.dataset.sponsoredCampaignId = String(ad.campaign_id || "");
+        card.style.cssText = "position:relative;z-index:2;display:block;width:100%;max-width:none;height:72vh;min-height:320px;max-height:720px;box-sizing:border-box;margin:0;padding:0;border:0;border-radius:24px;background:#080808;box-shadow:none;touch-action:pan-y;overflow:hidden;will-change:transform,opacity;";
+        const media = document.createElement("div");
+        media.style.cssText = "position:absolute;inset:0;width:100%;height:100%;overflow:hidden;background:#050505;border-radius:inherit;";
+        if (ad.creative_type === "video") {
+          const video = document.createElement("video");
+          video.src = ad.creative_url || ""; video.poster = ad.poster_url || "";
+          video.autoplay = true; video.muted = true; video.loop = true; video.playsInline = true;
+          video.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;";
+          media.appendChild(video);
+        } else {
+          const image = document.createElement("img");
+          image.src = ad.creative_url || ""; image.alt = ad.headline || "Sponsored advert";
+          image.loading = "eager";
+          image.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;background:#080808;display:block;";
+          media.appendChild(image);
+        }
+        const shade = document.createElement("div");
+        shade.style.cssText = "position:absolute;inset:35% 0 0;background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.35) 35%,rgba(0,0,0,.94) 100%);pointer-events:none;";
+        media.appendChild(shade);
+        const info = document.createElement("div");
+        info.style.cssText = "position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;flex-direction:column;gap:8px;padding:18px 16px 100px;box-sizing:border-box;color:#fff;max-height:58%;overflow:auto;";
+        const sponsoredLabel = document.createElement("span");
+        sponsoredLabel.textContent = "SPONSORED";
+        sponsoredLabel.style.cssText = "align-self:flex-start;padding:5px 10px;border:1px solid rgba(232,202,139,.65);border-radius:999px;background:rgba(12,10,8,.78);color:#f4d995;font-size:10px;font-weight:850;letter-spacing:1.2px;";
+        const headline = document.createElement("h2");
+        headline.textContent = ad.headline || "Sponsored";
+        headline.style.cssText = "margin:0;color:#fff;font-size:clamp(20px,5.5vw,27px);line-height:1.2;font-weight:850;overflow-wrap:anywhere;";
+        const description = document.createElement("p");
+        description.textContent = ad.description || "";
+        description.style.cssText = "margin:0;color:#f0ece4;font-size:14px;line-height:1.45;overflow-wrap:anywhere;white-space:normal;";
+        const learn = document.createElement("button");
+        learn.type = "button";
+        learn.textContent = ({"learn_more":"Learn More","visit_website":"Visit Website","contact_us":"Contact Us","whatsapp":"WhatsApp"})[ad.cta] || "Learn More";
+        learn.style.cssText = "width:100%;min-height:46px;border:1px solid #d2aa62;border-radius:999px;background:linear-gradient(135deg,#f4dfad,#c99b4b);color:#33230b;font-size:14px;font-weight:850;";
+        const openDestination = () => {
+          if (ad.destination_url) window.open(ad.destination_url,"_blank","noopener,noreferrer");
+          window.matchRecordSponsoredEvent?.(ad.campaign_id,"click");
+        };
+        learn.addEventListener("click",openDestination);
+        info.append(sponsoredLabel,headline,description,learn);
+        media.appendChild(info); card.appendChild(media);
+        const actions = document.createElement("div");
+        actions.style.cssText = "position:absolute;z-index:5;left:0;right:0;bottom:12px;display:flex;justify-content:center;align-items:center;gap:clamp(10px,4vw,18px);pointer-events:none;";
+        const makeAction = (label, aria, style) => { const b=document.createElement("button"); b.type="button"; b.textContent=label; b.setAttribute("aria-label",aria); b.style.cssText=style+";pointer-events:auto;"; return b; };
+        const passAd = makeAction("✕","Pass this advert","flex:0 0 68px;width:68px;height:68px;border-radius:50%;border:1px solid rgba(255,255,255,.58);background:linear-gradient(145deg,#171717,#050505);color:#fff;font-size:36px");
+        const likeAd = makeAction("♥","Open this advert","flex:0 0 68px;width:68px;height:68px;border-radius:50%;border:1px solid rgba(255,224,145,.95);background:radial-gradient(circle at 32% 22%,#fff1c0 0%,#e8c16d 48%,#bd8735 100%);color:#160f05;font-size:34px;font-weight:900");
+        const superAd = makeAction("✦","Learn more about this advert","flex:0 0 68px;width:68px;height:68px;border-radius:50%;border:1px solid rgba(255,232,175,.95);background:radial-gradient(circle at 35% 20%,#fff6d5 0%,#e6c27a 48%,#b98a3f 100%);color:#241707;font-size:34px;font-weight:900");
+        const advanceAd = async direction => { passAd.disabled=likeAd.disabled=superAd.disabled=true; await animateDiscoverCardExit(card,direction); personIndex++; await showPerson(); };
+        passAd.onclick = () => advanceAd("left");
+        likeAd.onclick = () => { openDestination(); void advanceAd("right"); };
+        superAd.onclick = () => { openDestination(); void advanceAd("right"); };
+        actions.append(passAd,superAd,likeAd); card.appendChild(actions);
+        const cardStack = document.createElement("div");
+        cardStack.className = "discover-profile-card-stack";
+        cardStack.style.cssText = "position:relative;isolation:isolate;width:100%;max-width:100%;margin:0 auto 12px;padding:0 0 9px;box-sizing:border-box;";
+        const rear = document.createElement("div");
+        rear.setAttribute("aria-hidden","true");
+        rear.style.cssText = "position:absolute;z-index:0;left:9px;right:9px;top:7px;bottom:1px;border:1px solid rgba(214,180,110,.22);border-radius:25px;background:#171613;";
+        cardStack.append(rear,card); list.replaceChildren(cardStack);
+        window.matchRecordSponsoredEvent?.(ad.campaign_id,"impression");
+        return;
+      }
       if (p?.__matchEvent) {
         await showDiscoverEvent(p, document.createElement("div"));
         return;

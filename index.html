@@ -13074,6 +13074,17 @@ if (!people.length && !discoverEventCards.length) {
         likeAd.onclick = () => { openDestination(); void advanceAd("right"); };
         superAd.onclick = () => { openDestination(); void advanceAd("right"); };
         actions.append(passAd,superAd,likeAd); card.appendChild(actions);
+        let adTouchStartX = 0, adTouchStartY = 0;
+        card.addEventListener("touchstart", event => {
+          adTouchStartX = event.changedTouches[0].clientX;
+          adTouchStartY = event.changedTouches[0].clientY;
+        }, { passive: true });
+        card.addEventListener("touchend", event => {
+          const dx = event.changedTouches[0].clientX - adTouchStartX;
+          const dy = event.changedTouches[0].clientY - adTouchStartY;
+          if (Math.abs(dx) < 90 || Math.abs(dx) < Math.abs(dy)) return;
+          if (dx < 0) passAd.click(); else likeAd.click();
+        }, { passive: true });
         const cardStack = document.createElement("div");
         cardStack.className = "discover-profile-card-stack";
         cardStack.style.cssText = "position:relative;isolation:isolate;width:100%;max-width:100%;margin:0 auto 12px;padding:0 0 9px;box-sizing:border-box;";

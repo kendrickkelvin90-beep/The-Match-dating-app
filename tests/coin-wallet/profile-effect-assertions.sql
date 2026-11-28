@@ -6,7 +6,7 @@ on conflict(user_id,item_code) do update set quantity=excluded.quantity;
 set role authenticated;
 select set_config('request.jwt.claim.sub','66666666-6666-4666-8666-666666666666',false);
 select public.test_expect_error(
-  $select public.coin_buy_store_item('animated_effect','another-permanent-purchase')$,
+  'select public.coin_buy_store_item(''animated_effect'',''another-permanent-purchase'')',
   'already own the permanent Animated Profile Effect'
 );
 select public.test_assert(
